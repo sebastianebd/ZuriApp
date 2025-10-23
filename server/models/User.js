@@ -1,117 +1,110 @@
-const mongoose = require('mongoose')
+const mongoose = require("mongoose");
+const validator = require("validator");
 
-const Schema = mongoose.Schema
-
-const UserSchema = Schema(
+const userSchema = new mongoose.Schema(
   {
-    rut:{
+    rut: {
       type: String,
       required: true,
       unique: true,
       uppercase: true,
+      trim: true,
     },
-
     nombre: {
       type: String,
       required: true,
       uppercase: true,
+      trim: true,
     },
-
     apellido: {
       type: String,
       required: true,
       uppercase: true,
+      trim: true,
     },
-
     fecha_nac: {
       type: Date,
       required: true,
-      uppercase: true,
     },
-
     direccion: {
       type: String,
       required: true,
+      trim: true,
       uppercase: true,
     },
-
     telefono: {
-      type: Number,
-      required: true,
-      unique: true
-    },
-    email:{
       type: String,
       required: true,
-      uppercase: true,
-      trim: true,
       unique: true,
-      validate: [
-        (val) => /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(val),
-      ]
+      validate: {
+        validator: (val) => /^[0-9]{8,15}$/.test(val),
+        message: "Número de teléfono no válido",
+      },
     },
-
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      validate: [validator.isEmail, "Email no válido"],
+    },
     ciudad: {
       type: String,
       required: true,
       uppercase: true,
     },
-
     tipo_cargo: {
       type: String,
       required: true,
-      uppercase: true
+      uppercase: true,
     },
-
     eliminado: {
       type: Boolean,
-      default: false
+      default: false,
     },
-
     password: {
       type: String,
       required: true,
+      select: false,
     },
-
     servicio: {
       type: String,
-      required: function() {
-        return this.tipo_cargo === 'JEFA SERVICIO';
+      required: function () {
+        return this.tipo_cargo === "JEFA SERVICIO";
       },
+      uppercase: true,
     },
 
     habilitado: {
       type: String,
-      required: function() {
-        return this.tipo_cargo === 'TENS';
+      required: function () {
+        return this.tipo_cargo === "TENS";
       },
-
-    refresh_token: String
-    
-  }
-},
-
-
-  {
-    virtuals:{
-      full_name: {
-        get(){
-          return this.nombre + ' ' + this.apellido
-        }
-      },
-
-      id: {
-        get(){
-          return this._id
-        }
-      }
+      enum: ["HABILITADO", "NO HABILITADO"],
+      default: "HABILITADO",
+      uppercase: true,
+      trim: true,
     },
-    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+
+    refresh_token: {
+      type: String,
+      select: false,
+    },
   },
-  
-)
+  {
+    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
 
-module.exports = mongoose.model('User', UserSchema)
+userSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
 
+userSchema.virtual("full_name").get(function () {
+  return `${this.nombre} ${this.apellido}`;
+});
 
-
+module.exports = mongoose.model("User", userSchema);

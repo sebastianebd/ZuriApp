@@ -1,71 +1,60 @@
-const mongoose = require('mongoose')
-const Schema = mongoose.Schema
+const mongoose = require('mongoose');
 
-const ReemplazoSchema = Schema(
+const replacementSchema = new mongoose.Schema(
   {
-    id_saliente:{
-      type: String,
+    id_saliente: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
       required: true
     },
-    rut_saliente:{
+    rut_saliente: {
       type: String,
       required: true,
       uppercase: true
     },
-
     nombre_saliente: {
       type: String,
       required: true,
       uppercase: true
     },
-
     apellido_saliente: {
       type: String,
       required: true,
       uppercase: true
     },
-
-    id_entrante:{
-      type: String,
+    id_entrante: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
       required: true
     },
-
-    rut_entrante:{
+    rut_entrante: {
       type: String,
       required: true,
       uppercase: true
     },
-
     nombre_entrante: {
       type: String,
       required: true,
       uppercase: true
     },
-
     apellido_entrante: {
       type: String,
       required: true,
       uppercase: true
     },
-
     tipo_turno: {
       type: String,
       required: true,
       uppercase: true
     },
-
     fecha_inicio: {
       type: Date,
-      required: true,
-      uppercase: true
+      required: true
     },
-
     fecha_termino: {
       type: Date,
-      required: true,
-      uppercase: true
+      required: true
     },
-
     servicio: {
       type: String,
       required: true,
@@ -79,22 +68,24 @@ const ReemplazoSchema = Schema(
       type: Boolean,
       default: true
     },
-    refresh_token: String
+    refresh_token: {
+      type: String,
+      select: false
+    }
   },
   {
-    virtuals:{
-      id: {
-        get(){
-          return this._id
-        }
-      }
-    },
-    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
-  },
-  
-)
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
+);
 
-module.exports = mongoose.model('Reemplazo', ReemplazoSchema)
+replacementSchema.virtual('id').get(function () {
+  return this._id.toHexString();
+});
+
+module.exports = mongoose.model('Replacement', replacementSchema);
+
 
 
 
