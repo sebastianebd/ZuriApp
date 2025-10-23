@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const User = require('../models/User');
+const User = require('../models/user.model');
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({

@@ -1,10 +1,10 @@
 const cron = require('node-cron');
-const Reemplazo = require('../models/Reemplazo');
+const replacement = require('../models/replacement.model');
 
 cron.schedule('1 0 * * *', async () => {
   try {
     const fechaActual = new Date();
-    await Reemplazo.updateMany(
+    await replacement.updateMany(
       { fecha_termino: { $lt: fechaActual }, activo: true },
       { $set: { activo: false } }
     );

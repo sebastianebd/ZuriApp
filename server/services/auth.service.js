@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const User = require("../models/user.model");
 
 class AuthError extends Error {
   constructor(message = "Rut o contraseña incorrecta") {
@@ -39,7 +39,7 @@ async function login({ rut, password }) {
     throw new ValidationError("Campos de autenticación requeridos.");
   }
 
-  const user = await User.findOne({ rut }).exec();
+  const user = await User.findOne({ rut }).select("+password").exec();
 
   if (!user) {
     throw new AuthError("Rut o contraseña incorrecta.");
@@ -76,7 +76,7 @@ async function logout(refreshToken) {
   const userId = decoded?.id;
   if (!userId) return;
 
-  const user = await User.findById(userId).exec();
+  const user = await User.findById(userId).select("+refresh_token").exec();
   if (!user || !user.refresh_token) return;
 
   const match = await bcrypt.compare(refreshToken, user.refresh_token);
@@ -106,7 +106,7 @@ async function refresh(refreshToken) {
     throw new AuthError("Token de actualización inválido.");
   }
 
-  const user = await User.findById(userId).exec();
+  const user = await User.findById(userId).select("+refresh_token").exec();
   if (!user || !user.refresh_token) {
     throw new AuthError("Sesión no válida o usuario no encontrado.");
   }
