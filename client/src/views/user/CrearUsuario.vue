@@ -89,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore, type RegisterData } from '../../stores/auth';
+import { useAuthStore, type RegisterData } from '../../stores/auth.store';
 import { reactive, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 

@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore, type LoginData } from '../../stores/auth';
+import { useAuthStore, type LoginData } from '../../stores/auth.store';
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 

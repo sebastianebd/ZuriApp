@@ -244,7 +244,7 @@
   </template>
 
 <script setup lang="ts">
-import { useAuthStore, type User } from '../../stores/auth';
+import { useAuthStore, type User } from '../../stores/auth.store';
 import { onMounted, ref, computed } from 'vue';
 
 const authStore = useAuthStore();

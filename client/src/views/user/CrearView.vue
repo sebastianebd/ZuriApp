@@ -150,7 +150,7 @@
   </template>
     
     <script setup lang="ts">
-    import { useAuthStore, type RegisterDataReemplazo, type User } from '../../stores/auth';
+    import { useAuthStore, type RegisterDataReemplazo, type User } from '../../stores/auth.store';
     import { reactive, ref, onMounted, computed } from 'vue';
     import { useRouter } from 'vue-router';
     

@@ -1,77 +1,85 @@
-import { useAuthStore } from '@/stores/auth'
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import { useAuthStore } from '@/stores/auth.store'
+
+// Layouts
+import AuthLayout from '@/components/layout/AuthLayout.vue'
+import AppLayout from '@/components/layout/AppLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // Rutas públicas (AuthLayout)
     {
       path: '/',
-      name: 'home',
-      component: HomeView
+      component: AuthLayout,
+      children: [
+        {
+          path: '',
+          name: 'login',
+          component: () => import('@/views/auth/LoginView.vue'),
+          meta: { requiresGuest: true },
+        },
+      ],
     },
+
     {
-      path: '/login',
-      name: 'login',
-      component: () => import('../views/auth/LoginView.vue'),
-      meta: {requiresGuest: true}
+      path: '/app',
+      component: AppLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'user',
+          name: 'user',
+          component: () => import('@/views/user/UserView.vue'),
+        },
+        {
+          path: 'crear',
+          name: 'crear',
+          component: () => import('@/views/user/CrearView.vue'),
+        },
+        {
+          path: 'reemplazos',
+          name: 'reemplazos',
+          component: () => import('@/views/user/ReemplazosView.vue'),
+        },
+        {
+          path: 'crear_usuario',
+          name: 'crear_usuario',
+          component: () => import('@/views/user/CrearUsuario.vue'),
+        },
+        {
+          path: 'calendario',
+          name: 'calendario',
+          component: () => import('@/views/user/CalendarioView.vue'),
+        },
+        {
+          path: 'ver_usuarios',
+          name: 'ver_usuarios',
+          component: () => import('@/views/user/VerUsuarios.vue'),
+        },
+        {
+          path: 'ver_historial',
+          name: 'ver_historial',
+          component: () => import('@/views/user/VerHistorial.vue'),
+        },
+      ],
     },
-    {
-      path: '/user',
-      name: 'user',
-      component: () => import('../views/auth/UserView.vue'),
-      meta: {requiresAuth: true}
-    },
-    {
-      path: '/crear',
-      name: 'crear',
-      component: () => import('../views/auth/CrearView.vue'),
-      meta: {requiresAuth: true}
-    },
-    {
-      path: '/reemplazos',
-      name: 'reemplazos',
-      component: () => import('../views/auth/ReemplazosView.vue'),
-      meta: {requiresAuth: true}
-    },
-    {
-      path: '/crear_usuario',
-      name: 'crear_usuario',
-      component: () => import('../views/auth/CrearUsuario.vue'),
-      meta: {requiresAuth: true}
-    },
-    {
-      path: '/calendario',
-      name: 'calendario',
-      component: () => import('../views/auth/CalendarioView.vue'),
-      meta: {requiresAuth: true}
-    },
-    {
-      path: '/ver_usuarios',
-      name: 'ver_usuarios',
-      component: () => import('../views/auth/VerUsuarios.vue'),
-      meta: {requiresAuth: true}
-    },
-    {
-      path: '/ver_historial',
-      name: 'ver_historial',
-      component: () => import('../views/auth/VerHistorial.vue'),
-      meta: {requiresAuth: true}
-    },
-    
-  ]
+  ],
 })
 
 router.beforeResolve(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  if (to.name !== 'login' && !authStore.isAuthenticated) {
-    // Si la ruta a la que se intenta acceder no es la de inicio de sesión y el usuario no está autenticado
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return next({ name: 'login', query: { redirect: to.fullPath } })
-  } else {
-    // Si está autenticado o la ruta es la de inicio de sesión, permite el acceso
-    return next()
   }
+
+  if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    return next({ name: 'user' }) // redirige a zona privada si ya está logueado
+  }
+
+  next()
 })
 
 export default router
+

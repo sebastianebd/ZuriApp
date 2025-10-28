@@ -3,16 +3,31 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import NavBar from './components/layout/NavBar.vue'
+import Sidebar from './components/layout/SidebarMenu.vue'
+import { computed, ref } from 'vue'
+import { useAuthStore } from './stores/auth.store'
+
+const authStore = useAuthStore()
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 
+const isExpanded = ref(sessionStorage.getItem('is_expanded') === 'true')
 
+const handleSidebarToggle = (value: boolean) => {
+  isExpanded.value = value
+  sessionStorage.setItem('is_expanded', value.toString())
 
-
+}
 </script>
 
 <template >
   <div id="app">
-      <RouterView/>
+    <NavBar  />
+    <Sidebar @sidebarToggle="handleSidebarToggle" v-if="isAuthenticated" />
+    <main class="main-content" :class="{ expanded: isExpanded }">
+      <RouterView :class="{ expanded: isExpanded }" />
+    </main>
   </div>
 </template>
 
@@ -50,7 +65,6 @@ button {
   display: flex;
   flex: 1;
   padding: 2rem;
-  
 
   main {
     flex: 1;

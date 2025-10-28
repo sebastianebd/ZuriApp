@@ -1,5 +1,5 @@
 <template>
-  <nav v-if="isAuthenticated" class="navbar navbar-expand-sm position-sticky" style="background-color:#CDCDCD">
+  <nav v-if="isAuthenticated && authReady" class="navbar navbar-expand-sm position-sticky" style="background-color:#CDCDCD">
   <div class="container-fluid">
     <!--<router-link class="navbar-brand" :to="{name: 'home'}">Navbar</router-link>-->
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#appNavbar" aria-controls="appNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from '../stores/auth';
+import { useAuthStore } from '../../stores/auth.store';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -50,9 +50,9 @@ const user = computed(()=>{
   return authStore.user
 })
 
-const isAuthenticated = computed(()=>{
-  return authStore.isAuthenticated
-})
+const authReady = computed(() => authStore.authReady)
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+
 
 async function logout(){
   await authStore.logout()

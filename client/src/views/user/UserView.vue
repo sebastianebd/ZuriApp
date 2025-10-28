@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from '../../stores/auth';
+import { useAuthStore } from '../../stores/auth.store';
 import { computed, onMounted } from 'vue';
 
 
