@@ -1,14 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 
-// Layouts
 import AuthLayout from '@/components/layout/AuthLayout.vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // Rutas públicas (AuthLayout)
     {
       path: '/',
       component: AuthLayout,

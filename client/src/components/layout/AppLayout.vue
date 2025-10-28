@@ -21,30 +21,32 @@ const handleSidebarToggle = (value: boolean) => {
   </div>
 </template>
 
-<style>
+<style scoped>
+
+
 .main-content {
   margin-left: 7rem;
-  transition: margin-left 0.2s ease-in-out; /* Transición suave al expandir/contraer el Sidebar */
-  flex: 1; /* Asegura que el contenido ocupe el espacio restante */
-  padding: 2rem; /* Ajusta según sea necesario */
+  transition: margin-left 0.2s ease-in-out; 
+  flex: 1; 
+  padding: 2rem; 
 
   &.expanded {
     margin-left: calc(
       var(--sidebar-width) + 3rem
-    ); /* Ajusta el ancho cuando el sidebar está expandido */
-    transition: margin-left 0.2s ease-in-out; /* Transición suave al expandir/contraer el Sidebar */
+    ); 
+    transition: margin-left 0.2s ease-in-out; 
   }
 }
 
 .RouterView {
-  transition: margin-left 0.2s ease-in-out; /* Agrega una transición al cambiar el ancho */
-  flex: 1; /* Asegura que el contenido ocupe el espacio restante */
+  transition: margin-left 0.2s ease-in-out; 
+  flex: 1; 
 
   &.expanded {
     margin-left: calc(
       var(--sidebar-width) + 3rem
-    ); /* Ajusta el ancho cuando el sidebar está expandido */
-    transition: margin-left 0.2s ease-in-out; /* Transición suave al expandir/contraer el Sidebar */
+    ); 
+    transition: margin-left 0.2s ease-in-out; 
   }
 }
 </style>

@@ -1,18 +1,10 @@
-
-
-
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-
-
-
-
-
 </script>
 
-<template >
+<template>
   <div id="app">
-      <RouterView/>
+    <RouterView />
   </div>
 </template>
 
@@ -27,16 +19,6 @@ import { RouterView } from 'vue-router'
   --sidebar-width: 300px;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Fira sans', sans-serif;
-}
-
-body {
-  background: var(--light);
-}
 
 button {
   cursor: pointer;
@@ -46,45 +28,6 @@ button {
   background: none;
 }
 
-.app {
-  display: flex;
-  flex: 1;
-  padding: 2rem;
-  
 
-  main {
-    flex: 1;
-    padding: 2rem;
 
-    @media (max-width: 1024px) {
-      padding-left: 6rem;
-    }
-  }
-}
-
-.main-content {
-  margin-left: 7rem;
-  transition: margin-left 0.2s ease-in-out; /* Transición suave al expandir/contraer el Sidebar */
-  flex: 1; /* Asegura que el contenido ocupe el espacio restante */
-  padding: 2rem; /* Ajusta según sea necesario */
-
-  &.expanded {
-    margin-left: calc(
-      var(--sidebar-width) + 3rem
-    ); /* Ajusta el ancho cuando el sidebar está expandido */
-    transition: margin-left 0.2s ease-in-out; /* Transición suave al expandir/contraer el Sidebar */
-  }
-}
-
-.RouterView {
-  transition: margin-left 0.2s ease-in-out; /* Agrega una transición al cambiar el ancho */
-  flex: 1; /* Asegura que el contenido ocupe el espacio restante */
-
-  &.expanded {
-    margin-left: calc(
-      var(--sidebar-width) + 3rem
-    ); /* Ajusta el ancho cuando el sidebar está expandido */
-    transition: margin-left 0.2s ease-in-out; /* Transición suave al expandir/contraer el Sidebar */
-  }
-}
 </style>

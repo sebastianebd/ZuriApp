@@ -286,10 +286,7 @@ const seleccionarUsuarioPaso2 = (usuario: User) => {
 </script>
     
     <style scoped>
-    #register .card{
-      max-width: 40vw;
-      margin: auto;
-    }
+
 
     .modal {
   display: none; 
