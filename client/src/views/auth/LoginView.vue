@@ -5,7 +5,7 @@
       <div class="col-md-5 login-form d-flex flex-column justify-content-center">
         <h3 class="mb-4 text-center">Login</h3>
 
-        <form @submit.prevent="submit">
+        <form @submit.prevent="onSubmit">
           <!-- RUT -->
           <div class="custom-input mb-3 w-100 d-flex flex-column align-items-center">
             <label for="rut" class="form-label text-muted align-self-start ms-5">Rut</label>
@@ -14,21 +14,32 @@
               id="rut"
               type="text"
               class="form-control"
+              maxlength="10"
               @input="validateRutInput"
             />
-            <!-- Mensaje de error -->
-            <small v-if="rutError" class="text-danger mt-1">{{ rutError }}</small>
+            <!-- Mensaje de error reactivo -->
+            <small v-if="errors.rut || rutError" class="text-danger mt-1">
+              {{ errors.rut || rutError }}
+            </small>
           </div>
 
           <!-- PASSWORD -->
           <div class="custom-input mb-5 w-100 d-flex flex-column align-items-center">
-            <label for="password" class="form-label text-muted align-self-start ms-5">Password</label>
+            <label for="password" class="form-label text-muted align-self-start ms-5">
+              Password
+            </label>
             <input
               v-model="loginData.password"
               id="password"
               type="password"
               class="form-control"
             />
+            <small v-if="errors.password || passwordError" class="text-danger mt-1">
+              {{ errors.password || passwordError }}
+            </small>
+            <small v-if="loginError" class="text-danger mt-1">
+              {{ loginError }}
+            </small>
           </div>
 
           <!-- BOTÓN -->
@@ -55,33 +66,38 @@ import { useAuthStore } from '../../stores/auth.store'
 import { useRouter } from 'vue-router'
 import type { LoginData } from '../../types/models'
 import { validateRut, formatRut } from '@fdograph/rut-utilities'
+import { useForm } from 'vee-validate'
+import * as yup from 'yup'
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+const schemaForm = yup.object({
+  rut: yup.string().max(10),
+  password: yup.string().min(6)
+})
+
+const { errors, validate } = useForm({
+  validationSchema: schemaForm
+})
 
 const loginData = reactive<LoginData>({
   rut: '',
   password: ''
 })
 
-// Estado del error del rut
 const rutError = ref<string>('')
+const passwordError = ref<string>('')
+const loginError = ref<string>('')
 
-// ✅ Valida el RUT a medida que el usuario escribe
 function validateRutInput() {
   const value = loginData.rut.trim()
+
   if (value.length === 0) {
     rutError.value = ''
     return
   }
 
-  // Si aún no hay suficiente longitud para validar bien
-  if (value.length < 8) {
-    rutError.value = 'RUT inválido'
-    return
-  }
-
-  // Validar usando la librería
   if (!validateRut(value)) {
     rutError.value = 'RUT inválido'
   } else {
@@ -89,29 +105,34 @@ function validateRutInput() {
   }
 }
 
-
-async function submit() {
-  if (loginData.password.length === 0 || loginData.rut.length === 0) {
-    alert('Completa todos los campos')
+async function onSubmit() {
+  const { valid } = await validate()
+  if (!valid) {
     return
   }
 
   if (!validateRut(loginData.rut)) {
-    alert('RUT inválido')
+    rutError.value = 'RUT inválido'
+    return
+  }
+
+  if (loginData.password.length === 0) {
+    passwordError.value = 'Ingrese Contraseña'
     return
   }
 
   loginData.rut = formatRut(loginData.rut)
-  await authStore.login(loginData)
-  router.replace({ name: 'calendario' })
+
+  try {
+    await authStore.login(loginData)
+    router.replace({ name: 'calendario' })
+  } catch (err) {
+    loginError.value = 'Rut o Contraseña incorrectos'
+  }
 }
 </script>
 
 <style scoped>
-.custom-input {
-  width: 70%;
-}
-
 .text-danger {
   color: #e74c3c !important;
   font-size: 14px;
@@ -148,10 +169,8 @@ async function submit() {
   border-radius: 1rem;
   overflow: hidden;
   background: #fff;
-  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px,
-    rgba(0, 0, 0, 0.12) 0px -12px 30px,
-    rgba(0, 0, 0, 0.12) 0px 4px 6px,
-    rgba(0, 0, 0, 0.17) 0px 12px 13px,
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px,
+    rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px,
     rgba(0, 0, 0, 0.09) 0px -3px 5px;
 }
 
