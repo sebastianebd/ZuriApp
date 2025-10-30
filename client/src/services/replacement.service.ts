@@ -6,7 +6,7 @@ import type { RegisterDataReemplazo } from '../types/models'
 export const registerReemplazo = async (payload: RegisterDataReemplazo,
   apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.post('/api/auth/registerReemplazo', payload)
+    const { data } = await apiPrivate.post('/api/reemplazos/registerReemplazo', payload)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -19,7 +19,7 @@ export const actualizarReemplazo = async (
   payload: RegisterDataReemplazo,
 ) => {
   try {
-    const { data } = await apiPrivate.put(`/api/auth/actualizarReemplazo/${reemplazoId}`, payload)
+    const { data } = await apiPrivate.put(`/api/reemplazos/actualizarReemplazo/${reemplazoId}`, payload)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -31,7 +31,7 @@ export const eliminarReemplazo = async (
   id: string, 
 ) => {
   try {
-    const { data } = await apiPrivate.delete(`/api/auth/eliminarReemplazo/${id}`,)
+    const { data } = await apiPrivate.delete(`/api/reemplazos/eliminarReemplazo/${id}`,)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -40,7 +40,7 @@ export const eliminarReemplazo = async (
 
 export const mostrarReemplazos = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get(`/api/auth/reemplazos`)
+    const { data } = await apiPrivate.get(`/api/reemplazos/`)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -49,7 +49,7 @@ export const mostrarReemplazos = async (apiPrivate: ReturnType<typeof useApiPriv
 
 export const mostrarHistorialReeemplazos = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get(`/api/auth/historial`)
+    const { data } = await apiPrivate.get(`/api/reemplazos/historial`)
     return data
   } catch (error) {
     throw errorHandler(error)

@@ -30,7 +30,7 @@
 
     <h3>Usuarios</h3>
     <div class="menu">
-      <router-link to="/ver_usuarios" class="button">
+      <router-link to="ver_usuarios" class="button">
         <span class="material-icons">groups</span>
         <span class="text">Usuarios</span>
       </router-link>
@@ -67,7 +67,7 @@ aside {
   top: 0;
   left: 0;
 
-  background-color: rgba(221, 102, 44);
+  background-color: #4d02a1;
   color: var(--light);
 
   width: calc(3.5rem + 32px);
@@ -152,7 +152,7 @@ aside {
       }
 
       &:hover {
-        background-color: rgba(191, 26, 34, 0.48);
+        background-color: #8252c5; 
 
         .material-icons,
         .text {
@@ -161,7 +161,7 @@ aside {
       }
 
       &.router-link-exact-active {
-        background-color: rgb(191, 26, 33);
+        background-color: #8252c5; 
         border-right: 5px solid var(--primary);
 
         .material-icons,

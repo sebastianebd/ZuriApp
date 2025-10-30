@@ -26,6 +26,7 @@ export interface LoginData {
 }
 
 export interface RegisterDataReemplazo {
+  _id : string;
   id_saliente: string;
   rut_saliente: string;
   nombre_saliente: string;
@@ -35,8 +36,8 @@ export interface RegisterDataReemplazo {
   nombre_entrante: string;
   apellido_entrante: string;
   tipo_turno: string;
-  fecha_inicio: Date;
-  fecha_termino: Date;
+  fecha_inicio: string;
+  fecha_termino: string;
   servicio: string;
 }
 

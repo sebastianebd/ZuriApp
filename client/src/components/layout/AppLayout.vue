@@ -12,7 +12,7 @@ const handleSidebarToggle = (value: boolean) => {
 </script>
 
 <template>
-  <div class="app-layout">
+  <div class="app-layout ">
     <NavBar />
     <Sidebar @sidebarToggle="handleSidebarToggle" />
     <main class="main-content" :class="{ expanded: isExpanded }">
@@ -48,5 +48,10 @@ const handleSidebarToggle = (value: boolean) => {
     ); 
     transition: margin-left 0.2s ease-in-out; 
   }
+}
+
+.app-layout {
+  background-color: rgb(243, 226, 250);
+  height: 100vh;
 }
 </style>

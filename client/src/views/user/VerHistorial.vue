@@ -42,24 +42,23 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from '../../stores/auth.store';
+import { mostrarHistorialReeemplazos } from '../../services/replacement.service';
 import { onMounted, ref } from 'vue';
+import { useAuthStore } from '../../stores/auth.store';
 
 const authStore = useAuthStore();
+const useApi = authStore.usePrivateApi()
+
 const user = ref<any[]>([]); 
 
 
 onMounted(async () => {
-
-    user.value = await authStore.mostrarHistorial();
-
+    user.value = await mostrarHistorialReeemplazos(useApi);
 });
-
 
 
 const formatearFecha = (fecha: string) => {
     return new Date(fecha).toISOString().split('T')[0].split('-').reverse().join('-');
 };
-
 
 </script>

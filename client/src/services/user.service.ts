@@ -38,7 +38,7 @@ export const eliminarUsuario = async (apiPrivate: ReturnType<typeof useApiPrivat
 
 export const mostrarUsersCargoTens = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get(`/api/auth/usuarios`)
+    const { data } = await apiPrivate.get(`/api/users/tens`)
     return data
   } catch (error) {
     throw errorHandler(error)

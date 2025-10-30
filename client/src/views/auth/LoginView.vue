@@ -3,6 +3,9 @@
     <div class="row login-box">
       <!-- Columna izquierda -->
       <div class="col-md-5 login-form d-flex flex-column justify-content-center">
+        <div class="logo-container">
+          <img src="../../assets/icons/zuri-icon.png" alt="ZuriApp Logo" class="app-logo">
+        </div>
         <h3 class="mb-4 text-center">Login</h3>
 
         <form @submit.prevent="onSubmit">
@@ -119,6 +122,8 @@ async function onSubmit() {
   if (loginData.password.length === 0) {
     passwordError.value = 'Ingrese Contraseña'
     return
+  }else{
+    passwordError.value = ''
   }
 
   loginData.rut = formatRut(loginData.rut)
@@ -151,8 +156,8 @@ async function onSubmit() {
 }
 
 .custom-btn:hover {
-  background-color: #6f32c4; /* tono más claro */
-  transform: translateY(-2px); /* pequeño efecto de elevación */
+  background-color: #6f32c4; 
+  transform: translateY(-2px); 
   box-shadow: 0 4px 10px rgba(77, 2, 161, 0.3);
 }
 
@@ -177,6 +182,7 @@ async function onSubmit() {
 .login-form {
   background: #fff;
   color: #4d02a1;
+  position:relative
 }
 
 .login-banner {
@@ -233,5 +239,17 @@ async function onSubmit() {
   color: #6c6c6c;
   padding-left: 30px;
   margin-bottom: 15px;
+}
+
+.logo-container {
+  position: absolute;
+  top: 30px; 
+  left: 30px; 
+  z-index: 10; 
+}
+
+.app-logo {
+  height: 40px; 
+  width: auto;
 }
 </style>
