@@ -100,6 +100,7 @@ onMounted(async () => {
 })
 
 const handleEliminar = async (id: string) => {
+  console.log('estoy intentanto eliminar el id', id)
   await replacementStore.eliminarReemplazo(id)
 }
 

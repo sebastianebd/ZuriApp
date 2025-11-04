@@ -19,7 +19,7 @@ export const actualizarReemplazo = async (
   payload: RegisterDataReemplazo,
 ) => {
   try {
-    const { data } = await apiPrivate.put(`/api/reemplazos/actualizarReemplazo/${reemplazoId}`, payload)
+    const { data } = await apiPrivate.put(`/api/reemplazos/${reemplazoId}`, payload)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -31,7 +31,7 @@ export const eliminarReemplazo = async (
   id: string, 
 ) => {
   try {
-    const { data } = await apiPrivate.delete(`/api/reemplazos/eliminarReemplazo/${id}`,)
+    const { data } = await apiPrivate.delete(`/api/reemplazos/${id}`,)
     return data
   } catch (error) {
     throw errorHandler(error)

@@ -5,7 +5,8 @@ let interceptorsInitialized = false
 
 export function useApiPrivate(
   getAccessToken: () => string,
-  refreshToken: () => Promise<string>
+  refreshToken: () => Promise<string>,
+  logout: () => Promise<void>
 ): AxiosInstance {
   if (!interceptorsInitialized) {
     interceptorsInitialized = true
@@ -31,12 +32,15 @@ export function useApiPrivate(
           !prevRequest.sent
         ) {
           prevRequest.sent = true
+          console.log('Token expirado, intentando renovarlo...')
 
           try {
             const newAccessToken = await refreshToken()
+            console.log('newAccessToken', newAccessToken)
             prevRequest.headers['Authorization'] = `Bearer ${newAccessToken}`
             return axiosPrivateInstance(prevRequest)
           } catch (refreshError) {
+            await logout()
             return Promise.reject(refreshError)
           }
         }

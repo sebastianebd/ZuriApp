@@ -1,4 +1,3 @@
-// src/services/auth.service.ts
 import { useApi, useApiPrivate } from '../composables/useApi'
 import type { LoginData } from '../types/models'
 import { errorHandler } from '../utils/errorHandler'
@@ -17,6 +16,7 @@ export const login = async (payload: LoginData) => {
 export const refresh = async () => {
   try {
     const { data } = await Api.post('/api/auth/refresh')
+    console.log('Refresh Token obtenido')
     return data
   } catch (error) {
     throw errorHandler(error)

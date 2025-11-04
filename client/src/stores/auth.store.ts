@@ -33,7 +33,8 @@ export const useAuthStore = defineStore('auth', {
       if (!privateApiInstance) {
         privateApiInstance = useApiPrivate(
           () => this.getAccessToken(),
-          () => this.refreshToken()
+          () => this.refreshToken(),
+          () => this.logout()
         )
       }
       return privateApiInstance
@@ -61,18 +62,6 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       return data
     },
-
-    async attempt() {
-      try {
-        await this.refreshToken()
-        await this.getUser()
-      } catch {
-        return
-      } finally {
-        this.authReady = true
-      }
-    },
-
 
   },
 

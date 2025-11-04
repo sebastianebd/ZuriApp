@@ -8,7 +8,8 @@ async function login(req, res) {
         httpOnly: true,
         sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
         secure: process.env.NODE_ENV === "production",
-        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: "Strict",
+
       })
       .json({ access_token: tokens.accessToken });
   } catch (error) {
@@ -21,8 +22,8 @@ async function logout(req, res) {
     await authService.logout(req.cookies.refresh_token);
     res.clearCookie("refresh_token", {
       httpOnly: true,
-      sameSite: "Lax",
-      secure: false,
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      secure: process.env.NODE_ENV === "production",
     });
     res.sendStatus(204);
   } catch (error) {
