@@ -20,7 +20,7 @@
         </h5>
       </div>
 
-      <div class="table-responsive">
+      <div class="">
         <ReplacementFilter :lista-servicios="listaDeServicios" />
 
         <ReplacementTable
@@ -87,6 +87,9 @@ import {
   ReplacementModalCreate
 } from '@/components/replacements'
 import type { User, RegisterDataReemplazo } from '@/types/models'
+import { inject } from 'vue'
+
+const showAlert = inject<(title: string, message: string) => void>('showAlert')
 
 // --- STORES
 const authStore = useAuthStore()
@@ -140,6 +143,7 @@ onMounted(async () => {
 // --- CRUD: eliminar
 const handleDelete = async (id: string) => {
   await replacementStore.eliminarReemplazo(id)
+  showAlert?.('Eliminado', 'El registro se ha eliminado correctamente.')
 }
 
 // --- MODAL EDITAR
@@ -165,6 +169,7 @@ const handleUpdate = async () => {
     await replacementStore.actualizarReemplazo(registroActual.value._id, registroActual.value)
   }
   closeUpdateModal()
+  showAlert?.('Modificado', 'El registro se ha modificado correctamente.')
 }
 
 // --- MODAL CREAR
@@ -180,6 +185,7 @@ const closeCreateModal = () => {
 const guardarNuevoReemplazo = async (nuevoReemplazo: RegisterDataReemplazo) => {
   await replacementStore.crearReemplazo(nuevoReemplazo)
   closeCreateModal()
+  showAlert?.('Guardado', 'El registro se ha guardado correctamente.')
 }
 
 // --- MODAL USUARIOS
@@ -230,20 +236,6 @@ const seleccionarUsuario = (usuario: User) => {
 </script>
 
 <style>
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 1050;
-  overflow: hidden;
-  outline: 0;
-}
-.modal.show {
-  display: block;
-}
 
 .custom-small-button {
   padding: 0rem 0rem;
@@ -254,4 +246,6 @@ const seleccionarUsuario = (usuario: User) => {
   margin-bottom: 0;
   padding-bottom: 0;
 }
+
+
 </style>

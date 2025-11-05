@@ -2,7 +2,6 @@
   <div class="modal fade show d-block" v-if="visible" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
       <div class="modal-content shadow-lg border-0 rounded-3">
-
         <!-- HEADER -->
         <div class="modal-header bg-primary text-white rounded-top">
           <h5 class="modal-title fw-bold">Modificar Registro</h5>
@@ -17,14 +16,11 @@
         <!-- BODY -->
         <div class="modal-body bg-light">
           <div class="row">
-
             <!-- Grupo 1: Usuario Saliente -->
             <div class="col-md-6 mb-3">
               <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
-                <h6 class="text-primary fw-semibold mb-3">Funcionario Saliente</h6>
-
                 <div class="d-flex align-items-center mb-3">
-                  <label class="form-label flex-grow-1 fw-semibold">Rut Saliente</label>
+                  <h6 class="text-primary flex-grow-1 fw-semibold mb-3">Funcionario Saliente</h6>
                   <button
                     @click.prevent="$emit('buscar-usuario', 1)"
                     class="btn btn-warning btn-sm fw-semibold"
@@ -38,7 +34,12 @@
                     type="text"
                     id="rutSaliente"
                     :value="registro.rut_saliente"
-                    @input="$emit('update:registro', { ...registro, rut_saliente: ($event.target as HTMLInputElement).value })"
+                    @input="
+                      $emit('update:registro', {
+                        ...registro,
+                        rut_saliente: ($event.target as HTMLInputElement).value
+                      })
+                    "
                     class="form-control"
                     disabled
                   />
@@ -50,7 +51,12 @@
                     type="text"
                     id="nombreSaliente"
                     :value="registro.nombre_saliente"
-                    @input="$emit('update:registro', { ...registro, nombre_saliente: ($event.target as HTMLInputElement).value })"
+                    @input="
+                      $emit('update:registro', {
+                        ...registro,
+                        nombre_saliente: ($event.target as HTMLInputElement).value
+                      })
+                    "
                     class="form-control"
                     disabled
                   />
@@ -62,7 +68,12 @@
                     type="text"
                     id="apellidoSaliente"
                     :value="registro.apellido_saliente"
-                    @input="$emit('update:registro', { ...registro, apellido_saliente: ($event.target as HTMLInputElement).value })"
+                    @input="
+                      $emit('update:registro', {
+                        ...registro,
+                        apellido_saliente: ($event.target as HTMLInputElement).value
+                      })
+                    "
                     class="form-control"
                     disabled
                   />
@@ -74,10 +85,8 @@
             <!-- Grupo 2: Usuario Entrante -->
             <div class="col-md-6 mb-3">
               <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
-                <h6 class="text-primary fw-semibold mb-3">Funcionario Entrante</h6>
-
                 <div class="d-flex align-items-center mb-3">
-                  <label class="form-label flex-grow-1 fw-semibold">Rut Entrante</label>
+                  <h6 class="text-primary flex-grow-1 fw-semibold mb-3">Funcionario Entrante</h6>
                   <button
                     @click.prevent="$emit('buscar-usuario', 2)"
                     class="btn btn-warning btn-sm fw-semibold"
@@ -91,7 +100,12 @@
                     type="text"
                     id="rutEntrante"
                     :value="registro.rut_entrante"
-                    @input="$emit('update:registro', { ...registro, rut_entrante: ($event.target as HTMLInputElement).value })"
+                    @input="
+                      $emit('update:registro', {
+                        ...registro,
+                        rut_entrante: ($event.target as HTMLInputElement).value
+                      })
+                    "
                     class="form-control"
                     disabled
                   />
@@ -103,7 +117,12 @@
                     type="text"
                     id="nombreEntrante"
                     :value="registro.nombre_entrante"
-                    @input="$emit('update:registro', { ...registro, nombre_entrante: ($event.target as HTMLInputElement).value })"
+                    @input="
+                      $emit('update:registro', {
+                        ...registro,
+                        nombre_entrante: ($event.target as HTMLInputElement).value
+                      })
+                    "
                     class="form-control"
                     disabled
                   />
@@ -115,7 +134,12 @@
                     type="text"
                     id="apellidoEntrante"
                     :value="registro.apellido_entrante"
-                    @input="$emit('update:registro', { ...registro, apellido_entrante: ($event.target as HTMLInputElement).value })"
+                    @input="
+                      $emit('update:registro', {
+                        ...registro,
+                        apellido_entrante: ($event.target as HTMLInputElement).value
+                      })
+                    "
                     class="form-control"
                     disabled
                   />
@@ -133,11 +157,18 @@
               <select
                 id="tipoTurno"
                 :value="registro.tipo_turno"
-                @change="$emit('update:registro', { ...registro, tipo_turno: ($event.target as HTMLSelectElement).value })"
+                @change="
+                  $emit('update:registro', {
+                    ...registro,
+                    tipo_turno: ($event.target as HTMLSelectElement).value
+                  })
+                "
                 class="form-select"
               >
                 <option value="" disabled>Seleccione un turno</option>
-                <option v-for="turno in listaDeTurnos" :key="turno" :value="turno">{{ turno }}</option>
+                <option v-for="turno in listaDeTurnos" :key="turno" :value="turno">
+                  {{ turno }}
+                </option>
               </select>
               <label for="tipoTurno">Tipo de Turno</label>
             </div>
@@ -147,7 +178,12 @@
                 type="date"
                 id="fechaInicio"
                 :value="registro.fecha_inicio"
-                @input="$emit('update:registro', { ...registro, fecha_inicio: ($event.target as HTMLInputElement).value })"
+                @input="
+                  $emit('update:registro', {
+                    ...registro,
+                    fecha_inicio: ($event.target as HTMLInputElement).value
+                  })
+                "
                 class="form-control"
               />
               <label for="fechaInicio">Fecha de Inicio</label>
@@ -158,7 +194,12 @@
                 type="date"
                 id="fechaTermino"
                 :value="registro.fecha_termino"
-                @input="$emit('update:registro', { ...registro, fecha_termino: ($event.target as HTMLInputElement).value })"
+                @input="
+                  $emit('update:registro', {
+                    ...registro,
+                    fecha_termino: ($event.target as HTMLInputElement).value
+                  })
+                "
                 class="form-control"
               />
               <label for="fechaTermino">Fecha de Término</label>
@@ -168,7 +209,12 @@
               <select
                 id="servicio"
                 :value="registro.servicio"
-                @change="$emit('update:registro', { ...registro, servicio: ($event.target as HTMLSelectElement).value })"
+                @change="
+                  $emit('update:registro', {
+                    ...registro,
+                    servicio: ($event.target as HTMLSelectElement).value
+                  })
+                "
                 class="form-select"
               >
                 <option value="" disabled>Seleccione un servicio</option>
@@ -183,13 +229,25 @@
 
         <!-- FOOTER -->
         <div class="modal-footer d-flex justify-content-center border-0 pb-4">
-          <button type="button" class="btn btn-secondary px-4 fw-semibold me-2" @click="$emit('cerrar')">
+          <button
+            type="button"
+            class="btn btn-secondary px-4 fw-semibold me-2"
+            @click="$emit('cerrar')"
+          >
             Cancelar
           </button>
-          <button type="button" class="btn btn-success px-4 fw-semibold" @click="$emit('guardar')">
+          <button type="button" class="btn btn-primary px-4 fw-semibold" @click="abrirConfirmacion">
             Guardar
           </button>
         </div>
+
+        <!-- Modal de confirmación -->
+        <ConfirmationModal
+          :visible="showConfirmacion"
+          mensaje="¿Deseas guardar los cambios realizados?"
+          @confirmar="confirmarGuardar"
+          @cancelar="cancelarConfirmacion"
+        />
       </div>
     </div>
   </div>
@@ -197,6 +255,9 @@
 
 <script setup lang="ts">
 import type { RegisterDataReemplazo } from '@/types/models'
+import { ref } from 'vue'
+import ConfirmationModal from '../common/ConfirmationModal.vue'
+
 
 interface ReemplazoModalData extends Partial<RegisterDataReemplazo> {
   fecha_inicio?: string
@@ -210,12 +271,31 @@ defineProps<{
   listaDeServicios: string[]
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardar'): void
   (e: 'buscar-usuario', grupo: 1 | 2): void
   (e: 'update:registro', nuevoRegistro: ReemplazoModalData): void
 }>()
+
+// 👇 controlamos el modal de confirmación
+const showConfirmacion = ref(false)
+
+// Cuando el usuario presiona "Guardar"
+function abrirConfirmacion() {
+  showConfirmacion.value = true
+}
+
+// Si confirma guardar
+function confirmarGuardar() {
+  showConfirmacion.value = false
+  emit('guardar')
+}
+
+// Si cancela (volver al modal original)
+function cancelarConfirmacion() {
+  showConfirmacion.value = false
+}
 </script>
 
 <style scoped>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import NavBar from '@/components/auth/NavBar.vue'
 import Sidebar from '@/components/auth/SidebarMenu.vue'
-import { ref } from 'vue'
+import { provide, ref } from 'vue'
+import AlertMessage from '../common/AlertMessage.vue'
 
 const isExpanded = ref(sessionStorage.getItem('is_expanded') === 'true')
 
@@ -9,6 +10,13 @@ const handleSidebarToggle = (value: boolean) => {
   isExpanded.value = value
   sessionStorage.setItem('is_expanded', value.toString())
 }
+
+const alertRef = ref<InstanceType<typeof AlertMessage> | null>(null)
+
+provide('showAlert', (title: string, message: string) => {
+  alertRef.value?.show(title, message)
+})
+
 </script>
 
 <template>
@@ -18,6 +26,7 @@ const handleSidebarToggle = (value: boolean) => {
     <main class="main-content" :class="{ expanded: isExpanded }">
       <RouterView />
     </main>
+    <AlertMessage ref="alertRef" />
   </div>
 </template>
 
@@ -54,4 +63,7 @@ const handleSidebarToggle = (value: boolean) => {
   background-color: rgb(243, 226, 250);
   height: 100vh;
 }
+
+
+
 </style>
