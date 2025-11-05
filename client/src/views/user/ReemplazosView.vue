@@ -24,10 +24,30 @@
         <ReplacementFilter :lista-servicios="listaDeServicios" />
 
         <ReplacementTable
-          :reemplazos="replacementStore.reemplazosFiltrados"
+          :reemplazos="paginatedReplacements"
           @eliminar="handleDelete"
           @modificar="openUpdateModal"
         />
+
+        <div class="d-flex justify-content-center align-items-center my-3" v-if="totalPages > 1">
+          <button
+            class="btn btn-outline-primary btn-sm mx-1"
+            :disabled="currentPage === 1"
+            @click="changePage(currentPage - 1)"
+          >
+            ◀ Anterior
+          </button>
+
+          <span class="mx-2">Página {{ currentPage }} de {{ totalPages }}</span>
+
+          <button
+            class="btn btn-outline-primary btn-sm mx-1"
+            :disabled="currentPage === totalPages"
+            @click="changePage(currentPage + 1)"
+          >
+            Siguiente ▶
+          </button>
+        </div>
       </div>
 
       <div
@@ -78,7 +98,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { mostrarUsersCargoTens } from '@/services/user.service'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, inject, computed } from 'vue'
 import {
   ReplacementFilter,
   ReplacementTable,
@@ -87,9 +107,27 @@ import {
   ReplacementModalCreate
 } from '@/components/replacements'
 import type { User, RegisterDataReemplazo } from '@/types/models'
-import { inject } from 'vue'
 
 const showAlert = inject<(title: string, message: string) => void>('showAlert')
+
+const currentPage = ref(1)
+const itemsPerPage = 20
+
+const totalPages = computed(() => {
+  return Math.ceil(replacementStore.reemplazosFiltrados.length / itemsPerPage)
+})
+
+const paginatedReplacements = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return replacementStore.reemplazosFiltrados.slice(start, end)
+})
+
+function changePage(page: number) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
 
 // --- STORES
 const authStore = useAuthStore()
@@ -199,9 +237,9 @@ const seleccionarGrupo = (numeroGrupo: 1 | 2) => {
 }
 
 /**
- * @param registro 
- * @param usuario 
- * @param esSaliente 
+ * @param registro
+ * @param usuario
+ * @param esSaliente
  */
 const asignarDatosUsuario = (
   registro: typeof registroNuevo | typeof registroActual,
@@ -218,17 +256,17 @@ const asignarDatosUsuario = (
 }
 
 const seleccionarUsuario = (usuario: User) => {
-  let registroAfectado: typeof registroNuevo | typeof registroActual | null = null;
+  let registroAfectado: typeof registroNuevo | typeof registroActual | null = null
 
   if (createModalVisible.value) {
-    registroAfectado = registroNuevo;
+    registroAfectado = registroNuevo
   } else if (updateModalVisible.value) {
-    registroAfectado = registroActual;
+    registroAfectado = registroActual
   }
 
   if (registroAfectado) {
-    const esSaliente = grupo.value === 1;
-    asignarDatosUsuario(registroAfectado, usuario, esSaliente);
+    const esSaliente = grupo.value === 1
+    asignarDatosUsuario(registroAfectado, usuario, esSaliente)
   }
 
   userModalVisible.value = false
@@ -236,7 +274,6 @@ const seleccionarUsuario = (usuario: User) => {
 </script>
 
 <style>
-
 .custom-small-button {
   padding: 0rem 0rem;
   font-size: 0rem;
@@ -246,6 +283,4 @@ const seleccionarUsuario = (usuario: User) => {
   margin-bottom: 0;
   padding-bottom: 0;
 }
-
-
 </style>

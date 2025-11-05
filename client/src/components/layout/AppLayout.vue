@@ -37,7 +37,7 @@ provide('showAlert', (title: string, message: string) => {
   margin-left: 7rem;
   transition: margin-left 0.2s ease-in-out; 
   flex: 1; 
-  padding: 2rem; 
+  padding: 1rem; 
 
   &.expanded {
     margin-left: calc(
