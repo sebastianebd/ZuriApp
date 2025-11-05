@@ -16,7 +16,7 @@
     <div class="card mt-2">
       <div class="card-body p-0">
         <h5 class="card-title m-b-0 p-3">
-          Reemplazos Activos ({{ replacementStore.reemplazosFiltrados.length }} registros filtrados)
+          Reemplazos Activos ({{ replacementStore.reemplazosFiltrados.length }} registros)
         </h5>
       </div>
 

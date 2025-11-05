@@ -1,133 +1,131 @@
 <template>
-  <div class="modal modal-dialog " :class="{ show: visible }" style="display: block" v-if="visible">
-    <div class="" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">CREAR NUEVO REEMPLAZO</h5>
-          <button type="button" class="close" @click="$emit('cerrar')" aria-label="Close">
-            <span aria-hidden="true" class="h1">&times;</span>
-          </button>
+  <div class="modal fade show d-block" v-if="visible" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+      <div class="modal-content shadow-lg border-0 rounded-3">
+
+        <!-- HEADER -->
+        <div class="modal-header bg-primary text-white rounded-top">
+          <h5 class="modal-title fw-bold">Creación de Nuevo Reemplazo</h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            @click="$emit('cerrar')"
+            aria-label="Close"
+          ></button>
         </div>
 
-        <div class="modal-body">
-          <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
+        <!-- BODY -->
+        <div class="modal-body bg-light">
+          <p v-if="errorMessage" class="alert alert-danger py-2">{{ errorMessage }}</p>
 
-          <div v-if="currentStep === 1">
-            <h5>Paso 1: Datos de funcionario (Salida)</h5>
-            <button @click.prevent="$emit('buscar-usuario', 1)" class="btn btn-warning btn-sm mb-3">
-              Buscar TENS Saliente
-            </button>
+          <!-- Usamos <transition> para animar entre pasos.
+              mode="out-in" garantiza que la salida termine antes de la entrada -->
+          <transition name="fade-step" mode="out-in">
+            <div :key="currentStep">
+              <!-- Paso 1 -->
+              <div v-if="currentStep === 1">
+                <h5 class="fw-semibold mb-3 text-primary">Paso 1: Datos de Funcionario (Salida)</h5>
 
-            <div class="mb-2">
-              <label>Rut</label>
-              <input
-                v-model="registroLocal.rut_saliente"
-                type="text"
-                class="form-control"
-                disabled
-              />
-            </div>
-            <div class="mb-2">
-              <label>Nombre</label>
-              <input
-                v-model="registroLocal.nombre_saliente"
-                type="text"
-                class="form-control"
-                disabled
-              />
-            </div>
-            <div class="mb-2">
-              <label>Apellido</label>
-              <input
-                v-model="registroLocal.apellido_saliente"
-                type="text"
-                class="form-control"
-                disabled
-              />
-            </div>
+                <button
+                  @click.prevent="$emit('buscar-usuario', 1)"
+                  class="btn btn-warning btn-sm mb-3 fw-semibold"
+                >
+                  <i class="bi bi-search"></i> Buscar TENS Saliente
+                </button>
 
-            <button @click="nextStep" class="btn btn-primary">Siguiente</button>
-          </div>
+                <div class="form-floating mb-2">
+                  <input v-model="registroLocal.rut_saliente" type="text" class="form-control" disabled />
+                  <label>RUT</label>
+                </div>
 
-          <div v-if="currentStep === 2">
-            <h5>Paso 2: Datos de TENS (entrante)</h5>
-            <button @click.prevent="$emit('buscar-usuario', 2)" class="btn btn-warning btn-sm mb-3">
-              Buscar TENS Entrante
-            </button>
+                <div class="form-floating mb-2">
+                  <input v-model="registroLocal.nombre_saliente" type="text" class="form-control" disabled />
+                  <label>Nombre</label>
+                </div>
 
-            <div class="mb-2">
-              <label>Rut</label>
-              <input
-                v-model="registroLocal.rut_entrante"
-                type="text"
-                class="form-control"
-                disabled
-              />
-            </div>
-            <div class="mb-2">
-              <label>Nombre</label>
-              <input
-                v-model="registroLocal.nombre_entrante"
-                type="text"
-                class="form-control"
-                disabled
-              />
-            </div>
-            <div class="mb-2">
-              <label>Apellido</label>
-              <input
-                v-model="registroLocal.apellido_entrante"
-                type="text"
-                class="form-control"
-                disabled
-              />
-            </div>
+                <div class="form-floating mb-3">
+                  <input v-model="registroLocal.apellido_saliente" type="text" class="form-control" disabled />
+                  <label>Apellido</label>
+                </div>
 
-            <div class="d-flex justify-content-between">
-              <button @click="prevStep" class="btn btn-secondary">Volver</button>
-              <button @click="nextStep" class="btn btn-primary">Siguiente</button>
-            </div>
-          </div>
+                <div class="text-end">
+                  <button @click="nextStep" class="btn btn-primary px-4 fw-semibold">Siguiente</button>
+                </div>
+              </div>
 
-          <div v-if="currentStep === 3">
-            <h5>Paso 3: Configuración de Turno</h5>
+              <!-- Paso 2 -->
+              <div v-else-if="currentStep === 2">
+                <h5 class="fw-semibold mb-3 text-primary">Paso 2: Datos de TENS (Entrante)</h5>
 
-            <div class="mb-2">
-              <label>Tipo Turno</label>
-              <select v-model="registroLocal.tipo_turno" class="form-control form-control-sm">
-                <option value="" disabled selected>Seleccione un turno</option>
-                <option v-for="turno in listaDeTurnos" :key="turno" :value="turno">
-                  {{ turno }}
-                </option>
-              </select>
-            </div>
+                <button
+                  @click.prevent="$emit('buscar-usuario', 2)"
+                  class="btn btn-warning btn-sm mb-3 fw-semibold"
+                >
+                  <i class="bi bi-search"></i> Buscar TENS Entrante
+                </button>
 
-            <div class="mb-2">
-              <label>Fecha Inicio</label>
-              <input v-model="registroLocal.fecha_inicio" type="date" class="form-control" />
-            </div>
+                <div class="form-floating mb-2">
+                  <input v-model="registroLocal.rut_entrante" type="text" class="form-control" disabled />
+                  <label>RUT</label>
+                </div>
 
-            <div class="mb-2">
-              <label>Fecha Término</label>
-              <input v-model="registroLocal.fecha_termino" type="date" class="form-control" />
-            </div>
+                <div class="form-floating mb-2">
+                  <input v-model="registroLocal.nombre_entrante" type="text" class="form-control" disabled />
+                  <label>Nombre</label>
+                </div>
 
-            <div class="mb-2">
-              <label>Servicio</label>
-              <select v-model="registroLocal.servicio" class="form-control form-control-sm">
-                <option value="" disabled selected>Seleccione un servicio</option>
-                <option v-for="servicio in listaDeServicios" :key="servicio" :value="servicio">
-                  {{ servicio }}
-                </option>
-              </select>
-            </div>
+                <div class="form-floating mb-3">
+                  <input v-model="registroLocal.apellido_entrante" type="text" class="form-control" disabled />
+                  <label>Apellido</label>
+                </div>
 
-            <div class="d-flex justify-content-between">
-              <button @click="prevStep" class="btn btn-secondary">Volver</button>
-              <button @click="guardar" class="btn btn-success">Guardar</button>
+                <div class="d-flex justify-content-between">
+                  <button @click="prevStep" class="btn btn-secondary px-3 fw-semibold">Volver</button>
+                  <button @click="nextStep" class="btn btn-primary px-3 fw-semibold">Siguiente</button>
+                </div>
+              </div>
+
+              <!-- Paso 3 -->
+              <div v-else-if="currentStep === 3">
+                <h5 class="fw-semibold mb-3 text-primary">Paso 3: Configuración de Turno</h5>
+
+                <div class="form-floating mb-3">
+                  <select v-model="registroLocal.tipo_turno" class="form-select">
+                    <option value="" disabled>Seleccione un turno</option>
+                    <option v-for="turno in listaDeTurnos" :key="turno" :value="turno">{{ turno }}</option>
+                  </select>
+                  <label>Tipo de Turno</label>
+                </div>
+
+                <div class="form-floating mb-3">
+                  <input v-model="registroLocal.fecha_inicio" type="date" class="form-control" />
+                  <label>Fecha de Inicio</label>
+                </div>
+
+                <div class="form-floating mb-3">
+                  <input v-model="registroLocal.fecha_termino" type="date" class="form-control" />
+                  <label>Fecha de Término</label>
+                </div>
+
+                <div class="form-floating mb-4">
+                  <select v-model="registroLocal.servicio" class="form-select">
+                    <option value="" disabled>Seleccione un servicio</option>
+                    <option v-for="servicio in listaDeServicios" :key="servicio" :value="servicio">
+                      {{ servicio }}
+                    </option>
+                  </select>
+                  <label>Servicio</label>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                  <button @click="prevStep" class="btn btn-secondary px-3 fw-semibold">Volver</button>
+                  <button @click="guardar" class="btn btn-success px-4 fw-semibold">Guardar</button>
+                </div>
+              </div>
             </div>
-          </div>
+          </transition>
         </div>
+
       </div>
     </div>
   </div>
@@ -137,7 +135,6 @@
 import { ref, watch, reactive } from 'vue'
 import type { RegisterDataReemplazo } from '@/types/models'
 
-// 1. Emits y Props se mantienen
 const props = defineProps<{
   visible: boolean
   listaDeTurnos: string[]
@@ -151,12 +148,10 @@ const emit = defineEmits<{
   (e: 'buscar-usuario', grupo: 1 | 2): void
 }>()
 
-// 2. Estado local
 const registroLocal = reactive({ ...props.registro })
 const currentStep = ref(1)
 const errorMessage = ref('')
 
-// 3. Watchers
 watch(
   () => props.visible,
   (nuevo) => {
@@ -167,7 +162,6 @@ watch(
   }
 )
 
-// Sincronización: Esto es correcto porque el prop.registro se actualiza con la selección del usuario
 watch(
   () => props.registro,
   (nuevo) => {
@@ -176,35 +170,28 @@ watch(
   { deep: true }
 )
 
-// 4. Lógica de Navegación/Validación
 function nextStep() {
-  errorMessage.value = '' // Limpiar mensaje anterior
-
-  if (currentStep.value === 1) {
-    if (!registroLocal.rut_saliente) {
-      errorMessage.value = 'Debe seleccionar un TENS saliente para continuar.'
-      return
-    }
-  } else if (currentStep.value === 2) {
-    if (!registroLocal.rut_entrante) {
-      errorMessage.value = 'Debe seleccionar un TENS entrante para continuar.'
-      return
-    }
+  errorMessage.value = ''
+  if (currentStep.value === 1 && !registroLocal.rut_saliente) {
+    errorMessage.value = 'Debe seleccionar un TENS saliente para continuar.'
+    return
   }
-
-  // Solo avanzar si las validaciones pasan
+  if (currentStep.value === 2 && !registroLocal.rut_entrante) {
+    errorMessage.value = 'Debe seleccionar un TENS entrante para continuar.'
+    return
+  }
   currentStep.value++
 }
 
 function prevStep() {
   if (currentStep.value > 1) {
     currentStep.value--
-    errorMessage.value = '' // Limpiar mensaje al retroceder
+    errorMessage.value = ''
   }
 }
 
 function guardar() {
-  errorMessage.value = '' // Limpiar mensaje anterior
+  errorMessage.value = ''
   if (
     !registroLocal.tipo_turno ||
     !registroLocal.fecha_inicio ||
@@ -214,8 +201,84 @@ function guardar() {
     errorMessage.value = 'Por favor complete todos los campos de la configuración de turno.'
     return
   }
-
-  // Se lanza el evento al padre con el objeto local que contiene los datos del formulario.
   emit('guardar', registroLocal as RegisterDataReemplazo)
 }
 </script>
+
+<style scoped>
+/* Overlay */
+.modal {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Apariencia modal */
+.modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+  animation: fadeInModal 0.25s ease;
+}
+
+@keyframes fadeInModal {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Transición de pasos (entrada/salida limpia) */
+.fade-step-enter-active,
+.fade-step-leave-active {
+  transition: all 260ms cubic-bezier(.2,.9,.2,1);
+  transition-property: opacity, transform;
+  will-change: opacity, transform;
+}
+
+.fade-step-enter-from {
+  opacity: 0;
+  transform: translateY(8px) scale(0.995);
+}
+.fade-step-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.fade-step-leave-from {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.fade-step-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.995);
+}
+
+/* Estilos generales */
+.modal-header {
+  border-bottom: none;
+}
+
+.modal-footer {
+  border-top: none;
+}
+
+h5 {
+  font-weight: 600;
+}
+
+.form-control,
+.form-select {
+  border-radius: 6px;
+}
+
+button {
+  transition: transform 0.12s ease-in-out;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+</style>
+
