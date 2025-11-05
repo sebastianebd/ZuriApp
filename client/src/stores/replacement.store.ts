@@ -90,6 +90,20 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
+    async crearReemplazo(reemplazo: RegisterDataReemplazo) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+
+      try {
+        await ReplacementService.crearReemplazo(reemplazo, apiPrivate)
+        await this.mostrarReemplazos()
+      } catch (error) {
+        console.error('Error al crear reemplazo:', error)
+        this.error = 'No se pudo crear el reemplazo.'
+        throw error
+      }
+    },
+
     async actualizarReemplazo(reemplazoId: string, datosActualizados: any) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()

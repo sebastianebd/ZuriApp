@@ -1,11 +1,11 @@
 <template>
   <div
-    class="modal"
+    class="modal modal-dialog modal-xl"
     :class="{ show: visible }"
     tabindex="-1"
     role="dialog"
   >
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-xl" role="document">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Seleccione Usuario</h5>
@@ -67,13 +67,11 @@
 import { ref, computed } from 'vue'
 import type { User } from '@/types/models'
 
-// 1. Props
 const props = defineProps<{
   visible: boolean;
   usuarios: User[]; 
 }>();
 
-// 2. Emits
 const emit = defineEmits<{
   (e: 'cerrar'): void;
   (e: 'usuario-seleccionado', usuario: User): void; 
@@ -91,10 +89,9 @@ const usuariosFiltrados = computed(() => {
   return props.usuarios;
 });
 
-// 4. Lógica de Selección
 const seleccionarYEmitir = (usuario: User) => {
   // Emitimos el evento con el usuario seleccionado
   emit('usuario-seleccionado', usuario);
-  // El padre será el encargado de cerrar el modal y asignar los datos.
+  // No se cierra el modal aquí, el padre lo maneja
 };
 </script>

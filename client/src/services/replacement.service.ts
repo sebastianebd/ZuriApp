@@ -3,10 +3,10 @@ import type { useApiPrivate } from '../composables/useApi'
 import type { RegisterDataReemplazo } from '../types/models'
 
 
-export const registerReemplazo = async (payload: RegisterDataReemplazo,
+export const crearReemplazo = async (payload: RegisterDataReemplazo,
   apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.post('/api/reemplazos/registerReemplazo', payload)
+    const { data } = await apiPrivate.post('/api/reemplazos/', payload)
     return data
   } catch (error) {
     throw errorHandler(error)

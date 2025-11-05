@@ -197,7 +197,7 @@ defineProps<{
 defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardar'): void
-  (e: 'buscar-usuario', grupo: number): void
+  (e: 'buscar-usuario', grupo: 1 | 2): void
   // Permite al componente padre usar v-model:registro
   (e: 'update:registro', nuevoRegistro: ReemplazoModalData): void 
 }>()
