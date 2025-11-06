@@ -30,9 +30,10 @@
         />
 
         <div class="d-flex justify-content-center align-items-center my-3" v-if="totalPages > 1">
+          <!-- Botón ANTERIOR: solo visible si no estás en la primera página -->
           <button
+            v-if="currentPage > 1"
             class="btn btn-outline-primary btn-sm mx-1"
-            :disabled="currentPage === 1"
             @click="changePage(currentPage - 1)"
           >
             ◀ Anterior
@@ -40,9 +41,10 @@
 
           <span class="mx-2">Página {{ currentPage }} de {{ totalPages }}</span>
 
+          <!-- Botón SIGUIENTE -->
           <button
+            v-if="currentPage < totalPages"
             class="btn btn-outline-primary btn-sm mx-1"
-            :disabled="currentPage === totalPages"
             @click="changePage(currentPage + 1)"
           >
             Siguiente ▶
@@ -118,9 +120,16 @@ const totalPages = computed(() => {
 })
 
 const paginatedReplacements = computed(() => {
+  // Ordenar primero (del más reciente al más antiguo)
+  const sorted = [...replacementStore.reemplazosFiltrados].sort((a, b) => {
+    const fechaA = new Date(a.fecha_inicio).getTime()
+    const fechaB = new Date(b.fecha_inicio).getTime()
+    return fechaB - fechaA // Descendente → más reciente primero
+  })
+
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
-  return replacementStore.reemplazosFiltrados.slice(start, end)
+  return sorted.slice(start, end)
 })
 
 function changePage(page: number) {

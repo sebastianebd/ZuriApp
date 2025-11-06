@@ -13,6 +13,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
 
+
 app.use('/api/auth', require('./routes/api/auth.routes'));
 app.use('/api/users', require('./routes/api/users.routes'));
 app.use('/api/reemplazos', require('./routes/api/replacement.routes'));
@@ -23,6 +24,8 @@ app.all('*', (req, res) => {
 });
 
 app.use(errorHandlerMiddleware);
+
+require('./jobs/replacement.cron');
 
 module.exports = app;
 
