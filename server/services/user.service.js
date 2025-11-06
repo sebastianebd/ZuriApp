@@ -1,15 +1,7 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const User = require('../models/user.model');
-const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'zuri.app01@gmail.com',
-    pass: 'password2023!',
-  },
-});
 
 async function register(data) {
   const { rut, nombre, apellido, fecha_nac, direccion, telefono, email, ciudad, tipo_cargo } = data;
@@ -43,12 +35,6 @@ async function register(data) {
 
   await User.create(nuevoUsuario);
 
-  await transporter.sendMail({
-    from: 'zuri.app01@gmail.com',
-    to: email,
-    subject: 'Contraseña generada automáticamente',
-    text: `¡Hola ${nombre}! Tu contraseña es: ${generarPassword}`,
-  });
 }
 
 async function obtenerUsuariosTENS() {

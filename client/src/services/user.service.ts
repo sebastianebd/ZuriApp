@@ -2,12 +2,12 @@ import { errorHandler } from '@/utils/errorHandler'
 import { useApiPrivate } from '../composables/useApi'
 import type { registrarUsuario } from '../types/models'
 
-export const register = async (
-  payload: registrarUsuario,
-  apiPrivate: ReturnType<typeof useApiPrivate>
+export const crearUsuario = async (
+  apiPrivate: ReturnType<typeof useApiPrivate>,
+  payload: registrarUsuario
 ) => {
   try {
-    const { data } = await apiPrivate.post('/api/auth/register', payload)
+    const { data } = await apiPrivate.post('/api/users/', payload)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -20,7 +20,7 @@ export const actualizarUsuario = async (
   payload: registrarUsuario
 ) => {
   try {
-    const { data } = await apiPrivate.put(`/api/auth/actualizarUsuario/${usuarioId}`, payload)
+    const { data } = await apiPrivate.put(`/api/users/${usuarioId}`, payload)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -29,7 +29,7 @@ export const actualizarUsuario = async (
 
 export const eliminarUsuario = async (apiPrivate: ReturnType<typeof useApiPrivate>, id: string) => {
   try {
-    const { data } = await apiPrivate.delete(`/api/auth/eliminarUsuario/${id}`)
+    const { data } = await apiPrivate.delete(`/api/users/${id}`)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -47,7 +47,7 @@ export const mostrarUsersCargoTens = async (apiPrivate: ReturnType<typeof useApi
 
 export const mostrarTodosUsuarios = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get(`/api/auth/mostrarTodos`)
+    const { data } = await apiPrivate.get(`/api/users/`)
     return data
   } catch (error) {
     throw errorHandler(error)

@@ -5,8 +5,8 @@ const authMiddleware = require('../../middleware/authentication.middleware');
 
 router.use(authMiddleware);
 
-router.post('/register', userController.register);
-router.put('/actualizarUsuario/:id', userController.actualizarUsuario);
+router.post('/', userController.register);
+router.put('/:id', userController.actualizarUsuario);
 router.get('/', userController.mostrarTodos);
 router.get('/tens', userController.mostrarUsuarios);
 router.delete('/:id', userController.eliminarUsuario);
