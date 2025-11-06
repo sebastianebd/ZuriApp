@@ -100,7 +100,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { mostrarUsersCargoTens } from '@/services/user.service'
-import { onMounted, ref, inject, computed } from 'vue'
+import { onMounted, ref, inject, computed, onUnmounted } from 'vue'
 import {
   ReplacementFilter,
   ReplacementTable,
@@ -109,6 +109,7 @@ import {
   ReplacementModalCreate
 } from '@/components/replacements'
 import type { User, RegisterDataReemplazo } from '@/types/models'
+import socket from '@/plugins/socket'
 
 const showAlert = inject<(title: string, message: string) => void>('showAlert')
 
@@ -185,6 +186,14 @@ onMounted(async () => {
 
   const usuariosCargados = await mostrarUsersCargoTens(apiPrivate)
   usuarios.value = usuariosCargados as User[]
+
+  socket.on('replacementsUpdated', async () => {
+    await replacementStore.mostrarReemplazos()
+  })
+})
+
+onUnmounted(() => {
+  socket.off('replacementsUpdated')
 })
 
 // --- CRUD: eliminar

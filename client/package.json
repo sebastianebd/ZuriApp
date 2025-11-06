@@ -22,6 +22,7 @@
     "bootstrap": "^5.2.3",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.5.0",
+    "socket.io-client": "^4.8.1",
     "vee-validate": "^4.15.1",
     "vue": "^3.2.47",
     "vue-router": "^4.1.6",
