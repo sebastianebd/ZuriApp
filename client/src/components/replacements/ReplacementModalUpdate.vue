@@ -4,7 +4,7 @@
       <div class="modal-content shadow-lg border-0 rounded-3">
         <!-- HEADER -->
         <div class="modal-header bg-primary text-white rounded-top">
-          <h5 class="modal-title fw-bold">Modificar Registro</h5>
+          <h5 class="modal-title fst-italic fw-bold">MODIFICA REGISTRO</h5>
           <button
             type="button"
             class="btn-close btn-close-white"

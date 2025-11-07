@@ -1,21 +1,21 @@
 <template>
-  <div class="row mb-3">
-    <div class="col-sm-3">
-      <label class="form-label">Buscar por Rut:</label>
+  <div class="row mb-3 pt-2 ps-2">
+    <div class="col-sm-3 me-3">
+      <label class="form-label col-form-label-sm">Buscar por Rut:</label>
       <input
         type="text"
         v-model="filtroRutLocal"
         placeholder="Ingrese Rut"
-        class="form-control"
+        class="form-control form-control-sm"
         @input="$emit('update:filtroRut', filtroRutLocal)"
       />
     </div>
 
     <div class="col-sm-3">
-      <label class="form-label">Filtrar por Cargo:</label>
+      <label class="form-label col-form-label-sm">Filtrar por Cargo:</label>
       <select
         v-model="tipoCargoLocal"
-        class="form-select"
+        class="form-select form-select-sm mb-3"
         @change="$emit('update:tipoCargo', tipoCargoLocal)"
       >
         <option value="">Todos</option>
@@ -25,11 +25,7 @@
       </select>
     </div>
 
-    <div class="col d-flex justify-content-end align-items-end">
-      <button class="btn btn-primary btn-sm" @click="$emit('crear')">
-        + Crear Usuario
-      </button>
-    </div>
+
   </div>
 </template>
 

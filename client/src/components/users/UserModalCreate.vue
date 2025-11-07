@@ -1,89 +1,111 @@
 <template>
-  <div class="modal" :class="{ show: visible }" v-if="visible" style="display:block">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        
-        <!-- Header -->
-        <div class="modal-header">
-          <h5 class="modal-title">Crear Nuevo Usuario</h5>
-          <button type="button" class="btn-close" @click="emit('cerrar')"></button>
+  <div class="modal fade show d-block" v-if="visible" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+      <div class="modal-content shadow-lg border-0 rounded-3">
+
+        <!-- HEADER -->
+        <div class="modal-header bg-primary text-white rounded-top">
+          <h5 class="modal-title fst-italic fw-bold">CREAR NUEVO USUARIO</h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            @click="emit('cerrar')"
+            aria-label="Close"
+          ></button>
         </div>
 
-        <!-- Body -->
-        <div class="modal-body">
+        <!-- BODY -->
+        <div class="modal-body bg-light">
           <form @submit.prevent="abrirConfirmacion">
             <div class="row">
               <!-- Columna izquierda -->
-              <div class="col-md-6">
-                <label class="form-label">RUT</label>
-                <input v-model="form.rut" class="form-control form-control-sm" required />
+              <div class="col-md-6 mb-3">
+                <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
+                  <label class="form-label fw-semibold text-primary">RUT</label>
+                  <input v-model="form.rut" class="form-control form-control-sm mb-2" required />
 
-                <label class="form-label mt-2">Nombre</label>
-                <input v-model="form.nombre" class="form-control form-control-sm" required />
+                  <label class="form-label fw-semibold text-primary">Nombre</label>
+                  <input v-model="form.nombre" class="form-control form-control-sm mb-2" required />
 
-                <label class="form-label mt-2">Apellido</label>
-                <input v-model="form.apellido" class="form-control form-control-sm" required />
+                  <label class="form-label fw-semibold text-primary">Apellido</label>
+                  <input v-model="form.apellido" class="form-control form-control-sm mb-2" required />
 
-                <label class="form-label mt-2">Fecha de Nacimiento</label>
-                <input
-                  v-model="form.fecha_nac"
-                  type="date"
-                  class="form-control form-control-sm"
-                  required
-                />
+                  <label class="form-label fw-semibold text-primary">Fecha de Nacimiento</label>
+                  <input
+                    v-model="form.fecha_nac"
+                    type="date"
+                    class="form-control form-control-sm mb-2"
+                    required
+                  />
 
-                <label class="form-label mt-2">Dirección</label>
-                <input v-model="form.direccion" class="form-control form-control-sm" />
+                  <label class="form-label fw-semibold text-primary">Dirección</label>
+                  <input v-model="form.direccion" class="form-control form-control-sm" />
+                </div>
               </div>
 
               <!-- Columna derecha -->
-              <div class="col-md-6">
-                <label class="form-label">Ciudad</label>
-                <input v-model="form.ciudad" class="form-control form-control-sm" />
+              <div class="col-md-6 mb-3">
+                <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
+                  <label class="form-label fw-semibold text-primary">Ciudad</label>
+                  <input v-model="form.ciudad" class="form-control form-control-sm mb-2" />
 
-                <label class="form-label mt-2">Teléfono</label>
-                <input v-model="form.telefono" class="form-control form-control-sm" />
+                  <label class="form-label fw-semibold text-primary">Teléfono</label>
+                  <input v-model="form.telefono" class="form-control form-control-sm mb-2" />
 
-                <label class="form-label mt-2">Email</label>
-                <input
-                  v-model="form.email"
-                  type="email"
-                  class="form-control form-control-sm"
-                  required
-                />
+                  <label class="form-label fw-semibold text-primary">Email</label>
+                  <input
+                    v-model="form.email"
+                    type="email"
+                    class="form-control form-control-sm mb-2"
+                    required
+                  />
 
-                <label class="form-label mt-2">Cargo</label>
-                <select v-model="form.tipo_cargo" class="form-select form-select-sm" required>
-                  <option value="">Seleccione cargo</option>
-                  <option v-for="cargo in listaTipoCargo" :key="cargo" :value="cargo">
-                    {{ cargo }}
-                  </option>
-                </select>
+                  <label class="form-label fw-semibold text-primary">Cargo</label>
+                  <select v-model="form.tipo_cargo" class="form-select form-select-sm mb-2 form-option-sm" required>
+                    <option value="">Seleccione cargo</option>
+                    <option v-for="cargo in listaTipoCargo" :key="cargo" :value="cargo">
+                      {{ cargo }}
+                    </option>
+                  </select>
 
-                <label class="form-label mt-2">Servicio</label>
-                <input v-model="form.servicio" class="form-control form-control-sm" />
+                  <label class="form-label fw-semibold text-primary">Servicio</label>
+                  <input v-model="form.servicio" class="form-control form-control-sm" />
+                </div>
               </div>
             </div>
           </form>
         </div>
 
-        <!-- Footer -->
-        <div class="modal-footer">
-          <button class="btn btn-secondary btn-sm" @click="emit('cerrar')">Cancelar</button>
-          <button class="btn btn-success btn-sm" @click="abrirConfirmacion">Guardar</button>
+        <!-- FOOTER -->
+        <div class="modal-footer d-flex justify-content-center border-0 pb-4">
+          <button
+            type="button"
+            class="btn btn-secondary px-4 fw-semibold me-2"
+            @click="emit('cerrar')"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-success px-4 fw-semibold"
+            @click="abrirConfirmacion"
+          >
+            Guardar
+          </button>
         </div>
+
+        <!-- Modal de confirmación -->
+        <ConfirmationModal
+          :visible="confirmVisible"
+          mensaje="¿Seguro que deseas crear este usuario?"
+          @confirmar="confirmarGuardar"
+          @cancelar="cerrarConfirmacion"
+        />
       </div>
     </div>
-
-    <!-- 🔸 Modal de confirmación -->
-    <ConfirmationModal
-      :visible="confirmVisible"
-      mensaje="¿Seguro que deseas crear este usuario?"
-      @confirmar="confirmarGuardar"
-      @cancelar="cerrarConfirmacion"
-    />
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { ref } from "vue";

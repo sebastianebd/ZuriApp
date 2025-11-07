@@ -1,50 +1,53 @@
 <template>
-  <div>
-    <table class="table table-bordered table-sm">
-      <thead class="thead-light">
+  <div class="table-responsive tabla-reemplazos-container">
+    <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden tabla-reemplazos">
+      <thead class="table-primary text-center text-white">
         <tr>
-          <th scope="col" class="small">Rut Saliente</th>
-          <th scope="col" class="small">Nombre Saliente</th>
-          <th scope="col" class="small">Apellido Saliente</th>
-          <th scope="col" class="small">Rut Entrante</th>
-          <th scope="col" class="small">Nombre Entrante</th>
-          <th scope="col" class="small">Apellido Entrante</th>
-          <th scope="col" class="small">Tipo de Turno</th>
-          <th scope="col" class="small">Fecha Inicio</th>
-          <th scope="col" class="small">Fecha Termino</th>
-          <th scope="col" class="small">Servicio</th>
-          <th scope="col" class="small action-header">Modificar</th>
-          <th scope="col" class="small action-header">Exportar</th>
-          <th scope="col" class="small action-header">Eliminar</th>
+          <th class="small">Rut Saliente</th>
+          <th class="small">Nombre Saliente</th>
+          <th class="small">Apellido Saliente</th>
+          <th class="small">Rut Entrante</th>
+          <th class="small">Nombre Entrante</th>
+          <th class="small">Apellido Entrante</th>
+          <th class="small">Tipo de Turno</th>
+          <th class="small">Fecha Inicio</th>
+          <th class="small">Fecha Término</th>
+          <th class="small">Servicio</th>
+          <th class="small text-center">Editar</th>
+          <th class="small text-center">Exportar</th>
+          <th class="small text-center">Eliminar</th>
         </tr>
       </thead>
 
-      <tbody class="customtable">
-        <tr v-for="reemplazo in reemplazos" :key="reemplazo._id">
-          <td class="small bg-warning-light">{{ reemplazo.rut_saliente }}</td>
+      <tbody>
+        <tr
+          v-for="reemplazo in reemplazos"
+          :key="reemplazo._id"
+          class="border-bottom align-middle hover-row"
+        >
+          <td class="small text-secondary bg-warning-light">{{ reemplazo.rut_saliente }}</td>
           <td class="small bg-warning-light">{{ reemplazo.nombre_saliente }}</td>
           <td class="small bg-warning-light">{{ reemplazo.apellido_saliente }}</td>
-          <td class="small bg-success-light">{{ reemplazo.rut_entrante }}</td>
+          <td class="small text-secondary bg-success-light">{{ reemplazo.rut_entrante }}</td>
           <td class="small bg-success-light">{{ reemplazo.nombre_entrante }}</td>
           <td class="small bg-success-light">{{ reemplazo.apellido_entrante }}</td>
           <td class="small">{{ reemplazo.tipo_turno }}</td>
           <td class="small">{{ formatearFecha(reemplazo.fecha_inicio) }}</td>
           <td class="small">{{ formatearFecha(reemplazo.fecha_termino) }}</td>
-          <td class="small">{{ reemplazo.servicio }}</td>
+          <td class="small text-primary fw-semibold">{{ reemplazo.servicio }}</td>
 
-          <!-- Botones -->
           <td class="action-cell">
-            <button @click="$emit('modificar', reemplazo)" class="btn btn-warning btn-xs">
+            <button @click="$emit('modificar', reemplazo)" class="btn btn-warning btn-sm shadow-sm">
               <img src="../../assets/icons/update-icon.png" alt="update icon" />
             </button>
           </td>
           <td class="action-cell">
-            <button @click="$emit('exportar', reemplazo)" class="btn btn-info btn-xs">
+            <button @click="$emit('exportar', reemplazo)" class="btn btn-info btn-sm shadow-sm">
               <img src="../../assets/icons/export-icon.png" alt="export icon" />
             </button>
           </td>
           <td class="action-cell">
-            <button @click="confirmarEliminar(reemplazo._id)" class="btn btn-danger btn-xs">
+            <button @click="confirmarEliminar(reemplazo._id)" class="btn btn-danger btn-sm shadow-sm">
               <img src="../../assets/icons/delete-icon.png" alt="delete icon" />
             </button>
           </td>
@@ -83,22 +86,17 @@ const emit = defineEmits<{
 const showConfirmacion = ref(false)
 const idAEliminar = ref<string | null>(null)
 
-// Mostrar modal de confirmación
 function confirmarEliminar(id: string) {
   idAEliminar.value = id
   showConfirmacion.value = true
 }
 
-// Si confirma eliminar
 function eliminarRegistroConfirmado() {
-  if (idAEliminar.value) {
-    emit('eliminar', idAEliminar.value)
-  }
+  if (idAEliminar.value) emit('eliminar', idAEliminar.value)
   showConfirmacion.value = false
   idAEliminar.value = null
 }
 
-// Si cancela
 function cancelarEliminacion() {
   showConfirmacion.value = false
   idAEliminar.value = null
@@ -111,32 +109,79 @@ const formatearFecha = (fecha: string) => {
 </script>
 
 <style scoped>
-.bg-warning-light {
-  background-color: #fff3cd !important;
-}
-.bg-success-light {
-  background-color: #d1e7dd !important;
+/* 🌙 Contenedor general */
+.tabla-reemplazos-container {
+  background-color: #f8f9fb;
+  border-radius: 0.75rem;
+  padding: 1rem;
 }
 
-.action-header {
-  width: 80px;
-  text-align: center;
+/* 🧭 Encabezado */
+.table-primary {
+  background: linear-gradient(90deg, #0d6efd, #3d8bfd);
+  border-bottom: 2px solid #bcd0ff;
+}
+
+.table th {
+  font-weight: 600;
+  vertical-align: middle;
+  letter-spacing: 0.3px;
+}
+
+/* 🩶 Filas alternadas */
+.tabla-reemplazos tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+.tabla-reemplazos tbody tr:nth-child(even) {
+  background-color: #f6f8fa;
+}
+
+/* ✨ Hover */
+.hover-row:hover {
+  background-color: #e9f3ff !important;
+  transition: background-color 0.25s ease;
+}
+
+/* 🔘 Celdas y bordes */
+.table td {
+  vertical-align: middle;
+  border-color: #dee2e6;
+  padding: 0.5rem;
+  color: #495057;
+}
+
+/* 🎨 Colores de reemplazo */
+.bg-warning-light {
+  background-color: #fff7e0 !important;
+}
+.bg-success-light {
+  background-color: #e3f7ea !important;
 }
 
 .action-cell {
   text-align: center;
-  white-space: fixed;
   padding: 0.2rem !important;
 }
 
-.btn-xs {
-  padding: 2px 10px !important;
-  font-size: 0.7rem !important;
-  line-height: 1;
+.action-cell img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+/* 🎨 Tamaño de botón */
+
+
+/* 🌤 Sombras suaves */
+.shadow-sm {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
 
+/* 🌈 Bordes y redondeo */
 .table {
-  width: 100%;
-  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 </style>
+
