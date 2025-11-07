@@ -111,8 +111,8 @@ function formatearFecha(fecha: string) {
 /* 🌙 Contenedor general */
 .tabla-usuarios-container {
   background-color: #f8f9fb;
-  border-radius: 0.75rem;
-  padding: 1rem;
+  padding-left: 4rem;
+  padding-right: 4rem;
 }
 
 /* 🧭 Encabezado */
@@ -181,5 +181,6 @@ function formatearFecha(fecha: string) {
   overflow: hidden;
 }
 </style>
+
 
 

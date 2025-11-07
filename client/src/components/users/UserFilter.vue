@@ -1,5 +1,5 @@
 <template>
-  <div class="row mb-3 pt-2 ps-2">
+  <div class="row mb-3 ps-5">
     <div class="col-sm-3 me-3">
       <label class="form-label col-form-label-sm">Buscar por Rut:</label>
       <input
@@ -15,7 +15,7 @@
       <label class="form-label col-form-label-sm">Filtrar por Cargo:</label>
       <select
         v-model="tipoCargoLocal"
-        class="form-select form-select-sm mb-3"
+        class="form-select form-select-sm "
         @change="$emit('update:tipoCargo', tipoCargoLocal)"
       >
         <option value="">Todos</option>

@@ -59,7 +59,7 @@
             
             <div class="col-md-6 mb-3">
               <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
-                <h6 class="text-primary fw-semibold mb-3">Información de Laboral</h6>
+                <h6 class="text-primary fw-semibold mb-3">Información Laboral</h6>
                 
                 <div class="form-floating mb-2">
                   <select v-model="editableUsuario.tipo_cargo" id="cargoUsuario" class="form-select form-select-sm">

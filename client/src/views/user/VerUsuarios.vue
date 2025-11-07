@@ -5,7 +5,7 @@
     </div>
     <div class="card mt-2">
       <div class="card-body p-0">
-        <h5 class="card-title p-3">Usuarios ({{ usuariosFiltrados.length }})</h5>
+        <h5 class="card-title pt-3 ps-3">Usuarios ({{ usuariosFiltrados.length }})</h5>
       </div>
 
       <UserFilter
