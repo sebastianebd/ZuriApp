@@ -35,6 +35,8 @@ async function register(data) {
 
   await User.create(nuevoUsuario);
 
+  console.log('nuevo usuario en el service: ', nuevoUsuario);
+  return nuevoUsuario
 }
 
 async function obtenerUsuariosTENS() {

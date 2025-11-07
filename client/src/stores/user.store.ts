@@ -35,8 +35,7 @@ export const useUserStore = defineStore('user', {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       try {
-        const data = await UserService.eliminarUsuario(apiPrivate, id)
-        return data
+        await UserService.eliminarUsuario(apiPrivate, id)
       } catch (error) {
         console.error('Error al eliminar usuario:', error)
         throw error 
@@ -47,8 +46,7 @@ export const useUserStore = defineStore('user', {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       try {
-        const data = await UserService.actualizarUsuario(apiPrivate, id, datosActualizados)
-        return data
+        await UserService.actualizarUsuario(apiPrivate, id, datosActualizados)
       } catch (error) {
         console.error('Error al actualizar usuario:', error)
         throw error 
@@ -60,6 +58,7 @@ export const useUserStore = defineStore('user', {
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       try {
         const data = await UserService.crearUsuario(apiPrivate, usuario)
+        console.log('Usuario creado en el store:', data)
         return data
       } catch (error) {
         console.error('Error al crear usuario:', error)

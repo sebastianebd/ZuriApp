@@ -1,4 +1,4 @@
-<template>
+J<template>
   <div class="table-responsive tabla-usuarios-container">
     <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden tabla-usuarios">
       <thead class="table-primary text-center text-white">
@@ -59,7 +59,6 @@
       </tbody>
     </table>
 
-    <!-- Modal de confirmación -->
     <ConfirmationModal
       v-if="mostrarModal"
       :visible="mostrarModal"
@@ -73,6 +72,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
+
 
 defineProps<{ usuarios: any[] }>()
 const emit = defineEmits(['editar', 'eliminar'])
@@ -108,14 +108,12 @@ function formatearFecha(fecha: string) {
 </script>
 
 <style scoped>
-/* 🌙 Contenedor general */
 .tabla-usuarios-container {
   background-color: #f8f9fb;
   padding-left: 4rem;
   padding-right: 4rem;
 }
 
-/* 🧭 Encabezado */
 .table-primary {
   background: linear-gradient(90deg, #0d6efd, #3d8bfd);
   border-bottom: 2px solid #bcd0ff;
@@ -127,7 +125,6 @@ function formatearFecha(fecha: string) {
   letter-spacing: 0.3px;
 }
 
-/* 🩶 Filas alternadas */
 .tabla-usuarios tbody tr:nth-child(odd) {
   background-color: #ffffff;
 }
@@ -136,13 +133,11 @@ function formatearFecha(fecha: string) {
   background-color: #f6f8fa;
 }
 
-/* ✨ Hover */
 .hover-row:hover {
   background-color: #e9f3ff !important;
   transition: background-color 0.25s ease;
 }
 
-/* 🔘 Celdas y bordes */
 .table td {
   vertical-align: middle;
   border-color: #dee2e6;
@@ -150,7 +145,6 @@ function formatearFecha(fecha: string) {
   color: #495057;
 }
 
-/* 🪶 Botones e íconos */
 .action-cell {
   text-align: center;
   padding: 0.2rem !important;
@@ -162,18 +156,15 @@ function formatearFecha(fecha: string) {
   object-fit: contain;
 }
 
-/* 🎨 Badges */
 .badge {
   font-size: 0.75rem;
   padding: 0.35em 0.65em;
 }
 
-/* 🌤 Sombras suaves */
 .shadow-sm {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* 🌈 Bordes y redondeo */
 .table {
   border-collapse: separate;
   border-spacing: 0;

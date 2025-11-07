@@ -2,8 +2,8 @@ const userService = require('../services/user.service');
 
 async function register(req, res) {
   try {
-    await userService.register(req.body);
-    res.sendStatus(201);
+    const data = await userService.register(req.body);
+    res.status(201).json(data);
   } catch (error) {
     res.status(error.status || 400).json({ mensaje: error.message });
   }

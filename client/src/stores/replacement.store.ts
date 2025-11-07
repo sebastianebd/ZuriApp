@@ -123,7 +123,6 @@ export const useReplacementStore = defineStore('replacement', {
             ...this.reemplazosActivos[index],
             ...reemplazoModificado
           }
-          
         }
       } catch (error) {
         console.error('Error al actualizar reemplazo:', error)

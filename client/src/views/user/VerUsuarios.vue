@@ -54,6 +54,8 @@
     <UserModalCreate
       :visible="createModalVisible"
       :lista-tipo-cargo="listaTipoCargo"
+      :lista-habilitado="listaHabilitado"
+      :lista-servicios="listaServicios"
       @cerrar="closeCreateModal"
       @guardar="handleCreate"
     />
@@ -61,10 +63,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useUserStore } from '@/stores/user.store'
 import { useOptionStore } from '@/stores/option.store'
 import { UserFilter, UserTable, UserModalUpdate, UserModalCreate } from '@/components/users'
+import type { User } from '@/types/models'
+
+const showAlert = inject<(title: string, message: string) => void>('showAlert')
+
 
 // --- STORES
 const userStore = useUserStore()
@@ -76,6 +82,7 @@ const filtroRut = ref('')
 const tipoCargo = ref('')
 const listaTipoCargo = ref<string[]>([])
 const listaHabilitado = ref<string[]>([])
+const listaServicios = ref<string[]>([])
 const updateModalVisible = ref(false)
 const createModalVisible = ref(false)
 const usuarioActual = ref<any>({})
@@ -100,6 +107,7 @@ onMounted(async () => {
   const opciones = await optionStore.mostrarOpciones()
   listaTipoCargo.value = opciones.tipoCargo
   listaHabilitado.value = opciones.habilitado
+  listaServicios.value = opciones.servicios
 })
 
 // --- FILTRO + ORDEN
@@ -125,8 +133,8 @@ const paginatedUsuarios = computed(() => {
   return usuariosFiltrados.value.slice(start, end)
 })
 
-// --- CRUD
-function openUpdateModal(usuario: any) {
+// --- MODALES
+function openUpdateModal(usuario: User) {
   usuarioActual.value = { ...usuario }
   updateModalVisible.value = true
 }
@@ -134,18 +142,6 @@ function openUpdateModal(usuario: any) {
 function closeUpdateModal() {
   updateModalVisible.value = false
   usuarioActual.value = {}
-}
-
-async function handleUpdate(usuario: any) {
-  await userStore.actualizarUsuario(usuario._id, usuario)
-  // refrescar lista si se requiere
-  usuarios.value = await userStore.mostrarTodos()
-  closeUpdateModal()
-}
-
-async function handleDelete(id: string) {
-  await userStore.eliminarUsuario(id)
-  usuarios.value = usuarios.value.filter((u) => u._id !== id)
 }
 
 function openCreateModal() {
@@ -156,9 +152,26 @@ function closeCreateModal() {
   createModalVisible.value = false
 }
 
-async function handleCreate(nuevoUsuario: any) {
+// CRUD HANDLERS
+async function handleUpdate(usuario: User) {
+  await userStore.actualizarUsuario(usuario._id, usuario)
+  usuarios.value = await userStore.mostrarTodos()
+  closeUpdateModal()
+  showAlert?.('Modificado', 'El registro se ha modificado correctamente.')
+}
+
+async function handleDelete(id: string) {
+  await userStore.eliminarUsuario(id)
+  usuarios.value = usuarios.value.filter((u) => u._id !== id)
+  showAlert?.('Eliminado', 'El usuario se ha eliminado correctamente.')
+}
+
+async function handleCreate(nuevoUsuario: User) {
   const usuarioCreado = await userStore.crearUsuario(nuevoUsuario)
   usuarios.value.push(usuarioCreado)
   closeCreateModal()
+  showAlert?.('Guardado', 'El usuario se ha creado correctamente.')
 }
+
+
 </script>

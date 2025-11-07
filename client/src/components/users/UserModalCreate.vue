@@ -2,7 +2,6 @@
   <div class="modal fade show d-block" v-if="visible" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
       <div class="modal-content shadow-lg border-0 rounded-3">
-
         <!-- HEADER -->
         <div class="modal-header bg-primary text-white rounded-top">
           <h5 class="modal-title fst-italic fw-bold">CREAR NUEVO USUARIO</h5>
@@ -28,7 +27,11 @@
                   <input v-model="form.nombre" class="form-control form-control-sm mb-2" required />
 
                   <label class="form-label fw-semibold text-primary">Apellido</label>
-                  <input v-model="form.apellido" class="form-control form-control-sm mb-2" required />
+                  <input
+                    v-model="form.apellido"
+                    class="form-control form-control-sm mb-2"
+                    required
+                  />
 
                   <label class="form-label fw-semibold text-primary">Fecha de Nacimiento</label>
                   <input
@@ -61,15 +64,42 @@
                   />
 
                   <label class="form-label fw-semibold text-primary">Cargo</label>
-                  <select v-model="form.tipo_cargo" class="form-select form-select-sm mb-2 form-option-sm" required>
+                  <select
+                    v-model="form.tipo_cargo"
+                    class="form-select form-select-sm mb-2 form-option-sm"
+                    required
+                  >
                     <option value="">Seleccione cargo</option>
                     <option v-for="cargo in listaTipoCargo" :key="cargo" :value="cargo">
                       {{ cargo }}
                     </option>
                   </select>
 
-                  <label class="form-label fw-semibold text-primary">Servicio</label>
-                  <input v-model="form.servicio" class="form-control form-control-sm" />
+                  <div v-if="showServicio">
+                    <label class="form-label fw-semibold text-primary">Servicio</label>
+                    <select v-model="form.servicio" 
+                    class="form-control form-control-sm" 
+                    required
+                    >
+                    <option value="">Seleccione servicio</option>
+                    <option v-for="servicio in listaServicios" :key="servicio" :value="servicio">
+                      {{ servicio }}
+                    </option>
+                    </select>
+                  </div>
+
+                  <div v-if="showHabilitado">
+                    <label class="form-label fw-semibold text-primary">Habilitado</label>
+                    <select v-model="form.habilitado"
+                    class="form-control form-control-sm"
+                    required
+                    >
+                    <option value="">Seleccione habilitado</option>
+                    <option v-for="habilitado in listaHabilitado" :key="habilitado" :value="habilitado">
+                      {{ habilitado }}
+                    </option>
+                  </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -85,11 +115,7 @@
           >
             Cancelar
           </button>
-          <button
-            type="button"
-            class="btn btn-success px-4 fw-semibold"
-            @click="abrirConfirmacion"
-          >
+          <button type="button" class="btn btn-success px-4 fw-semibold" @click="abrirConfirmacion">
             Guardar
           </button>
         </div>
@@ -106,49 +132,53 @@
   </div>
 </template>
 
-
 <script setup lang="ts">
-import { ref } from "vue";
-import ConfirmationModal from "@/components/common/ConfirmationModal.vue";
+import { computed, ref } from 'vue'
+import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 
+const showHabilitado = computed(() => form.value?.tipo_cargo === 'TENS')
+const showServicio = computed(() => form.value?.tipo_cargo === 'JEFA SERVICIO')
 
 defineProps<{
-  visible: boolean;
-  listaTipoCargo: string[];
-}>();
+  visible: boolean
+  listaTipoCargo: string[]
+  listaHabilitado: string[]
+  listaServicios: string[]
+}>()
 
 const emit = defineEmits<{
-  (e: "cerrar"): void;
-  (e: "guardar", nuevoUsuario: any): void;
-}>();
+  (e: 'cerrar'): void
+  (e: 'guardar', nuevoUsuario: any): void
+}>()
 
 const form = ref({
-  rut: "",
-  nombre: "",
-  apellido: "",
-  fecha_nac: "",
-  direccion: "",
-  ciudad: "",
-  telefono: "",
-  email: "",
-  tipo_cargo: "",
-  servicio: "",
-});
+  rut: '',
+  nombre: '',
+  apellido: '',
+  fecha_nac: '',
+  direccion: '',
+  ciudad: '',
+  telefono: '',
+  email: '',
+  tipo_cargo: '',
+  servicio: '',
+  habilitado: ''
+})
 
 // Estado del modal de confirmación
-const confirmVisible = ref(false);
+const confirmVisible = ref(false)
 
 function abrirConfirmacion() {
-  confirmVisible.value = true;
+  confirmVisible.value = true
 }
 
 function cerrarConfirmacion() {
-  confirmVisible.value = false;
+  confirmVisible.value = false
 }
 
 function confirmarGuardar() {
-  emit("guardar", { ...form.value });
-  confirmVisible.value = false;
+  emit('guardar', { ...form.value })
+  confirmVisible.value = false
 }
 </script>
 
@@ -157,4 +187,3 @@ function confirmarGuardar() {
   background-color: rgba(0, 0, 0, 0.6);
 }
 </style>
-
