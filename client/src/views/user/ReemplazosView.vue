@@ -30,7 +30,6 @@
         />
 
         <div class="d-flex justify-content-center align-items-center my-3" v-if="totalPages > 1">
-          <!-- Botón ANTERIOR: solo visible si no estás en la primera página -->
           <button
             v-if="currentPage > 1"
             class="btn btn-outline-primary btn-sm mx-1"
@@ -41,7 +40,6 @@
 
           <span class="mx-2">Página {{ currentPage }} de {{ totalPages }}</span>
 
-          <!-- Botón SIGUIENTE -->
           <button
             v-if="currentPage < totalPages"
             class="btn btn-outline-primary btn-sm mx-1"
@@ -65,6 +63,7 @@
       </div>
     </div>
 
+    <!-- MODAL CREAR -->
     <ReplacementModalCreate
       :visible="createModalVisible"
       :lista-de-turnos="listaDeTurnos"
@@ -75,6 +74,7 @@
       @buscar-usuario="seleccionarGrupo"
     />
 
+    <!-- MODAL EDITAR -->
     <ReplacementModalUpdate
       :visible="updateModalVisible"
       :registro="registroActual"
@@ -86,9 +86,10 @@
       @update:registro="(nuevoRegistro) => (registroActual = nuevoRegistro)"
     />
 
+    <!-- MODAL USUARIOS (con lista filtrada según cargo) -->
     <ReplacementModalUsers
       :visible="userModalVisible"
-      :usuarios="usuarios"
+      :usuarios="usuariosFiltradosPorCargo"
       @cerrar="closeUserModal"
       @usuario-seleccionado="seleccionarUsuario"
     />
@@ -99,7 +100,7 @@
 import { useAuthStore } from '@/stores/auth.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
-import { mostrarUsersCargoTens } from '@/services/user.service'
+import { mostrarTodosUsuarios } from '@/services/user.service'
 import { onMounted, ref, inject, computed, onUnmounted } from 'vue'
 import {
   ReplacementFilter,
@@ -116,18 +117,21 @@ const showAlert = inject<(title: string, message: string) => void>('showAlert')
 const currentPage = ref(1)
 const itemsPerPage = 20
 
+const replacementStore = useReplacementStore()
+const authStore = useAuthStore()
+const optionStore = useOptionStore()
+const apiPrivate = authStore.usePrivateApi()
+
 const totalPages = computed(() => {
   return Math.ceil(replacementStore.reemplazosFiltrados.length / itemsPerPage)
 })
 
 const paginatedReplacements = computed(() => {
-  // Ordenar primero (del más reciente al más antiguo)
   const sorted = [...replacementStore.reemplazosFiltrados].sort((a, b) => {
     const fechaA = new Date(a.fecha_inicio).getTime()
     const fechaB = new Date(b.fecha_inicio).getTime()
-    return fechaB - fechaA // Descendente → más reciente primero
+    return fechaB - fechaA
   })
-
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
   return sorted.slice(start, end)
@@ -139,42 +143,39 @@ function changePage(page: number) {
   }
 }
 
-// --- STORES
-const authStore = useAuthStore()
-const optionStore = useOptionStore()
-const replacementStore = useReplacementStore()
-const apiPrivate = authStore.usePrivateApi()
-
-// --- DATOS BASE
 const listaDeTurnos = ref<string[]>([])
 const listaDeServicios = ref<string[]>([])
 const usuarios = ref<User[]>([])
 const grupo = ref<1 | 2>(1) // 1: saliente, 2: entrante
 
-// --- MODALES (estado)
-const updateModalVisible = ref(false) // modal de edición
-const createModalVisible = ref(false) // modal de creación
-const userModalVisible = ref(false) // modal de usuarios
+// MODALES
+const updateModalVisible = ref(false)
+const createModalVisible = ref(false)
+const userModalVisible = ref(false)
 
-// --- ESTADOS DE REGISTROS
+// TARGET seguro para asignar en seleccionarUsuario
+// Mantiene la referencia al registro (registroNuevo o registroActual) que
+// debe completarse cuando el usuario elige en el modal de usuarios.
+const registroTarget = ref<typeof registroNuevo | typeof registroActual | null>(null)
+
 const registroActual = ref<Partial<RegisterDataReemplazo>>({})
 const registroNuevo = ref<Partial<RegisterDataReemplazo>>({
   id_saliente: '',
   rut_saliente: '',
   nombre_saliente: '',
   apellido_saliente: '',
+  tipo_cargo: '', // campo usado para filtrar
   id_entrante: '',
   rut_entrante: '',
   nombre_entrante: '',
   apellido_entrante: '',
   tipo_turno: '',
-  // Usar new Date().toISOString().slice(0, 10) está bien para el valor inicial de Vue
   fecha_inicio: new Date().toISOString().slice(0, 10),
   fecha_termino: new Date().toISOString().slice(0, 10),
   servicio: ''
 })
 
-// --- MONTADO INICIAL
+// --- MONTAJE
 onMounted(async () => {
   if (!replacementStore.hayReemplazos) {
     await replacementStore.mostrarReemplazos()
@@ -184,7 +185,7 @@ onMounted(async () => {
   listaDeTurnos.value = opciones.tiposTurno
   listaDeServicios.value = opciones.servicios
 
-  const usuariosCargados = await mostrarUsersCargoTens(apiPrivate)
+  const usuariosCargados = await mostrarTodosUsuarios(apiPrivate)
   usuarios.value = usuariosCargados as User[]
 
   socket.on('replacementsUpdated', async () => {
@@ -196,47 +197,56 @@ onUnmounted(() => {
   socket.off('replacementsUpdated')
 })
 
-// --- CRUD: eliminar
+// --- ELIMINAR
 const handleDelete = async (id: string) => {
   await replacementStore.eliminarReemplazo(id)
   showAlert?.('Eliminado', 'El registro se ha eliminado correctamente.')
 }
 
-// --- MODAL EDITAR
+// --- EDITAR
 const openUpdateModal = (reemplazo: RegisterDataReemplazo) => {
   updateModalVisible.value = true
-  // Se destructura el objeto para asegurar que solo se tomen las propiedades necesarias
   const { fecha_inicio, fecha_termino, ...resto } = reemplazo
-
   registroActual.value = {
     ...resto,
-    // Asegurar el formato 'YYYY-MM-DD' para los inputs de tipo 'date'
     fecha_inicio: String(fecha_inicio).slice(0, 10),
     fecha_termino: String(fecha_termino).slice(0, 10)
   }
 }
 const closeUpdateModal = () => {
   updateModalVisible.value = false
-  registroActual.value = {} // Limpiar el estado
+  registroActual.value = {}
 }
 const handleUpdate = async () => {
   if (registroActual.value._id) {
-    // El 'registroActual' ya está actualizado por el evento 'update:registro' del modal
     await replacementStore.actualizarReemplazo(registroActual.value._id, registroActual.value)
   }
   closeUpdateModal()
   showAlert?.('Modificado', 'El registro se ha modificado correctamente.')
 }
 
-// --- MODAL CREAR
+// --- CREAR
 const openCreateModal = () => {
+  // resetea nuevo registro para evitar residuos de antiguas selecciones
+  registroNuevo.value = {
+    id_saliente: '',
+    rut_saliente: '',
+    nombre_saliente: '',
+    apellido_saliente: '',
+    tipo_cargo: '',
+    id_entrante: '',
+    rut_entrante: '',
+    nombre_entrante: '',
+    apellido_entrante: '',
+    tipo_turno: '',
+    fecha_inicio: new Date().toISOString().slice(0, 10),
+    fecha_termino: new Date().toISOString().slice(0, 10),
+    servicio: ''
+  }
   createModalVisible.value = true
-  // Opcional: limpiar 'registroNuevo' si quieres asegurar que siempre inicie limpio al abrir.
-  // Sin embargo, tu inicialización de registroNuevo ya es limpia.
 }
 const closeCreateModal = () => {
   createModalVisible.value = false
-  // Opcional: restablecer 'registroNuevo' a su estado inicial.
 }
 const guardarNuevoReemplazo = async (nuevoReemplazo: RegisterDataReemplazo) => {
   await replacementStore.crearReemplazo(nuevoReemplazo)
@@ -247,18 +257,53 @@ const guardarNuevoReemplazo = async (nuevoReemplazo: RegisterDataReemplazo) => {
 // --- MODAL USUARIOS
 const closeUserModal = () => {
   userModalVisible.value = false
+  registroTarget.value = null // limpiar target por seguridad
 }
 
+// Computed que filtra usuarios por tipo_cargo si corresponde
+const usuariosFiltradosPorCargo = computed(() => {
+  // Si el usuario abrió el modal para seleccionar SALIENTE (grupo=1), mostramos todos
+  if (grupo.value === 1) {
+    return usuarios.value
+  }
+
+  // Si es entrante (grupo=2), intentamos leer el tipo de cargo del registroNuevo o registroActual
+  // Preferimos registroTarget si está establecido (es más seguro)
+  const cargoSaliente =
+    // si hay target y es registroNuevo/registroActual, comprobamos si contiene tipo_cargo
+    registroTarget.value && 'tipo_cargo' in registroTarget.value
+      ? (registroTarget.value as any).tipo_cargo
+      : // fallback a los objetos globales
+        (createModalVisible.value ? registroNuevo.value.tipo_cargo : registroActual.value.tipo_cargo)
+
+  if (!cargoSaliente) {
+    // si no hay cargo definido, devolvemos todos (evitar crash)
+    return usuarios.value
+  }
+
+  return usuarios.value.filter((u) => u.tipo_cargo === cargoSaliente)
+})
+
+// seleccionarGrupo: abre el modal de usuarios y guarda cuál registro será afectado
+// numeroGrupo: 1 -> saliente, 2 -> entrante
 const seleccionarGrupo = (numeroGrupo: 1 | 2) => {
-  grupo.value = numeroGrupo // Guardar qué campo se está llenando (saliente o entrante)
+  grupo.value = numeroGrupo
+
+  // Guardamos target en el momento de abrir el modal (evita depender de variables de visibilidad
+  // que pueden cambiar entre abrir y seleccionar)
+  if (createModalVisible.value) {
+    registroTarget.value = registroNuevo
+  } else if (updateModalVisible.value) {
+    registroTarget.value = registroActual
+  } else {
+    // si no hay modal principal abierto, no asignamos target
+    registroTarget.value = null
+  }
+
   userModalVisible.value = true
 }
 
-/**
- * @param registro
- * @param usuario
- * @param esSaliente
- */
+// --- ASIGNAR USUARIO
 const asignarDatosUsuario = (
   registro: typeof registroNuevo | typeof registroActual,
   usuario: User,
@@ -269,25 +314,29 @@ const asignarDatosUsuario = (
     [`id_${prefijo}`]: usuario._id,
     [`rut_${prefijo}`]: usuario.rut,
     [`nombre_${prefijo}`]: usuario.nombre,
-    [`apellido_${prefijo}`]: usuario.apellido
+    [`apellido_${prefijo}`]: usuario.apellido,
+    [`cargo_${prefijo}`]: usuario.tipo_cargo
   })
+
+  // Esta línea es la clave: si seleccionamos al saliente, guardamos su tipo de cargo
+  // en el registro (campo 'tipo_cargo') para que el filtro pueda usarlo.
+  if (esSaliente) {
+    registro.value.tipo_cargo = usuario.tipo_cargo
+  }
 }
 
 const seleccionarUsuario = (usuario: User) => {
-  let registroAfectado: typeof registroNuevo | typeof registroActual | null = null
-
-  if (createModalVisible.value) {
-    registroAfectado = registroNuevo
-  } else if (updateModalVisible.value) {
-    registroAfectado = registroActual
-  }
+  // usamos el registroTarget que se estableció al abrir el modal (más robusto)
+  const registroAfectado = registroTarget.value ?? (createModalVisible.value ? registroNuevo : updateModalVisible.value ? registroActual : null)
 
   if (registroAfectado) {
     const esSaliente = grupo.value === 1
-    asignarDatosUsuario(registroAfectado, usuario, esSaliente)
+    asignarDatosUsuario(registroAfectado as any, usuario, esSaliente)
   }
 
+  // cerrar modal de usuarios y limpiar target
   userModalVisible.value = false
+  registroTarget.value = null
 }
 </script>
 
@@ -302,3 +351,4 @@ const seleccionarUsuario = (usuario: User) => {
   padding-bottom: 0;
 }
 </style>
+

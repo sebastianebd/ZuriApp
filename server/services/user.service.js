@@ -44,7 +44,7 @@ async function obtenerUsuariosTENS() {
 }
 
 async function obtenerTodos() {
-  return await User.find({ eliminado: false });
+  return await User.find({ eliminado: false, tipo_cargo: { $ne: 'RECURSOS HUMANOS' } });
 }
 
 async function actualizar(id, data) {

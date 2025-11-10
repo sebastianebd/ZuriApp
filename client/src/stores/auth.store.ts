@@ -60,6 +60,7 @@ export const useAuthStore = defineStore('auth', {
       const data = await AuthService.logout(apiPrivate)
       this.accessToken = ''
       this.user = null
+      sessionStorage.clear()
       return data
     },
 

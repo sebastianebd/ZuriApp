@@ -128,7 +128,6 @@ const formatearFecha = (fecha: string) => {
   letter-spacing: 0.3px;
 }
 
-/* 🩶 Filas alternadas */
 .tabla-reemplazos tbody tr:nth-child(odd) {
   background-color: #ffffff;
 }
@@ -150,7 +149,6 @@ const formatearFecha = (fecha: string) => {
   color: #495057;
 }
 
-/* 🎨 Colores de reemplazo */
 .bg-warning-light {
   background-color: #fff7e0 !important;
 }
@@ -168,15 +166,12 @@ const formatearFecha = (fecha: string) => {
   height: 14px;
   object-fit: contain;
 }
-/* 🎨 Tamaño de botón */
 
 
-/* 🌤 Sombras suaves */
 .shadow-sm {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* 🌈 Bordes y redondeo */
 .table {
   border-collapse: separate;
   border-spacing: 0;

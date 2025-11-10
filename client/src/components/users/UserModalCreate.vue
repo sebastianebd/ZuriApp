@@ -75,31 +75,17 @@
                     </option>
                   </select>
 
-                  <div v-if="showServicio">
-                    <label class="form-label fw-semibold text-primary">Servicio</label>
-                    <select v-model="form.servicio" 
-                    class="form-control form-control-sm" 
-                    required
-                    >
-                    <option value="">Seleccione servicio</option>
-                    <option v-for="servicio in listaServicios" :key="servicio" :value="servicio">
-                      {{ servicio }}
-                    </option>
-                    </select>
-                  </div>
-
-                  <div v-if="showHabilitado">
                     <label class="form-label fw-semibold text-primary">Habilitado</label>
-                    <select v-model="form.habilitado"
-                    class="form-control form-control-sm"
-                    required
-                    >
-                    <option value="">Seleccione habilitado</option>
-                    <option v-for="habilitado in listaHabilitado" :key="habilitado" :value="habilitado">
-                      {{ habilitado }}
-                    </option>
-                  </select>
-                  </div>
+                    <select v-model="form.habilitado" class="form-control form-control-sm" required>
+                      <option value="">Seleccione habilitado</option>
+                      <option
+                        v-for="habilitado in listaHabilitado"
+                        :key="habilitado"
+                        :value="habilitado"
+                      >
+                        {{ habilitado }}
+                      </option>
+                    </select>
                 </div>
               </div>
             </div>
@@ -133,11 +119,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import {  ref } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 
-const showHabilitado = computed(() => form.value?.tipo_cargo === 'TENS')
-const showServicio = computed(() => form.value?.tipo_cargo === 'JEFA SERVICIO')
+
 
 defineProps<{
   visible: boolean

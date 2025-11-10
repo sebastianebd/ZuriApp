@@ -1,15 +1,10 @@
 <template>
-  <div
-    class="modal fade show d-block"
-    tabindex="-1"
-    role="dialog"
-    v-if="visible"
-  >
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" v-if="visible">
     <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
       <div class="modal-content shadow-lg border-0 rounded-3">
         <!-- Header -->
         <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title">SELECCIONAR USUARIO</h5>
+          <h5 class="fw-italic">SELECCIONAR USUARIO</h5>
           <button
             type="button"
             class="btn-close btn-close-white"
@@ -36,6 +31,7 @@
                   <th scope="col" class="small">RUT</th>
                   <th scope="col" class="small">Nombre</th>
                   <th scope="col" class="small">Apellido</th>
+                  <th scope="col" class="small">Cargo</th>
                   <th scope="col" class="small">Dirección</th>
                   <th scope="col" class="small">Teléfono</th>
                   <th scope="col" class="small">Email</th>
@@ -46,17 +42,18 @@
 
               <tbody>
                 <tr
-                  v-for="(usuario, index) in usuariosFiltrados"
+                  v-for="(usuario, index) in paginatedUsuarios"
                   :key="index"
                   @click="handleClick(usuario)"
                   :class="{
                     'table-hover-row': true,
-                    'selected-row': usuarioSeleccionado?.rut === usuario.rut,
+                    'selected-row': usuarioSeleccionado?.rut === usuario.rut
                   }"
                 >
                   <td class="small">{{ usuario.rut }}</td>
                   <td class="small">{{ usuario.nombre }}</td>
                   <td class="small">{{ usuario.apellido }}</td>
+                  <td class="small">{{ usuario.tipo_cargo }}</td>
                   <td class="small">{{ usuario.direccion }}</td>
                   <td class="small">{{ usuario.telefono }}</td>
                   <td class="small">{{ usuario.email }}</td>
@@ -64,7 +61,7 @@
                   <td class="small">{{ usuario.habilitado ? 'Sí' : 'No' }}</td>
                 </tr>
 
-                <tr v-if="usuariosFiltrados.length === 0">
+                <tr v-if="paginatedUsuarios.length === 0">
                   <td colspan="8" class="text-center text-muted py-3">
                     No se encontraron usuarios que coincidan con el filtro.
                   </td>
@@ -72,17 +69,40 @@
               </tbody>
             </table>
           </div>
-        </div>
 
-        <!-- Footer -->
-        <div class="modal-footer bg-light">
-          <button
-            type="button"
-            class="btn btn-secondary px-4"
-            @click="$emit('cerrar')"
-          >
-            Cerrar
-          </button>
+
+          <!-- Paginación Footer -->
+          <div class="d-flex align-items-center justify-content-between mt-2" v-if="totalPages > 1">
+            <!-- Botones de paginación (centrados) -->
+            <div class="d-flex justify-content-center flex-grow-1">
+              <button
+                v-if="currentPage > 1"
+                class="btn btn-outline-primary btn-sm mx-1"
+                @click="changePage(currentPage - 1)"
+              >
+                ◀ Anterior
+              </button>
+
+              <span class="mx-2 small align-self-center">
+                Página {{ currentPage }} de {{ totalPages }}
+              </span>
+
+              <button
+                v-if="currentPage < totalPages"
+                class="btn btn-outline-primary btn-sm mx-1"
+                @click="changePage(currentPage + 1)"
+              >
+                Siguiente ▶
+              </button>
+            </div>
+
+            <!-- Botón cerrar (a la derecha) -->
+            <div class="ms-auto">
+              <button type="button" class="btn btn-secondary px-4" @click="$emit('cerrar')">
+                Cerrar
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -90,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { User } from '@/types/models'
 
 const props = defineProps<{
@@ -103,22 +123,53 @@ const emit = defineEmits<{
   (e: 'usuario-seleccionado', usuario: User): void
 }>()
 
+// --- Estado local
 const filtroRutLocal = ref('')
 const usuarioSeleccionado = ref<User | null>(null)
 let lastClickTime = 0
 
-const usuariosFiltrados = computed(() => {
-  if (filtroRutLocal.value) {
-    return props.usuarios.filter((u) =>
-      u.rut.toLowerCase().startsWith(filtroRutLocal.value.toLowerCase())
-    )
-  }
-  return props.usuarios
+// --- Paginación
+const currentPage = ref(1)
+const itemsPerPage = 20
+
+// Reiniciar página cuando cambia el filtro o el modal se vuelve visible
+watch([filtroRutLocal, () => props.visible], () => {
+  currentPage.value = 1
 })
 
+// --- Filtrar y ordenar usuarios
+const usuariosFiltrados = computed(() => {
+  let lista = props.usuarios
+
+  // Filtrado por RUT
+  if (filtroRutLocal.value) {
+    lista = lista.filter((u) => u.rut.toLowerCase().startsWith(filtroRutLocal.value.toLowerCase()))
+  }
+
+  // Orden descendente por nombre (Z → A)
+  return lista.sort((a, b) => a.nombre.localeCompare(b.nombre))
+})
+
+// --- Total de páginas
+const totalPages = computed(() => Math.ceil(usuariosFiltrados.value.length / itemsPerPage))
+
+// --- Lista paginada
+const paginatedUsuarios = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return usuariosFiltrados.value.slice(start, end)
+})
+
+function changePage(page: number) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+// --- Doble click o selección
 function handleClick(usuario: User) {
   const now = Date.now()
-  const doubleClick = now - lastClickTime < 300 // si el segundo click ocurre dentro de 300ms
+  const doubleClick = now - lastClickTime < 300
 
   if (doubleClick && usuarioSeleccionado.value?.rut === usuario.rut) {
     emit('usuario-seleccionado', usuario)
@@ -135,19 +186,16 @@ function handleClick(usuario: User) {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
-/* Hover sobre la fila */
 .table-hover-row:hover {
   background-color: #e3f2fd !important;
   transition: background-color 0.2s ease-in-out;
 }
 
-/* Fila seleccionada */
 .selected-row {
   background-color: #bbdefb !important;
   font-weight: 500;
 }
 
-/* Mejor aspecto para tabla */
 .table {
   border-radius: 8px;
   overflow: hidden;
@@ -174,4 +222,12 @@ thead th {
     transform: translateY(0) scale(1);
   }
 }
+
+.table-responsive {
+  min-height: 600px; /* altura que necesitas para 20 filas */
+  max-height: 600px; /* evita que crezca más */
+  overflow-y: auto; /* agrega scroll interno si hay más contenido */
+}
+
+
 </style>
