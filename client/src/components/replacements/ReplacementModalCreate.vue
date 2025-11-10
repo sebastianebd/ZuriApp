@@ -2,7 +2,6 @@
   <div class="modal fade show d-block" v-if="visible" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-md modal-dialog-centered" role="document">
       <div class="modal-content shadow-lg border-0 rounded-3">
-
         <!-- HEADER -->
         <div class="modal-header bg-primary text-white rounded-top">
           <h5 class="modal-title fw-bold">Creación de Nuevo Reemplazo</h5>
@@ -24,64 +23,102 @@
             <div :key="currentStep">
               <!-- Paso 1 -->
               <div v-if="currentStep === 1">
-                <h5 class="fw-semibold mb-3 text-primary">Paso 1: Datos de Funcionario (Salida)</h5>
+                <h5 class="fw-semibold mb-3 text-primary">Paso 1: Datos de Funcionario (SALIDA)</h5>
 
                 <button
                   @click.prevent="$emit('buscar-usuario', 1)"
                   class="btn btn-warning btn-sm mb-3 fw-semibold"
                 >
-                  <i class="bi bi-search"></i> Buscar TENS Saliente
+                  <i class="bi bi-search">Buscar Funcionario</i> 
                 </button>
 
                 <div class="form-floating mb-2">
-                  <input v-model="registroLocal.rut_saliente" type="text" class="form-control" disabled />
+                  <input
+                    v-model="registroLocal.rut_saliente"
+                    type="text"
+                    class="form-control"
+                    disabled
+                  />
                   <label>RUT</label>
                 </div>
 
                 <div class="form-floating mb-2">
-                  <input v-model="registroLocal.nombre_saliente" type="text" class="form-control" disabled />
+                  <input
+                    v-model="registroLocal.nombre_saliente"
+                    type="text"
+                    class="form-control"
+                    disabled
+                  />
                   <label>Nombre</label>
                 </div>
 
                 <div class="form-floating mb-3">
-                  <input v-model="registroLocal.apellido_saliente" type="text" class="form-control" disabled />
+                  <input
+                    v-model="registroLocal.apellido_saliente"
+                    type="text"
+                    class="form-control"
+                    disabled
+                  />
                   <label>Apellido</label>
                 </div>
 
                 <div class="text-end">
-                  <button @click="nextStep" class="btn btn-primary px-4 fw-semibold">Siguiente</button>
+                  <button @click="nextStep" class="btn btn-primary px-4 fw-semibold">
+                    Siguiente
+                  </button>
                 </div>
               </div>
 
               <!-- Paso 2 -->
               <div v-else-if="currentStep === 2">
-                <h5 class="fw-semibold mb-3 text-primary">Paso 2: Datos de TENS (Entrante)</h5>
+                <h5 class="fw-semibold mb-3 text-primary">
+                  Paso 2: Datos de Funcionario (ENTRANTE)
+                </h5>
 
                 <button
                   @click.prevent="$emit('buscar-usuario', 2)"
                   class="btn btn-warning btn-sm mb-3 fw-semibold"
                 >
-                  <i class="bi bi-search"></i> Buscar TENS Entrante
+                  <i class="bi bi-search">Buscar Funcionario</i>
                 </button>
 
                 <div class="form-floating mb-2">
-                  <input v-model="registroLocal.rut_entrante" type="text" class="form-control" disabled />
+                  <input
+                    v-model="registroLocal.rut_entrante"
+                    type="text"
+                    class="form-control"
+                    disabled
+                  />
                   <label>RUT</label>
                 </div>
 
                 <div class="form-floating mb-2">
-                  <input v-model="registroLocal.nombre_entrante" type="text" class="form-control" disabled />
+                  <input
+                    v-model="registroLocal.nombre_entrante"
+                    type="text"
+                    class="form-control"
+                    disabled
+                  />
                   <label>Nombre</label>
                 </div>
 
                 <div class="form-floating mb-3">
-                  <input v-model="registroLocal.apellido_entrante" type="text" class="form-control" disabled />
+                  <input
+                    v-model="registroLocal.apellido_entrante"
+                    type="text"
+                    class="form-control"
+                    disabled
+                  />
                   <label>Apellido</label>
                 </div>
 
                 <div class="d-flex justify-content-between">
-                  <button @click="prevStep" class="btn btn-secondary px-3 fw-semibold">Volver</button>
-                  <button @click="nextStep" class="btn btn-primary px-3 fw-semibold">Siguiente</button>
+                  <button @click="prevStep" class="btn btn-secondary px-3 fw-semibold">
+                    Volver
+                  </button>
+                  <button @click="nextStep" class="btn btn-primary px-3 fw-semibold">
+                    Siguiente
+                  </button>
                 </div>
               </div>
 
@@ -92,7 +129,9 @@
                 <div class="form-floating mb-3">
                   <select v-model="registroLocal.tipo_turno" class="form-select">
                     <option value="" disabled>Seleccione un turno</option>
-                    <option v-for="turno in listaDeTurnos" :key="turno" :value="turno">{{ turno }}</option>
+                    <option v-for="turno in listaDeTurnos" :key="turno" :value="turno">
+                      {{ turno }}
+                    </option>
                   </select>
                   <label>Tipo de Turno</label>
                 </div>
@@ -118,14 +157,25 @@
                 </div>
 
                 <div class="d-flex justify-content-between">
-                  <button @click="prevStep" class="btn btn-secondary px-3 fw-semibold">Volver</button>
-                  <button @click="guardar" class="btn btn-success px-4 fw-semibold">Guardar</button>
+                  <button @click="prevStep" class="btn btn-secondary px-3 fw-semibold">
+                    Volver
+                  </button>
+                  <button @click="abrirConfirmacion" class="btn btn-success px-4 fw-semibold">
+                    Guardar
+                  </button>
                 </div>
               </div>
             </div>
           </transition>
         </div>
 
+        <!-- Modal de confirmación -->
+        <ConfirmationModal
+          :visible="showConfirmacion"
+          mensaje="¿Deseas guardar los cambios realizados?"
+          @confirmar="confirmarGuardar"
+          @cancelar="cancelarConfirmacion"
+        />
       </div>
     </div>
   </div>
@@ -134,6 +184,7 @@
 <script setup lang="ts">
 import { ref, watch, reactive } from 'vue'
 import type { RegisterDataReemplazo } from '@/types/models'
+import ConfirmationModal from '../common/ConfirmationModal.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -173,11 +224,11 @@ watch(
 function nextStep() {
   errorMessage.value = ''
   if (currentStep.value === 1 && !registroLocal.rut_saliente) {
-    errorMessage.value = 'Debe seleccionar un TENS saliente para continuar.'
+    errorMessage.value = 'Debe seleccionar un usuario para continuar.'
     return
   }
   if (currentStep.value === 2 && !registroLocal.rut_entrante) {
-    errorMessage.value = 'Debe seleccionar un TENS entrante para continuar.'
+    errorMessage.value = 'Debe seleccionar un usuario para continuar.'
     return
   }
   currentStep.value++
@@ -190,18 +241,23 @@ function prevStep() {
   }
 }
 
-function guardar() {
-  errorMessage.value = ''
-  if (
-    !registroLocal.tipo_turno ||
-    !registroLocal.fecha_inicio ||
-    !registroLocal.fecha_termino ||
-    !registroLocal.servicio
-  ) {
-    errorMessage.value = 'Por favor complete todos los campos de la configuración de turno.'
-    return
-  }
+// 👇 controlamos el modal de confirmación
+const showConfirmacion = ref(false)
+
+// Cuando el usuario presiona "Guardar"
+function abrirConfirmacion() {
+  showConfirmacion.value = true
+}
+
+// Si confirma guardar
+function confirmarGuardar() {
+  showConfirmacion.value = false
   emit('guardar', registroLocal as RegisterDataReemplazo)
+}
+
+// Si cancela (volver al modal original)
+function cancelarConfirmacion() {
+  showConfirmacion.value = false
 }
 </script>
 
@@ -232,7 +288,7 @@ function guardar() {
 /* Transición de pasos (entrada/salida limpia) */
 .fade-step-enter-active,
 .fade-step-leave-active {
-  transition: all 260ms cubic-bezier(.2,.9,.2,1);
+  transition: all 260ms cubic-bezier(0.2, 0.9, 0.2, 1);
   transition-property: opacity, transform;
   will-change: opacity, transform;
 }
@@ -281,4 +337,3 @@ button:hover {
   transform: translateY(-1px);
 }
 </style>
-

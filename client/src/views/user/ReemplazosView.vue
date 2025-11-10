@@ -90,6 +90,8 @@
     <ReplacementModalUsers
       :visible="userModalVisible"
       :usuarios="usuariosFiltradosPorCargo"
+      :grupo="grupo" 
+      :lista-de-cargos="listaDeCargos"
       @cerrar="closeUserModal"
       @usuario-seleccionado="seleccionarUsuario"
     />
@@ -145,6 +147,7 @@ function changePage(page: number) {
 
 const listaDeTurnos = ref<string[]>([])
 const listaDeServicios = ref<string[]>([])
+const listaDeCargos = ref<string[]>([])
 const usuarios = ref<User[]>([])
 const grupo = ref<1 | 2>(1) // 1: saliente, 2: entrante
 
@@ -184,6 +187,7 @@ onMounted(async () => {
   const opciones = await optionStore.mostrarOpciones()
   listaDeTurnos.value = opciones.tiposTurno
   listaDeServicios.value = opciones.servicios
+  listaDeCargos.value = opciones.tipoCargo
 
   const usuariosCargados = await mostrarTodosUsuarios(apiPrivate)
   usuarios.value = usuariosCargados as User[]

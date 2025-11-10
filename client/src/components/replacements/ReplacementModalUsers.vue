@@ -15,18 +15,51 @@
 
         <!-- Body -->
         <div class="modal-body bg-light">
-          <div class="mb-3">
-            <input
-              type="text"
-              v-model="filtroRutLocal"
-              placeholder="Buscar por RUT"
-              class="form-control form-control-sm border-primary shadow-sm"
-            />
+          <div class="mb-3 d-flex justify-content-start gap-4">
+            <!-- Filtro por RUT -->
+            <div>
+              <label for="">RUT: </label>
+              <input
+                type="text"
+                v-model="filtroRutLocal"
+                placeholder="Ingrese RUT"
+                class="form-control form-control-sm border-primary shadow-sm filtro-input"
+              />
+            </div>
+
+            <!-- Filtro por Nombre -->
+            <div>
+              <label for="">Nombre: </label>
+              <input
+                type="text"
+                v-model="filtroNombreLocal"
+                placeholder="Buscar por Nombre"
+                class="form-control form-control-sm border-primary shadow-sm filtro-input"
+              />
+            </div>
+
+            <!-- Filtro por Cargo (solo en paso 1) -->
+            <div v-if="grupo===1">
+              <label for="">Cargo:</label>
+              <select
+                v-model="filtroCargoLocal"
+                class="form-select form-select-sm border-primary shadow-sm filtro-input" 
+              >
+                <option value="">Todos</option>
+                <option
+                  v-for="(Cargo, index) in props.listaDeCargos"
+                  :key="index"
+                  :value="Cargo"
+                >
+                  {{ Cargo }}
+                </option>
+              </select>
+            </div>
           </div>
 
           <div class="table-responsive">
             <table class="table table-hover align-middle shadow-sm rounded">
-              <thead class="table-primary text-center">
+              <thead class="table-primary">
                 <tr>
                   <th scope="col" class="small">RUT</th>
                   <th scope="col" class="small">Nombre</th>
@@ -70,11 +103,10 @@
             </table>
           </div>
 
-
           <!-- Paginación Footer -->
-          <div class="d-flex align-items-center justify-content-between mt-2" v-if="totalPages > 1">
+          <div class="d-flex align-items-center justify-content-between mt-2">
             <!-- Botones de paginación (centrados) -->
-            <div class="d-flex justify-content-center flex-grow-1">
+            <div class="d-flex justify-content-center flex-grow-1" v-if="totalPages > 1">
               <button
                 v-if="currentPage > 1"
                 class="btn btn-outline-primary btn-sm mx-1"
@@ -97,7 +129,7 @@
             </div>
 
             <!-- Botón cerrar (a la derecha) -->
-            <div class="ms-auto">
+            <div class="ms-auto pt-3">
               <button type="button" class="btn btn-secondary px-4" @click="$emit('cerrar')">
                 Cerrar
               </button>
@@ -116,6 +148,8 @@ import type { User } from '@/types/models'
 const props = defineProps<{
   visible: boolean
   usuarios: User[]
+  grupo: 1 | 2 // 👈 paso actual (1 = saliente, 2 = entrante)
+  listaDeCargos: string[]
 }>()
 
 const emit = defineEmits<{
@@ -123,8 +157,11 @@ const emit = defineEmits<{
   (e: 'usuario-seleccionado', usuario: User): void
 }>()
 
-// --- Estado local
+// --- Estado local de filtros
 const filtroRutLocal = ref('')
+const filtroNombreLocal = ref('')
+const filtroCargoLocal = ref('') // 👈 nuevo
+
 const usuarioSeleccionado = ref<User | null>(null)
 let lastClickTime = 0
 
@@ -132,28 +169,39 @@ let lastClickTime = 0
 const currentPage = ref(1)
 const itemsPerPage = 20
 
-// Reiniciar página cuando cambia el filtro o el modal se vuelve visible
-watch([filtroRutLocal, () => props.visible], () => {
+// Reiniciar página cuando cambia algún filtro o visibilidad
+watch([filtroRutLocal, filtroNombreLocal, filtroCargoLocal, () => props.visible], () => {
   currentPage.value = 1
 })
 
-// --- Filtrar y ordenar usuarios
+// --- Filtrar usuarios
 const usuariosFiltrados = computed(() => {
   let lista = props.usuarios
 
-  // Filtrado por RUT
+  // Filtro RUT
   if (filtroRutLocal.value) {
-    lista = lista.filter((u) => u.rut.toLowerCase().startsWith(filtroRutLocal.value.toLowerCase()))
+    lista = lista.filter((u) => u.rut.toLowerCase().includes(filtroRutLocal.value.toLowerCase()))
   }
 
-  // Orden descendente por nombre (Z → A)
+  // Filtro Nombre
+  if (filtroNombreLocal.value) {
+    lista = lista.filter((u) =>
+      u.nombre.toLowerCase().includes(filtroNombreLocal.value.toLowerCase())
+    )
+  }
+
+  if (filtroCargoLocal.value) {
+  lista = lista.filter(
+    (u) => u.tipo_cargo?.toLowerCase().includes(filtroCargoLocal.value.toLowerCase())
+  )
+}
+
+  // Ordenar alfabéticamente
   return lista.sort((a, b) => a.nombre.localeCompare(b.nombre))
 })
 
-// --- Total de páginas
+// --- Paginación
 const totalPages = computed(() => Math.ceil(usuariosFiltrados.value.length / itemsPerPage))
-
-// --- Lista paginada
 const paginatedUsuarios = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
@@ -161,12 +209,10 @@ const paginatedUsuarios = computed(() => {
 })
 
 function changePage(page: number) {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-  }
+  if (page >= 1 && page <= totalPages.value) currentPage.value = page
 }
 
-// --- Doble click o selección
+// --- Click
 function handleClick(usuario: User) {
   const now = Date.now()
   const doubleClick = now - lastClickTime < 300
@@ -229,5 +275,7 @@ thead th {
   overflow-y: auto; /* agrega scroll interno si hay más contenido */
 }
 
-
+.filtro-input {
+  width: 220px;
+}
 </style>

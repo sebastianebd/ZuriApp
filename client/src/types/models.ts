@@ -31,6 +31,7 @@ export interface RegisterDataReemplazo {
   rut_saliente: string;
   nombre_saliente: string;
   apellido_saliente: string;
+  tipo_cargo: string;
   id_entrante: string;
   rut_entrante: string;
   nombre_entrante: string;
