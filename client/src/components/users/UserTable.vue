@@ -14,7 +14,8 @@ J<template>
           <th class="small">Habilitado</th>
           <th class="small">Cargo</th>
           <th class="small text-center">Editar</th>
-          <th class="small text-center">Eliminar</th>
+          <th class="small text-center">Detalle</th>
+          <th class="small text-center" v-if="loginUser.tipo_cargo === 'ADMIN-TI'">Eliminar</th>
         </tr>
       </thead>
 
@@ -51,6 +52,12 @@ J<template>
           </td>
 
           <td class="action-cell">
+            <button class="btn btn-info btn-sm shadow-sm" @click="$emit('detalle', usuario)">
+              <img src="../../assets/icons/detalle-icon.png" alt="detail icon" />
+            </button>
+          </td>
+
+          <td class="action-cell" v-if="loginUser.tipo_cargo === 'ADMIN-TI'">
             <button class="btn btn-danger btn-sm shadow-sm" @click="confirmarEliminacion(usuario)">
               <img src="../../assets/icons/delete-icon.png" alt="delete icon" />
             </button>
@@ -74,8 +81,12 @@ import { ref } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 
 
-defineProps<{ usuarios: any[] }>()
-const emit = defineEmits(['editar', 'eliminar'])
+defineProps<{ 
+  usuarios: any[] 
+  loginUser: any
+}>()
+
+const emit = defineEmits(['editar', 'eliminar', 'detalle'])
 
 const mostrarModal = ref(false)
 const usuarioAEliminar = ref<any>(null)

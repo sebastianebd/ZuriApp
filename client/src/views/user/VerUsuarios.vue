@@ -17,7 +17,13 @@
       />
 
       <!-- Tabla con usuarios paginados y ordenados -->
-      <UserTable :usuarios="paginatedUsuarios" @editar="openUpdateModal" @eliminar="handleDelete" />
+      <UserTable
+        :usuarios="paginatedUsuarios"
+        :login-user="userLoged"
+        @editar="openUpdateModal"
+        @eliminar="handleDelete"
+        @detalle="openHistorialModal"
+      />
 
       <!-- Paginación -->
       <div class="d-flex justify-content-center align-items-center my-3" v-if="totalPages > 1">
@@ -59,6 +65,13 @@
       @cerrar="closeCreateModal"
       @guardar="handleCreate"
     />
+
+    <UserModalDetail
+      :visible="historialModalVisible"
+      :usuario="usuarioSeleccionado"
+      :reemplazos="historialUsuario"
+      @cerrar="closeHistorialModal"
+    />
   </main>
 </template>
 
@@ -66,15 +79,18 @@
 import { ref, computed, onMounted, inject } from 'vue'
 import { useUserStore } from '@/stores/user.store'
 import { useOptionStore } from '@/stores/option.store'
-import { UserFilter, UserTable, UserModalUpdate, UserModalCreate } from '@/components/users'
+import { UserFilter, UserTable, UserModalUpdate, UserModalCreate, UserModalDetail } from '@/components/users'
 import type { User } from '@/types/models'
+import { useAuthStore } from '@/stores/auth.store'
+import { useReplacementStore } from '@/stores/replacement.store'
 
 const showAlert = inject<(title: string, message: string) => void>('showAlert')
-
 
 // --- STORES
 const userStore = useUserStore()
 const optionStore = useOptionStore()
+const authStore = useAuthStore()
+const replacementStore = useReplacementStore()
 
 // --- REFS
 const usuarios = ref<any[]>([])
@@ -85,7 +101,11 @@ const listaHabilitado = ref<string[]>([])
 const listaServicios = ref<string[]>([])
 const updateModalVisible = ref(false)
 const createModalVisible = ref(false)
+const historialModalVisible = ref(false)
+const usuarioSeleccionado = ref<any>(null)
 const usuarioActual = ref<any>({})
+const historialUsuario = ref<any[]>([])
+
 
 // --- PAGINACIÓN
 const currentPage = ref(1)
@@ -94,6 +114,32 @@ const itemsPerPage = 20
 const totalPages = computed(() => {
   return Math.ceil(usuariosFiltrados.value.length / itemsPerPage)
 })
+
+const userLoged = computed(() => {
+  return authStore.user
+})
+
+
+
+// --- Abrir modal de historial ---
+async function openHistorialModal(usuario: any) {
+  usuarioSeleccionado.value = usuario
+  historialModalVisible.value = true
+
+  try {
+    // Llamas al store para traer los reemplazos del usuario
+    historialUsuario.value = await replacementStore.mostrarHistorialUsuario(usuario._id)
+  } catch (error) {
+    console.error('Error cargando historial:', error)
+    showAlert?.('Error', 'No se pudo cargar el historial del usuario.')
+  }
+}
+
+function closeHistorialModal() {
+  historialModalVisible.value = false
+  usuarioSeleccionado.value = null
+  historialUsuario.value = []
+}
 
 function changePage(page: number) {
   if (page >= 1 && page <= totalPages.value) {
@@ -172,6 +218,4 @@ async function handleCreate(nuevoUsuario: User) {
   closeCreateModal()
   showAlert?.('Guardado', 'El usuario se ha creado correctamente.')
 }
-
-
 </script>

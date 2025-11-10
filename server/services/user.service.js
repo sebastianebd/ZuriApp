@@ -39,12 +39,13 @@ async function register(data) {
   return nuevoUsuario
 }
 
+// Función para obtener todos los usuarios Reemplazantes
 async function obtenerUsuariosTENS() {
-  return await User.find({ tipo_cargo: 'TENS' });
+  return await User.find({ eliminado: false, tipo_cargo: { $ne: 'ADMIN-TI', $ne: 'RECURSOS HUMANOS'} });
 }
 
 async function obtenerTodos() {
-  return await User.find({ eliminado: false, tipo_cargo: { $ne: 'RECURSOS HUMANOS' } });
+  return await User.find({ eliminado: false });
 }
 
 async function actualizar(id, data) {

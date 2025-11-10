@@ -37,10 +37,22 @@ async function eliminarReemplazo(req, res) {
   }
 }
 
+async function obtenerHistorialUsuario(req, res) {
+  try {
+    const data = await replacementService.obtenerHistorialUsuario(req.params.id);
+    res.json(data);
+  } catch (error) {
+    res.status(400).json({ mensaje: error.message });
+  }
+}
+
 module.exports = {
   registerReemplazo,
   mostrarReemplazos,
   mostrarHistorial,
   actualizarReemplazo,
   eliminarReemplazo,
+  obtenerHistorialUsuario
 };
+
+

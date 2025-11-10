@@ -11,5 +11,6 @@ router.put('/:id', replacementController.actualizarReemplazo);
 router.get('/', replacementController.mostrarReemplazos);
 router.get('/historial', replacementController.mostrarHistorial);
 router.delete('/:id', replacementController.eliminarReemplazo);
+router.get('/:id', replacementController.obtenerHistorialUsuario);
 
 module.exports = router;

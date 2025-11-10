@@ -4,15 +4,14 @@ async function registrar(data) {
   // 1. Crear una nueva instancia (documento) de Mongoose
   const nuevoReemplazo = new Reemplazo(data);
   await nuevoReemplazo.save();
-  console.log('✅ Reemplazo creado', nuevoReemplazo);
 }
 
 async function obtenerActivos() {
-  return await Reemplazo.find({ eliminado: false, activo: true });
+  return await Reemplazo.find({ anulado: false, activo: true });
 }
 
 async function obtenerInactivos() {
-  return await Reemplazo.find({ eliminado: false, activo: false });
+  return await Reemplazo.find({ activo: false });
 }
 
 async function actualizar(id, data) {
@@ -21,8 +20,14 @@ async function actualizar(id, data) {
 }
 
 async function eliminar(id) {
-  await Reemplazo.findByIdAndUpdate(id, { eliminado: true, activo: false });
-  return await Reemplazo.find({ eliminado: { $ne: true } });
+  await Reemplazo.findByIdAndUpdate(id, { anulado: true, activo: false });
+  return await Reemplazo.find();
 }
 
-module.exports = { registrar, obtenerActivos, obtenerInactivos, actualizar, eliminar };
+async function obtenerHistorialUsuario(id) {
+  return await Reemplazo.find({
+    $or: [{ id_entrante: id }, { id_saliente: id }]
+  });
+}
+
+module.exports = { registrar, obtenerActivos, obtenerInactivos, actualizar, eliminar, obtenerHistorialUsuario };

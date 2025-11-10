@@ -32,8 +32,6 @@ const generateRefreshToken = (userId) => {
   });
 };
 
-// ------------------------------------
-
 async function login({ rut, password }) {
   if (!rut || !password) {
     throw new ValidationError("Campos de autenticación requeridos.");

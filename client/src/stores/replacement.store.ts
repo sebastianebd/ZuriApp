@@ -90,6 +90,20 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
+    async mostrarHistorialUsuario(id: string) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+    
+      try {
+        const data = await ReplacementService.mostrarHistorialUsuario(apiPrivate, id)
+        return data
+      } catch (error: any) {
+        console.error('Error al mostrar reemplazos:', error)
+        this.error = 'No se pudieron cargar los reemplazos.'
+        throw error
+      }
+    },
+
     async crearReemplazo(reemplazo: RegisterDataReemplazo) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
@@ -130,6 +144,8 @@ export const useReplacementStore = defineStore('replacement', {
         throw error
       }
     },
+
+
 
     limpiarFiltros() {
       this.filtroRutSaliente = ''

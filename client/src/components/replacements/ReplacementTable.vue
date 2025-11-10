@@ -16,7 +16,7 @@
           <th class="small">Servicio</th>
           <th class="small text-center">Editar</th>
           <th class="small text-center">Exportar</th>
-          <th class="small text-center">Eliminar</th>
+          <th class="small text-center">Anular</th>
         </tr>
       </thead>
 
@@ -61,7 +61,7 @@
     <ConfirmationModal
       :visible="showConfirmacion"
       @confirmar="eliminarRegistroConfirmado"
-      mensaje="¿Deseas eliminar este registro?"
+      mensaje="¿Deseas anular este registro?"
       @cancelar="cancelarEliminacion"
     />
   </div>

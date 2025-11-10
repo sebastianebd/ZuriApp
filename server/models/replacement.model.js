@@ -66,7 +66,7 @@ const replacementSchema = new mongoose.Schema(
       required: true,
       uppercase: true,
     },
-    eliminado: {
+    anulado: {
       type: Boolean,
       default: false,
     },

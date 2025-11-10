@@ -55,3 +55,12 @@ export const mostrarHistorialReeemplazos = async (apiPrivate: ReturnType<typeof 
     throw errorHandler(error)
   }
 }
+
+export const mostrarHistorialUsuario = async (apiPrivate: ReturnType<typeof useApiPrivate>, id: string) => {
+  try {
+    const { data } = await apiPrivate.get(`/api/reemplazos/${id}`)
+    return data
+  } catch (error) {
+    throw errorHandler(error)
+  }
+}

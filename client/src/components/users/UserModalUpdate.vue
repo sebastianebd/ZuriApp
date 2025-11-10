@@ -5,7 +5,12 @@
         <!-- HEADER -->
         <div class="modal-header bg-primary text-white rounded-top">
           <h5 class="modal-title fst-italic fw-bold">Modificar Usuario</h5>
-          <button type="button" class="btn-close btn-close-white" @click="emit('cerrar')" aria-label="Close"></button>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            @click="emit('cerrar')"
+            aria-label="Close"
+          ></button>
         </div>
 
         <!-- BODY -->
@@ -17,81 +22,124 @@
                 <h6 class="text-primary fw-semibold mb-3">Datos Personales</h6>
 
                 <div class="form-floating mb-2">
-                  <input v-model="editableUsuario.nombre" type="text" id="nombreUsuario" class="form-control form-control-sm" placeholder="Nombre" />
+                  <input
+                    v-model="editableUsuario.nombre"
+                    type="text"
+                    id="nombreUsuario"
+                    class="form-control form-control-sm"
+                    placeholder="Nombre"
+                  />
                   <label for="nombreUsuario">Nombre</label>
                 </div>
 
                 <div class="form-floating mb-2">
-                  <input v-model="editableUsuario.apellido" type="text" id="apellidoUsuario" class="form-control form-control-sm" placeholder="Apellido" />
+                  <input
+                    v-model="editableUsuario.apellido"
+                    type="text"
+                    id="apellidoUsuario"
+                    class="form-control form-control-sm"
+                    placeholder="Apellido"
+                  />
                   <label for="apellidoUsuario">Apellido</label>
                 </div>
 
                 <div class="form-floating mb-2">
-                  <input v-model="editableUsuario.direccion" type="text" id="direccionUsuario" class="form-control form-control-sm" placeholder="Dirección" />
+                  <input
+                    v-model="editableUsuario.direccion"
+                    type="text"
+                    id="direccionUsuario"
+                    class="form-control form-control-sm"
+                    placeholder="Dirección"
+                  />
                   <label for="direccionUsuario">Dirección</label>
                 </div>
-    
+
                 <div class="form-floating mb-2">
-                  <input v-model="editableUsuario.ciudad" type="text" id="ciudadUsuario" class="form-control form-control-sm" placeholder="Ciudad" />
+                  <input
+                    v-model="editableUsuario.ciudad"
+                    type="text"
+                    id="ciudadUsuario"
+                    class="form-control form-control-sm"
+                    placeholder="Ciudad"
+                  />
                   <label for="ciudadUsuario">Ciudad</label>
                 </div>
-
               </div>
             </div>
-            
+
             <!-- Columna 2 -->
             <div class="col-md-6 mb-3">
               <div class="border rounded-3 p-3 bg-white shadow-sm">
                 <h6 class="text-primary fw-semibold mb-3">Información de Contacto</h6>
-                
+
                 <div class="form-floating mb-2">
-                  <input v-model="editableUsuario.email" type="email" id="emailUsuario" class="form-control form-control-sm" placeholder="Email" />
+                  <input
+                    v-model="editableUsuario.email"
+                    type="email"
+                    id="emailUsuario"
+                    class="form-control form-control-sm"
+                    placeholder="Email"
+                  />
                   <label for="emailUsuario">Email</label>
                 </div>
-    
+
                 <div class="form-floating mb-2">
-                  <input v-model="editableUsuario.telefono" type="text" id="telefonoUsuario" class="form-control form-control-sm" placeholder="Teléfono" />
+                  <input
+                    v-model="editableUsuario.telefono"
+                    type="text"
+                    id="telefonoUsuario"
+                    class="form-control form-control-sm"
+                    placeholder="Teléfono"
+                  />
                   <label for="telefonoUsuario">Teléfono</label>
                 </div>
-
               </div>
             </div>
-            
+
             <div class="col-md-6 mb-3">
               <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
                 <h6 class="text-primary fw-semibold mb-3">Información Laboral</h6>
-                
+
                 <div class="form-floating mb-2">
-                  <select v-model="editableUsuario.tipo_cargo" id="cargoUsuario" class="form-select form-select-sm">
-                    <option v-for="cargo in listaTipoCargo" :key="cargo" :value="cargo">{{ cargo }}</option>
+                  <select
+                    v-model="editableUsuario.tipo_cargo"
+                    id="cargoUsuario"
+                    class="form-select form-select-sm"
+                  >
+                    <option v-for="cargo in listaTipoCargo" :key="cargo" :value="cargo">
+                      {{ cargo }}
+                    </option>
                   </select>
                   <label for="cargoUsuario">Cargo</label>
                 </div>
-    
-                <div class="form-floating mb-2" v-if="showHabilitado">
-                  <select v-model="editableUsuario.habilitado" id="habilitadoUsuario" class="form-select form-select-sm">
+
+                <div class="form-floating mb-2">
+                  <select
+                    v-model="editableUsuario.habilitado"
+                    id="habilitadoUsuario"
+                    class="form-select form-select-sm"
+                  >
                     <option v-for="h in listaHabilitado" :key="h" :value="h">{{ h }}</option>
                   </select>
                   <label for="habilitadoUsuario">Habilitado</label>
                 </div>
-
               </div>
-
             </div>
-
-            
-
-
-
-
-
           </div>
         </div>
 
         <!-- FOOTER -->
         <div class="modal-footer d-flex justify-content-center border-0 pb-4">
-          <button type="button" class="btn btn-secondary px-4 fw-semibold me-2" @click="emit('cerrar')">Cancelar</button>
-          <button type="button" class="btn btn-primary px-4 fw-semibold" @click="abrirConfirmacion">Guardar</button>
+          <button
+            type="button"
+            class="btn btn-secondary px-4 fw-semibold me-2"
+            @click="emit('cerrar')"
+          >
+            Cancelar
+          </button>
+          <button type="button" class="btn btn-primary px-4 fw-semibold" @click="abrirConfirmacion">
+            Guardar
+          </button>
         </div>
 
         <!-- MODAL CONFIRMACIÓN -->
@@ -106,9 +154,8 @@
   </div>
 </template>
 
-
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 import type { registrarUsuario } from '@/types/models'
 
@@ -131,8 +178,6 @@ watch(
   { immediate: true }
 )
 
-const showHabilitado = computed(() => editableUsuario.value?.tipo_cargo === 'TENS')
-
 // Estado del modal de confirmación
 const confirmVisible = ref(false)
 
@@ -151,7 +196,6 @@ function confirmarGuardar() {
 </script>
 
 <style scoped>
-
 .modal-content {
   border-radius: 12px;
   overflow: hidden;
@@ -172,5 +216,4 @@ function confirmarGuardar() {
 .modal {
   background-color: rgba(0, 0, 0, 0.5);
 }
-
 </style>
