@@ -1,8 +1,9 @@
 <template>
   <div class="table-responsive tabla-reemplazos-container">
     <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden tabla-reemplazos">
-      <thead class="table-primary text-center text-white">
+      <thead class="table-primary text-white">
         <tr>
+          <th class="small">Código</th>
           <th class="small">Rut Saliente</th>
           <th class="small">Nombre Saliente</th>
           <th class="small">Apellido Saliente</th>
@@ -25,6 +26,7 @@
           :key="reemplazo._id"
           class="border-bottom align-middle hover-row"
         >
+          <td class="small text-secondary bg-warning-light">RP10125</td>
           <td class="small text-secondary bg-warning-light">{{ reemplazo.rut_saliente }}</td>
           <td class="small bg-warning-light">{{ reemplazo.nombre_saliente }}</td>
           <td class="small bg-warning-light">{{ reemplazo.apellido_saliente }}</td>

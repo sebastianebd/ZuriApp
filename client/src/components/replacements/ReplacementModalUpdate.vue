@@ -21,12 +21,6 @@
               <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
                 <div class="d-flex align-items-center mb-3">
                   <h6 class="text-primary flex-grow-1 fw-semibold mb-3">Funcionario Saliente</h6>
-                  <button
-                    @click.prevent="$emit('buscar-usuario', 1)"
-                    class="btn btn-warning btn-sm fw-semibold"
-                  >
-                    <i class="bi bi-search"></i> Buscar
-                  </button>
                 </div>
 
                 <div class="form-floating mb-2">
@@ -34,12 +28,6 @@
                     type="text"
                     id="rutSaliente"
                     :value="registro.rut_saliente"
-                    @input="
-                      $emit('update:registro', {
-                        ...registro,
-                        rut_saliente: ($event.target as HTMLInputElement).value
-                      })
-                    "
                     class="form-control"
                     disabled
                   />
@@ -51,12 +39,6 @@
                     type="text"
                     id="nombreSaliente"
                     :value="registro.nombre_saliente"
-                    @input="
-                      $emit('update:registro', {
-                        ...registro,
-                        nombre_saliente: ($event.target as HTMLInputElement).value
-                      })
-                    "
                     class="form-control"
                     disabled
                   />
@@ -68,12 +50,6 @@
                     type="text"
                     id="apellidoSaliente"
                     :value="registro.apellido_saliente"
-                    @input="
-                      $emit('update:registro', {
-                        ...registro,
-                        apellido_saliente: ($event.target as HTMLInputElement).value
-                      })
-                    "
                     class="form-control"
                     disabled
                   />
@@ -91,7 +67,7 @@
                     @click.prevent="$emit('buscar-usuario', 2)"
                     class="btn btn-warning btn-sm fw-semibold"
                   >
-                    <i class="bi bi-search"></i> Buscar
+                    <i class="bi bi-search">Buscar</i>
                   </button>
                 </div>
 
@@ -100,12 +76,6 @@
                     type="text"
                     id="rutEntrante"
                     :value="registro.rut_entrante"
-                    @input="
-                      $emit('update:registro', {
-                        ...registro,
-                        rut_entrante: ($event.target as HTMLInputElement).value
-                      })
-                    "
                     class="form-control"
                     disabled
                   />
@@ -117,12 +87,6 @@
                     type="text"
                     id="nombreEntrante"
                     :value="registro.nombre_entrante"
-                    @input="
-                      $emit('update:registro', {
-                        ...registro,
-                        nombre_entrante: ($event.target as HTMLInputElement).value
-                      })
-                    "
                     class="form-control"
                     disabled
                   />
@@ -134,12 +98,6 @@
                     type="text"
                     id="apellidoEntrante"
                     :value="registro.apellido_entrante"
-                    @input="
-                      $emit('update:registro', {
-                        ...registro,
-                        apellido_entrante: ($event.target as HTMLInputElement).value
-                      })
-                    "
                     class="form-control"
                     disabled
                   />
@@ -164,6 +122,7 @@
                   })
                 "
                 class="form-select"
+                :disabled="turnoEnCurso"
               >
                 <option value="" disabled>Seleccione un turno</option>
                 <option v-for="turno in listaDeTurnos" :key="turno" :value="turno">
@@ -185,6 +144,7 @@
                   })
                 "
                 class="form-control"
+                :disabled="turnoEnCurso"
               />
               <label for="fechaInicio">Fecha de Inicio</label>
             </div>
@@ -201,6 +161,7 @@
                   })
                 "
                 class="form-control"
+                :disabled="turnoEnCurso"
               />
               <label for="fechaTermino">Fecha de Término</label>
             </div>
@@ -216,6 +177,7 @@
                   })
                 "
                 class="form-select"
+                :disabled="turnoEnCurso"
               >
                 <option value="" disabled>Seleccione un servicio</option>
                 <option v-for="servicio in listaDeServicios" :key="servicio" :value="servicio">
@@ -255,16 +217,15 @@
 
 <script setup lang="ts">
 import type { RegisterDataReemplazo } from '@/types/models'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
-
 
 interface ReemplazoModalData extends Partial<RegisterDataReemplazo> {
   fecha_inicio?: string
   fecha_termino?: string
 }
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   registro: ReemplazoModalData
   listaDeTurnos: string[]
@@ -280,6 +241,17 @@ const emit = defineEmits<{
 
 // 👇 controlamos el modal de confirmación
 const showConfirmacion = ref(false)
+
+// ✅ Computed: determina si el turno está en curso
+const turnoEnCurso = computed(() => {
+  if (!props.registro?.fecha_inicio) return false
+
+  const hoy = new Date()
+  const fechaInicio = new Date(props.registro.fecha_inicio)
+
+  // Si la fecha de inicio es menor o igual a hoy → turno en curso
+  return fechaInicio <= hoy
+})
 
 // Cuando el usuario presiona "Guardar"
 function abrirConfirmacion() {
