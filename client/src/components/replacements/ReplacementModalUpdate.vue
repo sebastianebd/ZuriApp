@@ -63,11 +63,21 @@
               <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
                 <div class="d-flex align-items-center mb-3">
                   <h6 class="text-primary flex-grow-1 fw-semibold mb-3">Funcionario Entrante</h6>
+
+                  <!-- ✅ Botón dinámico -->
                   <button
+                    v-if="turnoEnCurso"
+                    @click.prevent="$emit('Sustitucion')"
+                    class="btn btn-danger btn-sm fw-semibold"
+                  >
+                    <i class="bi bi-arrow-repeat"></i> Sustituir
+                  </button>
+                  <button
+                    v-else
                     @click.prevent="$emit('buscar-usuario', 2)"
                     class="btn btn-warning btn-sm fw-semibold"
                   >
-                    <i class="bi bi-search">Buscar</i>
+                    <i class="bi bi-search"></i> Buscar
                   </button>
                 </div>
 
@@ -236,6 +246,7 @@ const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardar'): void
   (e: 'buscar-usuario', grupo: 1 | 2): void
+  (e: 'Sustitucion'): void
   (e: 'update:registro', nuevoRegistro: ReemplazoModalData): void
 }>()
 

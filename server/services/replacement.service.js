@@ -1,7 +1,10 @@
 const Reemplazo = require('../models/replacement.model');
 
 async function registrar(data) {
-  await Reemplazo.create(data);
+  // 1. Crear una nueva instancia (documento) de Mongoose
+  const nuevoReemplazo = new Reemplazo(data);
+  await nuevoReemplazo.save();
+  console.log('✅ Reemplazo creado', nuevoReemplazo);
 }
 
 async function obtenerActivos() {

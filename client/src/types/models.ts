@@ -26,6 +26,7 @@ export interface LoginData {
 }
 
 export interface RegisterDataReemplazo {
+  id_negocio: string;
   _id : string;
   id_saliente: string;
   rut_saliente: string;

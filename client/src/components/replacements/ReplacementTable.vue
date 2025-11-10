@@ -26,7 +26,7 @@
           :key="reemplazo._id"
           class="border-bottom align-middle hover-row"
         >
-          <td class="small text-secondary bg-warning-light">RP10125</td>
+          <td class="small text-secondary bg-warning-light">{{ reemplazo.id_negocio }}</td>
           <td class="small text-secondary bg-warning-light">{{ reemplazo.rut_saliente }}</td>
           <td class="small bg-warning-light">{{ reemplazo.nombre_saliente }}</td>
           <td class="small bg-warning-light">{{ reemplazo.apellido_saliente }}</td>
