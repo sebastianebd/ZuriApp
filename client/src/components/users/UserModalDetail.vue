@@ -26,17 +26,21 @@
 
             <div class="col-md-3">
               <label class="form-label small fw-semibold text-muted">Fecha Término</label>
-              <input type="date" class="form-control form-control-sm" v-model="filtroFechaTermino" />
+              <input
+                type="date"
+                class="form-control form-control-sm"
+                v-model="filtroFechaTermino"
+              />
             </div>
 
             <div class="col-md-3">
               <label class="form-label small fw-semibold text-muted">Servicio</label>
-              <input
-                type="text"
-                class="form-control form-control-sm"
-                placeholder="Ej: Urgencias"
-                v-model="filtroServicio"
-              />
+              <select class="form-select form-select-sm" v-model="filtroServicio">
+                <option value="">Todos</option>
+                <option v-for="(servicio, index) in listaServicios" :key="index" :value="servicio">
+                  {{ servicio }}
+                </option>
+              </select>
             </div>
 
             <div class="col-md-2">
@@ -98,7 +102,9 @@
                     {{ rep.nombre_saliente }} {{ rep.apellido_saliente }}
                   </td>
                   <td class="small text-center">
-                    <span :class="['badge rounded-pill', rep.activo ? 'bg-success' : 'bg-secondary']">
+                    <span
+                      :class="['badge rounded-pill', rep.activo ? 'bg-success' : 'bg-secondary']"
+                    >
                       {{ rep.activo ? 'Sí' : 'No' }}
                     </span>
                   </td>
@@ -131,6 +137,7 @@ const props = defineProps<{
   visible: boolean
   usuario: any
   reemplazos: any[]
+  listaServicios: string[]
 }>()
 
 defineEmits(['cerrar'])

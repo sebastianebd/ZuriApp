@@ -69,6 +69,7 @@
     <UserModalDetail
       :visible="historialModalVisible"
       :usuario="usuarioSeleccionado"
+      :lista-servicios="listaServicios"
       :reemplazos="historialUsuario"
       @cerrar="closeHistorialModal"
     />
