@@ -67,7 +67,7 @@
                   <!-- ✅ Botón dinámico -->
                   <button
                     v-if="turnoEnCurso"
-                    @click.prevent="$emit('Sustitucion')"
+                    @click.prevent="$emit('sustituir-usuario')"
                     class="btn btn-danger btn-sm fw-semibold"
                   >
                     <i class="bi bi-arrow-repeat"></i> Sustituir
@@ -246,7 +246,7 @@ const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardar'): void
   (e: 'buscar-usuario', grupo: 1 | 2): void
-  (e: 'Sustitucion'): void
+  (e: 'sustituir-usuario'): void
   (e: 'update:registro', nuevoRegistro: ReemplazoModalData): void
 }>()
 

@@ -4,6 +4,7 @@ import ReplacementModalUpdate from './ReplacementModalUpdate.vue';
 import ReplacementModalUsers from './ReplacementModalUsers.vue';
 import ReplacementModalCreate from './ReplacementModalCreate.vue';
 import ConfirmationModal from '../common/ConfirmationModal.vue';
+import ReplacementModalSubstitute from './ReplacementModalSubstitute.vue';
 
 export { 
     ReplacementFilter,
@@ -11,5 +12,7 @@ export {
     ReplacementModalUpdate,
     ReplacementModalUsers,
     ReplacementModalCreate,
-    ConfirmationModal
+    ConfirmationModal,
+    ReplacementModalSubstitute
+    
 }

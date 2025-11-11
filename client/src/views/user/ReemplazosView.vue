@@ -83,14 +83,26 @@
       @cerrar="closeUpdateModal"
       @guardar="handleUpdate"
       @buscar-usuario="seleccionarGrupo"
+      @sustituir-usuario="handleSustitucion"
       @update:registro="(nuevoRegistro) => (registroActual = nuevoRegistro)"
+    />
+
+    <ReplacementModalSubstitute
+      :visible="substituteModalVisible"
+      :registro-actual="registroActual"
+      :fecha-corte-a="fechaCorteSustitucion"
+      :nuevo-funcionario-b="nuevoEntranteSustitucion"
+      @cerrar="closeSubstituteModal"
+      @confirmar-sustitucion="confirmarSustitucion"
+      @update:fecha-corte-a="(nuevaFecha) => (fechaCorteSustitucion = nuevaFecha)"
+      @buscar-usuario="seleccionarGrupo"
     />
 
     <!-- MODAL USUARIOS (con lista filtrada según cargo) -->
     <ReplacementModalUsers
       :visible="userModalVisible"
       :usuarios="usuariosFiltradosPorCargo"
-      :grupo="grupo" 
+      :grupo="grupo"
       :lista-de-cargos="listaDeCargos"
       @cerrar="closeUserModal"
       @usuario-seleccionado="seleccionarUsuario"
@@ -109,7 +121,8 @@ import {
   ReplacementTable,
   ReplacementModalUpdate,
   ReplacementModalUsers,
-  ReplacementModalCreate
+  ReplacementModalCreate,
+  ReplacementModalSubstitute
 } from '@/components/replacements'
 import type { User, RegisterDataReemplazo } from '@/types/models'
 import socket from '@/plugins/socket'
@@ -130,10 +143,14 @@ const totalPages = computed(() => {
 
 const paginatedReplacements = computed(() => {
   const sorted = [...replacementStore.reemplazosFiltrados].sort((a, b) => {
-    const fechaA = new Date(a.fecha_inicio).getTime()
-    const fechaB = new Date(b.fecha_inicio).getTime()
-    return fechaB - fechaA
+    // Extraemos la parte numérica de cada id_negocio (ej: "RP10425" → 10425)
+    const numA = parseInt(a.id_negocio.replace(/\D/g, ''), 10)
+    const numB = parseInt(b.id_negocio.replace(/\D/g, ''), 10)
+
+    // Orden descendente (mayor a menor)
+    return numB - numA
   })
+
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
   return sorted.slice(start, end)
@@ -155,6 +172,102 @@ const grupo = ref<1 | 2>(1) // 1: saliente, 2: entrante
 const updateModalVisible = ref(false)
 const createModalVisible = ref(false)
 const userModalVisible = ref(false)
+const substituteModalVisible = ref(false)
+
+// DATOS ESPECÍFICOS DE SUSTITUCIÓN
+const fechaCorteSustitucion = ref('') // La fecha de término del reemplazante A
+const nuevoEntranteSustitucion = ref<Partial<RegisterDataReemplazo>>({}) // Datos del reemplazante B
+
+// ... (funciones de CREAR)
+
+// --- SUSTITUCIÓN
+const handleSustitucion = () => {
+  // 1. Ocultar el modal de UPDATE (para que no esté abierto detrás)
+  updateModalVisible.value = false
+  // 2. Limpiar los campos específicos de sustitución
+  fechaCorteSustitucion.value = registroActual.value.fecha_termino || '' // Usa la fecha de término actual como valor inicial
+  nuevoEntranteSustitucion.value = {}
+  // 3. Mostrar el modal de SUSTITUCIÓN
+  substituteModalVisible.value = true
+}
+
+const confirmarSustitucion = async () => {
+  // Lógica de Validación (básica, la robusta va en el backend)
+  if (
+    !registroActual.value._id ||
+    !fechaCorteSustitucion.value ||
+    !nuevoEntranteSustitucion.value.rut_entrante
+  ) {
+    showAlert?.('Error', 'Faltan datos para la sustitución.')
+    return
+  }
+
+  // 1. Preparar los datos para la llamada a la API
+  const datosSustitucion = {
+    // ID del registro que se va a cortar (Segmento A)
+    id_registro_a: registroActual.value._id, // La fecha en que termina A
+    fecha_corte_a: fechaCorteSustitucion.value, // Datos del nuevo reemplazante B
+    nuevo_entrante: nuevoEntranteSustitucion.value, // Datos del evento principal (copia los datos clave de A para crear B)
+    datos_base_evento: {
+      id_evento_principal: registroActual.value.id_negocio,
+      tipo_turno: registroActual.value.tipo_turno,
+      servicio: registroActual.value.servicio, // ... otros datos necesarios para el nuevo registro B
+      id_saliente: registroActual.value.id_saliente,
+      rut_saliente: registroActual.value.rut_saliente,
+      nombre_saliente: registroActual.value.nombre_saliente,
+      apellido_saliente: registroActual.value.apellido_saliente,
+      tipo_cargo: registroActual.value.tipo_cargo,
+      fecha_termino_original: registroActual.value.fecha_termino // Se necesita para el término de B
+    }
+  }
+
+  try {
+    // 2. Llamada a un endpoint específico de SUSTITUCIÓN (Ejemplo de servicio a implementar)
+    // await replacementStore.procesarSustitucion(datosSustitucion)
+
+    // 3. Cierre de ambos modales
+    closeSubstituteModal() // closeUpdateModal() NO ES NECESARIO si ya lo cerraste en handleSustitucion, pero lo mantenemos si la lógica de apertura es compleja.
+    showAlert?.(
+      'Sustitución Exitosa',
+      'El reemplazo fue segmentado y el nuevo funcionario asignado.'
+    )
+  } catch (error) {
+    showAlert?.('Error', 'Hubo un error al procesar la sustitución.')
+  }
+}
+
+const closeSubstituteModal = () => {
+  substituteModalVisible.value = false // Cierre forzoso del modal de edición, por si acaso
+  closeUpdateModal() // Limpiar datos de sustitución
+  fechaCorteSustitucion.value = ''
+  nuevoEntranteSustitucion.value = {}
+}
+
+// Sobreescribir `seleccionarUsuario` para gestionar la asignación en el modal de Sustitución
+const seleccionarUsuario = (usuario: User) => {
+  // Lógica existente (se mantiene)
+  const registroAfectado =
+    registroTarget.value ??
+    (createModalVisible.value ? registroNuevo : updateModalVisible.value ? registroActual : null)
+
+  if (registroAfectado) {
+    const esSaliente = grupo.value === 1
+    asignarDatosUsuario(registroAfectado as any, usuario, esSaliente)
+  }
+  // Lógica NUEVA: Si el modal de sustitución está abierto y el grupo es 2 (entrante)...
+  else if (substituteModalVisible.value && grupo.value === 2) {
+    // Asignar los datos del usuario seleccionado a la variable específica de sustitución (nuevoEntranteSustitucion)
+    Object.assign(nuevoEntranteSustitucion.value, {
+      id_entrante: usuario._id,
+      rut_entrante: usuario.rut,
+      nombre_entrante: usuario.nombre,
+      apellido_entrante: usuario.apellido
+    })
+  } // cerrar modal de usuarios y limpiar target
+
+  userModalVisible.value = false
+  registroTarget.value = null
+}
 
 // TARGET seguro para asignar en seleccionarUsuario
 // Mantiene la referencia al registro (registroNuevo o registroActual) que
@@ -278,7 +391,9 @@ const usuariosFiltradosPorCargo = computed(() => {
     registroTarget.value && 'tipo_cargo' in registroTarget.value
       ? (registroTarget.value as any).tipo_cargo
       : // fallback a los objetos globales
-        (createModalVisible.value ? registroNuevo.value.tipo_cargo : registroActual.value.tipo_cargo)
+      createModalVisible.value
+      ? registroNuevo.value.tipo_cargo
+      : registroActual.value.tipo_cargo
 
   if (!cargoSaliente) {
     // si no hay cargo definido, devolvemos todos (evitar crash)
@@ -328,20 +443,6 @@ const asignarDatosUsuario = (
     registro.value.tipo_cargo = usuario.tipo_cargo
   }
 }
-
-const seleccionarUsuario = (usuario: User) => {
-  // usamos el registroTarget que se estableció al abrir el modal (más robusto)
-  const registroAfectado = registroTarget.value ?? (createModalVisible.value ? registroNuevo : updateModalVisible.value ? registroActual : null)
-
-  if (registroAfectado) {
-    const esSaliente = grupo.value === 1
-    asignarDatosUsuario(registroAfectado as any, usuario, esSaliente)
-  }
-
-  // cerrar modal de usuarios y limpiar target
-  userModalVisible.value = false
-  registroTarget.value = null
-}
 </script>
 
 <style>
@@ -355,4 +456,3 @@ const seleccionarUsuario = (usuario: User) => {
   padding-bottom: 0;
 }
 </style>
-
