@@ -50,14 +50,12 @@ async function obtenerHistorialUsuario(req, res) {
 
 async function procesarSustitucion(req, res) {
   try {
-    // 🔑 Cambio clave: Desestructurar el array que devuelve el servicio
     const [registroA_cortado, nuevoRegistroB] =
-      await replacementService.sustituir(req.body); // Responder con éxito (200) y las variables desestructuradas
-
+      await replacementService.sustituir(req.body);
     res.status(200).json({
       mensaje: "Sustitución procesada exitosamente.",
-      registro_anterior: registroA_cortado, // Ahora definida
-      nuevo_registro: nuevoRegistroB, // Ahora definida
+      registro_anterior: registroA_cortado,
+      nuevo_registro: nuevoRegistroB,
     });
   } catch (error) {
     res.status(400).json({ mensaje: error.message });
