@@ -3,27 +3,15 @@ const mongoose = require('mongoose')
 const connectDB = require('./config/db.config')
 const app = require('./app')
 const http = require('http')
-const { Server } = require('socket.io')
+// Ya no necesitamos 'const { Server } = require('socket.io')'
+const socketIO = require('./config/socket'); // Importamos nuestro módulo
 
 const PORT = process.env.PORT || 3500
 
 const server = http.createServer(app)
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_URL, 
-    methods: ['GET', 'POST']
-  }
-})
 
-global.io = io
 
-io.on('connection', (socket) => {
-  console.log(`🟢 Cliente conectado: ${socket.id}`)
-
-  socket.on('disconnect', () => {
-    console.log(`🔴 Cliente desconectado: ${socket.id}`)
-  })
-})
+socketIO.init(server, process.env.CLIENT_URL); 
 
 connectDB()
 

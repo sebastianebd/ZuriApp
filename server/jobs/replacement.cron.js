@@ -1,38 +1,27 @@
+const { getIO } = require('../config/socket'); 
 const cron = require('node-cron');
 const replacement = require('../models/replacement.model'); 
 
-// La tarea se ejecuta a la 1 minuto después de la medianoche (1:01 AM)
-cron.schedule('1 0 * * *', async () => {
+cron.schedule('53 11 * * *', async () => {
   try {
-    // 1. Obtener la fecha actual (solo la fecha, ignorando la hora)
-    const hoy = new Date();
-    // Ajustar a medianoche del día para comparaciones precisas de fechas
-    hoy.setHours(0, 0, 0, 0); 
+    const now = new Date();
+    const fechaActual = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     
-    // La fecha de mañana, usada para determinar el estado EN CURSO
-    const manana = new Date(hoy);
-    manana.setDate(manana.getDate() + 1);
 
-    // --- TRANSICIÓN 1: PENDIENTE/FUTURO A EN CURSO (Registros que inician hoy) ---
-    // Buscamos registros que están PENDIENTE (status: 'PENDIENTE') 
-    // y cuya fecha_inicio es igual o anterior a hoy.
     const transicionEnCurso = await replacement.updateMany(
       { 
         status: 'PENDIENTE',
-        fecha_inicio: { $lte: hoy } 
+        fecha_inicio: { $lte: fechaActual } 
       },
       { 
         $set: { status: 'EN CURSO' } 
       }
     );
 
-    // --- TRANSICIÓN 2: EN CURSO A FINALIZADO (Registros que terminaron ayer) ---
-    // Buscamos registros que están EN CURSO (status: 'EN CURSO')
-    // y cuya fecha_termino es menor a hoy (terminó ayer o antes).
     const transicionFinalizada = await replacement.updateMany(
       { 
         status: 'EN CURSO',
-        fecha_termino: { $lt: hoy } 
+        fecha_termino: { $lt: fechaActual },
       },
       { 
         $set: { status: 'FINALIZADO' } 
@@ -41,8 +30,9 @@ cron.schedule('1 0 * * *', async () => {
 
     const totalModificados = transicionEnCurso.modifiedCount + transicionFinalizada.modifiedCount;
 
-    if (totalModificados > 0 && global.io) {
-      global.io.emit('replacementsUpdated', {
+    if (totalModificados > 0) {
+      const io = getIO(); 
+      io.emit('replacementsUpdated', {
         message: 'Estados de reemplazos actualizados automáticamente',
         count: totalModificados
       });
