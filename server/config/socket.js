@@ -1,28 +1,38 @@
+const { Server } = require("socket.io");
 
-let io;
+let ioInstance;
 
-// Función para inicializar la instancia de Socket.io
-// Se llama una única vez cuando se levanta el servidor HTTP
-const init = (httpServer) => {
-    io = require('socket.io')(httpServer, {
-        // Opciones de Socket.io, si las tienes
+const init = (httpServer, clientUrl) => {
+  if (ioInstance) {
+    return ioInstance;
+  }
+
+  ioInstance = new Server(httpServer, {
+    cors: {
+      origin: clientUrl,
+      methods: ["GET", "POST"],
+    },
+  });
+
+  ioInstance.on("connection", (socket) => {
+    console.log(`🟢 Cliente conectado: ${socket.id}`);
+
+    socket.on("disconnect", () => {
+      console.log(`🔴 Cliente desconectado: ${socket.id}`);
     });
-    // Puedes poner aquí tu lógica de conexión, ej:
-    io.on('connection', (socket) => {
-        console.log('Cliente conectado a sockets');
-    });
-    return io;
+  });
+
+  return ioInstance;
 };
 
-// Función para obtener la instancia existente
 const getIO = () => {
-    if (!io) {
-        throw new Error('Socket.io no está inicializado.');
-    }
-    return io;
+  if (!ioInstance) {
+    throw new Error("Socket.io no está inicializado. Llama a init() primero.");
+  }
+  return ioInstance;
 };
 
 module.exports = {
-    init,
-    getIO
+  init,
+  getIO,
 };
