@@ -57,3 +57,32 @@ export interface registrarUsuario {
   habilitado?: string;
   servicio?: string;
 }
+
+
+// AÑADIR ESTAS DOS INTERFACES A TU ARCHIVO models.ts
+
+// Define la estructura para los datos base que se copian del registro A al B
+export interface BaseEventoData {
+  id_evento_principal: string; // id_negocio original
+  id_saliente: string;
+  rut_saliente: string;
+  nombre_saliente: string;
+  apellido_saliente: string;
+  tipo_turno: string;
+  servicio: string;
+  tipo_cargo: string;
+  fecha_termino_original: string; // Se necesita para el término de B
+}
+
+// Define el payload completo que se enviará al endpoint de sustitución
+export interface SustitucionPayload {
+  id_registro_a: string; // El _id del registro que se va a cortar
+  fecha_corte_a: string; // La nueva fecha de término (seleccionada por RRHH)
+  
+  // Datos del nuevo funcionario entrante (B) que formará parte del nuevo registro
+  // Usamos Partial<RegisterDataReemplazo> porque solo tendrá los campos entrantes
+  nuevo_entrante: Partial<RegisterDataReemplazo>; 
+  
+  // Datos clave que se heredan del registro A para crear el registro B
+  datos_base_evento: BaseEventoData;
+}

@@ -12,5 +12,6 @@ router.get('/', replacementController.mostrarReemplazos);
 router.get('/historial', replacementController.mostrarHistorial);
 router.delete('/:id', replacementController.eliminarReemplazo);
 router.get('/:id', replacementController.obtenerHistorialUsuario);
+router.post('/sustituir', replacementController.procesarSustitucion);
 
 module.exports = router;

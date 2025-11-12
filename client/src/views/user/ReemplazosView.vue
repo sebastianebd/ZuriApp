@@ -124,7 +124,7 @@ import {
   ReplacementModalCreate,
   ReplacementModalSubstitute
 } from '@/components/replacements'
-import type { User, RegisterDataReemplazo } from '@/types/models'
+import type { User, RegisterDataReemplazo, SustitucionPayload } from '@/types/models'
 import socket from '@/plugins/socket'
 
 const showAlert = inject<(title: string, message: string) => void>('showAlert')
@@ -204,33 +204,32 @@ const confirmarSustitucion = async () => {
   ) {
     showAlert?.('Error', 'Faltan datos para la sustitución.')
     return
-  }
+  } // 1. Preparar los datos para la llamada a la API
 
-  // 1. Preparar los datos para la llamada a la API
-  const datosSustitucion = {
+  const datosSustitucion: SustitucionPayload = {
+    // <--- Usamos el nuevo tipo
     // ID del registro que se va a cortar (Segmento A)
-    id_registro_a: registroActual.value._id, // La fecha en que termina A
+    id_registro_a: registroActual.value._id,
     fecha_corte_a: fechaCorteSustitucion.value, // Datos del nuevo reemplazante B
     nuevo_entrante: nuevoEntranteSustitucion.value, // Datos del evento principal (copia los datos clave de A para crear B)
     datos_base_evento: {
-      id_evento_principal: registroActual.value.id_negocio,
-      tipo_turno: registroActual.value.tipo_turno,
-      servicio: registroActual.value.servicio, // ... otros datos necesarios para el nuevo registro B
-      id_saliente: registroActual.value.id_saliente,
-      rut_saliente: registroActual.value.rut_saliente,
-      nombre_saliente: registroActual.value.nombre_saliente,
-      apellido_saliente: registroActual.value.apellido_saliente,
-      tipo_cargo: registroActual.value.tipo_cargo,
-      fecha_termino_original: registroActual.value.fecha_termino // Se necesita para el término de B
+      id_evento_principal: registroActual.value.id_negocio!, // Usamos ! o comprobamos nulidad si es necesario
+      tipo_turno: registroActual.value.tipo_turno!,
+      servicio: registroActual.value.servicio!,
+      id_saliente: registroActual.value.id_saliente!,
+      rut_saliente: registroActual.value.rut_saliente!,
+      nombre_saliente: registroActual.value.nombre_saliente!,
+      apellido_saliente: registroActual.value.apellido_saliente!,
+      tipo_cargo: registroActual.value.tipo_cargo!,
+      fecha_termino_original: registroActual.value.fecha_termino! // Se necesita para el término de B
     }
   }
 
   try {
-    // 2. Llamada a un endpoint específico de SUSTITUCIÓN (Ejemplo de servicio a implementar)
-    // await replacementStore.procesarSustitucion(datosSustitucion)
+    // 2. Llamada a la action del Store
+    await replacementStore.procesarSustitucion(datosSustitucion) // <--- Conexión con el store // 3. Cierre de ambos modales
 
-    // 3. Cierre de ambos modales
-    closeSubstituteModal() // closeUpdateModal() NO ES NECESARIO si ya lo cerraste en handleSustitucion, pero lo mantenemos si la lógica de apertura es compleja.
+    closeSubstituteModal()
     showAlert?.(
       'Sustitución Exitosa',
       'El reemplazo fue segmentado y el nuevo funcionario asignado.'

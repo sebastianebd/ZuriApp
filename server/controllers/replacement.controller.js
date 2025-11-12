@@ -1,4 +1,4 @@
-const replacementService = require('../services/replacement.service');
+const replacementService = require("../services/replacement.service");
 
 async function registerReemplazo(req, res) {
   try {
@@ -39,8 +39,26 @@ async function eliminarReemplazo(req, res) {
 
 async function obtenerHistorialUsuario(req, res) {
   try {
-    const data = await replacementService.obtenerHistorialUsuario(req.params.id);
+    const data = await replacementService.obtenerHistorialUsuario(
+      req.params.id
+    );
     res.json(data);
+  } catch (error) {
+    res.status(400).json({ mensaje: error.message });
+  }
+}
+
+async function procesarSustitucion(req, res) {
+  try {
+    // 🔑 Cambio clave: Desestructurar el array que devuelve el servicio
+    const [registroA_cortado, nuevoRegistroB] =
+      await replacementService.sustituir(req.body); // Responder con éxito (200) y las variables desestructuradas
+
+    res.status(200).json({
+      mensaje: "Sustitución procesada exitosamente.",
+      registro_anterior: registroA_cortado, // Ahora definida
+      nuevo_registro: nuevoRegistroB, // Ahora definida
+    });
   } catch (error) {
     res.status(400).json({ mensaje: error.message });
   }
@@ -52,7 +70,6 @@ module.exports = {
   mostrarHistorial,
   actualizarReemplazo,
   eliminarReemplazo,
-  obtenerHistorialUsuario
+  obtenerHistorialUsuario,
+  procesarSustitucion,
 };
-
-

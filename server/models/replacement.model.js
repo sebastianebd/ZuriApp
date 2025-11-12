@@ -5,7 +5,6 @@ const replacementSchema = new mongoose.Schema(
   {
     id_negocio: {
       type: String,
-      unique: true,
       uppercase: true,
     },
     id_saliente: {

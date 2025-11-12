@@ -1,6 +1,6 @@
 import { errorHandler } from '@/utils/errorHandler'
 import type { useApiPrivate } from '../composables/useApi'
-import type { RegisterDataReemplazo } from '../types/models'
+import type { RegisterDataReemplazo, SustitucionPayload } from '../types/models'
 
 
 export const crearReemplazo = async (payload: RegisterDataReemplazo,
@@ -59,6 +59,19 @@ export const mostrarHistorialReeemplazos = async (apiPrivate: ReturnType<typeof 
 export const mostrarHistorialUsuario = async (apiPrivate: ReturnType<typeof useApiPrivate>, id: string) => {
   try {
     const { data } = await apiPrivate.get(`/api/reemplazos/${id}`)
+    return data
+  } catch (error) {
+    throw errorHandler(error)
+  }
+}
+
+export const procesarSustitucion = async (
+  apiPrivate: ReturnType<typeof useApiPrivate>,
+  payload: SustitucionPayload,
+) => {
+  try {
+    // LLAMADA AL NUEVO ENDPOINT
+    const { data } = await apiPrivate.post(`/api/reemplazos/sustituir`, payload)
     return data
   } catch (error) {
     throw errorHandler(error)

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import * as ReplacementService from '../services/replacement.service'
 import { useAuthStore } from './auth.store'
-import type { RegisterDataReemplazo } from '@/types/models'
+import type { RegisterDataReemplazo, SustitucionPayload } from '@/types/models'
 import type { AxiosInstance } from 'axios'
 
 export const useReplacementStore = defineStore('replacement', {
@@ -93,7 +93,7 @@ export const useReplacementStore = defineStore('replacement', {
     async mostrarHistorialUsuario(id: string) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
-    
+
       try {
         const data = await ReplacementService.mostrarHistorialUsuario(apiPrivate, id)
         return data
@@ -145,7 +145,21 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
+    async procesarSustitucion(payload: SustitucionPayload) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
 
+      try {
+        await ReplacementService.procesarSustitucion(apiPrivate, payload)
+
+        // CRUCIAL: Refrescar los datos para ver el registro A modificado y el nuevo registro B
+        await this.mostrarReemplazos()
+      } catch (error) {
+        console.error('Error al procesar la sustitución:', error)
+        this.error = 'No se pudo completar la sustitución.'
+        throw error
+      }
+    },
 
     limpiarFiltros() {
       this.filtroRutSaliente = ''

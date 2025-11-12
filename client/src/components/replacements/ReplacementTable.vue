@@ -1,6 +1,8 @@
 <template>
   <div class="table-responsive tabla-reemplazos-container">
-    <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden tabla-reemplazos">
+    <table
+      class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden tabla-reemplazos"
+    >
       <thead class="table-primary text-white">
         <tr>
           <th class="small">Código</th>
@@ -28,16 +30,20 @@
         >
           <td class="small text-secondary bg-warning-light">{{ reemplazo.id_negocio }}</td>
           <td class="small text-secondary bg-warning-light">{{ reemplazo.rut_saliente }}</td>
-          <td class="small bg-warning-light">{{ reemplazo.nombre_saliente }}&nbsp;&nbsp;&nbsp;{{ reemplazo.apellido_saliente }}</td>
+          <td class="small bg-warning-light">
+            {{ reemplazo.nombre_saliente }}&nbsp;&nbsp;&nbsp;{{ reemplazo.apellido_saliente }}
+          </td>
           <td class="small text-secondary bg-success-light">{{ reemplazo.rut_entrante }}</td>
-          <td class="small bg-success-light">{{ reemplazo.nombre_entrante}}&nbsp;&nbsp;&nbsp;{{reemplazo.apellido_entrante }}</td>
+          <td class="small bg-success-light">
+            {{ reemplazo.nombre_entrante }}&nbsp;&nbsp;&nbsp;{{ reemplazo.apellido_entrante }}
+          </td>
           <td class="small">{{ reemplazo.tipo_turno }}</td>
           <td class="small">{{ formatearFecha(reemplazo.fecha_inicio) }}</td>
           <td class="small">{{ formatearFecha(reemplazo.fecha_termino) }}</td>
           <td class="small text-primary fw-semibold">{{ reemplazo.servicio }}</td>
-          <td class="small text-primary fw-semibold">
-  {{ reemplazo.creado_por?.nombre }} {{ reemplazo.creado_por?.apellido }}
-</td>
+          <td class="small text-secondary bg-created-light fw-semibold">
+            {{ getCreatorName(reemplazo) }}
+          </td>
           <td class="small fw-semibold">
             <span
               :class="[
@@ -60,7 +66,10 @@
             </button>
           </td>
           <td class="action-cell">
-            <button @click="confirmarEliminar(reemplazo._id)" class="btn btn-danger btn-sm shadow-sm">
+            <button
+              @click="confirmarEliminar(reemplazo._id)"
+              class="btn btn-danger btn-sm shadow-sm"
+            >
               <img src="../../assets/icons/delete-icon.png" alt="delete icon" />
             </button>
           </td>
@@ -81,7 +90,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
-import type { RegisterDataReemplazo } from '@/types/models'
+import type { RegisterDataReemplazo, User } from '@/types/models'
 
 defineProps({
   reemplazos: {
@@ -98,6 +107,16 @@ const emit = defineEmits<{
 
 const showConfirmacion = ref(false)
 const idAEliminar = ref<string | null>(null)
+
+const getCreatorName = (reemplazo: RegisterDataReemplazo): string => {
+  const creator = reemplazo.creado_por
+
+  if (typeof creator !== 'string' && creator && 'nombre' in creator && 'apellido' in creator) {
+    const user = creator as User
+    return `${user.nombre} ${user.apellido}`
+  }
+  return String(creator) || 'Usuario no asignado'
+}
 
 function confirmarEliminar(id: string) {
   idAEliminar.value = id
@@ -169,6 +188,10 @@ const formatearFecha = (fecha: string) => {
   background-color: #e3f7ea !important;
 }
 
+.bg-created-light {
+  background-color: #b3d9f5 !important;
+}
+
 .action-cell {
   text-align: center;
   padding: 0.2rem !important;
@@ -179,7 +202,6 @@ const formatearFecha = (fecha: string) => {
   height: 14px;
   object-fit: contain;
 }
-
 
 .shadow-sm {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
@@ -192,4 +214,3 @@ const formatearFecha = (fecha: string) => {
   overflow: hidden;
 }
 </style>
-
