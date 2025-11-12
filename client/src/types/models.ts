@@ -41,6 +41,7 @@ export interface RegisterDataReemplazo {
   fecha_inicio: string;
   fecha_termino: string;
   servicio: string;
+  status: string;
 }
 
 export interface registrarUsuario {

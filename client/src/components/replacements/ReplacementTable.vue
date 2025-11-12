@@ -14,6 +14,7 @@
           <th class="small">Fecha Inicio</th>
           <th class="small">Fecha Término</th>
           <th class="small">Servicio</th>
+          <th class="small">Status</th>
           <th class="small text-center">Editar</th>
           <th class="small text-center">Exportar</th>
           <th class="small text-center">Anular</th>
@@ -37,6 +38,16 @@
           <td class="small">{{ formatearFecha(reemplazo.fecha_inicio) }}</td>
           <td class="small">{{ formatearFecha(reemplazo.fecha_termino) }}</td>
           <td class="small text-primary fw-semibold">{{ reemplazo.servicio }}</td>
+          <td class="small fw-semibold">
+            <span
+              :class="[
+                'badge rounded-pill',
+                reemplazo.status === 'PENDIENTE' ? 'bg-warning' : 'bg-success'
+              ]"
+            >
+              {{ reemplazo.status }}
+            </span>
+          </td>
 
           <td class="action-cell">
             <button @click="$emit('modificar', reemplazo)" class="btn btn-warning btn-sm shadow-sm">

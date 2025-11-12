@@ -7,11 +7,11 @@ async function registrar(data) {
 }
 
 async function obtenerActivos() {
-  return await Reemplazo.find({ anulado: false, activo: true });
+  return await Reemplazo.find({ status:{ $in: ['EN CURSO' , 'PENDIENTE'] }})
 }
 
 async function obtenerInactivos() {
-  return await Reemplazo.find({ activo: false });
+  return await Reemplazo.find({ status: { $in: ['FINALIZADO' , 'ANULADO' , 'INTERRUMPIDO'] }})
 }
 
 async function actualizar(id, data) {
@@ -19,8 +19,9 @@ async function actualizar(id, data) {
   return await Reemplazo.find();
 }
 
+//FUNCION DEBERÍA LLAMARSE anularReemplazo
 async function eliminar(id) {
-  await Reemplazo.findByIdAndUpdate(id, { anulado: true, activo: false });
+  await Reemplazo.findByIdAndUpdate(id, { status: 'ANULADO' });
   return await Reemplazo.find();
 }
 

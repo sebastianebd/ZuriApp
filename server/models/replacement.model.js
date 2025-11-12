@@ -66,13 +66,10 @@ const replacementSchema = new mongoose.Schema(
       required: true,
       uppercase: true,
     },
-    anulado: {
-      type: Boolean,
-      default: false,
-    },
-    activo: {
-      type: Boolean,
-      default: true,
+    status: {
+      type: String,
+      default: "PENDIENTE", 
+      uppercase: true,
     },
     refresh_token: {
       type: String,
