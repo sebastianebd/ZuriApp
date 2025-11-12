@@ -29,7 +29,7 @@
                   @click.prevent="$emit('buscar-usuario', 1)"
                   class="btn btn-warning btn-sm mb-3 fw-semibold"
                 >
-                  <i class="bi bi-search">Buscar Funcionario</i> 
+                  <i class="bi bi-search">Buscar Funcionario</i>
                 </button>
 
                 <div class="form-floating mb-2">

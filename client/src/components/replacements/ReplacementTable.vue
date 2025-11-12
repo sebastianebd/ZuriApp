@@ -6,14 +6,13 @@
           <th class="small">Código</th>
           <th class="small">Rut Saliente</th>
           <th class="small">Nombre Saliente</th>
-          <th class="small">Apellido Saliente</th>
           <th class="small">Rut Entrante</th>
           <th class="small">Nombre Entrante</th>
-          <th class="small">Apellido Entrante</th>
           <th class="small">Tipo de Turno</th>
           <th class="small">Fecha Inicio</th>
           <th class="small">Fecha Término</th>
           <th class="small">Servicio</th>
+          <th class="small">Creado por</th>
           <th class="small">Status</th>
           <th class="small text-center">Editar</th>
           <th class="small text-center">Exportar</th>
@@ -29,15 +28,16 @@
         >
           <td class="small text-secondary bg-warning-light">{{ reemplazo.id_negocio }}</td>
           <td class="small text-secondary bg-warning-light">{{ reemplazo.rut_saliente }}</td>
-          <td class="small bg-warning-light">{{ reemplazo.nombre_saliente }}</td>
-          <td class="small bg-warning-light">{{ reemplazo.apellido_saliente }}</td>
+          <td class="small bg-warning-light">{{ reemplazo.nombre_saliente }}&nbsp;&nbsp;&nbsp;{{ reemplazo.apellido_saliente }}</td>
           <td class="small text-secondary bg-success-light">{{ reemplazo.rut_entrante }}</td>
-          <td class="small bg-success-light">{{ reemplazo.nombre_entrante }}</td>
-          <td class="small bg-success-light">{{ reemplazo.apellido_entrante }}</td>
+          <td class="small bg-success-light">{{ reemplazo.nombre_entrante}}&nbsp;&nbsp;&nbsp;{{reemplazo.apellido_entrante }}</td>
           <td class="small">{{ reemplazo.tipo_turno }}</td>
           <td class="small">{{ formatearFecha(reemplazo.fecha_inicio) }}</td>
           <td class="small">{{ formatearFecha(reemplazo.fecha_termino) }}</td>
           <td class="small text-primary fw-semibold">{{ reemplazo.servicio }}</td>
+          <td class="small text-primary fw-semibold">
+  {{ reemplazo.creado_por?.nombre }} {{ reemplazo.creado_por?.apellido }}
+</td>
           <td class="small fw-semibold">
             <span
               :class="[

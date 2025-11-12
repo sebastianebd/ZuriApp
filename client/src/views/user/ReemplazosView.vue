@@ -137,6 +137,10 @@ const authStore = useAuthStore()
 const optionStore = useOptionStore()
 const apiPrivate = authStore.usePrivateApi()
 
+const userLoged = computed(() => {
+  return authStore.userDetail
+})
+
 const totalPages = computed(() => {
   return Math.ceil(replacementStore.reemplazosFiltrados.length / itemsPerPage)
 })
@@ -288,7 +292,8 @@ const registroNuevo = ref<Partial<RegisterDataReemplazo>>({
   tipo_turno: '',
   fecha_inicio: new Date().toISOString().slice(0, 10),
   fecha_termino: new Date().toISOString().slice(0, 10),
-  servicio: ''
+  servicio: '',
+  creado_por: ''
 })
 
 // --- MONTAJE
@@ -360,6 +365,16 @@ const openCreateModal = () => {
     fecha_termino: new Date().toISOString().slice(0, 10),
     servicio: ''
   }
+
+  if (userLoged.value && userLoged.value._id) {
+    // Asignamos el ID del usuario logeado de forma segura
+    registroNuevo.value.creado_por = userLoged.value._id
+  } else {
+    // Manejar el caso de error (aunque la ruta debería estar protegida)
+    showAlert?.('Error', 'No se pudo identificar al usuario creador. Intente recargar.')
+    return // Detener la apertura si el usuario no está cargado
+  }
+
   createModalVisible.value = true
 }
 const closeCreateModal = () => {

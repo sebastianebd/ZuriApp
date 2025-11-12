@@ -29,7 +29,8 @@ async function registrar(data) {
 }
 
 async function obtenerActivos() {
-  return await Reemplazo.find({ status: { $in: ["EN CURSO", "PENDIENTE"] } });
+  return await Reemplazo.find({ status: { $in: ["EN CURSO", "PENDIENTE"] } })
+    .populate("creado_por", "nombre apellido"); 
 }
 
 async function obtenerInactivos() {

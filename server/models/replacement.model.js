@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Counter = require("./counter"); 
+const Counter = require("./counter");
 
 const replacementSchema = new mongoose.Schema(
   {
@@ -68,8 +68,13 @@ const replacementSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: "PENDIENTE", 
+      default: "PENDIENTE",
       uppercase: true,
+    },
+    creado_por: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
     refresh_token: {
       type: String,

@@ -1,4 +1,3 @@
-// src/types/auth.types.ts
 
 export interface User {
   _id: string;
@@ -42,6 +41,7 @@ export interface RegisterDataReemplazo {
   fecha_termino: string;
   servicio: string;
   status: string;
+  creado_por: string | User;
 }
 
 export interface registrarUsuario {
