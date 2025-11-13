@@ -8,6 +8,7 @@
           <table class="table table-bordered table-sm">
             <thead class="thead-light">
               <tr>
+                <th scope="col" class="small">Código</th>
                 <th scope="col" class="small">Rut Saliente</th>
                 <th scope="col" class="small">Nombre Saliente</th>
                 <th scope="col" class="small">Apellido Saliente</th>
@@ -18,10 +19,12 @@
                 <th scope="col" class="small">Fecha Inicio</th>
                 <th scope="col" class="small">Fecha Termino</th>
                 <th scope="col" class="small">Servicio</th>
+                <th scope="col" class="small">Status</th>
             </tr>
             </thead>
             <tbody class="customtable">
               <tr v-for="(reemplazo, index) in user" :key="index">
+                <td class="small bg-warning">{{ reemplazo.id_negocio }}</td>
                 <td class="small bg-warning">{{ reemplazo.rut_saliente }}</td>
                 <td class="small bg-warning">{{ reemplazo.nombre_saliente }}</td>
                 <td class="small bg-warning">{{ reemplazo.apellido_saliente }}</td>
@@ -32,6 +35,7 @@
                 <td class="small">{{ formatearFecha(reemplazo.fecha_inicio) }}</td>
                 <td class="small">{{ formatearFecha(reemplazo.fecha_termino) }}</td>
                 <td class="small">{{ reemplazo.servicio }}</td>
+                <td class="small">{{ reemplazo.status }}</td>
               </tr>
             </tbody>           
           </table>    

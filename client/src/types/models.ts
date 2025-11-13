@@ -42,6 +42,7 @@ export interface RegisterDataReemplazo {
   servicio: string;
   status: string;
   creado_por: string | User;
+  corte_anticipado: Boolean;
 }
 
 export interface registrarUsuario {
@@ -77,6 +78,7 @@ export interface BaseEventoData {
 // Define el payload completo que se enviará al endpoint de sustitución
 export interface SustitucionPayload {
   id_registro_a: string; // El _id del registro que se va a cortar
+  //fecha_inicio: string; // La fecha de inicio del nuevo registro
   fecha_corte_a: string; // La nueva fecha de término (seleccionada por RRHH)
   
   // Datos del nuevo funcionario entrante (B) que formará parte del nuevo registro

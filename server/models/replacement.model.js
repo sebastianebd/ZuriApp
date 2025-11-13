@@ -75,9 +75,9 @@ const replacementSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    refresh_token: {
-      type: String,
-      select: false,
+    corte_anticipado: {
+      type: Boolean,
+      default: false,
     },
   },
   {

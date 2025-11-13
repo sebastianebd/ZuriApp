@@ -15,6 +15,20 @@ const determineStatus = (fecha_inicio) => {
   return "PENDIENTE";
 };
 
+const determineStatusCorte = (fecha_corte) => {
+  const now = new Date();
+  const fechaActualUTC = new Date(
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+  );
+
+  const fechaCorte = new Date(fecha_corte);
+
+  if (fechaCorte.getTime() < fechaActualUTC.getTime()) {
+    return "INTERRUMPIDO";
+  }
+  return "EN CURSO";
+};
+
 async function registrar(data) {
   const initialStatus = determineStatus(data.fecha_inicio);
 
@@ -68,6 +82,7 @@ const getNextDay = (dateString) => {
 async function sustituir(payload) {
   const { id_registro_a, fecha_corte_a, nuevo_entrante, datos_base_evento } =
     payload;
+  console.log(payload);
   if (
     !id_registro_a ||
     !fecha_corte_a ||
@@ -82,7 +97,8 @@ async function sustituir(payload) {
     id_registro_a,
     {
       fecha_termino: fechaCorteDate,
-      status: "INTERRUMPIDO",
+      status: determineStatusCorte(fecha_corte_a),
+      corte_anticipado: true,
       updated_at: new Date(),
     },
     { new: true }
