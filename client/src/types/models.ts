@@ -31,7 +31,6 @@ export interface RegisterDataReemplazo {
   rut_saliente: string;
   nombre_saliente: string;
   apellido_saliente: string;
-  tipo_cargo: string;
   id_entrante: string;
   rut_entrante: string;
   nombre_entrante: string;
@@ -39,6 +38,7 @@ export interface RegisterDataReemplazo {
   tipo_turno: string;
   fecha_inicio: string;
   fecha_termino: string;
+  tipo_cargo: string;
   servicio: string;
   status: string;
   creado_por: string | User;

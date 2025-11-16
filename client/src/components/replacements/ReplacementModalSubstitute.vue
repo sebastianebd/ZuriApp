@@ -66,7 +66,7 @@
                 </p>
               </div>
               <button
-                @click.prevent="$emit('buscar-usuario', 2)"
+                @click.prevent="$emit('sustituir-usuario')"
                 class="btn btn-success btn-sm fw-semibold"
               >
                 <i class="bi bi-person-add me-1"></i> Asignar
@@ -133,80 +133,60 @@
 <script setup lang="ts">
 import type { RegisterDataReemplazo } from '@/types/models'
 import { computed, ref } from 'vue'
-import  ConfirmationModal  from '../common/ConfirmationModal.vue'
+import ConfirmationModal from '../common/ConfirmationModal.vue'
 
 interface ReemplazoModalData extends Partial<RegisterDataReemplazo> {
   fecha_inicio?: string
   fecha_termino?: string
 }
 
-// Define las propiedades que este modal necesita
 const props = defineProps<{
   visible: boolean
-  // El registro actual (Segmento A) que se va a cortar.
   registroActual: ReemplazoModalData
-  // La fecha que el usuario está ingresando para el corte de A.
   fechaCorteA: string
-  // Los datos del funcionario B que se seleccionaron en el modal de búsqueda (para mostrar).
   nuevoFuncionarioB: Partial<ReemplazoModalData>
 }>()
 
-// Define los eventos que este modal emite
 const emit = defineEmits<{
   (e: 'cerrar'): void
-  // Evento para abrir el modal de búsqueda de usuarios
-  (e: 'buscar-usuario', grupo: 1 | 2): void
-  // Evento para actualizar la fecha de corte ingresada por el usuario
+  (e: 'sustituir-usuario'): void
   (e: 'update:fechaCorteA', nuevaFecha: string): void
-  // Evento de acción final: inicia la transacción atómica
   (e: 'confirmar-sustitucion'): void
 }>()
 
-// ✅ Lógica computada para la fecha de inicio del Reemplazante B
-// (Se recomienda hacer esta validación en el backend, pero la mostramos aquí)
 const fechaInicioB = computed(() => {
   if (!props.fechaCorteA) return ''
 
-  // Calcula el día siguiente a la fecha de corte
   const corte = new Date(props.fechaCorteA)
   corte.setDate(corte.getDate() + 1)
 
-  // Formatea a AAAA-MM-DD
   return corte.toISOString().split('T')[0]
 })
 
-// ✅ Lógica de validación simple del formulario
 const isFormValid = computed(() => {
-  // 1. Debe existir la fecha de corte.
   const hasFechaCorte = !!props.fechaCorteA
-  // 2. Debe haberse seleccionado un RUT para el funcionario B.
   const hasFuncionarioB = !!props.nuevoFuncionarioB.rut_entrante
 
   return hasFechaCorte && hasFuncionarioB
 })
 
-
 const showConfirmacion = ref(false)
 
-// Cuando el usuario presiona "Guardar"
 function abrirConfirmacion() {
   showConfirmacion.value = true
 }
 
-// Si confirma guardar
 function confirmarGuardar() {
   showConfirmacion.value = false
   emit('confirmar-sustitucion')
 }
 
-// Si cancela (volver al modal original)
 function cancelarConfirmacion() {
   showConfirmacion.value = false
 }
 </script>
 
 <style scoped>
-/* Mantener los mismos estilos que el modal principal */
 .modal {
   background-color: rgba(0, 0, 0, 0.5);
 }
@@ -216,8 +196,6 @@ function cancelarConfirmacion() {
   overflow: hidden;
   animation: fadeInModal 0.25s ease;
 }
-
-/* ... (otros estilos) */
 
 .modal-header {
   background-color: var(--bs-danger) !important;

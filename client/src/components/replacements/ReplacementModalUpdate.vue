@@ -74,7 +74,7 @@
                   </button>
                   <button
                     v-else
-                    @click.prevent="$emit('buscar-usuario', 2)"
+                    @click.prevent="$emit('buscar-entrante')"
                     class="btn btn-warning btn-sm fw-semibold"
                   >
                     <i class="bi bi-search"></i> Buscar
@@ -245,37 +245,31 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardar'): void
-  (e: 'buscar-usuario', grupo: 1 | 2): void
+  (e: 'buscar-entrante'): void
   (e: 'sustituir-usuario'): void
   (e: 'update:registro', nuevoRegistro: ReemplazoModalData): void
 }>()
 
-// 👇 controlamos el modal de confirmación
 const showConfirmacion = ref(false)
 
-// ✅ Computed: determina si el turno está en curso
 const turnoEnCurso = computed(() => {
   if (!props.registro?.fecha_inicio) return false
 
   const hoy = new Date()
   const fechaInicio = new Date(props.registro.fecha_inicio)
 
-  // Si la fecha de inicio es menor o igual a hoy → turno en curso
   return fechaInicio <= hoy
 })
 
-// Cuando el usuario presiona "Guardar"
 function abrirConfirmacion() {
   showConfirmacion.value = true
 }
 
-// Si confirma guardar
 function confirmarGuardar() {
   showConfirmacion.value = false
   emit('guardar')
 }
 
-// Si cancela (volver al modal original)
 function cancelarConfirmacion() {
   showConfirmacion.value = false
 }
