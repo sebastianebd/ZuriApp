@@ -269,8 +269,9 @@ watch(
 // --- Configuración de calendario
 const date = ref(new Date())
 const popoverConfig = ref({
-  visibility: 'click' as const,
-  placement: 'bottom-start' as const
+  visibility: 'focus' as const,
+  placement: 'right' as const,
+  hideDelay: 50
 })
 
 const dateAttributes = computed(() => {
@@ -418,4 +419,8 @@ button {
 button:hover {
   transform: translateY(-1px);
 }
+:deep(.modal-content) {
+  overflow: visible;
+}
+
 </style>
