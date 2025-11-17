@@ -135,15 +135,36 @@
                   </select>
                   <label>Tipo de Turno</label>
                 </div>
-
-                <div class="form-floating mb-3">
-                  <input v-model="registroLocal.fecha_inicio" type="date" class="form-control" />
+                <div class="mb-3">
                   <label>Fecha de Inicio</label>
+                  <DatePicker
+                    v-model="registroLocal.fecha_inicio"
+                    placeholder="dd/MM/yyyy"
+                    format="dd/MM/yyyy"
+                    select-text="Seleccionar"
+                    cancel-text="Cancelar"
+                    :enable-time-picker="false"
+                    :disabled-dates="isDateDisabled"
+                    :min-date="new Date()"
+                    class="custom-date-picker"
+                    lang="es"
+                  />
                 </div>
 
-                <div class="form-floating mb-3">
-                  <input v-model="registroLocal.fecha_termino" type="date" class="form-control" />
+                <div class="mb-3">
                   <label>Fecha de Término</label>
+                  <DatePicker
+                    v-model="registroLocal.fecha_termino"
+                    placeholder="dd/MM/yyyy"
+                    format="dd/MM/yyyy"
+                    select-text="Seleccionar"
+                    cancel-text="Cancelar"
+                    :enable-time-picker="false"
+                    :disabled-dates="isDateDisabled"
+                    :min-date="registroLocal.fecha_inicio"
+                    auto-apply
+                    class="custom-date-picker"
+                  />
                 </div>
 
                 <div class="form-floating mb-4">
@@ -185,12 +206,17 @@
 import { ref, watch, reactive } from 'vue'
 import type { RegisterDataReemplazo } from '@/types/models'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
+import { VueDatePicker } from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
+
+const DatePicker = VueDatePicker
 
 const props = defineProps<{
   visible: boolean
   listaDeTurnos: string[]
   listaDeServicios: string[]
   registro: Partial<RegisterDataReemplazo>
+  fechasBloqueadas: string[]
 }>()
 
 const emit = defineEmits<{
@@ -241,33 +267,35 @@ function prevStep() {
   }
 }
 
-// 👇 controlamos el modal de confirmación
 const showConfirmacion = ref(false)
 
-// Cuando el usuario presiona "Guardar"
 function abrirConfirmacion() {
   showConfirmacion.value = true
 }
 
-// Si confirma guardar
 function confirmarGuardar() {
   showConfirmacion.value = false
   emit('guardar', registroLocal as RegisterDataReemplazo)
 }
 
-// Si cancela (volver al modal original)
 function cancelarConfirmacion() {
   showConfirmacion.value = false
+}
+
+const isDateDisabled = (date: Date): boolean => {
+  // El DatePicker pasa un objeto Date, lo convertimos a string 'YYYY-MM-DD'
+  const dateString = date.toISOString().slice(0, 10)
+
+  // Comprobar si la fecha está en la lista de la prop
+  return props.fechasBloqueadas.includes(dateString)
 }
 </script>
 
 <style scoped>
-/* Overlay */
 .modal {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
-/* Apariencia modal */
 .modal-content {
   border-radius: 12px;
   overflow: hidden;
@@ -285,7 +313,6 @@ function cancelarConfirmacion() {
   }
 }
 
-/* Transición de pasos (entrada/salida limpia) */
 .fade-step-enter-active,
 .fade-step-leave-active {
   transition: all 260ms cubic-bezier(0.2, 0.9, 0.2, 1);

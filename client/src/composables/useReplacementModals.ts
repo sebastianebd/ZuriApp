@@ -53,19 +53,27 @@ const closeUpdateModal = () => {
   registroActual.value = {}
 }
 
+
 const openCreateModal = (userLogedId: string) => {
   registroNuevo.value = {
     ...registroNuevo.value,
-    creado_por: userLogedId
+    creado_por: userLogedId,
   }
   createModalVisible.value = true
 }
+
 const closeCreateModal = () => {
   createModalVisible.value = false
   registroNuevo.value = {
+    rut_entrante: '',
+    rut_saliente: '',
+    nombre_entrante: '',
+    nombre_saliente: '',
+    apellido_entrante: '',
+    apellido_saliente: '',
     tipo_cargo: '',
-    fecha_inicio: new Date().toISOString().slice(0, 10),
-    fecha_termino: new Date().toISOString().slice(0, 10)
+    fecha_inicio: '',
+    fecha_termino: ''
   }
 }
 

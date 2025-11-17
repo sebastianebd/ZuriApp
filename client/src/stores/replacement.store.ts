@@ -3,6 +3,7 @@ import * as ReplacementService from '../services/replacement.service'
 import { useAuthStore } from './auth.store'
 import type { RegisterDataReemplazo, SustitucionPayload } from '@/types/models'
 import type { AxiosInstance } from 'axios'
+import { getDatesInRange } from '@/utils/date-utils'
 
 export const useReplacementStore = defineStore('replacement', {
   state: () => ({
@@ -21,6 +22,25 @@ export const useReplacementStore = defineStore('replacement', {
   getters: {
     totalReemplazos: (state) => state.reemplazosActivos.length,
     hayReemplazos: (state) => state.reemplazosActivos.length > 0,
+    getFechasOcupadas:
+      (state) =>
+      (funcionarioId: string): string[] => {
+        const fechasOcupadasSet = new Set<string>()
+
+        // 1. Filtrar los reemplazos donde este funcionario es el SALIENTE
+        const reemplazosDelFuncionario = state.reemplazosActivos.filter(
+          (r) => r.id_entrante === funcionarioId
+        )
+
+        // 2. Expandir los rangos de fechas de cada reemplazo a días individuales
+        reemplazosDelFuncionario.forEach((r) => {
+          const fechasRango = getDatesInRange(r.fecha_inicio, r.fecha_termino)
+          fechasRango.forEach((fecha) => fechasOcupadasSet.add(fecha))
+        })
+
+        // 3. Devolver la lista única de fechas ocupadas
+        return Array.from(fechasOcupadasSet)
+      },
 
     reemplazosFiltrados(state) {
       let filtrados = state.reemplazosActivos

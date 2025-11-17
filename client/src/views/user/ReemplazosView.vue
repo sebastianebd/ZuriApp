@@ -69,6 +69,7 @@
       :lista-de-turnos="listaDeTurnos"
       :lista-de-servicios="listaDeServicios"
       :registro="registroNuevo"
+      :fechas-bloqueadas="fechasOcupadas"
       @cerrar="closeCreateModal"
       @guardar="guardarNuevoReemplazo"
       @buscar-usuario="seleccionarGrupo"
@@ -313,9 +314,25 @@ onMounted(async () => {
   })
 })
 
+
 onUnmounted(() => {
   socket.off('replacementsUpdated')
 })
+
+
+// 💡 NUEVO CÓMPUTED: Calcula las fechas ocupadas del ENTRANTE actual en el registro nuevo.
+const fechasOcupadas = computed(() => {
+    // 1. Obtener el ID del Entrante del registro nuevo (que está siendo creado)
+    const entranteId = registroNuevo.value.id_entrante; 
+    
+    // 2. Si hay un ID, llamar al Getter del Store. Si no, retornar un array vacío.
+    if (!entranteId) {
+        return [];
+    }
+    
+    // Llamar al getter que creamos en el Store (getFechasOcupadas)
+    return replacementStore.getFechasOcupadas(entranteId);
+});
 </script>
 
 <style>
