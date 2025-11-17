@@ -140,7 +140,7 @@
                   <label>Fecha de Inicio</label>
                   <DatePicker
                     v-model="date"
-                    :disabled-dates="isDateDisabled"
+                    :disabled-dates="isDisabled"
                     :min-date="new Date()"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :model-config="{
@@ -170,7 +170,7 @@
                   <label>Fecha de Término</label>
                   <DatePicker
                     v-model="date"
-                    :disabled-dates="isDateDisabled"
+                    :disabled-dates="isDisabled"
                     :min-date="new Date()"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :model-config="{
@@ -232,11 +232,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive, computed } from 'vue'
+import { ref, watch, reactive } from 'vue'
 import type { RegisterDataReemplazo } from '@/types/models'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
+import { useDatePicker } from '@/composables/useDatePicker'
 
 const props = defineProps<{
   visible: boolean
@@ -267,29 +268,8 @@ watch(
 )
 
 // --- Configuración de calendario
-const date = ref(new Date())
-const popoverConfig = ref({
-  visibility: 'focus' as const,
-  placement: 'right' as const,
-  hideDelay: 50
-})
+const { popoverConfig, dateAttributes, isDisabled, date } = useDatePicker(props);
 
-const dateAttributes = computed(() => {
-  return [
-    {
-      // Único identificador
-      key: 'disabled-dates',
-      highlight: {
-        color: 'red',
-        fillMode: 'light'
-      },
-      dates: isDateDisabled.value,
-      exclude: {
-        weekdays: []
-      }
-    }
-  ]
-})
 
 
 
@@ -336,15 +316,7 @@ function cancelarConfirmacion() {
   showConfirmacion.value = false
 }
 
-const isDateDisabled = computed(() => {
-  if (!props.fechasBloqueadas) return []
 
-  return props.fechasBloqueadas.map((f) => {
-    // Se agrega hora para evitar shift por timezone
-    const safeDate = new Date(`${f}T12:00:00`)
-    return safeDate
-  })
-})
 </script>
 
 <style scoped>
