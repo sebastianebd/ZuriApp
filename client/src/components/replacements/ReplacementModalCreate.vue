@@ -135,36 +135,65 @@
                   </select>
                   <label>Tipo de Turno</label>
                 </div>
+
                 <div class="mb-3">
                   <label>Fecha de Inicio</label>
                   <DatePicker
-                    v-model="registroLocal.fecha_inicio"
-                    placeholder="dd/MM/yyyy"
-                    format="dd/MM/yyyy"
-                    select-text="Seleccionar"
-                    cancel-text="Cancelar"
-                    :enable-time-picker="false"
+                    v-model="date"
                     :disabled-dates="isDateDisabled"
                     :min-date="new Date()"
-                    class="custom-date-picker"
-                    lang="es"
-                  />
+                    :masks="{ input: 'DD/MM/YYYY' }"
+                    :model-config="{
+                      type: 'string',
+                      mask: 'YYYY-MM-DD',
+                      timeAdjust: '00:00:00'
+                    }"
+                    :popover="popoverConfig"
+                    :attributes="dateAttributes"
+                    is-required
+                    trim-weeks
+                    color="blue"
+                  >
+                    <template #default="{ inputValue, inputEvents }">
+                      <input
+                        class="form-control"
+                        :value="inputValue"
+                        v-on="inputEvents"
+                        placeholder="Seleccione fecha de inicio"
+                        readonly
+                      />
+                    </template>
+                  </DatePicker>
                 </div>
 
                 <div class="mb-3">
                   <label>Fecha de Término</label>
                   <DatePicker
-                    v-model="registroLocal.fecha_termino"
-                    placeholder="dd/MM/yyyy"
-                    format="dd/MM/yyyy"
-                    select-text="Seleccionar"
-                    cancel-text="Cancelar"
-                    :enable-time-picker="false"
+                    v-model="date"
                     :disabled-dates="isDateDisabled"
-                    :min-date="registroLocal.fecha_inicio"
-                    auto-apply
-                    class="custom-date-picker"
-                  />
+                    :min-date="new Date()"
+                    :masks="{ input: 'DD/MM/YYYY' }"
+                    :model-config="{
+                      type: 'string',
+                      mask: 'YYYY-MM-DD',
+                      timeAdjust: '00:00:00'
+                    }"
+                    :popover="popoverConfig"
+                    :attributes="dateAttributes"
+                    is-required
+                    trim-weeks
+                    color="blue"
+                  >
+                    <template #default="{ inputValue, inputEvents }">
+                      <input
+                        class="form-control"
+                        :value="inputValue"
+                        v-on="inputEvents"
+                        placeholder="Seleccione fecha de Termino"
+                        readonly
+                      />
+                    </template>
+                  </DatePicker>
                 </div>
 
                 <div class="form-floating mb-4">
@@ -203,13 +232,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive } from 'vue'
+import { ref, watch, reactive, computed } from 'vue'
 import type { RegisterDataReemplazo } from '@/types/models'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
-import { VueDatePicker } from '@vuepic/vue-datepicker'
-import '@vuepic/vue-datepicker/dist/main.css'
-
-const DatePicker = VueDatePicker
+import { DatePicker } from 'v-calendar'
+import 'v-calendar/style.css'
 
 const props = defineProps<{
   visible: boolean
@@ -238,6 +265,32 @@ watch(
     }
   }
 )
+
+// --- Configuración de calendario
+const date = ref(new Date())
+const popoverConfig = ref({
+  visibility: 'click' as const,
+  placement: 'bottom-start' as const
+})
+
+const dateAttributes = computed(() => {
+  return [
+    {
+      // Único identificador
+      key: 'disabled-dates',
+      highlight: {
+        color: 'red',
+        fillMode: 'light'
+      },
+      dates: isDateDisabled.value,
+      exclude: {
+        weekdays: []
+      }
+    }
+  ]
+})
+
+
 
 watch(
   () => props.registro,
@@ -282,13 +335,15 @@ function cancelarConfirmacion() {
   showConfirmacion.value = false
 }
 
-const isDateDisabled = (date: Date): boolean => {
-  // El DatePicker pasa un objeto Date, lo convertimos a string 'YYYY-MM-DD'
-  const dateString = date.toISOString().slice(0, 10)
+const isDateDisabled = computed(() => {
+  if (!props.fechasBloqueadas) return []
 
-  // Comprobar si la fecha está en la lista de la prop
-  return props.fechasBloqueadas.includes(dateString)
-}
+  return props.fechasBloqueadas.map((f) => {
+    // Se agrega hora para evitar shift por timezone
+    const safeDate = new Date(`${f}T12:00:00`)
+    return safeDate
+  })
+})
 </script>
 
 <style scoped>
