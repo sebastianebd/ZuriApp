@@ -139,7 +139,10 @@
                 <div class="mb-3">
                   <label>Fecha de Inicio</label>
                   <DatePicker
-                    v-model="date"
+                    :model-value="
+                      registroLocal.fecha_inicio ? registroLocal.fecha_inicio + 'T00:00:00' : null
+                    "
+                    @update:model-value="(newDate) => (registroLocal.fecha_inicio = newDate)"
                     :disabled-dates="isDisabled"
                     :min-date="new Date()"
                     :masks="{ input: 'DD/MM/YYYY' }"
@@ -159,7 +162,7 @@
                         class="form-control"
                         :value="inputValue"
                         v-on="inputEvents"
-                        placeholder="Seleccione fecha de inicio"
+                        placeholder="Seleccione fecha de Inicio"
                         readonly
                       />
                     </template>
@@ -169,7 +172,10 @@
                 <div class="mb-3">
                   <label>Fecha de Término</label>
                   <DatePicker
-                    v-model="date"
+                    :model-value="
+                      registroLocal.fecha_termino ? registroLocal.fecha_termino + 'T00:00:00' : null
+                    "
+                    @update:model-value="(newDate) => (registroLocal.fecha_termino = newDate)"
                     :disabled-dates="isDisabled"
                     :min-date="new Date()"
                     :masks="{ input: 'DD/MM/YYYY' }"
@@ -263,23 +269,52 @@ watch(
     if (nuevo) {
       currentStep.value = 1
       errorMessage.value = ''
+      console.log('🔔 Modal CREATE abierto. props.registro:', JSON.parse(JSON.stringify(props.registro)))
+      console.log('registroLocal al abrir:', JSON.parse(JSON.stringify(registroLocal)))
     }
   }
 )
 
 // --- Configuración de calendario
-const { popoverConfig, dateAttributes, isDisabled, date } = useDatePicker(props);
-
-
-
+const { popoverConfig, dateAttributes, isDisabled } = useDatePicker(props)
 
 watch(
   () => props.registro,
   (nuevo) => {
+    console.log('🛰 props.registro cambiado:', JSON.parse(JSON.stringify(nuevo)))
     Object.assign(registroLocal, nuevo)
+    console.log('=> registroLocal después de assign:', JSON.parse(JSON.stringify(registroLocal)))
   },
   { deep: true }
 )
+
+watch(
+  () => registroLocal.fecha_inicio,
+  (val) => {
+    console.log('📥 registroLocal.fecha_inicio cambió -> raw:', val)
+    try {
+      const asDate = val ? new Date(val) : null
+      console.log('   typeof:', typeof val, ' new Date(val):', asDate, ' toISOString (if valid):', asDate && !isNaN(asDate.getTime()) ? asDate.toISOString() : 'invalid')
+    } catch (e) {
+      console.log('   error parse fecha_inicio:', e)
+    }
+  }
+)
+
+watch(
+  () => registroLocal.fecha_termino,
+  (val) => {
+    console.log('📥 registroLocal.fecha_termino cambió -> raw:', val)
+    try {
+      const asDate = val ? new Date(val) : null
+      console.log('   typeof:', typeof val, ' new Date(val):', asDate, ' toISOString (if valid):', asDate && !isNaN(asDate.getTime()) ? asDate.toISOString() : 'invalid')
+    } catch (e) {
+      console.log('   error parse fecha_termino:', e)
+    }
+  }
+)
+
+
 
 function nextStep() {
   errorMessage.value = ''
@@ -315,8 +350,6 @@ function confirmarGuardar() {
 function cancelarConfirmacion() {
   showConfirmacion.value = false
 }
-
-
 </script>
 
 <style scoped>
@@ -394,5 +427,4 @@ button:hover {
 :deep(.modal-content) {
   overflow: visible;
 }
-
 </style>

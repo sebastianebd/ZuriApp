@@ -81,6 +81,7 @@
       :registro="registroActual"
       :lista-de-turnos="listaDeTurnos"
       :lista-de-servicios="listaDeServicios"
+      :fechas-bloqueadas="fechasOcupadas"
       @cerrar="closeUpdateModal"
       @guardar="handleUpdate"
       @buscar-entrante="seleccionarEntranteEnEdicion"
@@ -248,11 +249,8 @@ const openUpdateModal = (reemplazo: RegisterDataReemplazo) => {
       ...reemplazo,
       tipo_cargo: saliente.tipo_cargo
     } as RegisterDataReemplazo
-
-    console.log('Cargo Inyectado (Saliente):', saliente.tipo_cargo)
   } else {
     reemplazoConCargo = reemplazo
-    console.warn('Advertencia: No se pudo inyectar el tipo_cargo del saliente.')
   }
 
   openUpdateModalComposable(reemplazoConCargo)
@@ -314,25 +312,25 @@ onMounted(async () => {
   })
 })
 
-
 onUnmounted(() => {
   socket.off('replacementsUpdated')
 })
 
-
-// 💡 NUEVO CÓMPUTED: Calcula las fechas ocupadas del ENTRANTE actual en el registro nuevo.
 const fechasOcupadas = computed(() => {
-    // 1. Obtener el ID del Entrante del registro nuevo (que está siendo creado)
-    const entranteId = registroNuevo.value.id_entrante; 
-    
-    // 2. Si hay un ID, llamar al Getter del Store. Si no, retornar un array vacío.
-    if (!entranteId) {
-        return [];
-    }
-    
-    // Llamar al getter que creamos en el Store (getFechasOcupadas)
-    return replacementStore.getFechasOcupadas(entranteId);
-});
+  let entranteId: string | undefined
+
+  if (createModalVisible.value) {
+    entranteId = registroNuevo.value.id_entrante
+  } else if (updateModalVisible.value) {
+    entranteId = registroActual.value.id_entrante
+  }
+
+  if (!entranteId) {
+    return []
+  }
+
+  return replacementStore.getFechasOcupadas(entranteId)
+})
 </script>
 
 <style>

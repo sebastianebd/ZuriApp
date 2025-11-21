@@ -1,8 +1,4 @@
-// src/utils/date-utils.ts
 
-/**
- * Retorna un array de strings de fecha (YYYY-MM-DD) entre dos fechas (inclusivas).
- */
 export const getDatesInRange = (startDate: string, endDate: string): string[] => {
   const dates: string[] = [];
   const currentDate = new Date(startDate);

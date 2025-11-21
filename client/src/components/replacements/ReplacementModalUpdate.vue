@@ -142,38 +142,84 @@
               <label for="tipoTurno">Tipo de Turno</label>
             </div>
 
-            <div class="form-floating mb-3">
-              <input
-                type="date"
-                id="fechaInicio"
-                :value="registro.fecha_inicio"
-                @input="
-                  $emit('update:registro', {
-                    ...registro,
-                    fecha_inicio: ($event.target as HTMLInputElement).value
-                  })
+            <div class="mb-3">
+              <label>Fecha de Inicio</label>
+              <DatePicker
+                :model-value="registro.fecha_inicio ? registro.fecha_inicio + 'T00:00:00' : null"
+                @update:model-value="
+                  (newDate) => {
+                    $emit('update:registro', {
+                      ...registro,
+                      fecha_inicio: newDate
+                    })
+                  }
                 "
-                class="form-control"
+                :disabled-dates="isDisabled"
+                :min-date="new Date()"
+                :masks="{ input: 'DD/MM/YYYY' }"
+                :model-config="{
+                  type: 'string',
+                  mask: 'YYYY-MM-DD',
+                  timeAdjust: '00:00:00'
+                }"
+                :popover="popoverConfig"
+                :attributes="dateAttributes"
+                :is-required="true"
                 :disabled="turnoEnCurso"
-              />
-              <label for="fechaInicio">Fecha de Inicio</label>
+                trim-weeks
+                color="blue"
+              >
+                <template #default="{ inputValue, inputEvents }">
+                  <input
+                    class="form-control"
+                    :value="inputValue"
+                    v-on="inputEvents"
+                    placeholder="Seleccione fecha de inicio"
+                    readonly
+                    :disabled="turnoEnCurso"
+                  />
+                </template>
+              </DatePicker>
             </div>
 
-            <div class="form-floating mb-3">
-              <input
-                type="date"
-                id="fechaTermino"
-                :value="registro.fecha_termino"
-                @input="
-                  $emit('update:registro', {
-                    ...registro,
-                    fecha_termino: ($event.target as HTMLInputElement).value
-                  })
+            <div class="mb-3">
+              <label>Fecha de Término</label>
+              <DatePicker
+                :model-value="registro.fecha_termino ? registro.fecha_termino + 'T00:00:00' : null"
+                @update:model-value="
+                  (newDate) => {
+                    $emit('update:registro', {
+                      ...registro,
+                      fecha_termino: newDate
+                    })
+                  }
                 "
-                class="form-control"
+                :disabled-dates="isDisabled"
+                :min-date="new Date()"
+                :masks="{ input: 'DD/MM/YYYY' }"
+                :model-config="{
+                  type: 'string',
+                  mask: 'YYYY-MM-DD',
+                  timeAdjust: '00:00:00'
+                }"
+                :popover="popoverConfig"
+                :attributes="dateAttributes"
+                :is-required="true"
                 :disabled="turnoEnCurso"
-              />
-              <label for="fechaTermino">Fecha de Término</label>
+                trim-weeks
+                color="blue"
+              >
+                <template #default="{ inputValue, inputEvents }">
+                  <input
+                    class="form-control"
+                    :value="inputValue"
+                    v-on="inputEvents"
+                    placeholder="Seleccione fecha de Termino"
+                    readonly
+                    :disabled="turnoEnCurso"
+                  />
+                </template>
+              </DatePicker>
             </div>
 
             <div class="form-floating mb-2">
@@ -229,6 +275,9 @@
 import type { RegisterDataReemplazo } from '@/types/models'
 import { ref, computed } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
+import { DatePicker } from 'v-calendar'
+import 'v-calendar/style.css'
+import { useDatePicker } from '@/composables/useDatePicker'
 
 interface ReemplazoModalData extends Partial<RegisterDataReemplazo> {
   fecha_inicio?: string
@@ -240,6 +289,7 @@ const props = defineProps<{
   registro: ReemplazoModalData
   listaDeTurnos: string[]
   listaDeServicios: string[]
+  fechasBloqueadas: string[]
 }>()
 
 const emit = defineEmits<{
@@ -273,6 +323,9 @@ function confirmarGuardar() {
 function cancelarConfirmacion() {
   showConfirmacion.value = false
 }
+
+// --- Configuración de calendario
+const { popoverConfig, dateAttributes, isDisabled } = useDatePicker(props)
 </script>
 
 <style scoped>
@@ -308,5 +361,9 @@ button:hover {
 
 h6 {
   font-weight: 600;
+}
+
+:deep(.modal-content) {
+  overflow: visible;
 }
 </style>
