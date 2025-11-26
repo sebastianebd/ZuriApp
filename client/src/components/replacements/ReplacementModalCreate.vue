@@ -136,21 +136,14 @@
                   <label>Tipo de Turno</label>
                 </div>
 
+                <!-- Fecha de Inicio -->
                 <div class="mb-3">
                   <label>Fecha de Inicio</label>
                   <DatePicker
-                    :model-value="
-                      registroLocal.fecha_inicio ? registroLocal.fecha_inicio + 'T00:00:00' : null
-                    "
-                    @update:model-value="(newDate) => (registroLocal.fecha_inicio = newDate)"
+                    v-model="fechaInicioComputed"
                     :disabled-dates="isDisabled"
                     :min-date="new Date()"
                     :masks="{ input: 'DD/MM/YYYY' }"
-                    :model-config="{
-                      type: 'string',
-                      mask: 'YYYY-MM-DD',
-                      timeAdjust: '00:00:00'
-                    }"
                     :popover="popoverConfig"
                     :attributes="dateAttributes"
                     is-required
@@ -169,21 +162,14 @@
                   </DatePicker>
                 </div>
 
+                <!-- Fecha de Término -->
                 <div class="mb-3">
                   <label>Fecha de Término</label>
                   <DatePicker
-                    :model-value="
-                      registroLocal.fecha_termino ? registroLocal.fecha_termino + 'T00:00:00' : null
-                    "
-                    @update:model-value="(newDate) => (registroLocal.fecha_termino = newDate)"
+                    v-model="fechaTerminoComputed"
                     :disabled-dates="isDisabled"
                     :min-date="new Date()"
                     :masks="{ input: 'DD/MM/YYYY' }"
-                    :model-config="{
-                      type: 'string',
-                      mask: 'YYYY-MM-DD',
-                      timeAdjust: '00:00:00'
-                    }"
                     :popover="popoverConfig"
                     :attributes="dateAttributes"
                     is-required
@@ -238,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive } from 'vue'
+import { ref, watch, reactive, computed } from 'vue'
 import type { RegisterDataReemplazo } from '@/types/models'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
@@ -263,58 +249,66 @@ const registroLocal = reactive({ ...props.registro })
 const currentStep = ref(1)
 const errorMessage = ref('')
 
-watch(
-  () => props.visible,
-  (nuevo) => {
-    if (nuevo) {
-      currentStep.value = 1
-      errorMessage.value = ''
-      console.log('🔔 Modal CREATE abierto. props.registro:', JSON.parse(JSON.stringify(props.registro)))
-      console.log('registroLocal al abrir:', JSON.parse(JSON.stringify(registroLocal)))
-    }
-  }
-)
+
 
 // --- Configuración de calendario
-const { popoverConfig, dateAttributes, isDisabled } = useDatePicker(props)
+const { popoverConfig, isDisabled, dateAttributes } = useDatePicker(props)
 
 watch(
   () => props.registro,
   (nuevo) => {
-    console.log('🛰 props.registro cambiado:', JSON.parse(JSON.stringify(nuevo)))
     Object.assign(registroLocal, nuevo)
-    console.log('=> registroLocal después de assign:', JSON.parse(JSON.stringify(registroLocal)))
   },
   { deep: true }
 )
 
-watch(
-  () => registroLocal.fecha_inicio,
-  (val) => {
-    console.log('📥 registroLocal.fecha_inicio cambió -> raw:', val)
-    try {
-      const asDate = val ? new Date(val) : null
-      console.log('   typeof:', typeof val, ' new Date(val):', asDate, ' toISOString (if valid):', asDate && !isNaN(asDate.getTime()) ? asDate.toISOString() : 'invalid')
-    } catch (e) {
-      console.log('   error parse fecha_inicio:', e)
+
+
+// COMPUTED PROPERTIES para convertir string <-> Date
+const fechaInicioComputed = computed({
+  get: () => {
+    if (!registroLocal.fecha_inicio) return null
+    // Crear fecha en UTC para evitar problemas de timezone
+    const [year, month, day] = registroLocal.fecha_inicio.split('-').map(Number)
+    return new Date(year, month - 1, day) // Fecha local sin timezone issues
+  },
+  set: (val: Date | string | null) => {
+    if (!val) {
+      registroLocal.fecha_inicio = undefined
+      return
+    }
+    if (val instanceof Date && !isNaN(val.getTime())) {
+      const year = val.getFullYear()
+      const month = String(val.getMonth() + 1).padStart(2, '0')
+      const day = String(val.getDate()).padStart(2, '0')
+      registroLocal.fecha_inicio = `${year}-${month}-${day}`
+    } else if (typeof val === 'string') {
+      registroLocal.fecha_inicio = val.split('T')[0]
     }
   }
-)
+})
 
-watch(
-  () => registroLocal.fecha_termino,
-  (val) => {
-    console.log('📥 registroLocal.fecha_termino cambió -> raw:', val)
-    try {
-      const asDate = val ? new Date(val) : null
-      console.log('   typeof:', typeof val, ' new Date(val):', asDate, ' toISOString (if valid):', asDate && !isNaN(asDate.getTime()) ? asDate.toISOString() : 'invalid')
-    } catch (e) {
-      console.log('   error parse fecha_termino:', e)
+const fechaTerminoComputed = computed({
+  get: () => {
+    if (!registroLocal.fecha_termino) return null
+    const [year, month, day] = registroLocal.fecha_termino.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  },
+  set: (val: Date | string | null) => {
+    if (!val) {
+      registroLocal.fecha_termino = undefined
+      return
+    }
+    if (val instanceof Date && !isNaN(val.getTime())) {
+      const year = val.getFullYear()
+      const month = String(val.getMonth() + 1).padStart(2, '0')
+      const day = String(val.getDate()).padStart(2, '0')
+      registroLocal.fecha_termino = `${year}-${month}-${day}`
+    } else if (typeof val === 'string') {
+      registroLocal.fecha_termino = val.split('T')[0]
     }
   }
-)
-
-
+})
 
 function nextStep() {
   errorMessage.value = ''

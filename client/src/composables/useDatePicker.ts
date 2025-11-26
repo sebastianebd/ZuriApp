@@ -5,17 +5,18 @@ interface DataPickerProps {
 }
 
 export function useDatePicker(props: DataPickerProps) {
+  // Convertir strings a objetos Date para disabled-dates
+  const isDisabled = computed(() => {
+    if (!props.fechasBloqueadas || props.fechasBloqueadas.length === 0) {
+      return [] // ← CAMBIO CLAVE: undefined en lugar de []
+    }
 
-  // 2. Fechas Deshabilitadas Procesadas
-const isDisabled = computed(() => {
-  if (!props.fechasBloqueadas) return []
-
-  return props.fechasBloqueadas.map((f) => {
-    const fecha = `${f}T12:00:00`
-    console.log(fecha)
-    return fecha
+    return props.fechasBloqueadas.map((f) => {
+      const [year, month, day] = f.split('-').map(Number)
+      const date = new Date(year, month - 1, day) // Fecha local sin 'T00:00:00'
+      return date
+    })
   })
-})
 
   const popoverConfig = ref({
     visibility: 'focus' as const,
@@ -24,6 +25,8 @@ const isDisabled = computed(() => {
   })
 
   const dateAttributes = computed(() => {
+    const dates = isDisabled.value
+    if (!dates.length) return []
     return [
       {
         key: 'disabled-dates',
@@ -32,16 +35,14 @@ const isDisabled = computed(() => {
           fillMode: 'light'
         },
         dates: isDisabled.value,
-        exclude: {
-          weekdays: []
-        }
+        disabled: true
       }
     ]
   })
 
   return {
     popoverConfig,
-    dateAttributes,
-    isDisabled
+    isDisabled,
+    dateAttributes
   }
 }

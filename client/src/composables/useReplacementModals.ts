@@ -72,8 +72,8 @@ const closeCreateModal = () => {
     apellido_entrante: '',
     apellido_saliente: '',
     tipo_cargo: '',
-    fecha_inicio: '',
-    fecha_termino: ''
+    servicio: '',
+    tipo_turno: '',
   }
 }
 
