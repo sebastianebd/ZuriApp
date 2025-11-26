@@ -283,7 +283,7 @@ const guardarNuevoReemplazo = async (nuevoReemplazo: RegisterDataReemplazo) => {
 
 //ESTO DEBERÍA SETEAR EL STATUS A FINALIZADO DANDO FECHA DE TERMINO EL MOMENTO EL DÍA FINALIZADO
 const handleFinalizar = async (id: string) => {
-  await replacementStore.eliminarReemplazo(id)
+  await replacementStore.finalizarReemplazo(id)
   showAlert?.('Finalizado', 'El registro se ha finalizado correctamente.')
 }
 
@@ -297,7 +297,7 @@ const handleUpdate = async () => {
 
 //ESTO DEBERÍA SETEAR EL STATUS A ANULADO 
 const handleAnular = async (id: string) => {
-  await replacementStore.eliminarReemplazo(id)
+  await replacementStore.anularReemplazo(id)
   showAlert?.('Anulado', 'El registro se ha anulado correctamente.')
 }
 

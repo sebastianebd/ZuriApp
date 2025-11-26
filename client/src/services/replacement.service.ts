@@ -26,7 +26,20 @@ export const actualizarReemplazo = async (
   }
 }
 
-export const eliminarReemplazo = async (
+export const finalizarReemplazo = async (
+  apiPrivate: ReturnType<typeof useApiPrivate>,
+  id: string, 
+) => {
+  try {
+    const { data } = await apiPrivate.delete(`/api/reemplazos/${id}`,)
+    return data
+  } catch (error) {
+    throw errorHandler(error)
+  }
+}
+
+//SE DEBE CAMBIAR EL ENDPOINT
+export const anularReemplazo = async (
   apiPrivate: ReturnType<typeof useApiPrivate>,
   id: string, 
 ) => {

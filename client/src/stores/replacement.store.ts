@@ -94,18 +94,37 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
-    async eliminarReemplazo(reemplazoId: string) {
+
+    //ESTA FUNCION ES PARA FINALIZAR (ANTICIPADAMENTE) REEMPLAZO NO ELIMINAR
+    async finalizarReemplazo(reemplazoId: string) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
 
       try {
-        await ReplacementService.eliminarReemplazo(apiPrivate, reemplazoId)
+        await ReplacementService.finalizarReemplazo(apiPrivate, reemplazoId)
         await this.mostrarReemplazos()
 
         this.reemplazosActivos = this.reemplazosActivos.filter((r) => r._id !== reemplazoId)
       } catch (error) {
         console.error('Error al eliminar reemplazo:', error)
         this.error = 'No se pudo eliminar el reemplazo.'
+        throw error
+      }
+    },
+
+      //ESTA FUNCION ES PARA ANULAR REEMPLAZO (FUTURO, AUN NO EN CURSO) NO ELIMINAR
+    async anularReemplazo(reemplazoId: string) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+
+      try {
+        await ReplacementService.anularReemplazo(apiPrivate, reemplazoId)
+        await this.mostrarReemplazos()
+
+        this.reemplazosActivos = this.reemplazosActivos.filter((r) => r._id !== reemplazoId)
+      } catch (error) {
+        console.error('Error al anular reemplazo:', error)
+        this.error = 'No se pudo anular el reemplazo.'
         throw error
       }
     },
