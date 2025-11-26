@@ -303,12 +303,11 @@ const emit = defineEmits<{
 const showConfirmacion = ref(false)
 
 const turnoEnCurso = computed(() => {
-  if (!props.registro?.fecha_inicio) return false
+  if (!props.registro?.status) return false
 
-  const hoy = new Date()
-  const fechaInicio = new Date(props.registro.fecha_inicio)
+  const status = props.registro.status
 
-  return fechaInicio <= hoy
+  return status === 'EN CURSO'
 })
 
 function abrirConfirmacion() {

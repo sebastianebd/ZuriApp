@@ -18,7 +18,7 @@
           <th class="small">Status</th>
           <th class="small text-center">Editar</th>
           <th class="small text-center">Exportar</th>
-          <th class="small text-center">Anular</th>
+          <th class="small text-center">Acción</th>
         </tr>
       </thead>
 
@@ -56,39 +56,53 @@
           </td>
 
           <td class="action-cell">
-            <button @click="$emit('modificar', reemplazo)" class="btn btn-warning btn-sm shadow-sm">
+            <button @click="$emit('modificar', reemplazo)" class=" btn-sm shadow-sm">
               <img src="../../assets/icons/update-icon.png" alt="update icon" />
             </button>
           </td>
           <td class="action-cell">
-            <button @click="$emit('exportar', reemplazo)" class="btn btn-info btn-sm shadow-sm">
+            <button @click="$emit('exportar', reemplazo)" class="btn  btn-sm shadow-sm">
               <img src="../../assets/icons/export-icon.png" alt="export icon" />
             </button>
           </td>
+
+
           <td class="action-cell">
             <button
-              @click="confirmarEliminar(reemplazo._id)"
+              v-if="turnoEnCurso(reemplazo)"
+              @click="confirmarFinalizar(reemplazo._id)"
+              class="btn btn-warning btn-sm shadow-sm"
+            >
+              <img src="../../assets/icons/finalizar-icon.png" alt="finalizar icon" />
+            </button>
+            <button
+              v-else
+              @click="confirmarAnular(reemplazo._id)"
               class="btn btn-danger btn-sm shadow-sm"
             >
-              <img src="../../assets/icons/delete-icon.png" alt="delete icon" />
+              <img src="../../assets/icons/delete-icon.png" alt="anular icon" />
             </button>
+
           </td>
+
+
         </tr>
       </tbody>
     </table>
 
     <!-- Modal de confirmación -->
-    <ConfirmationModal
-      :visible="showConfirmacion"
-      @confirmar="eliminarRegistroConfirmado"
-      mensaje="¿Deseas anular este registro?"
-      @cancelar="cancelarEliminacion"
-    />
+<ConfirmationModal
+  :visible="showConfirmacion"
+  :mensaje="accion === 'finalizar' ? '¿Deseas FINALIZAR este registro?' : '¿Deseas ANULAR este registro?'"
+  @confirmar="confirmarAccion"
+  @cancelar="cancelarAccion"
+/>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import {  ref } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import type { RegisterDataReemplazo, User } from '@/types/models'
 
@@ -99,14 +113,21 @@ defineProps({
   }
 })
 
+function turnoEnCurso(reemplazo: RegisterDataReemplazo) {
+  return reemplazo.status === 'EN CURSO';
+}
+
 const emit = defineEmits<{
   (e: 'modificar', registro: RegisterDataReemplazo): void
   (e: 'exportar', registro: RegisterDataReemplazo): void
-  (e: 'eliminar', id: string): void
+  (e: 'finalizar', id: string): void
+  (e: 'anular', id: string): void
 }>()
 
 const showConfirmacion = ref(false)
-const idAEliminar = ref<string | null>(null)
+const idRegistro = ref<string | null>(null)
+const accion = ref<'finalizar' | 'anular' | null>(null)
+
 
 const getCreatorName = (reemplazo: RegisterDataReemplazo): string => {
   const creator = reemplazo.creado_por
@@ -118,20 +139,37 @@ const getCreatorName = (reemplazo: RegisterDataReemplazo): string => {
   return String(creator) || 'Usuario no asignado'
 }
 
-function confirmarEliminar(id: string) {
-  idAEliminar.value = id
+function confirmarFinalizar(id: string) {
+  idRegistro.value = id
+  accion.value = 'finalizar'
   showConfirmacion.value = true
 }
 
-function eliminarRegistroConfirmado() {
-  if (idAEliminar.value) emit('eliminar', idAEliminar.value)
-  showConfirmacion.value = false
-  idAEliminar.value = null
+function confirmarAnular(id: string) {
+  idRegistro.value = id
+  accion.value = 'anular'
+  showConfirmacion.value = true
 }
 
-function cancelarEliminacion() {
+
+function confirmarAccion() {
+  if (!idRegistro.value || !accion.value) return
+
+  if (accion.value === 'finalizar') {
+    emit('finalizar', idRegistro.value)
+  } else {
+    emit('anular', idRegistro.value)
+  }
+
   showConfirmacion.value = false
-  idAEliminar.value = null
+  idRegistro.value = null
+  accion.value = null
+}
+
+
+function cancelarAccion() {
+  showConfirmacion.value = false
+  idRegistro.value = null
 }
 
 const formatearFecha = (fecha: string) => {

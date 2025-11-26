@@ -25,7 +25,8 @@
 
         <ReplacementTable
           :reemplazos="paginatedReplacements"
-          @eliminar="handleDelete"
+          @finalizar="handleFinalizar"
+          @anular="handleAnular"
           @modificar="openUpdateModal"
         />
 
@@ -278,10 +279,12 @@ const guardarNuevoReemplazo = async (nuevoReemplazo: RegisterDataReemplazo) => {
   showAlert?.('Guardado', 'El registro se ha guardado correctamente.')
 }
 
-// --- Eliminar/Actualizar
-const handleDelete = async (id: string) => {
+// --- Finalizar/Actualizar/Anular
+
+//ESTO DEBERÍA SETEAR EL STATUS A FINALIZADO DANDO FECHA DE TERMINO EL MOMENTO EL DÍA FINALIZADO
+const handleFinalizar = async (id: string) => {
   await replacementStore.eliminarReemplazo(id)
-  showAlert?.('Eliminado', 'El registro se ha eliminado correctamente.')
+  showAlert?.('Finalizado', 'El registro se ha finalizado correctamente.')
 }
 
 const handleUpdate = async () => {
@@ -290,6 +293,12 @@ const handleUpdate = async () => {
   }
   closeUpdateModal()
   showAlert?.('Modificado', 'El registro se ha modificado correctamente.')
+}
+
+//ESTO DEBERÍA SETEAR EL STATUS A ANULADO 
+const handleAnular = async (id: string) => {
+  await replacementStore.eliminarReemplazo(id)
+  showAlert?.('Anulado', 'El registro se ha anulado correctamente.')
 }
 
 // --- 4. MONTAJE y SOCKETS ---

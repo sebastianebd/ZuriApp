@@ -17,8 +17,6 @@
         <div class="modal-body bg-light">
           <p v-if="errorMessage" class="alert alert-danger py-2">{{ errorMessage }}</p>
 
-          <!-- Usamos <transition> para animar entre pasos.
-              mode="out-in" garantiza que la salida termine antes de la entrada -->
           <transition name="fade-step" mode="out-in">
             <div :key="currentStep">
               <!-- Paso 1 -->
@@ -249,8 +247,6 @@ const registroLocal = reactive({ ...props.registro })
 const currentStep = ref(1)
 const errorMessage = ref('')
 
-
-
 // --- Configuración de calendario
 const { popoverConfig, isDisabled, dateAttributes } = useDatePicker(props)
 
@@ -262,15 +258,11 @@ watch(
   { deep: true }
 )
 
-
-
-// COMPUTED PROPERTIES para convertir string <-> Date
 const fechaInicioComputed = computed({
   get: () => {
     if (!registroLocal.fecha_inicio) return null
-    // Crear fecha en UTC para evitar problemas de timezone
     const [year, month, day] = registroLocal.fecha_inicio.split('-').map(Number)
-    return new Date(year, month - 1, day) // Fecha local sin timezone issues
+    return new Date(year, month - 1, day)
   },
   set: (val: Date | string | null) => {
     if (!val) {
