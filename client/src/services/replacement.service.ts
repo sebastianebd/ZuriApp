@@ -31,7 +31,7 @@ export const finalizarReemplazo = async (
   id: string, 
 ) => {
   try {
-    const { data } = await apiPrivate.delete(`/api/reemplazos/${id}`,)
+    const { data } = await apiPrivate.put(`/api/reemplazos/finalizar/${id}`,)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -44,7 +44,7 @@ export const anularReemplazo = async (
   id: string, 
 ) => {
   try {
-    const { data } = await apiPrivate.delete(`/api/reemplazos/${id}`,)
+    const { data } = await apiPrivate.put(`/api/reemplazos/anular/${id}`,)
     return data
   } catch (error) {
     throw errorHandler(error)

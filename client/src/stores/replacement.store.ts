@@ -106,8 +106,8 @@ export const useReplacementStore = defineStore('replacement', {
 
         this.reemplazosActivos = this.reemplazosActivos.filter((r) => r._id !== reemplazoId)
       } catch (error) {
-        console.error('Error al eliminar reemplazo:', error)
-        this.error = 'No se pudo eliminar el reemplazo.'
+        console.error('Error al finalizar reemplazo:', error)
+        this.error = 'No se pudo finalizar el reemplazo.'
         throw error
       }
     },

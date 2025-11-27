@@ -29,6 +29,9 @@ const determineStatusCorte = (fecha_corte) => {
   return "EN CURSO";
 };
 
+const fechaLocal = new Date();
+fechaLocal.setMinutes(fechaLocal.getMinutes() - fechaLocal.getTimezoneOffset());
+
 async function registrar(data) {
   const initialStatus = determineStatus(data.fecha_inicio);
 
@@ -57,13 +60,19 @@ async function obtenerInactivos() {
 async function actualizar(id, data) {
   // Implementar lógica de determinar estado aquí también
   await Reemplazo.findByIdAndUpdate(id, data, { new: true });
-  return await Reemplazo.find();
+  return await Reemplazo.findById(id);
 }
 
-//FUNCION DEBERÍA LLAMARSE anularReemplazo
-async function eliminar(id) {
+//FUNCION DEBERÍA LLAMARSE finalizarReemplazo
+async function finalizarReemplazo(id) {
+  await Reemplazo.findByIdAndUpdate(id, { status: "FINALIZADO", fecha_termino: fechaLocal }, { new: true });
+  return await Reemplazo.findById(id);
+}
+
+
+async function anularReemplazo(id) {
   await Reemplazo.findByIdAndUpdate(id, { status: "ANULADO" });
-  return await Reemplazo.find();
+  return await Reemplazo.findById(id);
 }
 
 async function obtenerHistorialUsuario(id) {
@@ -143,7 +152,8 @@ module.exports = {
   obtenerActivos,
   obtenerInactivos,
   actualizar,
-  eliminar,
+  finalizarReemplazo,
+  anularReemplazo,
   obtenerHistorialUsuario,
   sustituir,
 };

@@ -140,7 +140,7 @@
                   <DatePicker
                     v-model="fechaInicioComputed"
                     :disabled-dates="isDisabled"
-                    :min-date="new Date()"
+                    :min-date="today"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :popover="popoverConfig"
                     :attributes="dateAttributes"
@@ -166,7 +166,7 @@
                   <DatePicker
                     v-model="fechaTerminoComputed"
                     :disabled-dates="isDisabled"
-                    :min-date="new Date()"
+                    :min-date="today"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :popover="popoverConfig"
                     :attributes="dateAttributes"
@@ -257,6 +257,37 @@ watch(
   },
   { deep: true }
 )
+
+function todayString() {
+  const d = new Date()
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+
+watch(
+  () => props.visible,
+  (nuevoValor) => {
+    if (nuevoValor) {
+      currentStep.value = 1
+      errorMessage.value = ''
+
+      Object.assign(registroLocal, props.registro)
+
+      if (!registroLocal.fecha_inicio)
+        registroLocal.fecha_inicio = todayString()
+
+      if (!registroLocal.fecha_termino)
+        registroLocal.fecha_termino = todayString()
+    }
+  }
+)
+
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
 
 const fechaInicioComputed = computed({
   get: () => {

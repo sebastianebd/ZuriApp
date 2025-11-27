@@ -28,9 +28,20 @@ async function actualizarReemplazo(req, res) {
   }
 }
 
-async function eliminarReemplazo(req, res) {
+//finalizar reemplazo
+async function finalizarReemplazo(req, res) {
   try {
-    const data = await replacementService.eliminar(req.params.id);
+    const data = await replacementService.finalizarReemplazo(req.params.id);
+    res.json(data);
+  } catch (error) {
+    res.status(400).json({ mensaje: error.message });
+  }
+}
+
+//anular reemplazo
+async function anularReemplazo(req, res) {
+  try {
+    const data = await replacementService.anularReemplazo(req.params.id);
     res.json(data);
   } catch (error) {
     res.status(400).json({ mensaje: error.message });
@@ -67,7 +78,8 @@ module.exports = {
   mostrarReemplazos,
   mostrarHistorial,
   actualizarReemplazo,
-  eliminarReemplazo,
+  finalizarReemplazo,
+  anularReemplazo,
   obtenerHistorialUsuario,
   procesarSustitucion,
 };

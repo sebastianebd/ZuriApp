@@ -10,7 +10,8 @@ router.post('/', replacementController.registerReemplazo);
 router.put('/:id', replacementController.actualizarReemplazo);
 router.get('/', replacementController.mostrarReemplazos);
 router.get('/historial', replacementController.mostrarHistorial);
-router.delete('/:id', replacementController.eliminarReemplazo);
+router.put('/finalizar/:id', replacementController.finalizarReemplazo);
+router.put('/anular/:id', replacementController.anularReemplazo);
 router.get('/:id', replacementController.obtenerHistorialUsuario);
 router.post('/sustituir', replacementController.procesarSustitucion);
 
