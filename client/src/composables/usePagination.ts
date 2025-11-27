@@ -4,7 +4,7 @@ interface Pageable {
     id_negocio: string;
 }
 
-export function usePagination<T extends Pageable>(items: Ref<T[]>, itemsPerPage = 20) {
+export function usePagination<T extends Pageable>(items: Ref<T[]>, itemsPerPage = 16) {
     const currentPage = ref(1);
 
     const totalPages = computed(() => {
@@ -13,7 +13,6 @@ export function usePagination<T extends Pageable>(items: Ref<T[]>, itemsPerPage 
 
     const paginatedItems = computed(() => {
         const sorted = [...items.value].sort((a, b) => {
-            // Lógica de ordenación que ya tenías: descendente por número de id_negocio
             const numA = parseInt(a.id_negocio.replace(/\D/g, ''), 10);
             const numB = parseInt(b.id_negocio.replace(/\D/g, ''), 10);
             return numB - numA;

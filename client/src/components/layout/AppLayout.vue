@@ -37,11 +37,12 @@ provide('showAlert', (title: string, message: string) => {
   margin-left: 7rem;
   transition: margin-left 0.2s ease-in-out; 
   flex: 1; 
-  padding: 1rem; 
+  padding-left: 3rem; 
+  padding-right: 3rem; 
 
   &.expanded {
     margin-left: calc(
-      var(--sidebar-width) + 3rem
+      var(--sidebar-width) 
     ); 
     transition: margin-left 0.2s ease-in-out; 
   }
@@ -53,14 +54,14 @@ provide('showAlert', (title: string, message: string) => {
 
   &.expanded {
     margin-left: calc(
-      var(--sidebar-width) + 3rem
+      var(--sidebar-width) 
     ); 
     transition: margin-left 0.2s ease-in-out; 
   }
 }
 
 .app-layout {
-  background-color: rgb(243, 226, 250);
+  background-color: rgb(246, 240, 248);
   height: 100vh;
 }
 

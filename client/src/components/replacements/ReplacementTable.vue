@@ -1,7 +1,7 @@
 <template>
-  <div class="table-responsive tabla-reemplazos-container">
+  <div class="table-responsive tabla-reemplazos-container ">
     <table
-      class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden tabla-reemplazos"
+      class="table table-hover align-middle shadow-sm rounded-4 overflow-hidden tabla-reemplazos"
     >
       <thead class="table-primary text-white">
         <tr>
@@ -28,20 +28,20 @@
           :key="reemplazo._id"
           class="border-bottom align-middle hover-row"
         >
-          <td class="small text-secondary bg-warning-light">{{ reemplazo.id_negocio }}</td>
+          <td class="small text-secondary ">{{ reemplazo.id_negocio }}</td>
           <td class="small text-secondary bg-warning-light">{{ reemplazo.rut_saliente }}</td>
-          <td class="small bg-warning-light">
+          <td class="small text-secondary fw-semibold bg-warning-light">
             {{ reemplazo.nombre_saliente }}&nbsp;&nbsp;&nbsp;{{ reemplazo.apellido_saliente }}
           </td>
           <td class="small text-secondary bg-success-light">{{ reemplazo.rut_entrante }}</td>
-          <td class="small bg-success-light">
+          <td class="small text-secondary fw-semibold bg-success-light">
             {{ reemplazo.nombre_entrante }}&nbsp;&nbsp;&nbsp;{{ reemplazo.apellido_entrante }}
           </td>
-          <td class="small">{{ reemplazo.tipo_turno }}</td>
-          <td class="small">{{ formatearFecha(reemplazo.fecha_inicio) }}</td>
-          <td class="small">{{ formatearFecha(reemplazo.fecha_termino) }}</td>
-          <td class="small text-primary fw-semibold">{{ reemplazo.servicio }}</td>
-          <td class="small text-secondary bg-created-light fw-semibold">
+          <td class="small text-secondary">{{ reemplazo.tipo_turno }}</td>
+          <td class="small text-secondary">{{ formatearFecha(reemplazo.fecha_inicio) }}</td>
+          <td class="small text-secondary">{{ formatearFecha(reemplazo.fecha_termino) }}</td>
+          <td class="small text-secondary ">{{ reemplazo.servicio }}</td>
+          <td class="small text-secondary ">
             {{ getCreatorName(reemplazo) }}
           </td>
           <td class="small fw-semibold">
@@ -181,9 +181,7 @@ const formatearFecha = (fecha: string) => {
 <style scoped>
 /* 🌙 Contenedor general */
 .tabla-reemplazos-container {
-  background-color: #f8f9fb;
   border-radius: 0.75rem;
-  padding: 1rem;
 }
 
 /* 🧭 Encabezado */

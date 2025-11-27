@@ -1,27 +1,27 @@
 <template>
   <main>
-    <div class="row mb-3">
-      <div class="col-auto">
-        <button @click="openCreateModal" class="btn btn-primary btn-sm">
-          <span class="text">Crear Reemplazo</span>
-        </button>
-      </div>
-      <div class="col-auto">
-        <button @click="replacementStore.limpiarFiltros()" class="btn btn-secondary btn-sm">
-          Limpiar Filtros
-        </button>
-      </div>
-    </div>
+    <div class="row mb-3"></div>
 
-    <div class="card mt-2">
-      <div class="card-body p-0">
-        <h5 class="card-title m-b-0 p-3">
-          Reemplazos Activos ({{ replacementStore.reemplazosFiltrados.length }} registros)
+    <div class="mt-2">
+      <div class="">
+        <h5 class="card-title m-b-0 pt-2 text-secondary">
+          Reemplazos Activos ({{ replacementStore.reemplazosFiltrados.length }} Registros)
         </h5>
+        <div class="d-flex justify-content-end pb-3">
+          <button @click="replacementStore.limpiarFiltros()" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm">
+            Limpiar Filtros
+          </button>
+        </div>
       </div>
 
       <div class="">
         <ReplacementFilter :lista-servicios="listaDeServicios" />
+
+        <div class="d-flex justify-content-end pb-3">
+          <button @click="openCreateModal" class="btn btn-primary btn-sm fw-semibold shadow-sm">
+            <span class=" text-white">Nuevo Reemplazo</span>
+          </button>
+        </div>
 
         <ReplacementTable
           :reemplazos="paginatedReplacements"
@@ -30,7 +30,7 @@
           @modificar="openUpdateModal"
         />
 
-        <div class="d-flex justify-content-center align-items-center my-3" v-if="totalPages > 1">
+        <div class="d-flex justify-content-center align-items-center my-1" v-if="totalPages > 1">
           <button
             v-if="currentPage > 1"
             class="btn btn-outline-primary btn-sm mx-1"
@@ -39,7 +39,7 @@
             ◀ Anterior
           </button>
 
-          <span class="mx-2">Página {{ currentPage }} de {{ totalPages }}</span>
+          <span class="mx-2 text-secondary">Página {{ currentPage }} de {{ totalPages }}</span>
 
           <button
             v-if="currentPage < totalPages"
@@ -295,7 +295,7 @@ const handleUpdate = async () => {
   showAlert?.('Modificado', 'El registro se ha modificado correctamente.')
 }
 
-//ESTO DEBERÍA SETEAR EL STATUS A ANULADO 
+//ESTO DEBERÍA SETEAR EL STATUS A ANULADO
 const handleAnular = async (id: string) => {
   await replacementStore.anularReemplazo(id)
   showAlert?.('Anulado', 'El registro se ha anulado correctamente.')

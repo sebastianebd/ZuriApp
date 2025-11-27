@@ -46,10 +46,10 @@ export const useReplacementStore = defineStore('replacement', {
       let filtrados = state.reemplazosActivos
 
       if (state.fechaInicio) {
-        filtrados = filtrados.filter((r) => String(r.fecha_inicio) >= state.fechaInicio)
+        filtrados = filtrados.filter((r) => String(r.fecha_inicio) === state.fechaInicio)
       }
       if (state.fechaFin) {
-        filtrados = filtrados.filter((r) => String(r.fecha_termino) <= state.fechaFin)
+        filtrados = filtrados.filter((r) => String(r.fecha_termino) === state.fechaFin)
       }
 
       if (state.filtroRutSaliente) {
