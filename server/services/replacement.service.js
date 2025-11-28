@@ -54,7 +54,8 @@ async function obtenerActivos() {
 async function obtenerInactivos() {
   return await Reemplazo.find({
     status: { $in: ["FINALIZADO", "ANULADO", "INTERRUMPIDO"] },
-  });
+  })
+  .populate("creado_por", "nombre apellido"); 
 }
 
 async function actualizar(id, data) {
