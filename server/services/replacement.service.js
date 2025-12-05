@@ -51,11 +51,98 @@ async function obtenerActivos() {
   }).populate("creado_por", "nombre apellido");
 }
 
-async function obtenerInactivos() {
-  return await Reemplazo.find({
+/**
+ * Obtiene el historial de reemplazos inactivos con paginación y filtrado.
+ * @param {object} filtros - Objeto con criterios de filtrado (ej: { rutSaliente: '123', servicio: 'Urgencias' })
+ * @param {number} [pagina=1] - Número de página a cargar.
+ * @param {number} [limite=10] - Cantidad máxima de registros por página.
+ * @returns {Promise<object>} Un objeto con los registros y metadatos de paginación.
+ */
+async function obtenerInactivosPaginados(
+  filtros = {},
+  pagina = 1,
+  limite = 10
+) {
+  // 1. Definición del Query Base (registros inactivos)
+  const query = {
     status: { $in: ["FINALIZADO", "ANULADO", "INTERRUMPIDO"] },
-  })
-  .populate("creado_por", "nombre apellido"); 
+  };
+
+  // 2. Aplicación de Filtros Dinámicos
+  // Nota: Los nombres de los filtros deben coincidir con los que envías desde el frontend.
+
+  if (filtros.servicio) {
+    query.servicio = filtros.servicio;
+  }
+
+  // Filtro por RUT Saliente (busca RUT que COMIENCE con el texto, Case-Insensitive 'i')
+  if (filtros.rutSaliente) {
+    query.rut_saliente = {
+      $regex: new RegExp(`^${filtros.rutSaliente}`),
+      $options: "i",
+    };
+  }
+
+  // Filtro por RUT Entrante
+  if (filtros.rutEntrante) {
+    query.rut_entrante = {
+      $regex: new RegExp(`^${filtros.rutEntrante}`),
+      $options: "i",
+    };
+  }
+
+  // Filtro por Fecha Inicio
+  if (filtros.fechaInicio) {
+    // En Mongoose, las fechas se comparan mejor usando $gte o $lte en un rango.
+    // Si el usuario quiere ver solo registros que *comenzaron* en esa fecha:
+    const fechaInicio = new Date(filtros.fechaInicio);
+    const fechaFinDia = new Date(fechaInicio);
+    fechaFinDia.setDate(fechaFinDia.getDate() + 1); // El día siguiente
+
+    query.fecha_inicio = {
+      $gte: fechaInicio, // Mayor o igual que el inicio del día
+      $lt: fechaFinDia, // Menor estricto que el inicio del día siguiente
+    };
+  }
+
+  // Filtro por Fecha Fin
+  if (filtros.fechaFin) {
+    // Si el usuario quiere ver solo registros que *terminaron* en esa fecha:
+    const fechaTermino = new Date(filtros.fechaFin);
+    const fechaFinDia = new Date(fechaTermino);
+    fechaFinDia.setDate(fechaFinDia.getDate() + 1);
+
+    query.fecha_termino = {
+      $gte: fechaTermino,
+      $lt: fechaFinDia,
+    };
+  }
+
+  // 3. Cálculo del OFFSET (Cuántos registros saltar)
+  const skip = (pagina - 1) * limite;
+
+  // 4. Ejecución de Consultas Concurrentes
+  const [registros, totalRegistros] = await Promise.all([
+    // Consulta A: Obtener los datos de la página
+    Reemplazo.find(query)
+      .populate("creado_por", "nombre apellido")
+      .sort({ fecha_inicio: -1 }) // Ordenar descendente
+      .skip(skip)
+      .limit(limite)
+      .exec(),
+
+    // Consulta B: Obtener el conteo total de documentos que cumplen el filtro
+    Reemplazo.countDocuments(query),
+  ]);
+
+  // 5. Devolver Resultados con Metadatos
+  return {
+    registros,
+    totalRegistros,
+    paginaActual: pagina,
+    limite,
+    totalPages: Math.ceil(totalRegistros / limite),
+  };
 }
 
 async function actualizar(id, data) {
@@ -66,10 +153,13 @@ async function actualizar(id, data) {
 
 //FUNCION DEBERÍA LLAMARSE finalizarReemplazo
 async function finalizarReemplazo(id) {
-  await Reemplazo.findByIdAndUpdate(id, { status: "FINALIZADO", fecha_termino: fechaLocal }, { new: true });
+  await Reemplazo.findByIdAndUpdate(
+    id,
+    { status: "FINALIZADO", fecha_termino: fechaLocal },
+    { new: true }
+  );
   return await Reemplazo.findById(id);
 }
-
 
 async function anularReemplazo(id) {
   await Reemplazo.findByIdAndUpdate(id, { status: "ANULADO" });
@@ -151,10 +241,10 @@ async function sustituir(payload) {
 module.exports = {
   registrar,
   obtenerActivos,
-  obtenerInactivos,
   actualizar,
   finalizarReemplazo,
   anularReemplazo,
   obtenerHistorialUsuario,
   sustituir,
+  obtenerInactivosPaginados,
 };

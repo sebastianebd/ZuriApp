@@ -73,6 +73,29 @@ async function procesarSustitucion(req, res) {
   }
 }
 
+async function mostrarHistorialPaginado(req, res) {
+    try {
+        // Extraer los filtros y la paginación de req.query
+        const { pagina, limite, ...filtros } = req.query; 
+
+        // Convertir a números (asegurando valores por defecto si no vienen)
+        const paginaNum = parseInt(pagina) || 1;
+        const limiteNum = parseInt(limite) || 10;
+        
+        // Llamar a la función del servicio con los filtros y paginación
+        const data = await replacementService.obtenerInactivosPaginados(
+            filtros, 
+            paginaNum, 
+            limiteNum
+        );
+        
+        res.json(data);
+    } catch (error) {
+        // Manejo de errores
+        res.status(500).json({ mensaje: error.message || "Error al cargar el historial paginado." });
+    }
+}
+
 module.exports = {
   registerReemplazo,
   mostrarReemplazos,
@@ -82,4 +105,5 @@ module.exports = {
   anularReemplazo,
   obtenerHistorialUsuario,
   procesarSustitucion,
+  mostrarHistorialPaginado,
 };

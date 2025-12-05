@@ -2,6 +2,50 @@ import { errorHandler } from '@/utils/errorHandler'
 import type { useApiPrivate } from '../composables/useApi'
 import type { RegisterDataReemplazo, SustitucionPayload } from '../types/models'
 
+// 💡 Interfaz para la respuesta del backend
+interface PaginacionResult {
+  registros: RegisterDataReemplazo[];
+  totalRegistros: number;
+  paginaActual: number;
+  limite: number;
+  totalPages: number;
+}
+
+// 💡 Interfaz para los filtros del historial (igual que en el componente)
+interface FiltrosHistorial {
+    rutSaliente?: string;
+    rutEntrante?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
+    servicio?: string;
+}
+
+// -----------------------------------------------------
+// 💡 NUEVA FUNCIÓN: OBTENER INACTIVOS PAGINADOS
+// -----------------------------------------------------
+export const obtenerInactivosPaginados = async (
+  apiPrivate: ReturnType<typeof useApiPrivate>,
+  filtros: FiltrosHistorial,
+  pagina: number,
+  limite: number
+): Promise<PaginacionResult> => {
+    try {
+        const params = {
+            ...filtros,
+            pagina,
+            limite
+        };
+
+        const { data } = await apiPrivate.get('/api/reemplazos/historial-paginado', {
+            params: params
+        });
+        
+        return data as PaginacionResult;
+    } catch (error) {
+        throw errorHandler(error)
+    }
+}
+
 
 export const crearReemplazo = async (payload: RegisterDataReemplazo,
   apiPrivate: ReturnType<typeof useApiPrivate>) => {
