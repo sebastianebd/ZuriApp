@@ -162,21 +162,13 @@ export const useReplacementStore = defineStore('replacement', {
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
 
       try {
-        const reemplazoModificado = await ReplacementService.actualizarReemplazo(
+        await ReplacementService.actualizarReemplazo(
           apiPrivate,
           reemplazoId,
           datosActualizados
         )
         await this.mostrarReemplazos()
 
-        const index = this.reemplazosActivos.findIndex((r) => r._id === reemplazoId)
-
-        if (index !== -1) {
-          this.reemplazosActivos[index] = {
-            ...this.reemplazosActivos[index],
-            ...reemplazoModificado
-          }
-        }
       } catch (error) {
         console.error('Error al actualizar reemplazo:', error)
         this.error = 'No se pudo actualizar el reemplazo.'

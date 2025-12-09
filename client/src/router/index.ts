@@ -36,11 +36,6 @@ const router = createRouter({
           component: () => import('@/views/user/ReemplazosView.vue'),
         },
         {
-          path: 'crear_usuario',
-          name: 'crear_usuario',
-          component: () => import('@/views/user/CrearUsuario.vue'),
-        },
-        {
           path: 'calendario',
           name: 'calendario',
           component: () => import('@/views/user/CalendarioView.vue'),

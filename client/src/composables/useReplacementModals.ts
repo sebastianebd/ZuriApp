@@ -1,4 +1,3 @@
-// src/composables/useReplacementModals.ts
 import { ref, computed } from 'vue'
 import type { User, RegisterDataReemplazo, SustitucionPayload } from '@/types/models'
 
@@ -39,7 +38,7 @@ const cargoDeFiltrado = computed(() => {
 
 const openUpdateModal = (reemplazo: RegisterDataReemplazo) => {
   updateModalVisible.value = true
-
+  
   const { fecha_inicio, fecha_termino, ...resto } = reemplazo
 
   registroActual.value = {
@@ -144,14 +143,11 @@ export function useReplacementModals() {
     userModalVisible,
     substituteModalVisible,
     grupo,
-
     registroActual,
     registroNuevo,
     fechaCorteSustitucion,
     nuevoEntranteSustitucion,
-
     cargoDeFiltrado,
-
     openUpdateModal,
     closeUpdateModal,
     openCreateModal,

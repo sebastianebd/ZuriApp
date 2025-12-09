@@ -121,25 +121,25 @@
           <div class="border rounded-3 p-3 bg-white shadow-sm mb-3">
             <h6 class="text-primary fw-semibold mb-3">Configuración del Turno</h6>
 
-            <div class="form-floating mb-3">
-              <select
+            <div class="mb-3">
+              <label for="tipoTurno" class="form-label fw-semibold">Tipo de Turno</label>
+
+              <v-select
                 id="tipoTurno"
-                :value="registro.tipo_turno"
-                @change="
-                  $emit('update:registro', {
-                    ...registro,
-                    tipo_turno: ($event.target as HTMLSelectElement).value
-                  })
-                "
-                class="form-select"
+                :key="listaDeTurnos.length > 0 ? 'turnos-loaded' : 'turnos-loading'"
+                :options="listaDeTurnos"
+                :model-value="registro.tipo_turno"
+                @update:model-value="(newValue: string) => { 
+        $emit('update:registro', {
+            ...registro,
+            tipo_turno: newValue
+        })
+    }"
                 :disabled="turnoEnCurso"
-              >
-                <option value="" disabled>Seleccione un turno</option>
-                <option v-for="turno in listaDeTurnos" :key="turno" :value="turno">
-                  {{ turno }}
-                </option>
-              </select>
-              <label for="tipoTurno">Tipo de Turno</label>
+                placeholder="Seleccione un turno"
+                :clearable="false"
+                :searchable="false"
+              />
             </div>
 
             <div class="mb-3">
@@ -222,25 +222,26 @@
               </DatePicker>
             </div>
 
-            <div class="form-floating mb-2">
-              <select
+            <div class="mb-3">
+              <label for="servicio" class="form-label fw-semibold">Servicio</label>
+
+              <v-select
                 id="servicio"
-                :value="registro.servicio"
-                @change="
-                  $emit('update:registro', {
+                :options="listaDeServicios"
+                :model-value="registro.servicio"
+                @update:model-value="
+            (newValue: string) => {
+                $emit('update:registro', {
                     ...registro,
-                    servicio: ($event.target as HTMLSelectElement).value
-                  })
-                "
-                class="form-select"
+                    servicio: newValue
+                })
+            }
+        "
                 :disabled="turnoEnCurso"
-              >
-                <option value="" disabled>Seleccione un servicio</option>
-                <option v-for="servicio in listaDeServicios" :key="servicio" :value="servicio">
-                  {{ servicio }}
-                </option>
-              </select>
-              <label for="servicio">Servicio</label>
+                placeholder="Seleccione un servicio"
+                :clearable="false"
+                :searchable="true"
+              />
             </div>
           </div>
         </div>
@@ -291,6 +292,8 @@ const props = defineProps<{
   listaDeServicios: string[]
   fechasBloqueadas: string[]
 }>()
+
+
 
 const emit = defineEmits<{
   (e: 'cerrar'): void
