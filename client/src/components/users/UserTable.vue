@@ -1,7 +1,10 @@
-J<template>
+J
+<template>
   <div class="table-responsive tabla-usuarios-container">
-    <table class="table table-hover align-middle shadow-sm rounded-3 overflow-hidden tabla-usuarios">
-      <thead class="table-primary text-center text-white">
+    <table
+      class="table table-hover align-middle shadow-sm rounded-4 overflow-hidden tabla-usuarios"
+    >
+      <thead class="table-primary text-white">
         <tr>
           <th class="small">RUT</th>
           <th class="small">Nombre</th>
@@ -80,9 +83,8 @@ J<template>
 import { ref } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 
-
-defineProps<{ 
-  usuarios: any[] 
+defineProps<{
+  usuarios: any[]
   loginUser: any
 }>()
 
@@ -119,12 +121,12 @@ function formatearFecha(fecha: string) {
 </script>
 
 <style scoped>
+/* 🌙 Contenedor general */
 .tabla-usuarios-container {
-  background-color: #f8f9fb;
-  padding-left: 4rem;
-  padding-right: 4rem;
+  border-radius: 0.75rem;
 }
 
+/* 🧭 Encabezado */
 .table-primary {
   background: linear-gradient(90deg, #0d6efd, #3d8bfd);
   border-bottom: 2px solid #bcd0ff;
@@ -136,24 +138,37 @@ function formatearFecha(fecha: string) {
   letter-spacing: 0.3px;
 }
 
+/* Alternancia de colores en filas */
 .tabla-usuarios tbody tr:nth-child(odd) {
   background-color: #ffffff;
 }
-
 .tabla-usuarios tbody tr:nth-child(even) {
   background-color: #f6f8fa;
 }
 
+/* ✨ Hover */
 .hover-row:hover {
   background-color: #e9f3ff !important;
   transition: background-color 0.25s ease;
 }
 
+/* 🔘 Celdas y bordes */
 .table td {
   vertical-align: middle;
   border-color: #dee2e6;
   padding: 0.5rem;
   color: #495057;
+}
+
+.bg-warning-light {
+  background-color: #fff7e0 !important;
+}
+.bg-success-light {
+  background-color: #e3f7ea !important;
+}
+
+.bg-created-light {
+  background-color: #b3d9f5 !important;
 }
 
 .action-cell {
@@ -167,11 +182,6 @@ function formatearFecha(fecha: string) {
   object-fit: contain;
 }
 
-.badge {
-  font-size: 0.75rem;
-  padding: 0.35em 0.65em;
-}
-
 .shadow-sm {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
@@ -183,6 +193,3 @@ function formatearFecha(fecha: string) {
   overflow: hidden;
 }
 </style>
-
-
-

@@ -6,86 +6,104 @@
   </main>
 </template>
 
-<script lang="ts">
-import { ref, onMounted, type Ref, nextTick } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
+import { useReplacementStore } from '@/stores/replacement.store'
 
-export default {
-  // eslint-disable-next-line vue/multi-word-component-names
-  name: 'Calendario',
-  components: {
-    FullCalendar
+const replacementStore = useReplacementStore()
+const calendarEvents = ref<any[]>([])
+
+// Opciones del calendario
+const calendarOptions = ref({
+  plugins: [dayGridPlugin, interactionPlugin],
+  initialView: 'dayGridMonth',
+  locale: 'es',
+  firstDay: 1,
+  events: calendarEvents, // Vinculado a la ref
+  headerToolbar: {
+    left: 'prev,next today',
+    center: 'title',
+    right: 'dayGridMonth,dayGridWeek,dayGridDay'
   },
-  setup() {
-    const nombresaliente: Ref<string> = ref('')
-    const isModalOpen: Ref<boolean> = ref(false)
-    const selectedDate: Ref<string> = ref('')
-    const selectedEvent: Ref<any> = ref(null)
-    const events: Ref<any[]> = ref([])
-    const calendar: Ref<InstanceType<typeof FullCalendar> | null> = ref(null)
+  buttonText: {
+    today: 'Hoy',
+    month: 'Mes',
+    week: 'Semana',
+    day: 'Día'
+  },
+  height: '80vh',
+  contentHeight: '80vh',
+  eventClick: handleEventClick
+})
 
-    const handleDateClick = (arg: any) => {
-      selectedDate.value = arg.dateStr
-      selectedEvent.value = events.value.find(
-        (event) =>
-          new Date(event.start) <= new Date(arg.dateStr) &&
-          new Date(arg.dateStr) <= new Date(event.end)
-      )
-      isModalOpen.value = true
-    }
+function handleEventClick(info: any) {
+  // Aquí podrías abrir un modal con detalles del reemplazo
+  // info.event.extendedProps contiene los datos originales
+  console.log('Evento clickeado:', info.event)
+}
 
-    const calendarOptions: Ref<any> = ref({
-      plugins: [dayGridPlugin, interactionPlugin],
-      initialView: 'dayGridMonth',
-      dateClick: handleDateClick,
-      events: events.value,
-      height: '80vh',
-      contentHeight: '80vh',
-      aspectRatio: 1.5,
-      locale: 'es',
-      firstDay: 1,
-      buttonText:{
-        today: 'Hoy',
-        month: 'Mes',
-        week: 'Semana',
-        day: 'Día'
-      },
-    },
-  )
+onMounted(async () => {
+  try {
+    const reemplazos = await replacementStore.mostrarReemplazos()
 
-    onMounted(() => {
-      nextTick(() => {
-        if (calendar.value && calendar.value.getApi) {
-          calendar.value.getApi().render()
-        }
-      })
+    // Transformar los datos para FullCalendar
+    calendarEvents.value = reemplazos.map((r: any) => {
+      // Ajuste de Fechas:
+      // 1. Slice(0, 10) para quitar la hora y evitar desfases de zona horaria (UTC vs Local).
+      // 2. Sumamos 1 día a la fecha de término porque FullCalendar considera el 'end' como exclusivo (hasta las 00:00).
+
+      const start = r.fecha_inicio ? r.fecha_inicio.slice(0, 10) : ''
+      const end = r.fecha_termino ? sumarUnDia(r.fecha_termino) : ''
+
+      return {
+        title: `${r.nombre_entrante} ${r.apellido_entrante} (${r.servicio}) ${r.tipo_turno}`,
+        start: start,
+        end: end,
+        backgroundColor: getColorByStatus(r.status),
+        borderColor: getColorByStatus(r.status),
+        extendedProps: { ...r }
+      }
     })
+  } catch (error) {
+    console.error('Error cargando eventos al calendario:', error)
+  }
+})
 
-    return {
-      calendarOptions,
-      isModalOpen,
-      selectedDate,
-      selectedEvent,
-      nombresaliente,
-      calendar,
-      handleDateClick
-    }
+// Función auxiliar para sumar 1 día a una fecha (para fix de FullCalendar end exclusive)
+function sumarUnDia(fechaIso: string): string {
+  if (!fechaIso) return ''
+  const date = new Date(fechaIso)
+  date.setUTCDate(date.getUTCDate() + 1)
+  return date.toISOString().slice(0, 10)
+}
+
+function getColorByStatus(status: string) {
+  switch (status) {
+    case 'EN CURSO':
+      return '#28a745' // Verde success
+    case 'PENDIENTE':
+      return '#ffc107' // Amarillo warning
+    case 'FINALIZADO':
+      return '#6c757d' // Gris
+    case 'ANULADO':
+      return '#dc3545' // Rojo danger
+    default:
+      return '#0d6efd' // Azul primary
   }
 }
 </script>
 
-<style >
-
+<style>
 .fc-col-header-cell-cushion {
   text-transform: capitalize;
   color: #6f32c4;
 }
 
-
 .fc-daygrid-day-number {
-  color: #6f32c4;  /* gris oscuro tipo Bootstrap */
+  color: #6f32c4; /* gris oscuro tipo Bootstrap */
   font-weight: 600;
 }
 
@@ -94,6 +112,4 @@ export default {
   color: #4d02a1; /* azul Bootstrap */
   font-weight: bold;
 }
-
-
 </style>

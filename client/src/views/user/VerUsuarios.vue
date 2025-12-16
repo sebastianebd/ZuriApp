@@ -1,20 +1,26 @@
 <template>
   <main>
-    <div class="">
-      <button class="btn btn-primary btn-sm" @click="openCreateModal">Crear Usuario</button>
-    </div>
-    <div class="card mt-2">
-      <div class="card-body p-0">
-        <h5 class="card-title pt-3 ps-3">Usuarios ({{ usuariosFiltrados.length }})</h5>
+    <div class="mt-2">
+      <div class="card-body pb-4">
+        <h5 class="card-title pt-3 text-secondary">Usuarios ({{ usuariosFiltrados.length }})</h5>
       </div>
 
       <UserFilter
         :lista-tipo-cargo="listaTipoCargo"
+        :lista-habilitado="listaHabilitado"
         :filtro-rut="filtroRut"
+        :filtro-nombre="filtroNombre"
         :tipo-cargo="tipoCargo"
+        :filtro-habilitado="filtroHabilitado"
         @update:filtroRut="(v) => (filtroRut = v)"
+        @update:filtroNombre="(v) => (filtroNombre = v)"
         @update:tipoCargo="(v) => (tipoCargo = v)"
+        @update:filtroHabilitado="(v) => (filtroHabilitado = v)"
       />
+
+      <div class="d-flex justify-content-end pb-4">
+        <button class="btn btn-primary btn-sm" @click="openCreateModal">Crear Usuario</button>
+      </div>
 
       <!-- Tabla con usuarios paginados y ordenados -->
       <UserTable
@@ -80,7 +86,13 @@
 import { ref, computed, onMounted, inject } from 'vue'
 import { useUserStore } from '@/stores/user.store'
 import { useOptionStore } from '@/stores/option.store'
-import { UserFilter, UserTable, UserModalUpdate, UserModalCreate, UserModalDetail } from '@/components/users'
+import {
+  UserFilter,
+  UserTable,
+  UserModalUpdate,
+  UserModalCreate,
+  UserModalDetail
+} from '@/components/users'
 import type { User } from '@/types/models'
 import { useAuthStore } from '@/stores/auth.store'
 import { useReplacementStore } from '@/stores/replacement.store'
@@ -96,7 +108,9 @@ const replacementStore = useReplacementStore()
 // --- REFS
 const usuarios = ref<any[]>([])
 const filtroRut = ref('')
+const filtroNombre = ref('')
 const tipoCargo = ref('')
+const filtroHabilitado = ref('')
 const listaTipoCargo = ref<string[]>([])
 const listaHabilitado = ref<string[]>([])
 const listaServicios = ref<string[]>([])
@@ -106,7 +120,6 @@ const historialModalVisible = ref(false)
 const usuarioSeleccionado = ref<any>(null)
 const usuarioActual = ref<any>({})
 const historialUsuario = ref<any[]>([])
-
 
 // --- PAGINACIÓN
 const currentPage = ref(1)
@@ -119,8 +132,6 @@ const totalPages = computed(() => {
 const userLoged = computed(() => {
   return authStore.user
 })
-
-
 
 // --- Abrir modal de historial ---
 async function openHistorialModal(usuario: any) {
@@ -162,7 +173,13 @@ const usuariosFiltrados = computed(() => {
   const filtrados = usuarios.value.filter((u) => {
     const coincideRut = !filtroRut.value || u.rut.startsWith(filtroRut.value)
     const coincideCargo = !tipoCargo.value || u.tipo_cargo === tipoCargo.value
-    return coincideRut && coincideCargo
+    const coincideHabilitado = !filtroHabilitado.value || u.habilitado === filtroHabilitado.value
+
+    const nombreCompleto = ((u.nombre || '') + ' ' + (u.apellido || '')).toLowerCase()
+    const busquedaNombre = (filtroNombre.value || '').toLowerCase()
+    const coincideNombre = !busquedaNombre || nombreCompleto.includes(busquedaNombre)
+
+    return coincideRut && coincideCargo && coincideHabilitado && coincideNombre
   })
 
   // Ordenar alfabéticamente por nombre (A → Z)
