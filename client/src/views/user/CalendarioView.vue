@@ -1,7 +1,83 @@
 <template>
   <main>
     <div class="rounded-xl shadow-md p-4 h-[80vh] overflow-auto">
-      <FullCalendar :options="calendarOptions" />
+      <FullCalendar ref="fullCalendar" :options="calendarOptions" />
+    </div>
+
+    <!-- Modal de Detalles -->
+    <div
+      v-if="modalVisible"
+      class="modal fade show d-block"
+      tabindex="-1"
+      role="dialog"
+      style="background-color: rgba(0, 0, 0, 0.5)"
+    >
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header bg-light">
+            <h5 class="modal-title fw-bold text-primary">Detalle del Reemplazo</h5>
+            <button type="button" class="btn-close" aria-label="Close" @click="closeModal"></button>
+          </div>
+          <div class="modal-body" v-if="eventoSeleccionado">
+            <div class="mb-3">
+              <strong class="d-block text-secondary small">Funcionario Saliente</strong>
+              <span class="fs-5"
+                >{{ eventoSeleccionado.nombre_saliente }}
+                {{ eventoSeleccionado.apellido_saliente }}</span
+              >
+            </div>
+
+            <div class="mb-3">
+              <strong class="d-block text-secondary small">Reemplazante (Entrante)</strong>
+              <span class="fs-5"
+                >{{ eventoSeleccionado.nombre_entrante }}
+                {{ eventoSeleccionado.apellido_entrante }}</span
+              >
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-6">
+                <strong class="d-block text-secondary small">Desde</strong>
+                <span>{{ formatDateDDMMYYYY(eventoSeleccionado.fecha_inicio) }}</span>
+              </div>
+              <div class="col-6">
+                <strong class="d-block text-secondary small">Hasta</strong>
+                <span>{{ formatDateDDMMYYYY(eventoSeleccionado.fecha_termino) }}</span>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-6">
+                <strong class="d-block text-secondary small">Servicio</strong>
+                <span class="badge bg-info text-dark">{{ eventoSeleccionado.servicio }}</span>
+              </div>
+              <div class="col-6">
+                <strong class="d-block text-secondary small">Turno</strong>
+                <span>{{ eventoSeleccionado.tipo_turno }}</span>
+              </div>
+            </div>
+
+            <hr />
+            <div class="d-flex justify-content-between align-items-center">
+              <span
+                class="badge"
+                :style="{ backgroundColor: getColorByStatus(eventoSeleccionado.status) }"
+              >
+                {{ eventoSeleccionado.status }}
+              </span>
+              <small class="text-muted">
+                Creado el {{ formatDateDDMMYYYY(eventoSeleccionado.created_at) }} por
+                {{ eventoSeleccionado.creado_por.full_name }}
+              </small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" @click="closeModal">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 </template>
@@ -15,6 +91,11 @@ import { useReplacementStore } from '@/stores/replacement.store'
 
 const replacementStore = useReplacementStore()
 const calendarEvents = ref<any[]>([])
+const fullCalendar = ref<InstanceType<typeof FullCalendar> | null>(null)
+
+// Modal State
+const modalVisible = ref(false)
+const eventoSeleccionado = ref<any>(null)
 
 // Opciones del calendario
 const calendarOptions = ref({
@@ -23,6 +104,7 @@ const calendarOptions = ref({
   locale: 'es',
   firstDay: 1,
   events: calendarEvents, // Vinculado a la ref
+  dayMaxEvents: 3, // Muestra "+X más" si hay muchos eventos
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
@@ -36,13 +118,29 @@ const calendarOptions = ref({
   },
   height: '80vh',
   contentHeight: '80vh',
-  eventClick: handleEventClick
+  eventClick: handleEventClick,
+  dateClick: handleDateClick
 })
+
+function handleDateClick(info: any) {
+  // Al hacer click en un día (celda vacía o fondo), cambiamos a la vista de día
+  if (fullCalendar.value) {
+    const calendarApi = fullCalendar.value.getApi()
+    calendarApi.changeView('dayGridDay', info.dateStr)
+  }
+}
 
 function handleEventClick(info: any) {
   // Aquí podrías abrir un modal con detalles del reemplazo
   // info.event.extendedProps contiene los datos originales
   console.log('Evento clickeado:', info.event)
+  eventoSeleccionado.value = info.event.extendedProps
+  modalVisible.value = true
+}
+
+function closeModal() {
+  modalVisible.value = false
+  eventoSeleccionado.value = null
 }
 
 onMounted(async () => {
@@ -78,6 +176,13 @@ function sumarUnDia(fechaIso: string): string {
   const date = new Date(fechaIso)
   date.setUTCDate(date.getUTCDate() + 1)
   return date.toISOString().slice(0, 10)
+}
+
+// Función auxiliar para formatear fechas a DD-MM-YYYY
+function formatDateDDMMYYYY(fechaIso: string): string {
+  if (!fechaIso) return '-'
+  const [year, month, day] = fechaIso.slice(0, 10).split('-')
+  return `${day}-${month}-${year}`
 }
 
 function getColorByStatus(status: string) {
