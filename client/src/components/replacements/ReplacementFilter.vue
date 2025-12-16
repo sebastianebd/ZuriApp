@@ -40,7 +40,6 @@
           v-model="store.fechaInicio"
           class="form-control mb-3 form-control-sm text-secondary"
           id="fechaInicio"
-          
         />
       </div>
 
@@ -60,16 +59,25 @@
         <label for="filtroServicio" class="form-label col-form-label-sm fw-semibold text-secondary"
           >Servicio</label
         >
-        <select
-          v-model="store.filtroServicio"
-          class="form-select form-select-sm mb-3 text-secondary"
+        <v-select
           id="filtroServicio"
+          v-model="store.filtroServicio"
+          :options="[
+            { label: 'TODOS', value: '' },
+            ...listaServicios.map((s) => ({ label: s, value: s }))
+          ]"
+          :reduce="(option: any) => option.value"
+          label="label"
+          :clearable="false"
+          :searchable="true"
+          placeholder="Seleccione un servicio"
+          class="mb-3 text-secondary style-chooser"
         >
-          <option value="">Todos los servicios</option>
-          <option v-for="servicio in listaServicios" :key="servicio" :value="servicio">
-            {{ servicio }}
-          </option>
-        </select>
+          <!-- Personalizamos la opción seleccionada -->
+          <template #selected-option="{ label }">
+            <span class="text-secondary">{{ label }}</span>
+          </template>
+        </v-select>
       </div>
     </div>
   </div>

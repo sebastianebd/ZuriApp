@@ -94,7 +94,6 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
-
     //ESTA FUNCION ES PARA FINALIZAR (ANTICIPADAMENTE) REEMPLAZO NO ELIMINAR
     async finalizarReemplazo(reemplazoId: string) {
       const authStore = useAuthStore()
@@ -112,7 +111,7 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
-      //ESTA FUNCION ES PARA ANULAR REEMPLAZO (FUTURO, AUN NO EN CURSO) NO ELIMINAR
+    //ESTA FUNCION ES PARA ANULAR REEMPLAZO (FUTURO, AUN NO EN CURSO) NO ELIMINAR
     async anularReemplazo(reemplazoId: string) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
@@ -162,13 +161,8 @@ export const useReplacementStore = defineStore('replacement', {
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
 
       try {
-        await ReplacementService.actualizarReemplazo(
-          apiPrivate,
-          reemplazoId,
-          datosActualizados
-        )
+        await ReplacementService.actualizarReemplazo(apiPrivate, reemplazoId, datosActualizados)
         await this.mostrarReemplazos()
-
       } catch (error) {
         console.error('Error al actualizar reemplazo:', error)
         this.error = 'No se pudo actualizar el reemplazo.'

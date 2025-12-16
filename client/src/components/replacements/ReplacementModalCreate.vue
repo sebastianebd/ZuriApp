@@ -124,14 +124,18 @@
               <div v-else-if="currentStep === 3">
                 <h5 class="fw-semibold mb-3 text-primary">Paso 3: Configuración de Turno</h5>
 
-                <div class="form-floating mb-3">
-                  <select v-model="registroLocal.tipo_turno" class="form-select">
-                    <option value="" disabled>Seleccione un turno</option>
-                    <option v-for="turno in listaDeTurnos" :key="turno" :value="turno">
-                      {{ turno }}
-                    </option>
-                  </select>
-                  <label>Tipo de Turno</label>
+                <label for="tipo_turno" class="">Tipo de Turno</label>
+                <div class="mb-3 bg-white ">
+                  <v-select
+                    id="tipo_turno"
+                    v-model="registroLocal.tipo_turno"
+                    :options="listaDeTurnos"
+                    :clearable="false"
+                    :searchable="true"
+                    placeholder="Seleccione un turno"
+                    class="custom-v-select"
+                  />
+
                 </div>
 
                 <!-- Fecha de Inicio -->
@@ -186,14 +190,17 @@
                   </DatePicker>
                 </div>
 
-                <div class="form-floating mb-4">
-                  <select v-model="registroLocal.servicio" class="form-select">
-                    <option value="" disabled>Seleccione un servicio</option>
-                    <option v-for="servicio in listaDeServicios" :key="servicio" :value="servicio">
-                      {{ servicio }}
-                    </option>
-                  </select>
-                  <label>Servicio</label>
+                <label for="servicio">Servicio</label>
+                <div class="form-floating mb-4 bg-white">
+                  <v-select
+                    id="servicio"
+                    v-model="registroLocal.servicio"
+                    :options="listaDeServicios"
+                    :clearable="false"
+                    :searchable="true"
+                    placeholder="Seleccione un servicio"
+                    class="custom-v-select"
+                  />
                 </div>
 
                 <div class="d-flex justify-content-between">
@@ -266,7 +273,6 @@ function todayString() {
   return `${yyyy}-${mm}-${dd}`
 }
 
-
 watch(
   () => props.visible,
   (nuevoValor) => {
@@ -276,18 +282,15 @@ watch(
 
       Object.assign(registroLocal, props.registro)
 
-      if (!registroLocal.fecha_inicio)
-        registroLocal.fecha_inicio = todayString()
+      if (!registroLocal.fecha_inicio) registroLocal.fecha_inicio = todayString()
 
-      if (!registroLocal.fecha_termino)
-        registroLocal.fecha_termino = todayString()
+      if (!registroLocal.fecha_termino) registroLocal.fecha_termino = todayString()
     }
   }
 )
 
-
-const today = new Date();
-today.setHours(0, 0, 0, 0);
+const today = new Date()
+today.setHours(0, 0, 0, 0)
 
 const fechaInicioComputed = computed({
   get: () => {

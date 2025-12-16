@@ -100,28 +100,28 @@
               <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
                 <h6 class="text-primary fw-semibold mb-3">Información Laboral</h6>
 
-                <div class="form-floating mb-2">
-                  <select
+                <div class="mb-2">
+                  <label for="cargoUsuario" class="form-label ms-1">Cargo</label>
+                  <v-select
                     v-model="editableUsuario.tipo_cargo"
-                    id="cargoUsuario"
-                    class="form-select form-select-sm"
-                  >
-                    <option v-for="cargo in listaTipoCargo" :key="cargo" :value="cargo">
-                      {{ cargo }}
-                    </option>
-                  </select>
-                  <label for="cargoUsuario">Cargo</label>
+                    :options="listaTipoCargo"
+                    :clearable="false"
+                    :searchable="false"
+                    placeholder="Seleccione un cargo"
+                    class="style-chooser"
+                  />
                 </div>
 
-                <div class="form-floating mb-2">
-                  <select
+                <div class="mb-2">
+                  <label for="habilitadoUsuario" class="form-label ms-1">Habilitado</label>
+                  <v-select
                     v-model="editableUsuario.habilitado"
-                    id="habilitadoUsuario"
-                    class="form-select form-select-sm"
-                  >
-                    <option v-for="h in listaHabilitado" :key="h" :value="h">{{ h }}</option>
-                  </select>
-                  <label for="habilitadoUsuario">Habilitado</label>
+                    :options="listaHabilitado"
+                    :clearable="false"
+                    :searchable="false"
+                    placeholder="Seleccione estado"
+                    class="style-chooser"
+                  />
                 </div>
               </div>
             </div>
@@ -215,5 +215,30 @@ function confirmarGuardar() {
 
 .modal {
   background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Estilos personalizados para v-select para que parezca un input bootstrap */
+:deep(.style-chooser .vs__dropdown-toggle) {
+  height: 31px; /* Altura similar al input sm de bootstrap */
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem; /* Ajustar el radio del borde si es necesario */
+  padding: 0 0 4px 0;
+  font-size: 0.875rem;
+}
+
+:deep(.style-chooser .vs__search::placeholder) {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+:deep(.style-chooser .vs__dropdown-menu) {
+  font-size: 0.875rem;
+  border-color: #ced4da;
+}
+
+:deep(.style-chooser .vs__clear),
+:deep(.style-chooser .vs__open-indicator) {
+  fill: #6c757d;
+  transform: scale(0.8); /* Iconos más pequeños */
 }
 </style>

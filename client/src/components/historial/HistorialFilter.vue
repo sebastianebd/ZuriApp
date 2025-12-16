@@ -63,24 +63,35 @@
         <label for="filtroServicio" class="form-label col-form-label-sm fw-semibold text-secondary"
           >Servicio</label
         >
-        <select
-          :value="modelValue.servicio"
-          @change="updateFilter('servicio', $event)"
-          class="form-select form-select-sm mb-3 text-secondary"
+        <v-select
           id="filtroServicio"
+          :model-value="modelValue.servicio"
+          @update:model-value="
+            (newValue: any) => {
+              updateFilter('servicio', { target: { value: newValue } } as any)
+            }
+          "
+          :options="[
+            { label: 'TODOS', value: '' },
+            ...listaServicios.map((s) => ({ label: s, value: s }))
+          ]"
+          :reduce="(option: any) => option.value"
+          label="label"
+          :clearable="false"
+          :searchable="true"
+          placeholder="Seleccione un servicio"
+          class="mb-3 text-secondary style-chooser"
         >
-          <option value="">Todos los servicios</option>
-          <option v-for="servicio in listaServicios" :key="servicio" :value="servicio">
-            {{ servicio }}
-          </option>
-        </select>
+          <template #selected-option="{ label }">
+            <span class="text-secondary">{{ label }}</span>
+          </template>
+        </v-select>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// Definimos la interfaz para el objeto de filtros
 interface HistoryFiltros {
   rutSaliente: string
   rutEntrante: string
@@ -89,62 +100,55 @@ interface HistoryFiltros {
   servicio: string
 }
 
-// 1. Props: Recibir el objeto de filtros (modelValue) y la lista de opciones.
 const props = defineProps<{
   listaServicios: string[]
-  modelValue: HistoryFiltros // Necesario para el v-model
+  modelValue: HistoryFiltros
 }>()
 
-// 2. Emits: Notificar al padre cuando los filtros cambian (update:modelValue).
 const emit = defineEmits<{
   (e: 'update:modelValue', newFilters: HistoryFiltros): void
 }>()
 
-// 3. Función clave: Actualizar y Emitir
-// Usamos una función para manejar el evento de manera segura y genérica.
 const updateFilter = (key: keyof HistoryFiltros, event: Event) => {
-  // Aserción de tipo para acceder a .value de manera segura y evitar el error 'possibly null'
   const target = event.target as HTMLInputElement | HTMLSelectElement
-  const value = target?.value ?? '' // Obtener el valor o un string vacío si es nulo
+  const value = target?.value ?? ''
 
-  // Emitir el objeto completo de filtros con la propiedad cambiada
   emit('update:modelValue', {
     ...props.modelValue,
-    [key]: value // Usamos la clave dinámica
+    [key]: value
   })
 }
 </script>
 
 <style scoped>
-/* REUTILIZAMOS EXACTAMENTE LOS MISMOS ESTILOS DEL COMPONENTE ORIGINAL */
 .bg-warning-light {
-background-color: #fff7e0 !important;
+  background-color: #fff7e0 !important;
 }
 .bg-success-light {
-background-color: #e3f7ea !important;
+  background-color: #e3f7ea !important;
 }
 
 .filter-card {
-background-color: #ffffff;
-border-radius: 0.75rem;
-border: 1px solid #dee2e6;
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px solid #dee2e6;
 }
 
 .form-label {
-color: #495057;
-margin-bottom: 0.25rem;
+  color: #495057;
+  margin-bottom: 0.25rem;
 }
 
 .form-control,
 .form-select {
-border-radius: 0.5rem;
-border-color: #ced4da;
-transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  border-radius: 0.5rem;
+  border-color: #ced4da;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .form-control:focus,
 .form-select:focus {
-border-color: #80bdff;
-box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 </style>
