@@ -35,11 +35,19 @@
         <span class="text">Usuarios</span>
       </router-link>
     </div>
+
+    <h3>Sistema</h3>
+    <div class="menu">
+      <router-link to="auditoria" class="button">
+        <span class="material-icons">policy</span>
+        <span class="text">Auditoría</span>
+      </router-link>
+    </div>
   </aside>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, defineEmits } from 'vue'
+import { ref, computed } from 'vue'
 import logoURL from '../../assets/images/logo-zuri.png'
 import { useAuthStore } from '../../stores/auth.store'
 
@@ -152,7 +160,7 @@ aside {
       }
 
       &:hover {
-        background-color: #8252c5; 
+        background-color: #8252c5;
 
         .material-icons,
         .text {
@@ -161,7 +169,7 @@ aside {
       }
 
       &.router-link-exact-active {
-        background-color: #8252c5; 
+        background-color: #8252c5;
         border-right: 5px solid var(--primary);
 
         .material-icons,

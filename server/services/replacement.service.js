@@ -145,6 +145,10 @@ async function obtenerInactivosPaginados(
   };
 }
 
+async function obtenerPorId(id) {
+  return await Reemplazo.findById(id).lean();
+}
+
 async function actualizar(id, data) {
   // Implementar lógica de determinar estado aquí también
   await Reemplazo.findByIdAndUpdate(id, data, { new: true });
@@ -247,4 +251,5 @@ module.exports = {
   obtenerHistorialUsuario,
   sustituir,
   obtenerInactivosPaginados,
+  obtenerPorId,
 };

@@ -1,8 +1,19 @@
 const replacementService = require("../services/replacement.service");
+const auditService = require("../services/audit.service");
+const Reemplazo = require("../models/replacement.model");
 
 async function registerReemplazo(req, res) {
   try {
-    await replacementService.registrar(req.body);
+    const nuevoReemplazo = await replacementService.registrar(req.body);
+    // Log Auditoría
+    await auditService.logAction(
+      "CREAR",
+      "REEMPLAZOS",
+      req.user,
+      `Se creó un nuevo reemplazo ${nuevoReemplazo.id_negocio} para ${req.body.nombre_saliente} ${req.body.apellido_saliente}`,
+      req.body,
+      nuevoReemplazo._id
+    );
     res.sendStatus(201);
   } catch (error) {
     res.status(400).json({ mensaje: error.message });
@@ -21,7 +32,34 @@ async function mostrarHistorial(req, res) {
 
 async function actualizarReemplazo(req, res) {
   try {
+    const original = await replacementService.obtenerPorId(req.params.id);
     const data = await replacementService.actualizar(req.params.id, req.body);
+
+    // Log Auditoría
+    const validFields = Object.keys(Reemplazo.schema.paths);
+    const cleanBody = {};
+    Object.keys(req.body).forEach((key) => {
+      if (validFields.includes(key)) {
+        cleanBody[key] = req.body[key];
+      }
+    });
+
+    const diff = auditService.generateDiff(original, cleanBody);
+    const nombreReemplazo = original
+      ? `${original.id_negocio} de ${original.nombre_saliente} ${original.apellido_saliente}`
+      : `ID ${req.params.id}`;
+    const descripcion = diff
+      ? `Se modificó el reemplazo ${nombreReemplazo} (Cambios: ${diff})`
+      : `Se modificó el reemplazo ${nombreReemplazo} (Sin cambios detectados)`;
+
+    await auditService.logAction(
+      "MODIFICAR",
+      "REEMPLAZOS",
+      req.user,
+      descripcion,
+      req.body,
+      req.params.id
+    );
     res.json(data);
   } catch (error) {
     res.status(400).json({ mensaje: error.message });
@@ -32,6 +70,15 @@ async function actualizarReemplazo(req, res) {
 async function finalizarReemplazo(req, res) {
   try {
     const data = await replacementService.finalizarReemplazo(req.params.id);
+    // Log Auditoría
+    await auditService.logAction(
+      "FINALIZAR",
+      "REEMPLAZOS",
+      req.user,
+      `Se finalizó el reemplazo ID ${req.params.id}`,
+      null,
+      req.params.id
+    );
     res.json(data);
   } catch (error) {
     res.status(400).json({ mensaje: error.message });
@@ -42,6 +89,15 @@ async function finalizarReemplazo(req, res) {
 async function anularReemplazo(req, res) {
   try {
     const data = await replacementService.anularReemplazo(req.params.id);
+    // Log Auditoría
+    await auditService.logAction(
+      "ANULAR",
+      "REEMPLAZOS",
+      req.user,
+      `Se anuló el reemplazo ID ${req.params.id}`,
+      null,
+      req.params.id
+    );
     res.json(data);
   } catch (error) {
     res.status(400).json({ mensaje: error.message });
@@ -68,32 +124,43 @@ async function procesarSustitucion(req, res) {
       registro_anterior: registroA_cortado,
       nuevo_registro: nuevoRegistroB,
     });
+    // Log Auditoría
+    await auditService.logAction(
+      "SUSTITUCION",
+      "REEMPLAZOS",
+      req.user,
+      `Sustitución procesada: Corte ID ${req.body.id_registro_a}`,
+      req.body,
+      req.body.id_registro_a
+    );
   } catch (error) {
     res.status(400).json({ mensaje: error.message });
   }
 }
 
 async function mostrarHistorialPaginado(req, res) {
-    try {
-        // Extraer los filtros y la paginación de req.query
-        const { pagina, limite, ...filtros } = req.query; 
+  try {
+    // Extraer los filtros y la paginación de req.query
+    const { pagina, limite, ...filtros } = req.query;
 
-        // Convertir a números (asegurando valores por defecto si no vienen)
-        const paginaNum = parseInt(pagina) || 1;
-        const limiteNum = parseInt(limite) || 10;
-        
-        // Llamar a la función del servicio con los filtros y paginación
-        const data = await replacementService.obtenerInactivosPaginados(
-            filtros, 
-            paginaNum, 
-            limiteNum
-        );
-        
-        res.json(data);
-    } catch (error) {
-        // Manejo de errores
-        res.status(500).json({ mensaje: error.message || "Error al cargar el historial paginado." });
-    }
+    // Convertir a números (asegurando valores por defecto si no vienen)
+    const paginaNum = parseInt(pagina) || 1;
+    const limiteNum = parseInt(limite) || 10;
+
+    // Llamar a la función del servicio con los filtros y paginación
+    const data = await replacementService.obtenerInactivosPaginados(
+      filtros,
+      paginaNum,
+      limiteNum
+    );
+
+    res.json(data);
+  } catch (error) {
+    // Manejo de errores
+    res.status(500).json({
+      mensaje: error.message || "Error al cargar el historial paginado.",
+    });
+  }
 }
 
 module.exports = {

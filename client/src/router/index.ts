@@ -15,9 +15,9 @@ const router = createRouter({
           path: '',
           name: 'login',
           component: () => import('@/views/auth/LoginView.vue'),
-          meta: { requiresGuest: true },
-        },
-      ],
+          meta: { requiresGuest: true }
+        }
+      ]
     },
 
     {
@@ -28,31 +28,36 @@ const router = createRouter({
         {
           path: 'user',
           name: 'user',
-          component: () => import('@/views/user/UserView.vue'),
+          component: () => import('@/views/user/UserView.vue')
         },
         {
           path: 'reemplazos',
           name: 'reemplazos',
-          component: () => import('@/views/user/ReemplazosView.vue'),
+          component: () => import('@/views/user/ReemplazosView.vue')
         },
         {
           path: 'calendario',
           name: 'calendario',
-          component: () => import('@/views/user/CalendarioView.vue'),
+          component: () => import('@/views/user/CalendarioView.vue')
         },
         {
           path: 'ver_usuarios',
           name: 'ver_usuarios',
-          component: () => import('@/views/user/VerUsuarios.vue'),
+          component: () => import('@/views/user/VerUsuarios.vue')
         },
         {
           path: 'ver_historial',
           name: 'ver_historial',
-          component: () => import('@/views/user/VerHistorial.vue'),
+          component: () => import('@/views/user/VerHistorial.vue')
         },
-      ],
-    },
-  ],
+        {
+          path: 'auditoria',
+          name: 'auditoria',
+          component: () => import('@/views/audit/AuditoriaView.vue')
+        }
+      ]
+    }
+  ]
 })
 
 router.beforeResolve(async (to, from, next) => {
@@ -70,4 +75,3 @@ router.beforeResolve(async (to, from, next) => {
 })
 
 export default router
-

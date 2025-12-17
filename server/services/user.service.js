@@ -1,10 +1,19 @@
-const bcrypt = require('bcrypt');
-const crypto = require('crypto');
-const User = require('../models/user.model');
-
+const bcrypt = require("bcrypt");
+const crypto = require("crypto");
+const User = require("../models/user.model");
 
 async function register(data) {
-  const { rut, nombre, apellido, fecha_nac, direccion, telefono, email, ciudad, tipo_cargo } = data;
+  const {
+    rut,
+    nombre,
+    apellido,
+    fecha_nac,
+    direccion,
+    telefono,
+    email,
+    ciudad,
+    tipo_cargo,
+  } = data;
 
   const exists = await Promise.all([
     User.exists({ rut }),
@@ -12,9 +21,10 @@ async function register(data) {
     User.exists({ email }),
   ]);
 
-  if (exists.some(Boolean)) throw { status: 409, message: 'Usuario ya registrado' };
+  if (exists.some(Boolean))
+    throw { status: 409, message: "Usuario ya registrado" };
 
-  const generarPassword = crypto.randomBytes(3).toString('hex');
+  const generarPassword = crypto.randomBytes(3).toString("hex");
   const hashedPassword = await bcrypt.hash(generarPassword, 10);
 
   const nuevoUsuario = {
@@ -30,18 +40,25 @@ async function register(data) {
     password: hashedPassword,
   };
 
-  if (tipo_cargo === 'TENS') nuevoUsuario.habilitado = data.habilitado;
-  if (tipo_cargo === 'JEFA SERVICIO') nuevoUsuario.servicio = data.servicio;
+  if (tipo_cargo === "TENS") nuevoUsuario.habilitado = data.habilitado;
+  if (tipo_cargo === "JEFA SERVICIO") nuevoUsuario.servicio = data.servicio;
 
   await User.create(nuevoUsuario);
 
-  console.log('nuevo usuario en el service: ', nuevoUsuario);
-  return nuevoUsuario
+  console.log("nuevo usuario en el service: ", nuevoUsuario);
+  return nuevoUsuario;
 }
 
 // Función para obtener todos los usuarios Reemplazantes
 async function obtenerUsuariosTENS() {
-  return await User.find({ eliminado: false, tipo_cargo: { $ne: 'ADMIN-TI', $ne: 'RECURSOS HUMANOS'} });
+  return await User.find({
+    eliminado: false,
+    tipo_cargo: { $ne: "ADMIN-TI", $ne: "RECURSOS HUMANOS" },
+  });
+}
+
+async function obtenerPorId(id) {
+  return await User.findById(id).lean();
 }
 
 async function obtenerTodos() {
@@ -58,4 +75,11 @@ async function eliminar(id) {
   return await User.find({ eliminado: { $ne: true } });
 }
 
-module.exports = { register, obtenerUsuariosTENS, obtenerTodos, actualizar, eliminar };
+module.exports = {
+  register,
+  obtenerUsuariosTENS,
+  obtenerTodos,
+  actualizar,
+  eliminar,
+  obtenerPorId,
+};

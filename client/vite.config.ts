@@ -6,16 +6,24 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3500',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  },
   plugins: [vue(), vueJsx()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
-      
     }
   },
-  define:{
+  define: {
     __VUE_OPTIONS_API__: true,
     __VUE_PROD_DEVTOOLS__: false,
-    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false
   }
 })
