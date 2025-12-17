@@ -129,7 +129,7 @@ async function procesarSustitucion(req, res) {
       "SUSTITUCION",
       "REEMPLAZOS",
       req.user,
-      `Sustitución procesada: Corte ID ${req.body.id_registro_a}`,
+      `Se sustituyó el reemplazo: ${registroA_cortado.id_negocio} (Cambios: funcionario reemplazante: ${registroA_cortado.nombre_entrante} ${registroA_cortado.apellido_entrante} -> ${nuevoRegistroB.nombre_entrante} ${nuevoRegistroB.apellido_entrante})`,
       req.body,
       req.body.id_registro_a
     );

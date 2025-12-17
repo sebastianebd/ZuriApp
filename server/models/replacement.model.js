@@ -114,7 +114,7 @@ replacementSchema.pre("save", async function (next) {
       );
     }
     const nuevoNumero = counter.seq;
-    this.id_negocio = `${prefix}${nuevoNumero}${currentYear}`;
+    this.id_negocio = `${prefix}${currentYear}${nuevoNumero}`;
     next();
   } catch (error) {
     next(error);

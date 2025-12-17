@@ -125,7 +125,7 @@
                 <h5 class="fw-semibold mb-3 text-primary">Paso 3: Configuración de Turno</h5>
 
                 <label for="tipo_turno" class="">Tipo de Turno</label>
-                <div class="mb-3 bg-white ">
+                <div class="mb-3 bg-white">
                   <v-select
                     id="tipo_turno"
                     v-model="registroLocal.tipo_turno"
@@ -135,7 +135,6 @@
                     placeholder="Seleccione un turno"
                     class="custom-v-select"
                   />
-
                 </div>
 
                 <!-- Fecha de Inicio -->
@@ -149,7 +148,6 @@
                     :popover="popoverConfig"
                     :attributes="dateAttributes"
                     is-required
-                    trim-weeks
                     color="blue"
                   >
                     <template #default="{ inputValue, inputEvents }">
@@ -175,7 +173,6 @@
                     :popover="popoverConfig"
                     :attributes="dateAttributes"
                     is-required
-                    trim-weeks
                     color="blue"
                   >
                     <template #default="{ inputValue, inputEvents }">
@@ -344,6 +341,11 @@ function nextStep() {
   }
   if (currentStep.value === 2 && !registroLocal.rut_entrante) {
     errorMessage.value = 'Debe seleccionar un usuario para continuar.'
+    return
+  }
+  if (currentStep.value === 2 && registroLocal.rut_entrante === registroLocal.rut_saliente) {
+    errorMessage.value =
+      'El funcionario entrante no puede ser el mismo que el funcionario saliente. Por favor, seleccione otro funcionario.'
     return
   }
   currentStep.value++

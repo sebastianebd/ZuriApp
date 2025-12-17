@@ -1,39 +1,33 @@
 <template>
-  <div class="filter-card shadow-sm mb-4">
-    <div class="row pt-2 pb-3 ps-2 pe-2 d-flex justify-content-evenly mb-3">
+  <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+    <div class="row g-3 align-items-end">
       <!-- Filtro RUT -->
-      <div class="col-sm-3 me-3">
-        <label class="form-label col-form-label-sm fw-semibold text-secondary"
-          >Buscar por Rut:</label
-        >
+      <div class="col-md-3">
+        <label class="form-label fw-semibold text-secondary small">Rut:</label>
         <input
           type="text"
           v-model="filtroRutLocal"
           placeholder="Ingrese Rut"
-          class="form-control form-control-sm"
+          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           @input="$emit('update:filtroRut', filtroRutLocal)"
         />
       </div>
 
       <!-- Filtro NOMBRE -->
-      <div class="col-sm-3 me-3">
-        <label class="form-label col-form-label-sm fw-semibold text-secondary"
-          >Buscar por Nombre:</label
-        >
+      <div class="col-md-3">
+        <label class="form-label fw-semibold text-secondary small">Nombre:</label>
         <input
           type="text"
           v-model="filtroNombreLocal"
           placeholder="Nombre o Apellido"
-          class="form-control form-control-sm"
+          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           @input="$emit('update:filtroNombre', filtroNombreLocal)"
         />
       </div>
 
       <!-- Filtro CARGO -->
-      <div class="col-sm-2 me-3">
-        <label class="form-label col-form-label-sm fw-semibold text-secondary"
-          >Filtrar por Cargo:</label
-        >
+      <div class="col-md-3">
+        <label class="form-label fw-semibold text-secondary small">Cargo:</label>
         <v-select
           id="filtroTipoCargo"
           v-model="tipoCargoLocal"
@@ -50,20 +44,18 @@
           label="label"
           :clearable="false"
           :searchable="false"
-          placeholder="Seleccione cargo"
+          placeholder="Seleccione..."
           class="style-chooser"
         >
           <template #selected-option="{ label }">
-            <span class="text-secondary">{{ label }}</span>
+            <span class="text-secondary small">{{ label }}</span>
           </template>
         </v-select>
       </div>
 
       <!-- Filtro HABILITADO -->
-      <div class="col-sm-2">
-        <label class="form-label col-form-label-sm fw-semibold text-secondary"
-          >Filtrar por Estado:</label
-        >
+      <div class="col-md-3">
+        <label class="form-label fw-semibold text-secondary small">Estado:</label>
         <v-select
           id="filtroHabilitado"
           v-model="filtroHabilitadoLocal"
@@ -80,11 +72,11 @@
           label="label"
           :clearable="false"
           :searchable="false"
-          placeholder="Seleccione estado"
+          placeholder="Seleccione..."
           class="style-chooser"
         >
           <template #selected-option="{ label }">
-            <span class="text-secondary">{{ label }}</span>
+            <span class="text-secondary small">{{ label }}</span>
           </template>
         </v-select>
       </div>
@@ -119,64 +111,21 @@ const filtroHabilitadoLocal = ref('')
 </script>
 
 <style scoped>
-/* 🎨 Colores base y utilidades */
-.bg-warning-light {
-  background-color: #fff7e0 !important;
-}
-.bg-success-light {
-  background-color: #e3f7ea !important;
-}
-
-/* 🖼️ Estilo de la tarjeta de filtros */
-.filter-card {
-  background-color: #ffffff;
-  border-radius: 0.75rem;
-  border: 1px solid #dee2e6;
-}
-
-/* 🖋️ Estilo de las etiquetas */
-.form-label {
-  color: #495057;
-  margin-bottom: 0.25rem;
-}
-
-/* 📥 Estilo de inputs */
-.form-control,
-.form-select {
-  border-radius: 0.5rem;
-  border-color: #ced4da;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
-}
-
-.form-control:focus,
-.form-select:focus {
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-}
-
-/* Estilos personalizados para v-select */
+/* Estilos unificados tipo AuditFilter */
 :deep(.style-chooser .vs__dropdown-toggle) {
-  height: 31px;
-  border: 1px solid #ced4da;
-  border-radius: 0.25rem;
-  padding: 0 0 4px 0;
-  font-size: 0.875rem;
-  background-color: #fff;
+  border: 0;
+  background-color: #f8f9fa; /* bg-light */
+  border-radius: 0.5rem; /* rounded-3 */
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* shadow-sm */
+  padding: 2px 0 6px 0;
+  min-height: 31px;
 }
-
 :deep(.style-chooser .vs__search::placeholder) {
   color: #6c757d;
   font-size: 0.875rem;
 }
-
-:deep(.style-chooser .vs__dropdown-menu) {
+:deep(.style-chooser .vs__selected) {
   font-size: 0.875rem;
-  border-color: #ced4da;
-}
-
-:deep(.style-chooser .vs__clear),
-:deep(.style-chooser .vs__open-indicator) {
-  fill: #6c757d;
-  transform: scale(0.8);
+  color: #495057;
 }
 </style>

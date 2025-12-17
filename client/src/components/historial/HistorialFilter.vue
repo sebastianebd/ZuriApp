@@ -1,66 +1,63 @@
 <template>
-  <div class="filter-card shadow-sm mb-4">
-    <div class="row pt-2 pb-3 ps-2 pe-2 d-flex justify-content-evenly">
-      <div class="col-sm-2 me-3">
-        <label
-          for="filtroRutSaliente"
-          class="form-label col-form-label-sm fw-semibold text-secondary"
-          >Buscar por Rut (saliente):</label
+  <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+    <div class="row g-3 align-items-end">
+      <!-- Filtro Rut Saliente -->
+      <div class="col-md-3">
+        <label for="filtroRutSaliente" class="form-label fw-semibold text-secondary small"
+          >Rut (saliente):</label
         >
         <input
           type="text"
           :value="modelValue.rutSaliente"
           @input="updateFilter('rutSaliente', $event)"
           placeholder="Ingrese Rut"
-          class="form-control mb-3 form-control-sm"
+          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           id="filtroRutSaliente"
         />
       </div>
 
-      <div class="col-sm-2 me-3">
-        <label
-          for="filtroRutEntrante"
-          class="form-label col-form-label-sm fw-semibold text-secondary"
-          >Buscar por Rut (entrante):</label
+      <!-- Filtro Rut Entrante -->
+      <div class="col-md-3">
+        <label for="filtroRutEntrante" class="form-label fw-semibold text-secondary small"
+          >Rut (entrante):</label
         >
         <input
           type="text"
           :value="modelValue.rutEntrante"
           @input="updateFilter('rutEntrante', $event)"
           placeholder="Ingrese Rut"
-          class="form-control mb-3 form-control-sm border-success-light"
+          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           id="filtroRutEntrante"
         />
       </div>
 
-      <div class="col-sm-2 me-3">
-        <label for="fechaInicio" class="form-label col-form-label-sm fw-semibold text-secondary"
-          >Desde:</label
-        >
+      <!-- Fecha Inicio -->
+      <div class="col-md-2">
+        <label for="fechaInicio" class="form-label fw-semibold text-secondary small">Desde:</label>
         <input
           type="date"
           :value="modelValue.fechaInicio"
           @input="updateFilter('fechaInicio', $event)"
-          class="form-control mb-3 form-control-sm text-secondary"
+          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           id="fechaInicio"
         />
       </div>
 
-      <div class="col-sm-2 me-3">
-        <label for="fechaFin" class="form-label col-form-label-sm fw-semibold text-secondary"
-          >Hasta:</label
-        >
+      <!-- Fecha Fin -->
+      <div class="col-md-2">
+        <label for="fechaFin" class="form-label fw-semibold text-secondary small">Hasta:</label>
         <input
           type="date"
           :value="modelValue.fechaFin"
           @input="updateFilter('fechaFin', $event)"
-          class="form-control mb-3 form-control-sm text-secondary"
+          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           id="fechaFin"
         />
       </div>
 
-      <div class="col-sm-2 me-3">
-        <label for="filtroServicio" class="form-label col-form-label-sm fw-semibold text-secondary"
+      <!-- Servicio -->
+      <div class="col-md-2">
+        <label for="filtroServicio" class="form-label fw-semibold text-secondary small"
           >Servicio</label
         >
         <v-select
@@ -79,11 +76,11 @@
           label="label"
           :clearable="false"
           :searchable="true"
-          placeholder="Seleccione un servicio"
-          class="mb-3 text-secondary style-chooser"
+          placeholder="Seleccione..."
+          class="style-chooser"
         >
           <template #selected-option="{ label }">
-            <span class="text-secondary">{{ label }}</span>
+            <span class="text-secondary small">{{ label }}</span>
           </template>
         </v-select>
       </div>
@@ -121,34 +118,21 @@ const updateFilter = (key: keyof HistoryFiltros, event: Event) => {
 </script>
 
 <style scoped>
-.bg-warning-light {
-  background-color: #fff7e0 !important;
+/* Estilos unificados tipo AuditFilter */
+:deep(.style-chooser .vs__dropdown-toggle) {
+  border: 0;
+  background-color: #f8f9fa; /* bg-light */
+  border-radius: 0.5rem; /* rounded-3 */
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* shadow-sm */
+  padding: 2px 0 6px 0;
+  min-height: 31px;
 }
-.bg-success-light {
-  background-color: #e3f7ea !important;
+:deep(.style-chooser .vs__search::placeholder) {
+  color: #6c757d;
+  font-size: 0.875rem;
 }
-
-.filter-card {
-  background-color: #ffffff;
-  border-radius: 0.75rem;
-  border: 1px solid #dee2e6;
-}
-
-.form-label {
+:deep(.style-chooser .vs__selected) {
+  font-size: 0.875rem;
   color: #495057;
-  margin-bottom: 0.25rem;
-}
-
-.form-control,
-.form-select {
-  border-radius: 0.5rem;
-  border-color: #ced4da;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
-}
-
-.form-control:focus,
-.form-select:focus {
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 </style>

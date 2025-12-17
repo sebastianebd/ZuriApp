@@ -11,15 +11,17 @@ export function useDatePicker(props: DataPickerProps) {
       return [] // ← CAMBIO CLAVE: undefined en lugar de []
     }
 
-    return props.fechasBloqueadas.map((f) => {
-      const [year, month, day] = f.split('-').map(Number)
-      const date = new Date(year, month - 1, day) // Fecha local sin 'T00:00:00'
-      return date
-    })
+    return props.fechasBloqueadas
+      .map((f) => {
+        const [year, month, day] = f.split('-').map(Number)
+        const date = new Date(year, month - 1, day) // Fecha local sin 'T00:00:00'
+        return date
+      })
+      .filter((d) => !isNaN(d.getTime()))
   })
 
   const popoverConfig = ref({
-    visibility: 'focus' as const,
+    visibility: 'click' as const,
     placement: 'right' as const,
     hideDelay: 50
   })
@@ -29,13 +31,11 @@ export function useDatePicker(props: DataPickerProps) {
     if (!dates.length) return []
     return [
       {
-        key: 'disabled-dates',
         highlight: {
           color: 'red',
           fillMode: 'light'
         },
-        dates: isDisabled.value,
-        disabled: true
+        dates: [...isDisabled.value]
       }
     ]
   })
