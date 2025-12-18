@@ -69,13 +69,19 @@ async function actualizarReemplazo(req, res) {
 //finalizar reemplazo
 async function finalizarReemplazo(req, res) {
   try {
+    const original = await replacementService.obtenerPorId(req.params.id);
     const data = await replacementService.finalizarReemplazo(req.params.id);
+
     // Log Auditoría
+    const nombreReemplazo = original
+      ? `${original.id_negocio} para ${original.nombre_saliente} ${original.apellido_saliente}`
+      : `ID ${req.params.id}`;
+
     await auditService.logAction(
       "FINALIZAR",
       "REEMPLAZOS",
       req.user,
-      `Se finalizó el reemplazo ID ${req.params.id}`,
+      `Se finalizó el reemplazo ${nombreReemplazo}`,
       null,
       req.params.id
     );
@@ -88,13 +94,19 @@ async function finalizarReemplazo(req, res) {
 //anular reemplazo
 async function anularReemplazo(req, res) {
   try {
+    const original = await replacementService.obtenerPorId(req.params.id);
     const data = await replacementService.anularReemplazo(req.params.id);
+
     // Log Auditoría
+    const nombreReemplazo = original
+      ? `${original.id_negocio} para ${original.nombre_saliente} ${original.apellido_saliente}`
+      : `ID ${req.params.id}`;
+
     await auditService.logAction(
       "ANULAR",
       "REEMPLAZOS",
       req.user,
-      `Se anuló el reemplazo ID ${req.params.id}`,
+      `Se anuló el reemplazo ${nombreReemplazo}`,
       null,
       req.params.id
     );
