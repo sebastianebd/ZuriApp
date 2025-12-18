@@ -16,11 +16,10 @@ const alertRef = ref<InstanceType<typeof AlertMessage> | null>(null)
 provide('showAlert', (title: string, message: string) => {
   alertRef.value?.show(title, message)
 })
-
 </script>
 
 <template>
-  <div class="app-layout ">
+  <div class="app-layout">
     <NavBar />
     <Sidebar @sidebarToggle="handleSidebarToggle" />
     <main class="main-content" :class="{ expanded: isExpanded }">
@@ -31,40 +30,31 @@ provide('showAlert', (title: string, message: string) => {
 </template>
 
 <style scoped>
-
-
 .main-content {
   margin-left: 7rem;
-  transition: margin-left 0.2s ease-in-out; 
-  flex: 1; 
-  padding-left: 3rem; 
-  padding-right: 3rem; 
+  transition: margin-left 0.2s ease-in-out;
+  flex: 1;
+  padding-left: 3rem;
+  padding-right: 3rem;
 
   &.expanded {
-    margin-left: calc(
-      var(--sidebar-width) 
-    ); 
-    transition: margin-left 0.2s ease-in-out; 
+    margin-left: calc(var(--sidebar-width));
+    transition: margin-left 0.2s ease-in-out;
   }
 }
 
 .RouterView {
-  transition: margin-left 0.2s ease-in-out; 
-  flex: 1; 
+  transition: margin-left 0.2s ease-in-out;
+  flex: 1;
 
   &.expanded {
-    margin-left: calc(
-      var(--sidebar-width) 
-    ); 
-    transition: margin-left 0.2s ease-in-out; 
+    margin-left: calc(var(--sidebar-width));
+    transition: margin-left 0.2s ease-in-out;
   }
 }
 
 .app-layout {
-  background-color: rgb(246, 240, 248);
+  background-color: #f8fafc;
   height: 100vh;
 }
-
-
-
 </style>

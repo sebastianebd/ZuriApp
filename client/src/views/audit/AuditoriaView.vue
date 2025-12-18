@@ -15,13 +15,6 @@
         <button @click="limpiarFiltros" class="btn btn-light border fw-semibold shadow-sm px-3">
           <i class="bi bi-eraser me-2"></i>Limpiar Filtros
         </button>
-        <div class="d-none d-md-block">
-          <span
-            class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill small fw-bold"
-          >
-            <i class="bi bi-list-check me-1"></i>Logs del Sistema
-          </span>
-        </div>
       </div>
     </div>
 
@@ -29,7 +22,7 @@
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
       <div class="card-body p-4">
         <!-- Filter Section -->
-        <div class="filter-section mb-4 p-3 bg-light rounded-3 border border-1">
+        <div class="">
           <AuditFilter ref="filterComponent" @filter="handleFilter" />
         </div>
 

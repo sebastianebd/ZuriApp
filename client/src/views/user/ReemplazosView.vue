@@ -3,7 +3,9 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1 text-dark">Gestión de Reemplazos</h2>
+        <h2 class="fw-bold mb-1 text-dark">
+          <i class="bi bi-arrow-repeat text-primary me-2"></i>Gestión de Reemplazos
+        </h2>
         <p class="text-secondary mb-0">
           Administra los reemplazos activos en el sistema ({{
             replacementStore.reemplazosFiltrados.length
@@ -28,7 +30,7 @@
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
       <div class="card-body p-4">
         <!-- Filter Section -->
-        <div class="filter-section mb-4 p-3 bg-light rounded-3 border border-1">
+        <div class="">
           <ReplacementFilter :lista-servicios="listaDeServicios" />
         </div>
 

@@ -3,7 +3,9 @@
     <div class="container-fluid px-4 py-4">
       <!-- Header -->
       <div class="mb-4">
-        <h2 class="fw-bold mb-1 text-dark">Mi Perfil</h2>
+        <h2 class="fw-bold mb-1 text-dark">
+          <i class="bi bi-person-circle text-primary me-2"></i>Mi Perfil
+        </h2>
         <p class="text-secondary mb-0">Información de tu cuenta y actividad</p>
       </div>
 

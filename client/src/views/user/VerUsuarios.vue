@@ -3,7 +3,9 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1 text-dark">Gestión de Usuarios</h2>
+        <h2 class="fw-bold mb-1 text-dark">
+          <i class="bi bi-people-fill text-primary me-2"></i>Gestión de Usuarios
+        </h2>
         <p class="text-secondary mb-0">
           Administra el personal y sus permisos ({{ usuariosFiltrados.length }} usuarios
           registrados)
@@ -18,7 +20,7 @@
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
       <div class="card-body p-4">
         <!-- Filter Section -->
-        <div class="filter-section mb-4 p-3 bg-light rounded-3 border border-1">
+        <div class="">
           <UserFilter
             :lista-tipo-cargo="listaTipoCargo"
             :lista-habilitado="listaHabilitado"

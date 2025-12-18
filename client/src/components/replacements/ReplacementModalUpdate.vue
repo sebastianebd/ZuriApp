@@ -1,275 +1,325 @@
 <template>
-  <div class="modal fade show d-block" v-if="visible" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-      <div class="modal-content shadow-lg border-0 rounded-3">
-        <!-- HEADER -->
-        <div class="modal-header bg-primary text-white rounded-top">
-          <h5 class="modal-title fst-italic fw-bold">MODIFICA REGISTRO</h5>
-          <button
-            type="button"
-            class="btn-close btn-close-white"
-            @click="$emit('cerrar')"
-            aria-label="Close"
-          ></button>
-        </div>
+  <Transition name="fade">
+    <div
+      class="modal fade show d-block"
+      v-if="visible"
+      tabindex="-1"
+      role="dialog"
+      style="background-color: rgba(30, 41, 59, 0.5); backdrop-filter: blur(4px)"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+          <!-- HEADER -->
+          <div class="modal-header border-0 bg-primary bg-gradient text-white p-4 rounded-top-4">
+            <h5 class="modal-title fw-bold">
+              <i class="bi bi-pencil-square me-2"></i>MODIFICA REGISTRO
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              @click="$emit('cerrar')"
+              aria-label="Close"
+            ></button>
+          </div>
 
-        <!-- BODY -->
-        <div class="modal-body bg-light">
-          <div class="row">
-            <!-- Grupo 1: Usuario Saliente -->
-            <div class="col-md-6 mb-3">
-              <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
-                <div class="d-flex align-items-center mb-3">
-                  <h6 class="text-primary flex-grow-1 fw-semibold mb-3">Funcionario Saliente</h6>
+          <!-- BODY -->
+          <div class="modal-body p-4 bg-white">
+            <div class="row g-4">
+              <!-- Grupo 1: Usuario Saliente -->
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border border-1 shadow-xs h-100">
+                  <div class="d-flex align-items-center mb-3">
+                    <h6 class="text-primary fw-bold mb-0 smaller text-uppercase tracking-wider">
+                      Funcionario Saliente
+                    </h6>
+                  </div>
+
+                  <div class="form-floating mb-3">
+                    <input
+                      type="text"
+                      id="rutSaliente"
+                      :value="registro.rut_saliente"
+                      class="form-control bg-white border-0 shadow-sm rounded-3"
+                      disabled
+                      placeholder="RUT"
+                    />
+                    <label for="rutSaliente" class="text-secondary fw-semibold">RUT</label>
+                  </div>
+
+                  <div class="form-floating mb-3">
+                    <input
+                      type="text"
+                      id="nombreSaliente"
+                      :value="registro.nombre_saliente"
+                      class="form-control bg-white border-0 shadow-sm rounded-3"
+                      disabled
+                      placeholder="Nombre"
+                    />
+                    <label for="nombreSaliente" class="text-secondary fw-semibold">Nombre</label>
+                  </div>
+
+                  <div class="form-floating">
+                    <input
+                      type="text"
+                      id="apellidoSaliente"
+                      :value="registro.apellido_saliente"
+                      class="form-control bg-white border-0 shadow-sm rounded-3"
+                      disabled
+                      placeholder="Apellido"
+                    />
+                    <label for="apellidoSaliente" class="text-secondary fw-semibold"
+                      >Apellido</label
+                    >
+                  </div>
                 </div>
+              </div>
 
-                <div class="form-floating mb-2">
-                  <input
-                    type="text"
-                    id="rutSaliente"
-                    :value="registro.rut_saliente"
-                    class="form-control"
-                    disabled
-                  />
-                  <label for="rutSaliente">RUT</label>
-                </div>
+              <!-- Grupo 2: Usuario Entrante -->
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border border-1 shadow-xs h-100">
+                  <div class="d-flex align-items-center mb-3">
+                    <h6
+                      class="text-primary flex-grow-1 fw-bold mb-0 smaller text-uppercase tracking-wider"
+                    >
+                      Funcionario Entrante
+                    </h6>
 
-                <div class="form-floating mb-2">
-                  <input
-                    type="text"
-                    id="nombreSaliente"
-                    :value="registro.nombre_saliente"
-                    class="form-control"
-                    disabled
-                  />
-                  <label for="nombreSaliente">Nombre</label>
-                </div>
+                    <!-- ✅ Botón dinámico -->
+                    <button
+                      v-if="turnoEnCurso"
+                      @click.prevent="$emit('sustituir-usuario')"
+                      class="btn btn-danger btn-sm fw-bold shadow-sm border-0 px-3"
+                    >
+                      <i class="bi bi-arrow-repeat me-1"></i> Sustituir
+                    </button>
+                    <button
+                      v-else
+                      @click.prevent="$emit('buscar-entrante')"
+                      class="btn btn-warning btn-sm fw-bold shadow-sm border-0 px-3"
+                    >
+                      <i class="bi bi-search me-1"></i> Buscar
+                    </button>
+                  </div>
 
-                <div class="form-floating mb-2">
-                  <input
-                    type="text"
-                    id="apellidoSaliente"
-                    :value="registro.apellido_saliente"
-                    class="form-control"
-                    disabled
-                  />
-                  <label for="apellidoSaliente">Apellido</label>
+                  <div class="form-floating mb-3">
+                    <input
+                      type="text"
+                      id="rutEntrante"
+                      :value="registro.rut_entrante"
+                      class="form-control bg-white border-0 shadow-sm rounded-3"
+                      disabled
+                      placeholder="RUT"
+                    />
+                    <label for="rutEntrante" class="text-secondary fw-semibold">RUT</label>
+                  </div>
+
+                  <div class="form-floating mb-3">
+                    <input
+                      type="text"
+                      id="nombreEntrante"
+                      :value="registro.nombre_entrante"
+                      class="form-control bg-white border-0 shadow-sm rounded-3"
+                      disabled
+                      placeholder="Nombre"
+                    />
+                    <label for="nombreEntrante" class="text-secondary fw-semibold">Nombre</label>
+                  </div>
+
+                  <div class="form-floating">
+                    <input
+                      type="text"
+                      id="apellidoEntrante"
+                      :value="registro.apellido_entrante"
+                      class="form-control bg-white border-0 shadow-sm rounded-3"
+                      disabled
+                      placeholder="Apellido"
+                    />
+                    <label for="apellidoEntrante" class="text-secondary fw-semibold"
+                      >Apellido</label
+                    >
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Grupo 2: Usuario Entrante -->
-            <div class="col-md-6 mb-3">
-              <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
-                <div class="d-flex align-items-center mb-3">
-                  <h6 class="text-primary flex-grow-1 fw-semibold mb-3">Funcionario Entrante</h6>
+            <!-- Grupo 3: Configuración de Turno -->
+            <div class="p-4 bg-light rounded-3 border border-1 shadow-xs mt-4">
+              <h6 class="text-primary fw-bold mb-4 smaller text-uppercase tracking-wider">
+                Configuración del Turno
+              </h6>
 
-                  <!-- ✅ Botón dinámico -->
-                  <button
-                    v-if="turnoEnCurso"
-                    @click.prevent="$emit('sustituir-usuario')"
-                    class="btn btn-danger btn-sm fw-semibold"
+              <div class="row g-3">
+                <div class="col-md-12 mb-2">
+                  <label class="form-label text-secondary fw-semibold small">Tipo de Turno</label>
+                  <v-select
+                    id="tipoTurno"
+                    :key="listaDeTurnos.length > 0 ? 'turnos-loaded' : 'turnos-loading'"
+                    :options="listaDeTurnos"
+                    :model-value="registro.tipo_turno"
+                    @update:model-value="(newValue: string) => { 
+                      $emit('update:registro', {
+                          ...registro,
+                          tipo_turno: newValue
+                      })
+                    }"
+                    :disabled="turnoEnCurso"
+                    placeholder="Seleccione un turno"
+                    :clearable="false"
+                    :searchable="false"
+                    class="custom-v-select"
+                  />
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label text-secondary fw-semibold small">Fecha de Inicio</label>
+                  <DatePicker
+                    :model-value="
+                      registro.fecha_inicio ? registro.fecha_inicio + 'T00:00:00' : null
+                    "
+                    @update:model-value="
+                      (newDate) => {
+                        $emit('update:registro', {
+                          ...registro,
+                          fecha_inicio: newDate
+                        })
+                      }
+                    "
+                    :disabled-dates="isDisabled"
+                    :min-date="new Date()"
+                    :masks="{ input: 'DD/MM/YYYY' }"
+                    :model-config="{
+                      type: 'string',
+                      mask: 'YYYY-MM-DD',
+                      timeAdjust: '00:00:00'
+                    }"
+                    :popover="popoverConfig"
+                    :attributes="dateAttributes"
+                    :is-required="true"
+                    :disabled="turnoEnCurso"
+                    trim-weeks
+                    color="blue"
                   >
-                    <i class="bi bi-arrow-repeat"></i> Sustituir
-                  </button>
-                  <button
-                    v-else
-                    @click.prevent="$emit('buscar-entrante')"
-                    class="btn btn-warning btn-sm fw-semibold"
+                    <template #default="{ inputValue, inputEvents }">
+                      <div class="input-group">
+                        <span class="input-group-text bg-white border-0 shadow-sm"
+                          ><i class="bi bi-calendar-event text-primary"></i
+                        ></span>
+                        <input
+                          class="form-control bg-white border-0 shadow-sm"
+                          :value="inputValue"
+                          v-on="inputEvents"
+                          placeholder="Seleccione fecha de inicio"
+                          readonly
+                          :disabled="turnoEnCurso"
+                        />
+                      </div>
+                    </template>
+                  </DatePicker>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label text-secondary fw-semibold small"
+                    >Fecha de Término</label
                   >
-                    <i class="bi bi-search"></i> Buscar
-                  </button>
+                  <DatePicker
+                    :model-value="
+                      registro.fecha_termino ? registro.fecha_termino + 'T00:00:00' : null
+                    "
+                    @update:model-value="
+                      (newDate) => {
+                        $emit('update:registro', {
+                          ...registro,
+                          fecha_termino: newDate
+                        })
+                      }
+                    "
+                    :disabled-dates="isDisabled"
+                    :min-date="new Date()"
+                    :masks="{ input: 'DD/MM/YYYY' }"
+                    :model-config="{
+                      type: 'string',
+                      mask: 'YYYY-MM-DD',
+                      timeAdjust: '00:00:00'
+                    }"
+                    :popover="popoverConfig"
+                    :attributes="dateAttributes"
+                    :is-required="true"
+                    :disabled="turnoEnCurso"
+                    trim-weeks
+                    color="blue"
+                  >
+                    <template #default="{ inputValue, inputEvents }">
+                      <div class="input-group">
+                        <span class="input-group-text bg-white border-0 shadow-sm"
+                          ><i class="bi bi-calendar-event text-danger"></i
+                        ></span>
+                        <input
+                          class="form-control bg-white border-0 shadow-sm"
+                          :value="inputValue"
+                          v-on="inputEvents"
+                          placeholder="Seleccione fecha de Termino"
+                          readonly
+                          :disabled="turnoEnCurso"
+                        />
+                      </div>
+                    </template>
+                  </DatePicker>
                 </div>
 
-                <div class="form-floating mb-2">
-                  <input
-                    type="text"
-                    id="rutEntrante"
-                    :value="registro.rut_entrante"
-                    class="form-control"
-                    disabled
+                <div class="col-md-12 mt-3">
+                  <label class="form-label text-secondary fw-semibold small">Servicio</label>
+                  <v-select
+                    id="servicio"
+                    :options="listaDeServicios"
+                    :model-value="registro.servicio"
+                    @update:model-value="
+                      (newValue: string) => {
+                          $emit('update:registro', {
+                              ...registro,
+                              servicio: newValue
+                          })
+                      }
+                    "
+                    :disabled="turnoEnCurso"
+                    placeholder="Seleccione un servicio"
+                    :clearable="false"
+                    :searchable="true"
+                    class="custom-v-select"
                   />
-                  <label for="rutEntrante">RUT</label>
-                </div>
-
-                <div class="form-floating mb-2">
-                  <input
-                    type="text"
-                    id="nombreEntrante"
-                    :value="registro.nombre_entrante"
-                    class="form-control"
-                    disabled
-                  />
-                  <label for="nombreEntrante">Nombre</label>
-                </div>
-
-                <div class="form-floating mb-2">
-                  <input
-                    type="text"
-                    id="apellidoEntrante"
-                    :value="registro.apellido_entrante"
-                    class="form-control"
-                    disabled
-                  />
-                  <label for="apellidoEntrante">Apellido</label>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Grupo 3: Configuración de Turno -->
-          <div class="border rounded-3 p-3 bg-white shadow-sm mb-3">
-            <h6 class="text-primary fw-semibold mb-3">Configuración del Turno</h6>
-
-            <div class="mb-3">
-              <label for="tipoTurno" class="form-label fw-semibold">Tipo de Turno</label>
-
-              <v-select
-                id="tipoTurno"
-                :key="listaDeTurnos.length > 0 ? 'turnos-loaded' : 'turnos-loading'"
-                :options="listaDeTurnos"
-                :model-value="registro.tipo_turno"
-                @update:model-value="(newValue: string) => { 
-        $emit('update:registro', {
-            ...registro,
-            tipo_turno: newValue
-        })
-    }"
-                :disabled="turnoEnCurso"
-                placeholder="Seleccione un turno"
-                :clearable="false"
-                :searchable="false"
-              />
-            </div>
-
-            <div class="mb-3">
-              <label>Fecha de Inicio</label>
-              <DatePicker
-                :model-value="registro.fecha_inicio ? registro.fecha_inicio + 'T00:00:00' : null"
-                @update:model-value="
-                  (newDate) => {
-                    $emit('update:registro', {
-                      ...registro,
-                      fecha_inicio: newDate
-                    })
-                  }
-                "
-                :disabled-dates="isDisabled"
-                :min-date="new Date()"
-                :masks="{ input: 'DD/MM/YYYY' }"
-                :model-config="{
-                  type: 'string',
-                  mask: 'YYYY-MM-DD',
-                  timeAdjust: '00:00:00'
-                }"
-                :popover="popoverConfig"
-                :attributes="dateAttributes"
-                :is-required="true"
-                :disabled="turnoEnCurso"
-                trim-weeks
-                color="blue"
-              >
-                <template #default="{ inputValue, inputEvents }">
-                  <input
-                    class="form-control"
-                    :value="inputValue"
-                    v-on="inputEvents"
-                    placeholder="Seleccione fecha de inicio"
-                    readonly
-                    :disabled="turnoEnCurso"
-                  />
-                </template>
-              </DatePicker>
-            </div>
-
-            <div class="mb-3">
-              <label>Fecha de Término</label>
-              <DatePicker
-                :model-value="registro.fecha_termino ? registro.fecha_termino + 'T00:00:00' : null"
-                @update:model-value="
-                  (newDate) => {
-                    $emit('update:registro', {
-                      ...registro,
-                      fecha_termino: newDate
-                    })
-                  }
-                "
-                :disabled-dates="isDisabled"
-                :min-date="new Date()"
-                :masks="{ input: 'DD/MM/YYYY' }"
-                :model-config="{
-                  type: 'string',
-                  mask: 'YYYY-MM-DD',
-                  timeAdjust: '00:00:00'
-                }"
-                :popover="popoverConfig"
-                :attributes="dateAttributes"
-                :is-required="true"
-                :disabled="turnoEnCurso"
-                trim-weeks
-                color="blue"
-              >
-                <template #default="{ inputValue, inputEvents }">
-                  <input
-                    class="form-control"
-                    :value="inputValue"
-                    v-on="inputEvents"
-                    placeholder="Seleccione fecha de Termino"
-                    readonly
-                    :disabled="turnoEnCurso"
-                  />
-                </template>
-              </DatePicker>
-            </div>
-
-            <div class="mb-3">
-              <label for="servicio" class="form-label fw-semibold">Servicio</label>
-
-              <v-select
-                id="servicio"
-                :options="listaDeServicios"
-                :model-value="registro.servicio"
-                @update:model-value="
-            (newValue: string) => {
-                $emit('update:registro', {
-                    ...registro,
-                    servicio: newValue
-                })
-            }
-        "
-                :disabled="turnoEnCurso"
-                placeholder="Seleccione un servicio"
-                :clearable="false"
-                :searchable="true"
-              />
-            </div>
+          <!-- FOOTER -->
+          <div class="modal-footer border-0 p-4 pt-0 d-flex justify-content-end gap-2">
+            <button
+              type="button"
+              class="btn btn-light fw-bold px-4 border text-secondary"
+              @click="$emit('cerrar')"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary fw-bold px-4 shadow-sm"
+              @click="abrirConfirmacion"
+            >
+              <i class="bi bi-check-lg me-2"></i>Guardar Cambios
+            </button>
           </div>
-        </div>
 
-        <!-- FOOTER -->
-        <div class="modal-footer d-flex justify-content-center border-0 pb-4">
-          <button
-            type="button"
-            class="btn btn-secondary px-4 fw-semibold me-2"
-            @click="$emit('cerrar')"
-          >
-            Cancelar
-          </button>
-          <button type="button" class="btn btn-primary px-4 fw-semibold" @click="abrirConfirmacion">
-            Guardar
-          </button>
+          <!-- Modal de confirmación -->
+          <ConfirmationModal
+            :visible="showConfirmacion"
+            mensaje="¿Deseas guardar los cambios realizados?"
+            @confirmar="confirmarGuardar"
+            @cancelar="cancelarConfirmacion"
+          />
         </div>
-
-        <!-- Modal de confirmación -->
-        <ConfirmationModal
-          :visible="showConfirmacion"
-          mensaje="¿Deseas guardar los cambios realizados?"
-          @confirmar="confirmarGuardar"
-          @cancelar="cancelarConfirmacion"
-        />
       </div>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
@@ -292,8 +342,6 @@ const props = defineProps<{
   listaDeServicios: string[]
   fechasBloqueadas: string[]
 }>()
-
-
 
 const emit = defineEmits<{
   (e: 'cerrar'): void
@@ -331,38 +379,79 @@ const { popoverConfig, dateAttributes, isDisabled } = useDatePicker(props)
 </script>
 
 <style scoped>
-.modal {
-  background-color: rgba(0, 0, 0, 0.5);
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
 }
 
-.modal-content {
-  border-radius: 12px;
-  overflow: hidden;
-  animation: fadeInModal 0.25s ease;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
-@keyframes fadeInModal {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+/* Custom v-select */
+.custom-v-select :deep(.vs__dropdown-toggle) {
+  background: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 4px 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.075);
+}
+
+.custom-v-select :deep(.vs__selected) {
+  font-size: 0.875rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.custom-v-select :deep(.vs__actions svg) {
+  fill: #64748b;
+  transform: scale(0.8);
+}
+
+.custom-v-select :deep(.vs__dropdown-menu) {
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  font-size: 0.875rem;
+}
+
+.custom-v-select :deep(.vs__dropdown-option) {
+  border-radius: 0.375rem;
+  padding: 8px 12px;
+  margin-bottom: 2px;
+}
+
+.custom-v-select :deep(.vs__dropdown-option--highlight) {
+  background: #3b82f6;
+  color: white;
+}
+
+.smaller {
+  font-size: 0.75rem;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 button {
-  transition: transform 0.12s ease-in-out, box-shadow 0.12s;
+  transition: all 0.2s ease;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  filter: brightness(1.05);
 }
 
-h6 {
-  font-weight: 600;
+button:active {
+  transform: translateY(0);
 }
 
 :deep(.modal-content) {

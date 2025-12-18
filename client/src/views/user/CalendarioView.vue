@@ -3,7 +3,9 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1 text-dark">Calendario de Reemplazos</h2>
+        <h2 class="fw-bold mb-1 text-dark">
+          <i class="bi bi-calendar3 text-primary me-2"></i>Calendario de Reemplazos
+        </h2>
         <p class="text-secondary mb-0">Visualiza y gestiona la programación de turnos</p>
       </div>
       <div class="d-none d-md-flex gap-2">

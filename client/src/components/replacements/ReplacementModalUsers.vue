@@ -1,144 +1,208 @@
 <template>
-  <div class="modal fade show d-block" tabindex="-1" role="dialog" v-if="visible">
-    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
-      <div class="modal-content shadow-lg border-0 rounded-3">
-        <!-- Header -->
-        <div class="modal-header bg-primary text-white">
-          <h5 class="fw-italic">SELECCIONAR USUARIO</h5>
-          <button
-            type="button"
-            class="btn-close btn-close-white"
-            @click="$emit('cerrar')"
-            aria-label="Close"
-          ></button>
-        </div>
-
-        <!-- Body -->
-        <div class="modal-body bg-light">
-          <div class="mb-3 d-flex justify-content-start gap-4">
-            <!-- Filtro por RUT -->
-            <div>
-              <label for="">RUT: </label>
-              <input
-                type="text"
-                v-model="filtroRutLocal"
-                placeholder="Ingrese RUT"
-                class="form-control form-control-sm border-primary shadow-sm filtro-input"
-              />
-            </div>
-
-            <!-- Filtro por Nombre -->
-            <div>
-              <label for="">Nombre: </label>
-              <input
-                type="text"
-                v-model="filtroNombreLocal"
-                placeholder="Buscar por Nombre"
-                class="form-control form-control-sm border-primary shadow-sm filtro-input"
-              />
-            </div>
-
-            <!-- Filtro por Cargo (solo en paso 1) -->
-            <div v-if="grupo===1">
-              <label for="">Cargo:</label>
-              <select
-                v-model="filtroCargoLocal"
-                class="form-select form-select-sm border-primary shadow-sm filtro-input" 
-              >
-                <option value="">Todos</option>
-                <option
-                  v-for="(Cargo, index) in props.listaDeCargos"
-                  :key="index"
-                  :value="Cargo"
-                >
-                  {{ Cargo }}
-                </option>
-              </select>
-            </div>
+  <Transition name="fade">
+    <div
+      class="modal fade show d-block"
+      tabindex="-1"
+      role="dialog"
+      v-if="visible"
+      style="background-color: rgba(30, 41, 59, 0.5); backdrop-filter: blur(4px)"
+    >
+      <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+          <!-- Header -->
+          <div class="modal-header border-0 bg-primary bg-gradient text-white p-4 rounded-top-4">
+            <h5 class="modal-title fw-bold">
+              <i class="bi bi-person-check-fill me-2"></i>SELECCIONAR USUARIO
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              @click="$emit('cerrar')"
+              aria-label="Close"
+            ></button>
           </div>
 
-          <div class="table-responsive">
-            <table class="table table-hover align-middle shadow-sm rounded">
-              <thead class="table-primary">
-                <tr>
-                  <th scope="col" class="small">RUT</th>
-                  <th scope="col" class="small">Nombre</th>
-                  <th scope="col" class="small">Apellido</th>
-                  <th scope="col" class="small">Cargo</th>
-                  <th scope="col" class="small">Dirección</th>
-                  <th scope="col" class="small">Teléfono</th>
-                  <th scope="col" class="small">Email</th>
-                  <th scope="col" class="small">Ciudad</th>
-                  <th scope="col" class="small">Habilitado</th>
-                </tr>
-              </thead>
+          <!-- Body -->
+          <div class="modal-body p-4 bg-white">
+            <div class="mb-4 d-flex justify-content-start gap-4">
+              <!-- Filtro por RUT -->
+              <div class="filtro-group">
+                <label class="form-label text-secondary fw-semibold small mb-1">RUT</label>
+                <div class="input-group input-group-sm rounded-3 overflow-hidden shadow-xs border">
+                  <span class="input-group-text bg-light border-0"
+                    ><i class="bi bi-search smaller text-primary"></i
+                  ></span>
+                  <input
+                    type="text"
+                    v-model="filtroRutLocal"
+                    placeholder="Ingrese RUT"
+                    class="form-control border-0 bg-white"
+                  />
+                </div>
+              </div>
 
-              <tbody>
-                <tr
-                  v-for="(usuario, index) in paginatedUsuarios"
-                  :key="index"
-                  @click="handleClick(usuario)"
-                  :class="{
-                    'table-hover-row': true,
-                    'selected-row': usuarioSeleccionado?.rut === usuario.rut
-                  }"
-                >
-                  <td class="small">{{ usuario.rut }}</td>
-                  <td class="small">{{ usuario.nombre }}</td>
-                  <td class="small">{{ usuario.apellido }}</td>
-                  <td class="small">{{ usuario.tipo_cargo }}</td>
-                  <td class="small">{{ usuario.direccion }}</td>
-                  <td class="small">{{ usuario.telefono }}</td>
-                  <td class="small">{{ usuario.email }}</td>
-                  <td class="small">{{ usuario.ciudad }}</td>
-                  <td class="small">{{ usuario.habilitado ? 'Sí' : 'No' }}</td>
-                </tr>
+              <!-- Filtro por Nombre -->
+              <div class="filtro-group">
+                <label class="form-label text-secondary fw-semibold small mb-1">Nombre</label>
+                <div class="input-group input-group-sm rounded-3 overflow-hidden shadow-xs border">
+                  <span class="input-group-text bg-light border-0"
+                    ><i class="bi bi-person smaller text-primary"></i
+                  ></span>
+                  <input
+                    type="text"
+                    v-model="filtroNombreLocal"
+                    placeholder="Buscar por Nombre"
+                    class="form-control border-0 bg-white"
+                  />
+                </div>
+              </div>
 
-                <tr v-if="paginatedUsuarios.length === 0">
-                  <td colspan="8" class="text-center text-muted py-3">
-                    No se encontraron usuarios que coincidan con el filtro.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Paginación Footer -->
-          <div class="d-flex align-items-center justify-content-between mt-2">
-            <!-- Botones de paginación (centrados) -->
-            <div class="d-flex justify-content-center flex-grow-1" v-if="totalPages > 1">
-              <button
-                v-if="currentPage > 1"
-                class="btn btn-outline-primary btn-sm mx-1"
-                @click="changePage(currentPage - 1)"
-              >
-                ◀ Anterior
-              </button>
-
-              <span class="mx-2 small align-self-center">
-                Página {{ currentPage }} de {{ totalPages }}
-              </span>
-
-              <button
-                v-if="currentPage < totalPages"
-                class="btn btn-outline-primary btn-sm mx-1"
-                @click="changePage(currentPage + 1)"
-              >
-                Siguiente ▶
-              </button>
+              <!-- Filtro por Cargo (solo en paso 1) -->
+              <div v-if="grupo === 1" class="filtro-group">
+                <label class="form-label text-secondary fw-semibold small mb-1">Cargo</label>
+                <div class="input-group input-group-sm rounded-3 shadow-xs border bg-white">
+                  <span class="input-group-text bg-light border-0"
+                    ><i class="bi bi-briefcase smaller text-primary"></i
+                  ></span>
+                  <v-select
+                    v-model="filtroCargoLocal"
+                    :options="props.listaDeCargos"
+                    placeholder="Todos los cargos"
+                    class="custom-v-select flex-grow-1"
+                    :clearable="false"
+                    :searchable="false"
+                  />
+                </div>
+              </div>
             </div>
 
-            <!-- Botón cerrar (a la derecha) -->
-            <div class="ms-auto pt-3">
-              <button type="button" class="btn btn-secondary px-4" @click="$emit('cerrar')">
-                Cerrar
-              </button>
+            <div class="table-responsive rounded-3 border shadow-xs">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="bg-primary bg-gradient text-white">
+                  <tr>
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                      RUT
+                    </th>
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                      Nombre
+                    </th>
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                      Apellido
+                    </th>
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                      Cargo
+                    </th>
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                      Dirección
+                    </th>
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                      Teléfono
+                    </th>
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                      Email
+                    </th>
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                      Habilitado
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr
+                    v-for="(usuario, index) in paginatedUsuarios"
+                    :key="index"
+                    @click="handleClick(usuario)"
+                    class="cursor-pointer"
+                    :class="{
+                      'table-primary-light fw-bold': usuarioSeleccionado?.rut === usuario.rut
+                    }"
+                  >
+                    <td class="small px-3">{{ usuario.rut }}</td>
+                    <td class="small px-3">{{ usuario.nombre }}</td>
+                    <td class="small px-3">{{ usuario.apellido }}</td>
+                    <td class="small px-3">
+                      <span
+                        class="badge bg-light text-primary border border-primary border-opacity-25"
+                        >{{ usuario.tipo_cargo }}</span
+                      >
+                    </td>
+                    <td class="small px-3 text-secondary">{{ usuario.direccion }}</td>
+                    <td class="small px-3 text-secondary">{{ usuario.telefono }}</td>
+                    <td class="small px-3 text-secondary text-truncate" style="max-width: 150px">
+                      {{ usuario.email }}
+                    </td>
+                    <td class="small px-3">
+                      <span
+                        class="badge rounded-pill"
+                        :class="
+                          usuario.habilitado
+                            ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
+                            : 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25'
+                        "
+                      >
+                        {{ usuario.habilitado ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </td>
+                  </tr>
+
+                  <tr v-if="paginatedUsuarios.length === 0">
+                    <td colspan="8" class="text-center text-muted py-5">
+                      <i class="bi bi-search me-2"></i>No se encontraron usuarios que coincidan con
+                      el filtro.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Paginación Footer -->
+            <div
+              class="d-flex align-items-center justify-content-between mt-4 p-3 bg-light rounded-3"
+            >
+              <div class="text-secondary small fw-medium">
+                {{ usuariosFiltrados.length }} usuarios encontrados
+              </div>
+
+              <!-- Botones de paginación -->
+              <div class="d-flex align-items-center gap-3" v-if="totalPages > 1">
+                <button
+                  class="btn btn-white btn-sm border shadow-xs px-3 fw-bold"
+                  :disabled="currentPage === 1"
+                  @click="changePage(currentPage - 1)"
+                >
+                  <i class="bi bi-chevron-left me-1"></i>Anterior
+                </button>
+
+                <div class="small fw-bold text-dark">
+                  Página {{ currentPage }} <span class="text-secondary fw-normal">de</span>
+                  {{ totalPages }}
+                </div>
+
+                <button
+                  class="btn btn-white btn-sm border shadow-xs px-3 fw-bold"
+                  :disabled="currentPage === totalPages"
+                  @click="changePage(currentPage + 1)"
+                >
+                  Siguiente<i class="bi bi-chevron-right ms-1"></i>
+                </button>
+              </div>
+
+              <!-- Botón cerrar -->
+              <div>
+                <button
+                  type="button"
+                  class="btn btn-secondary px-4 fw-bold shadow-sm"
+                  @click="$emit('cerrar')"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
@@ -160,7 +224,7 @@ const emit = defineEmits<{
 // --- Estado local de filtros
 const filtroRutLocal = ref('')
 const filtroNombreLocal = ref('')
-const filtroCargoLocal = ref('') // 👈 nuevo
+const filtroCargoLocal = ref<string | null>(null)
 
 const usuarioSeleccionado = ref<User | null>(null)
 let lastClickTime = 0
@@ -191,10 +255,9 @@ const usuariosFiltrados = computed(() => {
   }
 
   if (filtroCargoLocal.value) {
-  lista = lista.filter(
-    (u) => u.tipo_cargo?.toLowerCase().includes(filtroCargoLocal.value.toLowerCase())
-  )
-}
+    const cargoBusqueda = String(filtroCargoLocal.value).toLowerCase()
+    lista = lista.filter((u) => u.tipo_cargo?.toLowerCase().includes(cargoBusqueda))
+  }
 
   // Ordenar alfabéticamente
   return lista.sort((a, b) => a.nombre.localeCompare(b.nombre))
@@ -228,54 +291,114 @@ function handleClick(usuario: User) {
 </script>
 
 <style scoped>
-.modal {
-  background-color: rgba(0, 0, 0, 0.5);
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
 }
 
-.table-hover-row:hover {
-  background-color: #e3f2fd !important;
-  transition: background-color 0.2s ease-in-out;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
-.selected-row {
-  background-color: #bbdefb !important;
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.table-primary-light {
+  background-color: rgba(37, 99, 235, 0.05) !important;
+}
+
+.smaller {
+  font-size: 0.75rem;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Custom v-select */
+.custom-v-select :deep(.vs__dropdown-toggle) {
+  background: white;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.custom-v-select :deep(.vs__selected) {
+  font-size: 0.8125rem;
+  color: #1e293b;
   font-weight: 500;
+  margin: 0;
+  padding: 0 0.5rem;
+  line-height: 27px; /* Align with input-group height */
 }
 
-.table {
-  border-radius: 8px;
-  overflow: hidden;
+.custom-v-select :deep(.vs__actions) {
+  padding: 0 4px;
 }
 
-thead th {
-  font-weight: 600;
-  text-transform: uppercase;
+.custom-v-select :deep(.vs__actions svg) {
+  fill: #64748b;
+  transform: scale(0.7);
 }
 
-.modal-content {
-  border-radius: 12px;
-  overflow: hidden;
-  animation: fadeInModal 0.25s ease;
+.custom-v-select :deep(.vs__dropdown-menu) {
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  font-size: 0.8125rem;
+  z-index: 1050;
 }
 
-@keyframes fadeInModal {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.custom-v-select :deep(.vs__dropdown-option) {
+  border-radius: 0.375rem;
+  padding: 6px 12px;
+  margin-bottom: 2px;
+}
+
+.custom-v-select :deep(.vs__dropdown-option--highlight) {
+  background: #3b82f6;
+  color: white;
+}
+
+.custom-v-select :deep(.vs__search) {
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.filtro-group {
+  width: 220px;
 }
 
 .table-responsive {
-  min-height: 600px; /* altura que necesitas para 20 filas */
-  max-height: 600px; /* evita que crezca más */
-  overflow-y: auto; /* agrega scroll interno si hay más contenido */
+  max-height: 500px;
+  overflow-y: auto;
 }
 
-.filtro-input {
-  width: 220px;
+.btn-white {
+  background-color: white;
+  color: #64748b;
+}
+
+.btn-white:hover:not(:disabled) {
+  background-color: #f8fafc;
+  color: #3b82f6;
+  border-color: #3b82f6 !important;
+}
+
+button {
+  transition: all 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 </style>
