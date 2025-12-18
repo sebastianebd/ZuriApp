@@ -19,7 +19,7 @@ export const useAuditStore = defineStore('audit', () => {
     userId: ''
   })
 
-  async function fetchLogs(page = 1, limit = 20, filters: any = {}) {
+  async function fetchLogs(page = 1, limit = 14, filters: any = {}) {
     loading.value = true
     error.value = null
     try {

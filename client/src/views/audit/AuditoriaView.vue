@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid px-4 py-4">
+  <div class="container-fluid pt-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h2 class="fw-bold mb-1 text-dark">Registro de Auditoría</h2>
@@ -29,31 +29,30 @@
       <AuditTable :logs="logs" />
 
       <!-- Paginación -->
-      <nav v-if="totalPages > 1" class="d-flex justify-content-center mt-4">
-        <ul class="pagination shadow-sm">
-          <li class="page-item" :class="{ disabled: currentPage === 1 }">
-            <button
-              class="page-link border-0 rounded-start-pill px-3"
-              @click="changePage(currentPage - 1)"
-            >
-              <i class="bi bi-chevron-left"></i>
-            </button>
-          </li>
-          <li class="page-item disabled">
-            <span class="page-link border-0 bg-white text-secondary fw-semibold">
-              Página {{ currentPage }} de {{ totalPages }}
-            </span>
-          </li>
-          <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-            <button
-              class="page-link border-0 rounded-end-pill px-3"
-              @click="changePage(currentPage + 1)"
-            >
-              <i class="bi bi-chevron-right"></i>
-            </button>
-          </li>
-        </ul>
-      </nav>
+      <div
+        v-if="totalPages > 1"
+        class="d-flex justify-content-center align-items-center gap-3 mt-3"
+      >
+        <button
+          class="btn btn-sm btn-outline-primary"
+          :disabled="currentPage === 1"
+          @click="changePage(currentPage - 1)"
+        >
+          <i class="bi bi-chevron-left"></i> Anterior
+        </button>
+
+        <span class="text-secondary fw-semibold">
+          Página {{ currentPage }} de {{ totalPages }}
+        </span>
+
+        <button
+          class="btn btn-sm btn-outline-primary"
+          :disabled="currentPage === totalPages"
+          @click="changePage(currentPage + 1)"
+        >
+          Siguiente <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -69,12 +68,12 @@ const auditStore = useAuditStore()
 const { logs, loading, error, currentPage, totalPages, currentFilters } = storeToRefs(auditStore)
 
 function handleFilter(filters: any) {
-  auditStore.fetchLogs(1, 20, filters)
+  auditStore.fetchLogs(1, 14, filters)
 }
 
 function changePage(page: number) {
   if (page >= 1 && page <= totalPages.value) {
-    auditStore.fetchLogs(page, 20, currentFilters.value)
+    auditStore.fetchLogs(page, 14, currentFilters.value)
   }
 }
 

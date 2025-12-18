@@ -72,6 +72,7 @@ aside {
   display: flex;
   flex-direction: column;
   position: fixed;
+  z-index: 1050;
   top: 0;
   left: 0;
 
