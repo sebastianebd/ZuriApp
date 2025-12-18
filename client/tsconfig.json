@@ -6,7 +6,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "lib": ["es2018"] //VER CONFIG.
+    "lib": ["es2018"], 
+    "verbatimModuleSyntax": true
   },
 
   "references": [

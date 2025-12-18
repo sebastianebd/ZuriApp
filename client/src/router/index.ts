@@ -68,7 +68,7 @@ router.beforeResolve(async (to, from, next) => {
   }
 
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    return next({ name: 'user' }) // redirige a zona privada si ya está logueado
+    return next({ name: 'user' })
   }
 
   next()

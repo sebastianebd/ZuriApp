@@ -1,64 +1,88 @@
 <template>
-  <div class="table-responsive rounded-4 shadow-sm bg-white">
-    <table class="table table-hover align-middle mb-0 tabla-audit">
-      <thead class="table-primary text-white">
+  <div class="table-responsive rounded-3 border overflow-hidden shadow-sm bg-white">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="bg-primary bg-gradient text-white">
         <tr>
-          <th class="small py-3 ps-4">Fecha / Hora</th>
-          <th class="small py-3">Usuario Resp.</th>
-          <th class="small py-3">Módulo</th>
-          <th class="small py-3">Acción</th>
-          <th class="small py-3">Descripción</th>
-          <th class="small py-3 text-center">Detalles</th>
+          <th scope="col" class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider">
+            Fecha / Hora
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Usuario Resp.
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Módulo
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Acción
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Descripción
+          </th>
+          <th
+            scope="col"
+            class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider text-center"
+          >
+            Detalles
+          </th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="logs.length === 0">
           <td colspan="6" class="text-center py-5 text-muted">
-            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-            No se encontraron registros de auditoría.
+            <i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>
+            <span class="fw-medium">No se encontraron registros de auditoría.</span>
           </td>
         </tr>
         <tr v-for="log in logs" :key="log._id" class="border-bottom hover-row">
-          <td class="small ps-4 text-nowrap">
-            <div class="fw-bold text-dark">{{ formatDate(log.created_at) }}</div>
-            <div class="text-muted small">{{ formatTime(log.created_at) }}</div>
+          <td class="px-4 py-3">
+            <div class="d-flex flex-column">
+              <span class="fw-bold text-dark">{{ formatDate(log.created_at) }}</span>
+              <span class="smaller text-secondary">{{ formatTime(log.created_at) }} hrs</span>
+            </div>
           </td>
-          <td class="small">
+          <td class="px-3">
             <div class="d-flex align-items-center">
               <div
-                class="avatar-placeholder me-2 rounded-circle bg-light d-flex align-items-center justify-content-center text-primary fw-bold"
-                style="width: 32px; height: 32px"
+                class="avatar-placeholder me-2 rounded-3 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center text-primary fw-bold smaller border border-primary border-opacity-10"
+                style="width: 34px; height: 34px"
               >
                 {{ getInitials(log.user_name) }}
               </div>
-              <div>
-                <span class="d-block fw-semibold text-dark">{{
+              <div class="d-flex flex-column">
+                <span class="fw-semibold text-dark small">{{
                   log.user_name || 'Desconocido'
                 }}</span>
-                <span
-                  v-if="log.user_id"
-                  class="text-xs text-muted d-block"
-                  style="font-size: 0.75rem"
-                  >ID: ...{{ getUserId(log) }}</span
-                >
+                <span v-if="log.user_id" class="smaller text-muted" style="font-size: 0.7rem">
+                  ID: ...{{ getUserId(log) }}
+                </span>
               </div>
             </div>
           </td>
-          <td class="small">
-            <span class="badge bg-light text-secondary border fw-normal">{{ log.module }}</span>
+          <td class="px-3">
+            <span
+              class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill smaller fw-bold"
+            >
+              {{ log.module }}
+            </span>
           </td>
-          <td class="small">
-            <span :class="['badge rounded-pill', getActionColor(log.action)]">
+          <td class="px-3">
+            <span
+              :class="['badge rounded-pill px-3 py-1 smaller fw-bold', getActionColor(log.action)]"
+            >
               {{ log.action }}
             </span>
           </td>
-          <td class="small text-secondary">{{ log.description }}</td>
-          <td class="text-center">
+          <td class="px-3">
+            <span class="small text-secondary fw-medium">{{ log.description }}</span>
+          </td>
+          <td class="px-4 text-center">
             <button
-              class="btn btn-sm btn-outline-primary rounded-pill px-3"
+              class="btn btn-light btn-sm border shadow-xs"
               @click="verDetalles(log)"
+              title="Ver Detalles Técnicos"
             >
-              Ver JSON
+              <i class="bi bi-braces text-primary me-1"></i>
+              <span class="smaller fw-bold">JSON</span>
             </button>
           </td>
         </tr>
@@ -152,26 +176,27 @@ function getActionColor(action: string) {
 </script>
 
 <style scoped>
-/* Reutilizando estilos de Tabla User/Replacement para consistencia */
-.table th {
-  font-weight: 600;
-  border-bottom: 0;
-  letter-spacing: 0.5px;
-}
-.table-primary {
-  background: linear-gradient(
-    90deg,
-    #6610f2,
-    #6f42c1
-  ); /* Un morado auditoría diferente al azul user */
-  background: linear-gradient(90deg, #0d6efd, #3d8bfd); /* Mantener azul por consistencia */
-}
 .hover-row:hover {
-  background-color: #f8f9fa;
-  transition: all 0.2s;
+  background-color: #f8fafc !important;
 }
-.tabla-audit {
-  border-radius: 1rem;
-  overflow: hidden;
+
+.smaller {
+  font-size: 0.75rem;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+th {
+  border: none !important;
+}
+
+.table td {
+  border-color: #f1f5f9;
 }
 </style>

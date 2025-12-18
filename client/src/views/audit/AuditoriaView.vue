@@ -1,64 +1,112 @@
 <template>
-  <div class="container-fluid pt-3">
+  <div class="audit-view p-4">
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1 text-dark">Registro de Auditoría</h2>
-        <p class="text-secondary mb-0">Seguimiento detallado de cambios en el sistema</p>
+        <h2 class="fw-bold mb-1 text-dark">
+          <i class="bi bi-shield-check text-primary me-2"></i>Registro de Auditoría
+        </h2>
+        <p class="text-secondary mb-0">
+          Seguimiento detallado de cambios y acciones en el sistema ({{ logs.length }} logs
+          mostrados)
+        </p>
       </div>
-      <div>
-        <!-- Espacio para botones globales si fuera necesario -->
-      </div>
-    </div>
-
-    <!-- Filtros -->
-    <AuditFilter @filter="handleFilter" />
-
-    <!-- Tabla -->
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
-    </div>
-
-    <div v-else-if="error" class="alert alert-danger shadow-sm rounded-4 border-0">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      {{ error }}
-    </div>
-
-    <div v-else>
-      <AuditTable :logs="logs" />
-
-      <!-- Paginación -->
-      <div
-        v-if="totalPages > 1"
-        class="d-flex justify-content-center align-items-center gap-3 mt-3"
-      >
-        <button
-          class="btn btn-sm btn-outline-primary"
-          :disabled="currentPage === 1"
-          @click="changePage(currentPage - 1)"
-        >
-          <i class="bi bi-chevron-left"></i> Anterior
+      <div class="d-flex gap-2">
+        <button @click="limpiarFiltros" class="btn btn-light border fw-semibold shadow-sm px-3">
+          <i class="bi bi-eraser me-2"></i>Limpiar Filtros
         </button>
+        <div class="d-none d-md-block">
+          <span
+            class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill small fw-bold"
+          >
+            <i class="bi bi-list-check me-1"></i>Logs del Sistema
+          </span>
+        </div>
+      </div>
+    </div>
 
-        <span class="text-secondary fw-semibold">
-          Página {{ currentPage }} de {{ totalPages }}
-        </span>
+    <!-- Main Card Container -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div class="card-body p-4">
+        <!-- Filter Section -->
+        <div class="filter-section mb-4 p-3 bg-light rounded-3 border border-1">
+          <AuditFilter ref="filterComponent" @filter="handleFilter" />
+        </div>
 
-        <button
-          class="btn btn-sm btn-outline-primary"
-          :disabled="currentPage === totalPages"
-          @click="changePage(currentPage + 1)"
-        >
-          Siguiente <i class="bi bi-chevron-right"></i>
-        </button>
+        <!-- Table Container -->
+        <div class="table-container position-relative">
+          <!-- Loading State -->
+          <div
+            v-if="loading"
+            class="loading-overlay d-flex flex-column align-items-center justify-content-center py-5"
+          >
+            <div class="spinner-border text-primary mb-3" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="text-muted small">Actualizando registros de auditoría...</p>
+          </div>
+
+          <!-- Error State -->
+          <div v-else-if="error" class="alert alert-danger border-0 shadow-sm rounded-3 py-3">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ error }}
+          </div>
+
+          <!-- Table and Pagination -->
+          <div v-else>
+            <AuditTable :logs="logs" />
+
+            <!-- Pagination (Standardized with ReemplazosView) -->
+            <div
+              class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top"
+              v-if="totalPages > 1"
+            >
+              <span class="text-muted small"
+                >Mostrando página {{ currentPage }} de {{ totalPages }}</span
+              >
+              <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0 gap-1">
+                  <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                    <button
+                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
+                      @click="changePage(currentPage - 1)"
+                    >
+                      <i class="bi bi-chevron-left small"></i>
+                    </button>
+                  </li>
+                  <li
+                    class="page-item"
+                    v-for="page in totalPages"
+                    :key="page"
+                    :class="{ active: currentPage === page }"
+                  >
+                    <button
+                      class="page-link rounded-2 border-0 mx-1 shadow-xs"
+                      @click="changePage(page)"
+                    >
+                      {{ page }}
+                    </button>
+                  </li>
+                  <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                    <button
+                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
+                      @click="changePage(currentPage + 1)"
+                    >
+                      <i class="bi bi-chevron-right small"></i>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuditStore } from '@/stores/audit.store'
 import AuditFilter from '@/components/audit/AuditFilter.vue'
@@ -66,6 +114,7 @@ import AuditTable from '@/components/audit/AuditTable.vue'
 
 const auditStore = useAuditStore()
 const { logs, loading, error, currentPage, totalPages, currentFilters } = storeToRefs(auditStore)
+const filterComponent = ref<InstanceType<typeof AuditFilter> | null>(null)
 
 function handleFilter(filters: any) {
   auditStore.fetchLogs(1, 14, filters)
@@ -77,7 +126,47 @@ function changePage(page: number) {
   }
 }
 
+function limpiarFiltros() {
+  if (filterComponent.value) {
+    filterComponent.value.clear()
+    handleFilter({
+      startDate: '',
+      endDate: '',
+      module: 'TODOS',
+      action: 'TODOS',
+      userId: ''
+    })
+  }
+}
+
 onMounted(() => {
   auditStore.fetchLogs()
 })
 </script>
+
+<style scoped>
+.audit-view {
+  background-color: #f8fafc;
+  min-height: calc(100vh - 70px);
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.page-link {
+  padding: 0.5rem 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.page-item.active .page-link {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.page-link:hover:not(.active) {
+  background-color: #e2e8f0 !important;
+}
+</style>

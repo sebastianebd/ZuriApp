@@ -18,12 +18,14 @@ const userRoutes = require("./routes/api/users.routes");
 const replacementRoutes = require("./routes/api/replacement.routes");
 const optionRoutes = require("./routes/api/options.routes");
 const auditRoutes = require("./routes/api/audit.routes");
+const profileRoutes = require("./routes/api/profile.routes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reemplazos", replacementRoutes);
 app.use("/api/options", optionRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.all("*", (req, res) => {
   res.status(404).json({ error: "404 Not Found" });

@@ -1,65 +1,111 @@
 <template>
-  <main>
-    <div class="row mb-3"></div>
-
-    <div class="mt-2">
-      <div class="">
-        <h5 class="card-title m-b-0 pt-2 text-secondary">
-          Reemplazos Activos ({{ replacementStore.reemplazosFiltrados.length }} Registros)
-        </h5>
-        <div class="d-flex justify-content-end pb-3">
-          <button @click="replacementStore.limpiarFiltros()" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm">
-            Limpiar Filtros
-          </button>
-        </div>
+  <div class="reemplazos-view p-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-1 text-dark">Gestión de Reemplazos</h2>
+        <p class="text-secondary mb-0">
+          Administra los reemplazos activos en el sistema ({{
+            replacementStore.reemplazosFiltrados.length
+          }}
+          registros)
+        </p>
       </div>
+      <div class="d-flex gap-2">
+        <button
+          @click="replacementStore.limpiarFiltros()"
+          class="btn btn-light border fw-semibold shadow-sm px-3"
+        >
+          <i class="bi bi-eraser me-2"></i>Limpiar Filtros
+        </button>
+        <button @click="openCreateModal" class="btn btn-primary fw-bold shadow-sm px-4">
+          <i class="bi bi-plus-lg me-2"></i>Nuevo Reemplazo
+        </button>
+      </div>
+    </div>
 
-      <div class="">
-        <ReplacementFilter :lista-servicios="listaDeServicios" />
-
-        <div class="d-flex justify-content-end pb-3">
-          <button @click="openCreateModal" class="btn btn-primary btn-sm fw-semibold shadow-sm">
-            <span class=" text-white">Nuevo Reemplazo</span>
-          </button>
+    <!-- Main Content Card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div class="card-body p-4">
+        <!-- Filter Section -->
+        <div class="filter-section mb-4 p-3 bg-light rounded-3 border border-1">
+          <ReplacementFilter :lista-servicios="listaDeServicios" />
         </div>
 
-        <ReplacementTable
-          :reemplazos="paginatedReplacements"
-          @finalizar="handleFinalizar"
-          @anular="handleAnular"
-          @modificar="openUpdateModal"
-        />
-
-        <div class="d-flex justify-content-center align-items-center my-1" v-if="totalPages > 1">
-          <button
-            v-if="currentPage > 1"
-            class="btn btn-outline-primary btn-sm mx-1"
-            @click="changePage(currentPage - 1)"
+        <!-- Table Section -->
+        <div class="table-container position-relative">
+          <div
+            v-if="replacementStore.cargando"
+            class="loading-overlay d-flex flex-column align-items-center justify-content-center py-5"
           >
-            ◀ Anterior
-          </button>
+            <div class="spinner-border text-primary mb-3" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="text-muted">Actualizando registros...</p>
+          </div>
 
-          <span class="mx-2 text-secondary">Página {{ currentPage }} de {{ totalPages }}</span>
-
-          <button
-            v-if="currentPage < totalPages"
-            class="btn btn-outline-primary btn-sm mx-1"
-            @click="changePage(currentPage + 1)"
+          <div
+            v-else-if="replacementStore.reemplazosFiltrados.length === 0"
+            class="empty-state text-center py-5"
           >
-            Siguiente ▶
-          </button>
-        </div>
-      </div>
+            <div class="empty-icon-container mb-3 mx-auto">
+              <i class="bi bi-search fs-1 text-muted opacity-50"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-1">No se encontraron resultados</h5>
+            <p class="text-muted">Prueba ajustando los filtros de búsqueda</p>
+          </div>
 
-      <div
-        v-if="!replacementStore.cargando && replacementStore.reemplazosFiltrados.length === 0"
-        class="p-3 text-center text-muted"
-      >
-        No se encontraron reemplazos con los filtros actuales.
-      </div>
-      <div v-if="replacementStore.cargando" class="p-3 text-center">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Cargando...</span>
+          <template v-else>
+            <ReplacementTable
+              :reemplazos="paginatedReplacements"
+              @finalizar="handleFinalizar"
+              @anular="handleAnular"
+              @modificar="openUpdateModal"
+            />
+
+            <!-- Pagination -->
+            <div
+              class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top"
+              v-if="totalPages > 1"
+            >
+              <span class="text-muted small"
+                >Mostrando página {{ currentPage }} de {{ totalPages }}</span
+              >
+              <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0 gap-1">
+                  <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                    <button
+                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
+                      @click="changePage(currentPage - 1)"
+                    >
+                      <i class="bi bi-chevron-left small"></i>
+                    </button>
+                  </li>
+                  <li
+                    class="page-item"
+                    v-for="page in totalPages"
+                    :key="page"
+                    :class="{ active: currentPage === page }"
+                  >
+                    <button
+                      class="page-link rounded-2 border-0 mx-1 shadow-xs"
+                      @click="changePage(page)"
+                    >
+                      {{ page }}
+                    </button>
+                  </li>
+                  <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                    <button
+                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
+                      @click="changePage(currentPage + 1)"
+                    >
+                      <i class="bi bi-chevron-right small"></i>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -101,7 +147,7 @@
       @sustituir-usuario="seleccionarEntranteEnEdicion"
     />
 
-    <!-- MODAL USUARIOS (con lista filtrada según cargo) -->
+    <!-- MODAL USUARIOS -->
     <ReplacementModalUsers
       :visible="userModalVisible"
       :usuarios="usuariosFiltradosPorCargo"
@@ -110,7 +156,7 @@
       @cerrar="closeUserModal"
       @usuario-seleccionado="seleccionarUsuario"
     />
-  </main>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -145,8 +191,6 @@ const apiPrivate = authStore.usePrivateApi()
 
 const userLoged = computed(() => authStore.userDetail)
 
-// --- 1. USO DE COMPOSABLES ---
-
 // A. Paginación
 const {
   currentPage,
@@ -179,22 +223,16 @@ const {
   createSustitucionPayload
 } = useReplacementModals()
 
-// --- 2. ESTADO LOCAL (Data estática) ---
-
 const listaDeTurnos = ref<string[]>([])
 const listaDeServicios = ref<string[]>([])
 const listaDeCargos = ref<string[]>([])
 const usuarios = ref<User[]>([])
 
-// --- 3. FUNCIONES DE VISTA Y HANDLERS ---
-
-// --- Sustitución (Orquestador de la acción)
 const handleSustitucion = () => {
   handleSustitucionComposable()
 }
 
 const confirmarSustitucion = async () => {
-  // Validación simplificada
   if (!nuevoEntranteSustitucion.value.rut_entrante) {
     showAlert?.('Error', 'Debe asignar un nuevo funcionario para la sustitución.')
     return
@@ -202,7 +240,6 @@ const confirmarSustitucion = async () => {
   try {
     const datosSustitucion = createSustitucionPayload()
     await replacementStore.procesarSustitucion(datosSustitucion)
-
     closeSubstituteModal()
     showAlert?.(
       'Sustitución Exitosa',
@@ -236,36 +273,27 @@ const seleccionarUsuario = (usuario: User) => {
     const isSaliente = grupo.value === 1
     assignUserData(registroNuevo.value, usuario, isSaliente)
   }
-
   closeUserModal()
 }
 
 const openUpdateModal = (reemplazo: RegisterDataReemplazo) => {
   const saliente = usuarios.value.find((u) => u._id === reemplazo.id_saliente)
-
   let reemplazoConCargo: RegisterDataReemplazo
-
   if (saliente && saliente.tipo_cargo) {
-    reemplazoConCargo = {
-      ...reemplazo,
-      tipo_cargo: saliente.tipo_cargo
-    } as RegisterDataReemplazo
+    reemplazoConCargo = { ...reemplazo, tipo_cargo: saliente.tipo_cargo } as RegisterDataReemplazo
   } else {
     reemplazoConCargo = reemplazo
   }
-
   openUpdateModalComposable(reemplazoConCargo)
 }
-// ...
+
 const usuariosFiltradosPorCargo = computed(() => {
   if (grupo.value === 2 && cargoDeFiltrado.value) {
     return usuarios.value.filter((u) => u.tipo_cargo === cargoDeFiltrado.value)
   }
-
   return usuarios.value
 })
 
-// --- Crear
 const openCreateModal = () => {
   if (userLoged.value && userLoged.value._id) {
     openCreateModalComposable(userLoged.value._id)
@@ -273,15 +301,13 @@ const openCreateModal = () => {
     showAlert?.('Error', 'No se pudo identificar al usuario creador.')
   }
 }
+
 const guardarNuevoReemplazo = async (nuevoReemplazo: RegisterDataReemplazo) => {
   await replacementStore.crearReemplazo(nuevoReemplazo)
   closeCreateModal()
   showAlert?.('Guardado', 'El registro se ha guardado correctamente.')
 }
 
-// --- Finalizar/Actualizar/Anular
-
-//ESTO DEBERÍA SETEAR EL STATUS A FINALIZADO DANDO FECHA DE TERMINO EL MOMENTO EL DÍA FINALIZADO
 const handleFinalizar = async (id: string) => {
   await replacementStore.finalizarReemplazo(id)
   showAlert?.('Finalizado', 'El registro se ha finalizado correctamente.')
@@ -295,18 +321,15 @@ const handleUpdate = async () => {
   showAlert?.('Modificado', 'El registro se ha modificado correctamente.')
 }
 
-//ESTO DEBERÍA SETEAR EL STATUS A ANULADO
 const handleAnular = async (id: string) => {
   await replacementStore.anularReemplazo(id)
   showAlert?.('Anulado', 'El registro se ha anulado correctamente.')
 }
 
-// --- 4. MONTAJE y SOCKETS ---
 onMounted(async () => {
   if (!replacementStore.hayReemplazos) {
     await replacementStore.mostrarReemplazos()
   }
-
   const [opciones, usuariosCargados] = await Promise.all([
     optionStore.mostrarOpciones(),
     mostrarTodosUsuarios(apiPrivate)
@@ -327,28 +350,69 @@ onUnmounted(() => {
 
 const fechasOcupadas = computed(() => {
   let entranteId: string | undefined
-
   if (createModalVisible.value) {
     entranteId = registroNuevo.value.id_entrante
   } else if (updateModalVisible.value) {
     entranteId = registroActual.value.id_entrante
   }
-
-  if (!entranteId) {
-    return []
-  }
-
+  if (!entranteId) return []
   return replacementStore.getFechasOcupadas(entranteId)
 })
 </script>
 
-<style>
-.custom-small-button {
-  padding: 0rem 0rem;
-  font-size: 0rem;
+<style scoped>
+.reemplazos-view {
+  background-color: #f8fafc;
+  min-height: 100vh;
 }
 
-.modal-header {
+.filter-section {
+  background-color: #f1f5f9 !important;
+}
+
+.loading-overlay {
+  min-height: 300px;
+}
+
+.empty-state {
+  min-height: 300px;
+}
+
+.empty-icon-container {
+  width: 80px;
+  height: 80px;
+  background-color: #f1f5f9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination .page-link {
+  color: #475569;
+  font-weight: 500;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination .active .page-link {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.pagination .page-item.disabled .page-link {
+  opacity: 0.5;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Modal hacks */
+:deep(.modal-header) {
   margin-bottom: 0;
   padding-bottom: 0;
 }

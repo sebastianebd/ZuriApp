@@ -1,69 +1,103 @@
-J
 <template>
-  <div class="table-responsive tabla-usuarios-container">
-    <table
-      class="table table-hover align-middle shadow-sm rounded-4 overflow-hidden tabla-usuarios"
-    >
-      <thead class="table-primary text-white">
+  <div class="table-responsive rounded-3 border overflow-hidden shadow-sm">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="bg-primary bg-gradient text-white">
         <tr>
-          <th class="small">RUT</th>
-          <th class="small">Nombre</th>
-          <th class="small">Apellido</th>
-          <th class="small">Fecha Nac.</th>
-          <th class="small">Dirección</th>
-          <th class="small">Ciudad</th>
-          <th class="small">Teléfono</th>
-          <th class="small">Email</th>
-          <th class="small">Habilitado</th>
-          <th class="small">Cargo</th>
-          <th class="small text-center">Editar</th>
-          <th class="small text-center">Detalle</th>
-          <th class="small text-center" v-if="loginUser.tipo_cargo === 'ADMIN-TI'">Eliminar</th>
+          <th scope="col" class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider">RUT</th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Nombre
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Apellido
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Fecha Nac.
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Ciudad/Dirección
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Contacto
+          </th>
+          <th
+            scope="col"
+            class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider text-center"
+          >
+            Habilitado
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">Cargo</th>
+          <th
+            scope="col"
+            class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider text-center"
+          >
+            Acciones
+          </th>
         </tr>
       </thead>
 
       <tbody>
-        <tr
-          v-for="usuario in usuarios"
-          :key="usuario._id"
-          class="border-bottom align-middle hover-row"
-        >
-          <td class="small text-secondary fw-semibold">{{ usuario.rut }}</td>
-          <td class="small">{{ usuario.nombre }}</td>
-          <td class="small">{{ usuario.apellido }}</td>
-          <td class="small">{{ formatearFecha(usuario.fecha_nac) }}</td>
-          <td class="small">{{ usuario.direccion }}</td>
-          <td class="small">{{ usuario.ciudad }}</td>
-          <td class="small">{{ usuario.telefono }}</td>
-          <td class="small">{{ usuario.email }}</td>
-          <td class="small text-center">
+        <tr v-for="usuario in usuarios" :key="usuario._id" class="border-bottom hover-row">
+          <td class="px-4 py-3">
+            <span class="fw-bold text-dark">{{ usuario.rut }}</span>
+          </td>
+          <td class="px-3 text-dark">{{ usuario.nombre }}</td>
+          <td class="px-3 text-dark">{{ usuario.apellido }}</td>
+          <td class="px-3">
+            <span class="smaller text-secondary">{{ formatearFecha(usuario.fecha_nac) }}</span>
+          </td>
+          <td class="px-3">
+            <div class="d-flex flex-column smaller text-secondary">
+              <span class="fw-medium">{{ usuario.ciudad }}</span>
+              <span class="text-muted">{{ usuario.direccion }}</span>
+            </div>
+          </td>
+          <td class="px-3">
+            <div class="d-flex flex-column smaller text-secondary">
+              <span><i class="bi bi-telephone me-1"></i>{{ usuario.telefono }}</span>
+              <span><i class="bi bi-envelope me-1"></i>{{ usuario.email }}</span>
+            </div>
+          </td>
+          <td class="px-3 text-center">
             <span
-              :class="[
-                'badge rounded-pill',
-                usuario.habilitado === 'HABILITADO' ? 'bg-success' : 'bg-danger'
-              ]"
+              class="badge px-3 py-2 rounded-pill smaller fw-bold"
+              :class="[usuario.habilitado === 'HABILITADO' ? 'bg-success' : 'bg-danger']"
             >
               {{ usuario.habilitado }}
             </span>
           </td>
-          <td class="small text-primary fw-semibold">{{ usuario.tipo_cargo }}</td>
-
-          <td class="action-cell">
-            <button class="btn btn-warning btn-sm shadow-sm" @click="$emit('editar', usuario)">
-              <img src="../../assets/icons/update-icon.png" alt="update icon" />
-            </button>
+          <td class="px-3">
+            <span
+              class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill smaller fw-bold"
+            >
+              {{ usuario.tipo_cargo }}
+            </span>
           </td>
 
-          <td class="action-cell">
-            <button class="btn btn-info btn-sm shadow-sm" @click="$emit('detalle', usuario)">
-              <img src="../../assets/icons/detalle-icon.png" alt="detail icon" />
-            </button>
-          </td>
-
-          <td class="action-cell" v-if="loginUser.tipo_cargo === 'ADMIN-TI'">
-            <button class="btn btn-danger btn-sm shadow-sm" @click="confirmarEliminacion(usuario)">
-              <img src="../../assets/icons/delete-icon.png" alt="delete icon" />
-            </button>
+          <td class="px-4 text-center">
+            <div class="d-flex gap-1 justify-content-center">
+              <button
+                class="btn btn-light btn-sm border shadow-xs"
+                @click="$emit('editar', usuario)"
+                title="Editar"
+              >
+                <i class="bi bi-pencil-square text-primary"></i>
+              </button>
+              <button
+                class="btn btn-light btn-sm border shadow-xs"
+                @click="$emit('detalle', usuario)"
+                title="Ver Historial"
+              >
+                <i class="bi bi-clock-history text-info"></i>
+              </button>
+              <button
+                v-if="loginUser.tipo_cargo === 'ADMIN-TI'"
+                class="btn btn-light btn-sm border shadow-xs"
+                @click="confirmarEliminacion(usuario)"
+                title="Eliminar"
+              >
+                <i class="bi bi-trash3 text-danger"></i>
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -121,75 +155,27 @@ function formatearFecha(fecha: string) {
 </script>
 
 <style scoped>
-/* 🌙 Contenedor general */
-.tabla-usuarios-container {
-  border-radius: 0.75rem;
-}
-
-/* 🧭 Encabezado */
-.table-primary {
-  background: linear-gradient(90deg, #0d6efd, #3d8bfd);
-  border-bottom: 2px solid #bcd0ff;
-}
-
-.table th {
-  font-weight: 600;
-  vertical-align: middle;
-  letter-spacing: 0.3px;
-}
-
-/* Alternancia de colores en filas */
-.tabla-usuarios tbody tr:nth-child(odd) {
-  background-color: #ffffff;
-}
-.tabla-usuarios tbody tr:nth-child(even) {
-  background-color: #f6f8fa;
-}
-
-/* ✨ Hover */
 .hover-row:hover {
-  background-color: #e9f3ff !important;
-  transition: background-color 0.25s ease;
+  background-color: #f8fafc !important;
 }
 
-/* 🔘 Celdas y bordes */
+.smaller {
+  font-size: 0.75rem;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+th {
+  border: none !important;
+}
+
 .table td {
-  vertical-align: middle;
-  border-color: #dee2e6;
-  padding: 0.5rem;
-  color: #495057;
-}
-
-.bg-warning-light {
-  background-color: #fff7e0 !important;
-}
-.bg-success-light {
-  background-color: #e3f7ea !important;
-}
-
-.bg-created-light {
-  background-color: #b3d9f5 !important;
-}
-
-.action-cell {
-  text-align: center;
-  padding: 0.2rem !important;
-}
-
-.action-cell img {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-}
-
-.shadow-sm {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
-}
-
-.table {
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: 0.75rem;
-  overflow: hidden;
+  border-color: #f1f5f9;
 }
 </style>

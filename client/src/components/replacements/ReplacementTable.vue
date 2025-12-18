@@ -1,108 +1,160 @@
 <template>
-  <div class="table-responsive tabla-reemplazos-container ">
-    <table
-      class="table table-hover align-middle shadow-sm rounded-4 overflow-hidden tabla-reemplazos"
-    >
-      <thead class="table-primary text-white">
+  <div class="table-responsive rounded-3 border overflow-hidden shadow-sm">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="bg-primary bg-gradient text-white">
         <tr>
-          <th class="small">Código</th>
-          <th class="small">Rut Saliente</th>
-          <th class="small">Nombre Saliente</th>
-          <th class="small">Rut Entrante</th>
-          <th class="small">Nombre Entrante</th>
-          <th class="small">Tipo de Turno</th>
-          <th class="small">Fecha Inicio</th>
-          <th class="small">Fecha Término</th>
-          <th class="small">Servicio</th>
-          <th class="small">Creado por</th>
-          <th class="small">Status</th>
-          <th class="small text-center">Editar</th>
-          <th class="small text-center">Exportar</th>
-          <th class="small text-center">Acción</th>
+          <th scope="col" class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider">
+            Código
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Funcionario Saliente
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Reemplazante (Entrante)
+          </th>
+          <th
+            scope="col"
+            class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider text-center"
+          >
+            Turno
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Período
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Servicio
+          </th>
+          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+            Creado por
+          </th>
+          <th
+            scope="col"
+            class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider text-center"
+          >
+            Status
+          </th>
+          <th
+            scope="col"
+            class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider text-center"
+          >
+            Acciones
+          </th>
         </tr>
       </thead>
 
       <tbody>
-        <tr
-          v-for="reemplazo in reemplazos"
-          :key="reemplazo._id"
-          class="border-bottom align-middle hover-row"
-        >
-          <td class="small text-secondary ">{{ reemplazo.id_negocio }}</td>
-          <td class="small text-secondary bg-warning-light">{{ reemplazo.rut_saliente }}</td>
-          <td class="small text-secondary fw-semibold bg-warning-light">
-            {{ reemplazo.nombre_saliente }}&nbsp;&nbsp;&nbsp;{{ reemplazo.apellido_saliente }}
+        <tr v-for="reemplazo in reemplazos" :key="reemplazo._id" class="border-bottom hover-row">
+          <td class="px-4 py-3">
+            <span class="badge bg-light text-dark fw-bold border">{{ reemplazo.id_negocio }}</span>
           </td>
-          <td class="small text-secondary bg-success-light">{{ reemplazo.rut_entrante }}</td>
-          <td class="small text-secondary fw-semibold bg-success-light">
-            {{ reemplazo.nombre_entrante }}&nbsp;&nbsp;&nbsp;{{ reemplazo.apellido_entrante }}
+          <td class="px-3">
+            <div class="d-flex flex-column">
+              <span class="fw-bold text-dark"
+                >{{ reemplazo.nombre_saliente }} {{ reemplazo.apellido_saliente }}</span
+              >
+              <span class="text-muted smaller"
+                ><i class="bi bi-person-badge me-1"></i>{{ reemplazo.rut_saliente }}</span
+              >
+            </div>
           </td>
-          <td class="small text-secondary">{{ reemplazo.tipo_turno }}</td>
-          <td class="small text-secondary">{{ formatearFecha(reemplazo.fecha_inicio) }}</td>
-          <td class="small text-secondary">{{ formatearFecha(reemplazo.fecha_termino) }}</td>
-          <td class="small text-secondary ">{{ reemplazo.servicio }}</td>
-          <td class="small text-secondary ">
-            {{ getCreatorName(reemplazo) }}
+          <td class="px-3">
+            <div class="d-flex flex-column">
+              <span class="fw-bold text-dark"
+                >{{ reemplazo.nombre_entrante }} {{ reemplazo.apellido_entrante }}</span
+              >
+              <span class="text-muted smaller"
+                ><i class="bi bi-person-badge me-1"></i>{{ reemplazo.rut_entrante }}</span
+              >
+            </div>
           </td>
-          <td class="small fw-semibold">
+          <td class="px-3 text-center">
+            <span class="small text-secondary">{{ reemplazo.tipo_turno }}</span>
+          </td>
+          <td class="px-3">
+            <div class="d-flex flex-column smaller text-secondary">
+              <span
+                ><i class="bi bi-arrow-right-short text-success me-1"></i
+                >{{ formatearFecha(reemplazo.fecha_inicio) }}</span
+              >
+              <span
+                ><i class="bi bi-arrow-left-short text-danger me-1"></i
+                >{{ formatearFecha(reemplazo.fecha_termino) }}</span
+              >
+            </div>
+          </td>
+          <td class="px-3">
             <span
-              :class="[
-                'badge rounded-pill',
-                reemplazo.status === 'PENDIENTE' ? 'bg-warning' : 'bg-success'
-              ]"
+              class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill smaller"
+            >
+              {{ reemplazo.servicio }}
+            </span>
+          </td>
+          <td class="px-3">
+            <span class="smaller text-muted fw-medium">{{ getCreatorName(reemplazo) }}</span>
+          </td>
+          <td class="px-3 text-center">
+            <span
+              class="badge px-3 py-2 rounded-pill smaller fw-bold"
+              :class="[reemplazo.status === 'PENDIENTE' ? 'bg-warning text-dark' : 'bg-success']"
             >
               {{ reemplazo.status }}
             </span>
           </td>
 
-          <td class="action-cell">
-            <button @click="$emit('modificar', reemplazo)" class=" btn-sm shadow-sm">
-              <img src="../../assets/icons/update-icon.png" alt="update icon" />
-            </button>
+          <td class="px-4 text-center">
+            <div class="d-flex gap-1 justify-content-center">
+              <button
+                @click="$emit('modificar', reemplazo)"
+                class="btn btn-light btn-sm border shadow-xs"
+                title="Editar"
+              >
+                <i class="bi bi-pencil-square text-primary"></i>
+              </button>
+              <button
+                @click="$emit('exportar', reemplazo)"
+                class="btn btn-light btn-sm border shadow-xs"
+                title="Exportar"
+              >
+                <i class="bi bi-file-earmark-pdf text-danger"></i>
+              </button>
+              <button
+                v-if="turnoEnCurso(reemplazo)"
+                @click="confirmarFinalizar(reemplazo._id)"
+                class="btn btn-light btn-sm border shadow-xs"
+                title="Finalizar"
+              >
+                <i class="bi bi-check-circle-fill text-success"></i>
+              </button>
+              <button
+                v-else
+                @click="confirmarAnular(reemplazo._id)"
+                class="btn btn-light btn-sm border shadow-xs"
+                title="Anular"
+              >
+                <i class="bi bi-x-circle-fill text-danger"></i>
+              </button>
+            </div>
           </td>
-          <td class="action-cell">
-            <button @click="$emit('exportar', reemplazo)" class="btn  btn-sm shadow-sm">
-              <img src="../../assets/icons/export-icon.png" alt="export icon" />
-            </button>
-          </td>
-
-
-          <td class="action-cell">
-            <button
-              v-if="turnoEnCurso(reemplazo)"
-              @click="confirmarFinalizar(reemplazo._id)"
-              class="btn btn-warning btn-sm shadow-sm"
-            >
-              <img src="../../assets/icons/finalizar-icon.png" alt="finalizar icon" />
-            </button>
-            <button
-              v-else
-              @click="confirmarAnular(reemplazo._id)"
-              class="btn btn-danger btn-sm shadow-sm"
-            >
-              <img src="../../assets/icons/delete-icon.png" alt="anular icon" />
-            </button>
-
-          </td>
-
-
         </tr>
       </tbody>
     </table>
 
     <!-- Modal de confirmación -->
-<ConfirmationModal
-  :visible="showConfirmacion"
-  :mensaje="accion === 'finalizar' ? '¿Deseas FINALIZAR este registro?' : '¿Deseas ANULAR este registro?'"
-  @confirmar="confirmarAccion"
-  @cancelar="cancelarAccion"
-/>
-
+    <ConfirmationModal
+      :visible="showConfirmacion"
+      :mensaje="
+        accion === 'finalizar'
+          ? '¿Deseas FINALIZAR este registro?'
+          : '¿Deseas ANULAR este registro?'
+      "
+      @confirmar="confirmarAccion"
+      @cancelar="cancelarAccion"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import {  ref } from 'vue'
+import { ref } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import type { RegisterDataReemplazo, User } from '@/types/models'
 
@@ -114,7 +166,7 @@ defineProps({
 })
 
 function turnoEnCurso(reemplazo: RegisterDataReemplazo) {
-  return reemplazo.status === 'EN CURSO';
+  return reemplazo.status === 'EN CURSO'
 }
 
 const emit = defineEmits<{
@@ -127,7 +179,6 @@ const emit = defineEmits<{
 const showConfirmacion = ref(false)
 const idRegistro = ref<string | null>(null)
 const accion = ref<'finalizar' | 'anular' | null>(null)
-
 
 const getCreatorName = (reemplazo: RegisterDataReemplazo): string => {
   const creator = reemplazo.creado_por
@@ -151,7 +202,6 @@ function confirmarAnular(id: string) {
   showConfirmacion.value = true
 }
 
-
 function confirmarAccion() {
   if (!idRegistro.value || !accion.value) return
 
@@ -166,7 +216,6 @@ function confirmarAccion() {
   accion.value = null
 }
 
-
 function cancelarAccion() {
   showConfirmacion.value = false
   idRegistro.value = null
@@ -179,74 +228,27 @@ const formatearFecha = (fecha: string) => {
 </script>
 
 <style scoped>
-/* 🌙 Contenedor general */
-.tabla-reemplazos-container {
-  border-radius: 0.75rem;
-}
-
-/* 🧭 Encabezado */
-.table-primary {
-  background: linear-gradient(90deg, #0d6efd, #3d8bfd);
-  border-bottom: 2px solid #bcd0ff;
-}
-
-.table th {
-  font-weight: 600;
-  vertical-align: middle;
-  letter-spacing: 0.3px;
-}
-
-.tabla-reemplazos tbody tr:nth-child(odd) {
-  background-color: #ffffff;
-}
-.tabla-reemplazos tbody tr:nth-child(even) {
-  background-color: #f6f8fa;
-}
-
-/* ✨ Hover */
 .hover-row:hover {
-  background-color: #e9f3ff !important;
-  transition: background-color 0.25s ease;
+  background-color: #f8fafc !important;
 }
 
-/* 🔘 Celdas y bordes */
+.smaller {
+  font-size: 0.75rem;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+th {
+  border: none !important;
+}
+
 .table td {
-  vertical-align: middle;
-  border-color: #dee2e6;
-  padding: 0.5rem;
-  color: #495057;
-}
-
-.bg-warning-light {
-  background-color: #fff7e0 !important;
-}
-.bg-success-light {
-  background-color: #e3f7ea !important;
-}
-
-.bg-created-light {
-  background-color: #b3d9f5 !important;
-}
-
-.action-cell {
-  text-align: center;
-  padding: 0.2rem !important;
-}
-
-.action-cell img {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-}
-
-.shadow-sm {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
-}
-
-.table {
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: 0.75rem;
-  overflow: hidden;
+  border-color: #f1f5f9;
 }
 </style>

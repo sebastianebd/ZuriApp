@@ -1,55 +1,101 @@
 <template>
-  <main>
-    <div class="mt-2">
-      <div class="card-body pb-4">
-        <h5 class="card-title pt-3 text-secondary">Usuarios ({{ usuariosFiltrados.length }})</h5>
+  <div class="user-management-view p-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-1 text-dark">Gestión de Usuarios</h2>
+        <p class="text-secondary mb-0">
+          Administra el personal y sus permisos ({{ usuariosFiltrados.length }} usuarios
+          registrados)
+        </p>
       </div>
+      <button class="btn btn-primary fw-bold shadow-sm px-4" @click="openCreateModal">
+        <i class="bi bi-person-plus-fill me-2"></i>Crear Usuario
+      </button>
+    </div>
 
-      <UserFilter
-        :lista-tipo-cargo="listaTipoCargo"
-        :lista-habilitado="listaHabilitado"
-        :filtro-rut="filtroRut"
-        :filtro-nombre="filtroNombre"
-        :tipo-cargo="tipoCargo"
-        :filtro-habilitado="filtroHabilitado"
-        @update:filtroRut="(v) => (filtroRut = v)"
-        @update:filtroNombre="(v) => (filtroNombre = v)"
-        @update:tipoCargo="(v) => (tipoCargo = v)"
-        @update:filtroHabilitado="(v) => (filtroHabilitado = v)"
-      />
+    <!-- Main Content Card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div class="card-body p-4">
+        <!-- Filter Section -->
+        <div class="filter-section mb-4 p-3 bg-light rounded-3 border border-1">
+          <UserFilter
+            :lista-tipo-cargo="listaTipoCargo"
+            :lista-habilitado="listaHabilitado"
+            :filtro-rut="filtroRut"
+            :filtro-nombre="filtroNombre"
+            :tipo-cargo="tipoCargo"
+            :filtro-habilitado="filtroHabilitado"
+            @update:filtroRut="(v) => (filtroRut = v)"
+            @update:filtroNombre="(v) => (filtroNombre = v)"
+            @update:tipoCargo="(v) => (tipoCargo = v)"
+            @update:filtroHabilitado="(v) => (filtroHabilitado = v)"
+          />
+        </div>
 
-      <div class="d-flex justify-content-end pb-4">
-        <button class="btn btn-primary btn-sm" @click="openCreateModal">Crear Usuario</button>
-      </div>
+        <!-- User Table Section -->
+        <div class="table-container">
+          <div v-if="usuariosFiltrados.length === 0" class="empty-state text-center py-5">
+            <div class="empty-icon-container mb-3 mx-auto">
+              <i class="bi bi-people fs-1 text-muted opacity-50"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-1">No se encontraron usuarios</h5>
+            <p class="text-muted">No hay registros que coincidan con los criterios de búsqueda</p>
+          </div>
 
-      <!-- Tabla con usuarios paginados y ordenados -->
-      <UserTable
-        :usuarios="paginatedUsuarios"
-        :login-user="userLoged"
-        @editar="openUpdateModal"
-        @eliminar="handleDelete"
-        @detalle="openHistorialModal"
-      />
+          <template v-else>
+            <UserTable
+              :usuarios="paginatedUsuarios"
+              :login-user="userLoged"
+              @editar="openUpdateModal"
+              @eliminar="handleDelete"
+              @detalle="openHistorialModal"
+            />
 
-      <!-- Paginación -->
-      <div class="d-flex justify-content-center align-items-center my-3" v-if="totalPages > 1">
-        <button
-          v-if="currentPage > 1"
-          class="btn btn-outline-primary btn-sm mx-1"
-          @click="changePage(currentPage - 1)"
-        >
-          ◀ Anterior
-        </button>
-
-        <span class="mx-2">Página {{ currentPage }} de {{ totalPages }}</span>
-
-        <button
-          v-if="currentPage < totalPages"
-          class="btn btn-outline-primary btn-sm mx-1"
-          @click="changePage(currentPage + 1)"
-        >
-          Siguiente ▶
-        </button>
+            <!-- Pagination -->
+            <div
+              class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top"
+              v-if="totalPages > 1"
+            >
+              <span class="text-muted small"
+                >Mostrando página {{ currentPage }} de {{ totalPages }}</span
+              >
+              <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0 gap-1">
+                  <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                    <button
+                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
+                      @click="changePage(currentPage - 1)"
+                    >
+                      <i class="bi bi-chevron-left small"></i>
+                    </button>
+                  </li>
+                  <li
+                    class="page-item"
+                    v-for="page in totalPages"
+                    :key="page"
+                    :class="{ active: currentPage === page }"
+                  >
+                    <button
+                      class="page-link rounded-2 border-0 mx-1 shadow-xs"
+                      @click="changePage(page)"
+                    >
+                      {{ page }}
+                    </button>
+                  </li>
+                  <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                    <button
+                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
+                      @click="changePage(currentPage + 1)"
+                    >
+                      <i class="bi bi-chevron-right small"></i>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </template>
+        </div>
       </div>
     </div>
 
@@ -79,7 +125,7 @@
       :reemplazos="historialUsuario"
       @cerrar="closeHistorialModal"
     />
-  </main>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -137,9 +183,7 @@ const userLoged = computed(() => {
 async function openHistorialModal(usuario: any) {
   usuarioSeleccionado.value = usuario
   historialModalVisible.value = true
-
   try {
-    // Llamas al store para traer los reemplazos del usuario
     historialUsuario.value = await replacementStore.mostrarHistorialUsuario(usuario._id)
   } catch (error) {
     console.error('Error cargando historial:', error)
@@ -174,15 +218,11 @@ const usuariosFiltrados = computed(() => {
     const coincideRut = !filtroRut.value || u.rut.startsWith(filtroRut.value)
     const coincideCargo = !tipoCargo.value || u.tipo_cargo === tipoCargo.value
     const coincideHabilitado = !filtroHabilitado.value || u.habilitado === filtroHabilitado.value
-
     const nombreCompleto = ((u.nombre || '') + ' ' + (u.apellido || '')).toLowerCase()
     const busquedaNombre = (filtroNombre.value || '').toLowerCase()
     const coincideNombre = !busquedaNombre || nombreCompleto.includes(busquedaNombre)
-
     return coincideRut && coincideCargo && coincideHabilitado && coincideNombre
   })
-
-  // Ordenar alfabéticamente por nombre (A → Z)
   return filtrados.sort((a, b) => {
     const nombreA = (a.nombre || '').toLowerCase()
     const nombreB = (b.nombre || '').toLowerCase()
@@ -190,7 +230,6 @@ const usuariosFiltrados = computed(() => {
   })
 })
 
-// --- PAGINAR USUARIOS
 const paginatedUsuarios = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
@@ -237,3 +276,51 @@ async function handleCreate(nuevoUsuario: User) {
   showAlert?.('Guardado', 'El usuario se ha creado correctamente.')
 }
 </script>
+
+<style scoped>
+.user-management-view {
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.filter-section {
+  background-color: #f1f5f9 !important;
+}
+
+.empty-state {
+  min-height: 300px;
+}
+
+.empty-icon-container {
+  width: 80px;
+  height: 80px;
+  background-color: #f1f5f9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination .page-link {
+  color: #475569;
+  font-weight: 500;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination .active .page-link {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.pagination .page-item.disabled .page-link {
+  opacity: 0.5;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+</style>

@@ -1,47 +1,56 @@
 <template>
-  <aside v-if="isAuthenticated" :class="`${is_expanded ? 'is-expanded' : ''}`">
-    <div class="logo">
-      <img :src="logoURL" alt="Xu" />
-    </div>
-
-    <div class="menu-toggle-wrap">
+  <aside v-if="isAuthenticated" :class="{ 'is-expanded': is_expanded }">
+    <!-- Header Logo -->
+    <div class="sidebar-header">
+      <div class="logo">
+        <img :src="logoURL" alt="ZuriApp" />
+        <span class="logo-text ms-2" v-if="is_expanded">ZuriApp</span>
+      </div>
       <button class="menu-toggle" @click="ToggleMenu">
-        <span class="material-icons">keyboard_double_arrow_right</span>
+        <i class="bi" :class="is_expanded ? 'bi-chevron-left' : 'bi-chevron-right'"></i>
       </button>
     </div>
-    <h3>Calendario</h3>
-    <div class="menu">
-      <router-link to="calendario" class="button">
-        <span class="material-icons">calendar_month</span>
-        <span class="text">Calendario</span>
-      </router-link>
-    </div>
-    <h3>Turnos</h3>
-    <div class="menu">
-      <router-link :to="{ name: 'reemplazos' }" class="button">
-        <span class="material-icons">edit_document</span>
-        <span class="text">Reemplazos</span>
-      </router-link>
-      <router-link :to="{ name: 'ver_historial' }" class="button">
-        <span class="material-icons">manage_search</span>
-        <span class="text">Historial</span>
-      </router-link>
-    </div>
 
-    <h3>Usuarios</h3>
-    <div class="menu">
-      <router-link to="ver_usuarios" class="button">
-        <span class="material-icons">groups</span>
-        <span class="text">Usuarios</span>
-      </router-link>
-    </div>
+    <div class="menu-container">
+      <!-- Calendario Section -->
+      <div class="menu-group">
+        <h3 v-if="is_expanded">Calendario</h3>
+        <router-link :to="{ name: 'calendario' }" class="menu-item" title="Calendario">
+          <i class="bi bi-calendar3"></i>
+          <span class="text">Calendario</span>
+        </router-link>
+      </div>
 
-    <h3>Sistema</h3>
-    <div class="menu">
-      <router-link to="auditoria" class="button">
-        <span class="material-icons">policy</span>
-        <span class="text">Auditoría</span>
-      </router-link>
+      <!-- Turnos Section -->
+      <div class="menu-group">
+        <h3 v-if="is_expanded">Gestión de Turnos</h3>
+        <router-link :to="{ name: 'reemplazos' }" class="menu-item" title="Reemplazos">
+          <i class="bi bi-person-workspace"></i>
+          <span class="text">Reemplazos</span>
+        </router-link>
+        <router-link :to="{ name: 'ver_historial' }" class="menu-item" title="Historial">
+          <i class="bi bi-clock-history"></i>
+          <span class="text">Historial</span>
+        </router-link>
+      </div>
+
+      <!-- Usuarios Section -->
+      <div class="menu-group">
+        <h3 v-if="is_expanded">Administración</h3>
+        <router-link :to="{ name: 'ver_usuarios' }" class="menu-item" title="Usuarios">
+          <i class="bi bi-people"></i>
+          <span class="text">Usuarios</span>
+        </router-link>
+      </div>
+
+      <!-- Sistema Section -->
+      <div class="menu-group">
+        <h3 v-if="is_expanded">Configuración</h3>
+        <router-link :to="{ name: 'auditoria' }" class="menu-item" title="Auditoría">
+          <i class="bi bi-shield-check"></i>
+          <span class="text">Auditoría</span>
+        </router-link>
+      </div>
     </div>
   </aside>
 </template>
@@ -53,13 +62,12 @@ import { useAuthStore } from '../../stores/auth.store'
 
 const authStore = useAuthStore()
 
-const isAuthenticated = computed(() => {
-  return authStore.isAuthenticated
-})
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 const is_expanded = ref(sessionStorage.getItem('is_expanded') === 'true')
 
 const emitSidebarToggle = defineEmits(['sidebarToggle'])
+
 const ToggleMenu = () => {
   is_expanded.value = !is_expanded.value
   sessionStorage.setItem('is_expanded', is_expanded.value.toString())
@@ -76,151 +84,160 @@ aside {
   top: 0;
   left: 0;
 
-  background-color: #4d02a1;
-  color: var(--light);
+  background-color: #0f172a; // Slate 900
+  color: #f8fafc;
 
-  width: calc(3.5rem + 32px);
+  width: calc(3.5rem + 16px);
   overflow: hidden;
   min-height: 100vh;
-  padding: 1rem;
+  transition: width 0.3s ease-in-out;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
 
-  transition: 0.2s ease-in-out;
-
-  .flex {
-    flex: 1 1 0%;
-  }
-
-  .logo {
-    margin-bottom: 0.2rem;
+  .sidebar-header {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 0.75rem;
+    height: 70px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
-    img {
-      width: 3rem;
-    }
-  }
-
-  .menu-toggle-wrap {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1rem;
-
-    position: relative;
-    top: 0;
-    transition: 0.2s ease-in-out;
-
-    .menu-toggle {
-      transition: 0.2s ease-in-out;
-      .material-icons {
-        font-size: 2rem;
-        color: var(--light);
-        transition: 0.2s ease-out;
-      }
-
-      &:hover {
-        .material-icons {
-          color: var(--primary);
-          transform: translateX(0.5rem);
-        }
-      }
-    }
-  }
-
-  h3,
-  .button .text {
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-  }
-
-  h3 {
-    color: rgb(59, 58, 58);
-    font-size: 0.875rem;
-    margin-bottom: 0.7rem;
-    text-transform: uppercase;
-    margin-top: 1rem;
-  }
-
-  .menu {
-    margin: 0 -1rem;
-
-    .button {
+    .logo {
       display: flex;
       align-items: center;
-      text-decoration: none;
+      overflow: hidden;
 
-      transition: 0.2s ease-in-out;
-      padding: 0.5rem 1rem;
+      img {
+        width: 2rem;
+        height: 2rem;
+        object-fit: contain;
+      }
 
-      .material-icons {
-        font-size: 1.7rem;
-        color: var(--light);
-        transition: 0.2s ease-in-out;
+      .logo-text {
+        font-weight: 800;
+        font-size: 1.25rem;
+        letter-spacing: -0.025em;
+        white-space: nowrap;
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
       }
-      .text {
-        color: var(--light);
-        transition: 0.2s ease-in-out;
-      }
+    }
+
+    .menu-toggle {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #f8fafc;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 100;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 
       &:hover {
-        background-color: #8252c5;
-
-        .material-icons,
-        .text {
-          color: var(--primary);
-        }
+        background: #3b82f6;
+        border-color: #3b82f6;
+        transform: scale(1.1);
       }
 
-      &.router-link-exact-active {
-        background-color: #8252c5;
-        border-right: 5px solid var(--primary);
-
-        .material-icons,
-        .text {
-          color: var(--primary);
-        }
+      i {
+        font-size: 0.9rem;
       }
     }
   }
 
-  .footer {
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
+  .menu-container {
+    flex: 1;
+    padding: 1rem 0;
+    overflow-y: auto;
+    overflow-x: hidden;
 
-    p {
-      font-size: 0.875rem;
-      color: var(--grey);
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+  }
+
+  .menu-group {
+    margin-bottom: 1.5rem;
+    padding: 0 0.75rem;
+
+    h3 {
+      color: #64748b;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+      padding-left: 0.5rem;
+      white-space: nowrap;
+    }
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    padding: 0.75rem 0.85rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.25rem;
+    color: #94a3b8;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    i {
+      font-size: 1.25rem;
+      min-width: 1.5rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .text {
+      margin-left: 1rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #f8fafc;
+
+      i {
+        color: #3b82f6;
+      }
+    }
+
+    &.router-link-exact-active {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: #60a5fa;
+      font-weight: 600;
+
+      i {
+        color: #60a5fa;
+      }
     }
   }
 
   &.is-expanded {
     width: var(--sidebar-width);
 
-    .menu-toggle-wrap {
-      top: -3rem;
-
-      .menu-toggle {
-        transform: rotate(-180deg);
-      }
-    }
-
-    h3,
-    .button .text {
+    .text {
       opacity: 1;
-    }
-
-    .button {
-      .material-icons {
-        margin-right: 1rem;
-      }
-    }
-
-    .footer {
-      opacity: 0;
     }
   }
 
   @media (max-width: 1024px) {
     position: absolute;
-    z-index: 99;
+    z-index: 1100;
   }
 }
 </style>

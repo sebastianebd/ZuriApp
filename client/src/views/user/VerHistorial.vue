@@ -1,124 +1,220 @@
 <template>
-  <main>
-    <div class="tabla-reemplazos-container mt-2">
-      <div class="pt-3 pb-2 d-flex justify-content-between align-items-center">
-        <h5 class="card-title m-b-0 text-secondary">
-          Historial Reemplazos ({{ totalRegistros }} Registros)
-        </h5>
-        <button
-          @click="limpiarFiltros"
-          class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm"
-        >
-          Limpiar Filtros
-        </button>
+  <div class="historial-view p-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-1 text-dark">Historial de Reemplazos</h2>
+        <p class="text-secondary mb-0">
+          Consulta el registro histórico de movimientos ({{ totalRegistros }} registros encontrados)
+        </p>
       </div>
+      <button @click="limpiarFiltros" class="btn btn-light border fw-semibold shadow-sm px-3">
+        <i class="bi bi-eraser me-2"></i>Limpiar Filtros
+      </button>
+    </div>
 
-      <div class="pb-3">
-        <HistoryFilter
-          v-model="filtros"
-          :lista-servicios="listaDeServicios"
-          @update:model-value="handleFiltroCambiado"
-        />
-      </div>
+    <!-- Main Content Card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div class="card-body p-4">
+        <!-- Filter Section -->
+        <div class="filter-section mb-4 p-3 bg-light rounded-3 border border-1">
+          <HistoryFilter
+            v-model="filtros"
+            :lista-servicios="listaDeServicios"
+            @update:model-value="handleFiltroCambiado"
+          />
+        </div>
 
-      <div class="table-responsive overflow-hidden">
-        <table class="table table-hover align-middle tabla-reemplazos">
-          <thead class="table-primary text-white">
-            <tr>
-              <th scope="col" class="small">Código</th>
-              <th scope="col" class="small">Rut Saliente</th>
-              <th scope="col" class="small">Nombre Saliente</th>
-              <th scope="col" class="small">Rut Entrante</th>
-              <th scope="col" class="small">Nombre Entrante</th>
-              <th scope="col" class="small">Tipo de Turno</th>
-              <th scope="col" class="small">Fecha Inicio</th>
-              <th scope="col" class="small">Fecha Termino</th>
-              <th scope="col" class="small">Servicio</th>
-              <th scope="col" class="small">Creado por</th>
-              <th scope="col" class="small">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(reemplazo, index) in reemplazosHistorico"
-              :key="index"
-              class="border-bottom align-middle hover-row"
+        <!-- History Table Section -->
+        <div class="table-container position-relative">
+          <div
+            v-if="cargando"
+            class="loading-overlay d-flex flex-column align-items-center justify-content-center py-5"
+          >
+            <div class="spinner-border text-primary mb-3" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="text-muted">Cargando historial...</p>
+          </div>
+
+          <div v-else-if="reemplazosHistorico.length === 0" class="empty-state text-center py-5">
+            <div class="empty-icon-container mb-3 mx-auto">
+              <i class="bi bi-journal-x fs-1 text-muted opacity-50"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-1">Sin registros históricos</h5>
+            <p class="text-muted">No se encontraron movimientos con los filtros aplicados</p>
+          </div>
+
+          <template v-else>
+            <div class="table-responsive rounded-3 border overflow-hidden">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="bg-primary bg-gradient text-white">
+                  <tr>
+                    <th scope="col" class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider">
+                      Código
+                    </th>
+                    <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+                      Funcionario Saliente
+                    </th>
+                    <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+                      Reemplazante (Entrante)
+                    </th>
+                    <th
+                      scope="col"
+                      class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider text-center"
+                    >
+                      Turno
+                    </th>
+                    <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+                      Período
+                    </th>
+                    <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+                      Servicio
+                    </th>
+                    <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+                      Creado por
+                    </th>
+                    <th
+                      scope="col"
+                      class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider text-center"
+                    >
+                      Estado
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(reemplazo, index) in reemplazosHistorico"
+                    :key="index"
+                    class="border-bottom hover-row"
+                  >
+                    <td class="px-4 py-3">
+                      <span class="badge bg-light text-dark fw-bold border">{{
+                        reemplazo.id_negocio
+                      }}</span>
+                    </td>
+                    <td class="px-3">
+                      <div class="d-flex flex-column">
+                        <span class="fw-bold text-dark"
+                          >{{ reemplazo.nombre_saliente }} {{ reemplazo.apellido_saliente }}</span
+                        >
+                        <span class="text-muted smaller"
+                          ><i class="bi bi-person-badge me-1"></i>{{ reemplazo.rut_saliente }}</span
+                        >
+                      </div>
+                    </td>
+                    <td class="px-3">
+                      <div class="d-flex flex-column">
+                        <span class="fw-bold text-dark"
+                          >{{ reemplazo.nombre_entrante }} {{ reemplazo.apellido_entrante }}</span
+                        >
+                        <span class="text-muted smaller"
+                          ><i class="bi bi-person-badge me-1"></i>{{ reemplazo.rut_entrante }}</span
+                        >
+                      </div>
+                    </td>
+                    <td class="px-3 text-center">
+                      <span class="small text-secondary">{{ reemplazo.tipo_turno }}</span>
+                    </td>
+                    <td class="px-3">
+                      <div class="d-flex flex-column smaller text-secondary">
+                        <span
+                          ><i class="bi bi-arrow-right-short text-success me-1"></i
+                          >{{ formatearFecha(reemplazo.fecha_inicio) }}</span
+                        >
+                        <span
+                          ><i class="bi bi-arrow-left-short text-danger me-1"></i
+                          >{{ formatearFecha(reemplazo.fecha_termino) }}</span
+                        >
+                      </div>
+                    </td>
+                    <td class="px-3">
+                      <span
+                        class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill smaller"
+                      >
+                        {{ reemplazo.servicio }}
+                      </span>
+                    </td>
+                    <td class="px-3">
+                      <span class="smaller text-muted fw-medium">{{
+                        getCreatorName(reemplazo)
+                      }}</span>
+                    </td>
+                    <td class="px-4 text-center">
+                      <span
+                        class="badge px-3 py-2 rounded-pill smaller fw-bold"
+                        :class="[
+                          reemplazo.status === 'FINALIZADO'
+                            ? 'bg-secondary'
+                            : reemplazo.status === 'ANULADO'
+                            ? 'bg-danger'
+                            : 'bg-info'
+                        ]"
+                      >
+                        {{ reemplazo.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div
+              class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top"
+              v-if="totalPages > 1"
             >
-              <td class="small text-secondary">{{ reemplazo.id_negocio }}</td>
-              <td class="small text-secondary bg-warning-light">{{ reemplazo.rut_saliente }}</td>
-              <td class="small text-secondary fw-semibold bg-warning-light">
-                {{ reemplazo.nombre_saliente }}&nbsp;&nbsp;&nbsp;{{ reemplazo.apellido_saliente }}
-              </td>
-              <td class="small text-secondary bg-success-light">{{ reemplazo.rut_entrante }}</td>
-              <td class="small text-secondary fw-semibold bg-success-light">
-                {{ reemplazo.nombre_entrante }}&nbsp;&nbsp;&nbsp;{{ reemplazo.apellido_entrante }}
-              </td>
-
-              <td class="small text-secondary">{{ reemplazo.tipo_turno }}</td>
-              <td class="small text-secondary">{{ formatearFecha(reemplazo.fecha_inicio) }}</td>
-              <td class="small text-secondary">{{ formatearFecha(reemplazo.fecha_termino) }}</td>
-              <td class="small text-secondary">{{ reemplazo.servicio }}</td>
-              <td class="small text-secondary">{{ getCreatorName(reemplazo) }}</td>
-              <td class="small fw-semibold">
-                <span
-                  :class="[
-                    'badge rounded-pill',
-                    reemplazo.status === 'FINALIZADO'
-                      ? 'bg-secondary'
-                      : reemplazo.status === 'ANULADO'
-                      ? 'bg-danger'
-                      : 'bg-info'
-                  ]"
-                >
-                  {{ reemplazo.status }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="d-flex justify-content-center align-items-center my-3" v-if="totalPages > 1">
-        <button
-          v-if="currentPage > 1"
-          class="btn btn-outline-primary btn-sm mx-1"
-          @click="changePage(currentPage - 1)"
-        >
-          ◀ Anterior
-        </button>
-
-        <span class="mx-2 text-secondary">Página {{ currentPage }} de {{ totalPages }}</span>
-
-        <button
-          v-if="currentPage < totalPages"
-          class="btn btn-outline-primary btn-sm mx-1"
-          @click="changePage(currentPage + 1)"
-        >
-          Siguiente ▶
-        </button>
-      </div>
-      
-      <div v-if="!cargando && reemplazosHistorico.length === 0" class="p-3 text-center text-muted">
-        No se encontraron reemplazos con los filtros actuales.
-      </div>
-      
-      <div v-if="cargando" class="p-3 text-center">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Cargando...</span>
+              <span class="text-muted small"
+                >Mostrando página {{ currentPage }} de {{ totalPages }}</span
+              >
+              <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0 gap-1">
+                  <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                    <button
+                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
+                      @click="changePage(currentPage - 1)"
+                    >
+                      <i class="bi bi-chevron-left small"></i>
+                    </button>
+                  </li>
+                  <li
+                    class="page-item"
+                    v-for="page in totalPages"
+                    :key="page"
+                    :class="{ active: currentPage === page }"
+                  >
+                    <button
+                      class="page-link rounded-2 border-0 mx-1 shadow-xs"
+                      @click="changePage(page)"
+                    >
+                      {{ page }}
+                    </button>
+                  </li>
+                  <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                    <button
+                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
+                      @click="changePage(currentPage + 1)"
+                    >
+                      <i class="bi bi-chevron-right small"></i>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </template>
         </div>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue' // Ya no se necesita 'computed'
+import { onMounted, ref } from 'vue'
 import { useAuthStore } from '../../stores/auth.store'
 import type { RegisterDataReemplazo, User } from '@/types/models'
-import HistoryFilter from '@/components/historial/HistorialFilter.vue' // Importación corregida
+import HistoryFilter from '@/components/historial/HistorialFilter.vue'
 import { useOptionStore } from '@/stores/option.store'
-// 💡 Importar la función de servicio que creamos para Server-Side Pagination
-import { obtenerInactivosPaginados } from '@/services/replacement.service' 
+import { obtenerInactivosPaginados } from '@/services/replacement.service'
 
 // --- ESTADO Y STORES ---
 const authStore = useAuthStore()
@@ -126,29 +222,25 @@ const useApi = authStore.usePrivateApi()
 const optionStore = useOptionStore()
 
 // --- ESTADO DE PAGINACIÓN Y DATOS ---
-const reemplazosHistorico = ref<RegisterDataReemplazo[]>([]) // Almacena SOLO la data de la página actual
+const reemplazosHistorico = ref<RegisterDataReemplazo[]>([])
 const listaDeServicios = ref<string[]>([])
 const cargando = ref(true)
 
-// --- ESTADO DE FILTROS (se vincula con HistoryFilter.vue) ---
+// --- ESTADO DE FILTROS ---
 const filtros = ref({
-  rutSaliente: '', // Ahora incluimos todos los filtros del componente
+  rutSaliente: '',
   rutEntrante: '',
   fechaInicio: '',
   fechaFin: '',
-  servicio: '',
-  // Eliminamos 'status' ya que está fijo en el backend
+  servicio: ''
 })
 
-// --- ESTADO DE PAGINACIÓN (Viene del backend) ---
+// --- ESTADO DE PAGINACIÓN ---
 const currentPage = ref(1)
 const totalPages = ref(1)
-const totalRegistros = ref(0) // Usado para el contador
-const itemsPerPage = 10 // Constante de límite de registros por página
+const totalRegistros = ref(0)
+const itemsPerPage = 10
 
-// -----------------------------------------------------
-// 💡 LÓGICA CLAVE: LA FUNCIÓN QUE HACE LA LLAMADA AL BACKEND
-// -----------------------------------------------------
 async function cargarHistorial() {
   cargando.value = true
   try {
@@ -158,8 +250,6 @@ async function cargarHistorial() {
       currentPage.value,
       itemsPerPage
     )
-
-    // Actualiza el estado con la respuesta del servidor
     reemplazosHistorico.value = resultado.registros
     totalPages.value = resultado.totalPages
     totalRegistros.value = resultado.totalRegistros
@@ -173,30 +263,19 @@ async function cargarHistorial() {
   }
 }
 
-// -----------------------------------------------------
-// 💡 HANDLERS (Simplemente llaman a cargarHistorial)
-// -----------------------------------------------------
-
-// Handler para recibir los cambios del componente HistoryFilter (v-model)
 const handleFiltroCambiado = () => {
-  // 1. Los filtros.value ya fueron actualizados por el v-model.
-  // 2. Reiniciar la página a 1 al aplicar un nuevo filtro.
   currentPage.value = 1
-  // 3. Ejecutar la nueva búsqueda en el backend.
   cargarHistorial()
 }
 
-// Handler para el cambio de página (botón Anterior/Siguiente)
 const changePage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
-    // Ejecutar la nueva búsqueda en el backend.
     cargarHistorial()
   }
 }
 
 const limpiarFiltros = () => {
-  // Resetear todos los filtros a su estado inicial
   filtros.value = {
     rutSaliente: '',
     rutEntrante: '',
@@ -208,7 +287,6 @@ const limpiarFiltros = () => {
   cargarHistorial()
 }
 
-// --- FUNCIONES AUXILIARES (Sin cambios) ---
 const formatearFecha = (fecha: string) => {
   if (!fecha) return ''
   return new Date(fecha).toISOString().split('T')[0].split('-').reverse().join('-')
@@ -223,13 +301,11 @@ const getCreatorName = (reemplazo: RegisterDataReemplazo): string => {
   return String(creator) || 'Usuario no asignado'
 }
 
-// --- MONTAJE ---
 onMounted(async () => {
   try {
     const opciones = await optionStore.mostrarOpciones()
     listaDeServicios.value = opciones.servicios
-    // Carga inicial de la primera página
-    await cargarHistorial() 
+    await cargarHistorial()
   } catch (error) {
     console.error('Error en el montaje:', error)
   }
@@ -237,69 +313,69 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* ... (Estilos omitidos por brevedad) ... */
-</style>
-
-<style scoped>
-/* 🌙 Contenedor general */
-.tabla-reemplazos-container {
-  border-radius: 0.75rem;
+.historial-view {
+  background-color: #f8fafc;
+  min-height: 100vh;
 }
 
-/* 🧭 Encabezado */
-.table-primary {
-  background: linear-gradient(90deg, #0d6efd, #3d8bfd);
-  border-bottom: 2px solid #bcd0ff;
+.filter-section {
+  background-color: #f1f5f9 !important;
 }
 
-.table th {
-  font-weight: 600;
-  vertical-align: middle;
-  letter-spacing: 0.3px;
+.loading-overlay {
+  min-height: 400px;
 }
 
-/* 🦓 Estilo para filas pares/impares y la tabla principal */
-.tabla-reemplazos tbody tr:nth-child(odd) {
-  background-color: #ffffff;
-}
-.tabla-reemplazos tbody tr:nth-child(even) {
-  background-color: #f6f8fa;
+.empty-state {
+  min-height: 400px;
 }
 
-/* ✨ Hover */
+.empty-icon-container {
+  width: 80px;
+  height: 80px;
+  background-color: #f1f5f9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .hover-row:hover {
-  background-color: #e9f3ff !important;
-  transition: background-color 0.25s ease;
+  background-color: #f8fafc !important;
 }
 
-/* 🔘 Celdas y bordes */
-.table td {
-  vertical-align: middle;
-  border-color: #dee2e6;
-  padding: 0.5rem;
-  color: #495057;
+.smaller {
+  font-size: 0.75rem;
 }
 
-/* 🌈 Colores de fondo */
-.bg-warning-light {
-  background-color: #fff7e0 !important;
-}
-.bg-success-light {
-  background-color: #e3f7ea !important;
+.tracking-wider {
+  letter-spacing: 0.05em;
 }
 
-/* Nota: No necesitas bg-created-light ni action-cell aquí, a menos que tu historial también los use. */
-
-/* Estilos de tabla final (bordes redondeados y separación) */
-.table {
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: 0.75rem;
-  overflow: hidden;
+.pagination .page-link {
+  color: #475569;
+  font-weight: 500;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Asegura que la sombra pequeña de Bootstrap se vea igual */
-.shadow-sm {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+.pagination .active .page-link {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.pagination .page-item.disabled .page-link {
+  opacity: 0.5;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+th {
+  border: none !important;
 }
 </style>

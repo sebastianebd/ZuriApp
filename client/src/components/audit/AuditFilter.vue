@@ -3,25 +3,27 @@
     <div class="row g-3 align-items-end">
       <!-- Rango de Fechas -->
       <div class="col-md-3">
-        <label class="form-label fw-semibold text-secondary small">Desde</label>
+        <label class="form-label fw-semibold text-secondary small">Desde:</label>
         <input
           type="date"
           class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           v-model="filters.startDate"
+          @change="emitFilters"
         />
       </div>
       <div class="col-md-3">
-        <label class="form-label fw-semibold text-secondary small">Hasta</label>
+        <label class="form-label fw-semibold text-secondary small">Hasta:</label>
         <input
           type="date"
           class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           v-model="filters.endDate"
+          @change="emitFilters"
         />
       </div>
 
       <!-- Filtro Módulo -->
       <div class="col-md-2">
-        <label class="form-label fw-semibold text-secondary small">Módulo</label>
+        <label class="form-label fw-semibold text-secondary small">Módulo:</label>
         <v-select
           v-model="filters.module"
           :options="['TODOS', 'USUARIOS', 'REEMPLAZOS']"
@@ -29,12 +31,13 @@
           :clearable="false"
           class="style-chooser"
           placeholder="Todos"
+          @update:model-value="emitFilters"
         ></v-select>
       </div>
 
       <!-- Filtro Acción -->
       <div class="col-md-2">
-        <label class="form-label fw-semibold text-secondary small">Acción</label>
+        <label class="form-label fw-semibold text-secondary small">Acción:</label>
         <v-select
           v-model="filters.action"
           :options="[
@@ -50,34 +53,20 @@
           :clearable="false"
           class="style-chooser"
           placeholder="Todas"
+          @update:model-value="emitFilters"
         ></v-select>
       </div>
 
       <!-- Buscar (Usuario) -->
       <div class="col-md-2">
-        <label class="form-label fw-semibold text-secondary small">Usuario (ID)</label>
+        <label class="form-label fw-semibold text-secondary small">Usuario (ID):</label>
         <input
           type="text"
           class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           v-model.trim="filters.userId"
           placeholder="Buscar ID..."
+          @input="emitFilters"
         />
-      </div>
-
-      <!-- Botón aplicar (Opcional si es reactivo, pero útil para fechas) -->
-      <div class="col-12 text-end mt-3">
-        <button
-          class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm fw-semibold"
-          @click="emitFilters"
-        >
-          <i class="bi bi-funnel-fill me-1"></i> Filtrar
-        </button>
-        <button
-          class="btn btn-light btn-sm rounded-pill px-3 shadow-sm ms-2 text-secondary"
-          @click="clearFilters"
-        >
-          Limpiar
-        </button>
       </div>
     </div>
   </div>
@@ -88,6 +77,7 @@ import { ref } from 'vue'
 
 const emit = defineEmits(['filter'])
 
+// Definimos los filtros basándonos en lo que espera el store (o el componente padre)
 const filters = ref({
   startDate: '',
   endDate: '',
@@ -100,26 +90,28 @@ function emitFilters() {
   emit('filter', { ...filters.value })
 }
 
-function clearFilters() {
-  filters.value = {
-    startDate: '',
-    endDate: '',
-    module: 'TODOS',
-    action: 'TODOS',
-    userId: ''
+// Opcional: limpiar filtros desde el padre si fuera necesario
+defineExpose({
+  clear() {
+    filters.value = {
+      startDate: '',
+      endDate: '',
+      module: 'TODOS',
+      action: 'TODOS',
+      userId: ''
+    }
   }
-  emitFilters()
-}
+})
 </script>
 
 <style scoped>
-/* Reutilizando estilos de v-select del proyecto */
+/* Estilos unificados tipo ReplacementFilter */
 :deep(.style-chooser .vs__dropdown-toggle) {
   border: 0;
   background-color: #f8f9fa; /* bg-light */
   border-radius: 0.5rem; /* rounded-3 */
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* shadow-sm */
-  padding: 2px 0 6px 0; /* Ajuste altura visual similar a form-control-sm */
+  padding: 2px 0 6px 0;
   min-height: 31px;
 }
 :deep(.style-chooser .vs__search::placeholder) {

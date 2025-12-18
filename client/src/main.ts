@@ -17,7 +17,7 @@ app.component('v-select', vSelect)
 
 app.use(router)
 // --- Supresión de errores conocidos de v-calendar ---
-app.config.errorHandler = (err, instance, info) => {
+app.config.errorHandler = (err, _instance, _info) => {
   // Ignorar error específico de dayIndex en v-calendar
   if (err instanceof TypeError && err.message.includes('dayIndex')) {
     return
