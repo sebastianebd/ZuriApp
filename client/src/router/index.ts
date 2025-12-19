@@ -23,6 +23,7 @@ const router = createRouter({
     {
       path: '/app',
       component: AppLayout,
+      redirect: { name: 'user' },
       meta: { requiresAuth: true },
       children: [
         {
@@ -60,7 +61,7 @@ const router = createRouter({
   ]
 })
 
-router.beforeResolve(async (to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {

@@ -64,7 +64,7 @@ const authStore = useAuthStore()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 
-const is_expanded = ref(sessionStorage.getItem('is_expanded') === 'true')
+const is_expanded = ref(sessionStorage.getItem('is_expanded') !== 'false')
 
 const emitSidebarToggle = defineEmits(['sidebarToggle'])
 

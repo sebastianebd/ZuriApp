@@ -173,6 +173,7 @@
                 <div class="col-md-6">
                   <label class="form-label text-secondary fw-semibold small">Fecha de Inicio</label>
                   <DatePicker
+                    ref="dpInicio"
                     :model-value="
                       registro.fecha_inicio ? registro.fecha_inicio + 'T00:00:00' : null
                     "
@@ -208,6 +209,7 @@
                           class="form-control bg-white border-0 shadow-sm"
                           :value="inputValue"
                           v-on="inputEvents"
+                          @click="handleInicioClick"
                           placeholder="Seleccione fecha de inicio"
                           readonly
                           :disabled="turnoEnCurso"
@@ -222,6 +224,7 @@
                     >Fecha de Término</label
                   >
                   <DatePicker
+                    ref="dpTermino"
                     :model-value="
                       registro.fecha_termino ? registro.fecha_termino + 'T00:00:00' : null
                     "
@@ -257,6 +260,7 @@
                           class="form-control bg-white border-0 shadow-sm"
                           :value="inputValue"
                           v-on="inputEvents"
+                          @click="handleTerminoClick"
                           placeholder="Seleccione fecha de Termino"
                           readonly
                           :disabled="turnoEnCurso"
@@ -352,6 +356,30 @@ const emit = defineEmits<{
 }>()
 
 const showConfirmacion = ref(false)
+
+// --- Elementos de calendario para control de popover
+const dpInicio = ref<any>(null)
+const dpTermino = ref<any>(null)
+
+function handleInicioClick() {
+  if (dpTermino.value) {
+    try {
+      dpTermino.value.hidePopover()
+    } catch (e) {
+      console.warn('Error closing Termino popover', e)
+    }
+  }
+}
+
+function handleTerminoClick() {
+  if (dpInicio.value) {
+    try {
+      dpInicio.value.hidePopover()
+    } catch (e) {
+      console.warn('Error closing Inicio popover', e)
+    }
+  }
+}
 
 const turnoEnCurso = computed(() => {
   if (!props.registro?.status) return false

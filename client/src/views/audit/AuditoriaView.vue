@@ -3,9 +3,9 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1 text-dark">
+        <h4 class="fw-bold mb-1 text-dark">
           <i class="bi bi-shield-check text-primary me-2"></i>Registro de Auditoría
-        </h2>
+        </h4>
         <p class="text-secondary mb-0">
           Seguimiento detallado de cambios y acciones en el sistema ({{ logs.length }} logs
           mostrados)
@@ -110,12 +110,12 @@ const { logs, loading, error, currentPage, totalPages, currentFilters } = storeT
 const filterComponent = ref<InstanceType<typeof AuditFilter> | null>(null)
 
 function handleFilter(filters: any) {
-  auditStore.fetchLogs(1, 14, filters)
+  auditStore.fetchLogs(1, 10, filters)
 }
 
 function changePage(page: number) {
   if (page >= 1 && page <= totalPages.value) {
-    auditStore.fetchLogs(page, 14, currentFilters.value)
+    auditStore.fetchLogs(page, 10, currentFilters.value)
   }
 }
 
@@ -133,7 +133,7 @@ function limpiarFiltros() {
 }
 
 onMounted(() => {
-  auditStore.fetchLogs()
+  auditStore.fetchLogs(1, 10)
 })
 </script>
 

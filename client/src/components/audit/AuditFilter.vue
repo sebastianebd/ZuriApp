@@ -57,7 +57,7 @@
         ></v-select>
       </div>
 
-      <!-- Buscar (Usuario) -->
+      <!-- Buscar (Usuario) 
       <div class="col-md-2">
         <label class="form-label fw-semibold text-secondary small">Usuario (ID):</label>
         <input
@@ -68,6 +68,7 @@
           @input="emitFilters"
         />
       </div>
+      -->
     </div>
   </div>
 </template>

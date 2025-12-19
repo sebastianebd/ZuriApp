@@ -3,9 +3,9 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1 text-dark">
+        <h4 class="fw-bold mb-1 text-dark">
           <i class="bi bi-calendar3 text-primary me-2"></i>Calendario de Reemplazos
-        </h2>
+        </h4>
         <p class="text-secondary mb-0">Visualiza y gestiona la programación de turnos</p>
       </div>
       <div class="d-none d-md-flex gap-2">
@@ -23,8 +23,10 @@
     </div>
 
     <!-- Calendar Card -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-      <div class="card-body p-4 calendar-container">
+    <div
+      class="card border-0 shadow-sm rounded-4 overflow-hidden flex-grow-1 d-flex flex-column min-height-0"
+    >
+      <div class="card-body p-4 calendar-container d-flex flex-column flex-grow-1 min-height-0">
         <FullCalendar ref="fullCalendar" :options="calendarOptions" />
       </div>
     </div>
@@ -187,7 +189,20 @@ const calendarOptions = ref({
   locale: 'es',
   firstDay: 1,
   events: calendarEvents, // Vinculado a la ref
-  dayMaxEvents: 4, // Muestra "+X más" si hay muchos eventos
+  views: {
+    dayGridMonth: {
+      dayMaxEvents: 2 // Límite solo para la vista de mes
+    },
+    dayGridWeek: {
+      dayMaxEvents: false // Sin límite en vista de semana
+    },
+    dayGridDay: {
+      dayMaxEvents: false // Sin límite en vista de día
+    }
+  },
+  showNonCurrentDates: false, // Oculta días de otros meses
+  fixedWeekCount: false, // Muestra solo las semanas del mes actual (4 o 5 en lugar de siempre 6)
+  expandRows: true, // Fuerza a que las filas se ajusten al contenedor sin crecer
   headerToolbar: {
     left: 'prev,next today',
     center: 'title',
@@ -199,8 +214,8 @@ const calendarOptions = ref({
     week: 'Semana',
     day: 'Día'
   },
-  height: 'auto',
-  contentHeight: 'auto',
+  height: '100%',
+  contentHeight: '100%',
   eventClick: handleEventClick,
   dateClick: handleDateClick,
   eventDisplay: 'block',
@@ -285,16 +300,24 @@ function getColorByStatus(status: string) {
 /* FullCalendar Customization */
 .calendar-view {
   background-color: #f8fafc;
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 71px); /* Resta el alto del NavBar (70px) + 1px de ajuste */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .calendar-container {
-  min-height: 70vh;
+  flex: 1;
+  min-height: 0;
+}
+
+.fc {
+  height: 100% !important;
 }
 
 .fc-col-header-cell {
   background-color: #f1f5f9;
-  padding: 12px 0 !important;
+  padding: 8px 0 !important;
 }
 
 .fc-col-header-cell-cushion {
@@ -309,7 +332,7 @@ function getColorByStatus(status: string) {
 .fc-daygrid-day-number {
   color: #64748b !important;
   font-weight: 600;
-  padding: 8px !important;
+  padding: 4px 8px !important;
   text-decoration: none !important;
 }
 
@@ -343,8 +366,8 @@ function getColorByStatus(status: string) {
 
 .custom-calendar-event {
   border-radius: 4px !important;
-  padding: 2px 4px !important;
-  font-size: 0.8rem !important;
+  padding: 1px 4px !important;
+  font-size: 0.72rem !important;
   font-weight: 500 !important;
   border: none !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;

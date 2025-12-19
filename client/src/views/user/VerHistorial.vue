@@ -3,9 +3,9 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1 text-dark">
+        <h4 class="fw-bold mb-1 text-dark">
           <i class="bi bi-clock-history text-primary me-2"></i>Historial de Reemplazos
-        </h2>
+        </h4>
         <p class="text-secondary mb-0">
           Consulta el registro histórico de movimientos ({{ totalRegistros }} registros encontrados)
         </p>
@@ -354,7 +354,6 @@ onMounted(async () => {
 <style scoped>
 .historial-view {
   background-color: #f8fafc;
-  min-height: 100vh;
 }
 
 .filter-section {
@@ -424,5 +423,12 @@ onMounted(async () => {
 
 th {
   border: none !important;
+}
+
+.table td,
+.table th {
+  border-color: #f1f5f9;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 </style>

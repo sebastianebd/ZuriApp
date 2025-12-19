@@ -4,7 +4,7 @@ import Sidebar from '@/components/auth/SidebarMenu.vue'
 import { provide, ref } from 'vue'
 import AlertMessage from '../common/AlertMessage.vue'
 
-const isExpanded = ref(sessionStorage.getItem('is_expanded') === 'true')
+const isExpanded = ref(sessionStorage.getItem('is_expanded') !== 'false')
 
 const handleSidebarToggle = (value: boolean) => {
   isExpanded.value = value
@@ -36,6 +36,7 @@ provide('showAlert', (title: string, message: string) => {
   flex: 1;
   padding-left: 3rem;
   padding-right: 3rem;
+  overflow-y: auto; /* Permite scroll interno si el contenido es largo */
 
   &.expanded {
     margin-left: calc(var(--sidebar-width));
@@ -56,5 +57,8 @@ provide('showAlert', (title: string, message: string) => {
 .app-layout {
   background-color: #f8fafc;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Evita que el layout principal desborde */
 }
 </style>

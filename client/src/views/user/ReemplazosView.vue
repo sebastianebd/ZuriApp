@@ -3,9 +3,9 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1 text-dark">
+        <h4 class="fw-bold mb-1 text-dark">
           <i class="bi bi-arrow-repeat text-primary me-2"></i>Gestión de Reemplazos
-        </h2>
+        </h4>
         <p class="text-secondary mb-0">
           Administra los reemplazos activos en el sistema ({{
             replacementStore.reemplazosFiltrados.length
@@ -199,7 +199,10 @@ const {
   totalPages,
   paginatedItems: paginatedReplacements,
   changePage
-} = usePagination(computed(() => replacementStore.reemplazosFiltrados))
+} = usePagination(
+  computed(() => replacementStore.reemplazosFiltrados),
+  10
+)
 
 // B. Modales y Datos
 const {
@@ -365,7 +368,6 @@ const fechasOcupadas = computed(() => {
 <style scoped>
 .reemplazos-view {
   background-color: #f8fafc;
-  min-height: 100vh;
 }
 
 .filter-section {

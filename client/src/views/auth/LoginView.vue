@@ -130,7 +130,7 @@ async function onSubmit() {
 
   try {
     await authStore.login(loginData)
-    router.replace({ name: 'calendario' })
+    router.replace({ name: 'user' })
   } catch (err) {
     loginError.value = 'Rut o Contraseña incorrectos'
   }

@@ -19,7 +19,6 @@ import { RouterView } from 'vue-router'
   --sidebar-width: 300px;
 }
 
-
 button {
   cursor: pointer;
   appearance: none;
@@ -27,7 +26,4 @@ button {
   outline: none;
   background: none;
 }
-
-
-
 </style>

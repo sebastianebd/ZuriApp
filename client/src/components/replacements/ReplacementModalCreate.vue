@@ -167,6 +167,7 @@
                       >Fecha de Inicio</label
                     >
                     <DatePicker
+                      ref="dpInicio"
                       v-model="fechaInicioComputed"
                       :disabled-dates="isDisabled"
                       :min-date="today"
@@ -185,6 +186,7 @@
                             class="form-control bg-light border-0 shadow-sm"
                             :value="inputValue"
                             v-on="inputEvents"
+                            @click="handleInicioClick"
                             placeholder="Seleccione fecha de Inicio"
                             readonly
                           />
@@ -199,6 +201,7 @@
                       >Fecha de Término</label
                     >
                     <DatePicker
+                      ref="dpTermino"
                       v-model="fechaTerminoComputed"
                       :disabled-dates="isDisabled"
                       :min-date="today"
@@ -217,6 +220,7 @@
                             class="form-control bg-light border-0 shadow-sm"
                             :value="inputValue"
                             v-on="inputEvents"
+                            @click="handleTerminoClick"
                             placeholder="Seleccione fecha de Termino"
                             readonly
                           />
@@ -295,6 +299,22 @@ const emit = defineEmits<{
 const registroLocal = reactive({ ...props.registro })
 const currentStep = ref(1)
 const errorMessage = ref('')
+
+// --- Elementos de calendario para control de popover
+const dpInicio = ref<any>(null)
+const dpTermino = ref<any>(null)
+
+function handleInicioClick() {
+  if (dpTermino.value) {
+    dpTermino.value.hidePopover()
+  }
+}
+
+function handleTerminoClick() {
+  if (dpInicio.value) {
+    dpInicio.value.hidePopover()
+  }
+}
 
 // --- Configuración de calendario
 const { popoverConfig, isDisabled, dateAttributes } = useDatePicker(props)

@@ -3,9 +3,9 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1 text-dark">
+        <h4 class="fw-bold mb-1 text-dark">
           <i class="bi bi-people-fill text-primary me-2"></i>Gestión de Usuarios
-        </h2>
+        </h4>
         <p class="text-secondary mb-0">
           Administra el personal y sus permisos ({{ usuariosFiltrados.length }} usuarios
           registrados)
@@ -171,7 +171,7 @@ const historialUsuario = ref<any[]>([])
 
 // --- PAGINACIÓN
 const currentPage = ref(1)
-const itemsPerPage = 20
+const itemsPerPage = 10
 
 const totalPages = computed(() => {
   return Math.ceil(usuariosFiltrados.value.length / itemsPerPage)
@@ -282,7 +282,6 @@ async function handleCreate(nuevoUsuario: User) {
 <style scoped>
 .user-management-view {
   background-color: #f8fafc;
-  min-height: 100vh;
 }
 
 .filter-section {

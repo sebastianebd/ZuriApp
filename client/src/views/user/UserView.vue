@@ -3,9 +3,9 @@
     <div class="container-fluid px-4 py-4">
       <!-- Header -->
       <div class="mb-4">
-        <h2 class="fw-bold mb-1 text-dark">
+        <h4 class="fw-bold mb-1 text-dark">
           <i class="bi bi-person-circle text-primary me-2"></i>Mi Perfil
-        </h2>
+        </h4>
         <p class="text-secondary mb-0">Información de tu cuenta y actividad</p>
       </div>
 
@@ -305,7 +305,6 @@ onMounted(async () => {
 
 <style scoped>
 .user-profile-view {
-  min-height: 100vh;
   background-color: #f8f9fa;
 }
 

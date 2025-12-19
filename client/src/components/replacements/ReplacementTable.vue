@@ -285,7 +285,10 @@ th {
   border: none !important;
 }
 
-.table td {
+.table td,
+.table th {
   border-color: #f1f5f9;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 </style>
