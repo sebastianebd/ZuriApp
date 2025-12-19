@@ -3,32 +3,29 @@
     <table class="table table-hover align-middle mb-0">
       <thead class="bg-primary bg-gradient text-white">
         <tr>
-          <th scope="col" class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider">RUT</th>
-          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
-            Nombre
+          <th scope="col" class="py-2 px-4 x-small fw-bold text-uppercase tracking-wider">RUT</th>
+          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
+            Nombre / Usuario
           </th>
-          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
-            Apellido
-          </th>
-          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
             Fecha Nac.
           </th>
-          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
             Ciudad/Dirección
           </th>
-          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
             Contacto
           </th>
           <th
             scope="col"
-            class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider text-center"
+            class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider text-center"
           >
             Habilitado
           </th>
-          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">Cargo</th>
+          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">Cargo</th>
           <th
             scope="col"
-            class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider text-center"
+            class="py-2 px-4 x-small fw-bold text-uppercase tracking-wider text-center"
           >
             Acciones
           </th>
@@ -37,37 +34,53 @@
 
       <tbody>
         <tr v-for="usuario in usuarios" :key="usuario._id" class="border-bottom hover-row">
-          <td class="px-4 py-3">
-            <span class="fw-bold text-dark">{{ usuario.rut }}</span>
+          <td class="px-4 py-2">
+            <span class="fw-bold text-dark x-small">{{ usuario.rut }}</span>
           </td>
-          <td class="px-3 text-dark">{{ usuario.nombre }}</td>
-          <td class="px-3 text-dark">{{ usuario.apellido }}</td>
-          <td class="px-3">
-            <span class="smaller text-secondary">{{ formatearFecha(usuario.fecha_nac) }}</span>
+          <td class="px-3 py-2">
+            <div class="d-flex align-items-center">
+              <div
+                class="avatar-placeholder me-2 rounded-3 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center text-primary fw-bold x-small border border-primary border-opacity-10"
+                style="width: 28px; height: 28px"
+              >
+                {{ getInitials(usuario.nombre + ' ' + usuario.apellido) }}
+              </div>
+              <div class="d-flex flex-column">
+                <span class="fw-semibold text-dark x-small">{{
+                  usuario.nombre + ' ' + usuario.apellido
+                }}</span>
+                <span class="text-muted" style="font-size: 0.65rem">
+                  #{{ usuario._id.slice(-6) }}
+                </span>
+              </div>
+            </div>
           </td>
-          <td class="px-3">
-            <div class="d-flex flex-column smaller text-secondary">
-              <span class="fw-medium">{{ usuario.ciudad }}</span>
+          <td class="px-3 py-2">
+            <span class="x-small text-secondary">{{ formatearFecha(usuario.fecha_nac) }}</span>
+          </td>
+          <td class="px-3 py-2">
+            <div class="d-flex flex-column x-small text-secondary">
+              <span class="fw-medium text-dark">{{ usuario.ciudad }}</span>
               <span class="text-muted">{{ usuario.direccion }}</span>
             </div>
           </td>
-          <td class="px-3">
-            <div class="d-flex flex-column smaller text-secondary">
+          <td class="px-3 py-2">
+            <div class="d-flex flex-column x-small text-secondary">
               <span><i class="bi bi-telephone me-1"></i>{{ usuario.telefono }}</span>
               <span><i class="bi bi-envelope me-1"></i>{{ usuario.email }}</span>
             </div>
           </td>
-          <td class="px-3 text-center">
+          <td class="px-3 py-2 text-center">
             <span
-              class="badge px-3 py-2 rounded-pill smaller fw-bold"
+              class="badge px-3 py-1 rounded-pill x-small fw-bold"
               :class="[usuario.habilitado === 'HABILITADO' ? 'bg-success' : 'bg-danger']"
             >
               {{ usuario.habilitado }}
             </span>
           </td>
-          <td class="px-3">
+          <td class="px-3 py-2">
             <span
-              class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill smaller fw-bold"
+              class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill x-small fw-bold"
             >
               {{ usuario.tipo_cargo }}
             </span>
@@ -144,6 +157,17 @@ function cerrarModal() {
   usuarioAEliminar.value = null
 }
 
+function getInitials(name: string) {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .filter((n) => n.length > 0)
+    .map((n: string) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
 function formatearFecha(fecha: string) {
   if (!fecha) return '—'
   try {
@@ -159,8 +183,16 @@ function formatearFecha(fecha: string) {
   background-color: #f8fafc !important;
 }
 
+.avatar-placeholder {
+  flex-shrink: 0;
+}
+
 .smaller {
   font-size: 0.75rem;
+}
+
+.x-small {
+  font-size: 0.71rem;
 }
 
 .tracking-wider {

@@ -52,33 +52,33 @@
               <table class="table table-hover align-middle mb-0">
                 <thead class="bg-primary bg-gradient text-white">
                   <tr>
-                    <th scope="col" class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider">
+                    <th scope="col" class="py-2 px-4 x-small fw-bold text-uppercase tracking-wider">
                       Código
                     </th>
-                    <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+                    <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
                       Funcionario Saliente
                     </th>
-                    <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+                    <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
                       Reemplazante (Entrante)
                     </th>
                     <th
                       scope="col"
-                      class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider text-center"
+                      class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider text-center"
                     >
                       Turno
                     </th>
-                    <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+                    <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
                       Período
                     </th>
-                    <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+                    <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
                       Servicio
                     </th>
-                    <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+                    <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
                       Creado por
                     </th>
                     <th
                       scope="col"
-                      class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider text-center"
+                      class="py-2 px-4 x-small fw-bold text-uppercase tracking-wider text-center"
                     >
                       Estado
                     </th>
@@ -90,36 +90,62 @@
                     :key="index"
                     class="border-bottom hover-row"
                   >
-                    <td class="px-4 py-3">
-                      <span class="badge bg-light text-dark fw-bold border">{{
+                    <td class="px-4 py-2">
+                      <span class="badge bg-light text-dark fw-bold border x-small">{{
                         reemplazo.id_negocio
                       }}</span>
                     </td>
-                    <td class="px-3">
-                      <div class="d-flex flex-column">
-                        <span class="fw-bold text-dark"
-                          >{{ reemplazo.nombre_saliente }} {{ reemplazo.apellido_saliente }}</span
+                    <td class="px-3 py-2">
+                      <div class="d-flex align-items-center">
+                        <div
+                          class="avatar-placeholder me-2 rounded-3 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center text-primary fw-bold x-small border border-primary border-opacity-10"
+                          style="width: 28px; height: 28px"
                         >
-                        <span class="text-muted smaller"
-                          ><i class="bi bi-person-badge me-1"></i>{{ reemplazo.rut_saliente }}</span
-                        >
+                          {{
+                            getInitials(
+                              reemplazo.nombre_saliente + ' ' + reemplazo.apellido_saliente
+                            )
+                          }}
+                        </div>
+                        <div class="d-flex flex-column">
+                          <span class="fw-bold text-dark x-small"
+                            >{{ reemplazo.nombre_saliente }} {{ reemplazo.apellido_saliente }}</span
+                          >
+                          <span class="text-muted x-small"
+                            ><i class="bi bi-person-badge me-1"></i
+                            >{{ reemplazo.rut_saliente }}</span
+                          >
+                        </div>
                       </div>
                     </td>
-                    <td class="px-3">
-                      <div class="d-flex flex-column">
-                        <span class="fw-bold text-dark"
-                          >{{ reemplazo.nombre_entrante }} {{ reemplazo.apellido_entrante }}</span
+                    <td class="px-3 py-2">
+                      <div class="d-flex align-items-center">
+                        <div
+                          class="avatar-placeholder me-2 rounded-3 bg-success bg-opacity-10 d-flex align-items-center justify-content-center text-success fw-bold x-small border border-success border-opacity-10"
+                          style="width: 28px; height: 28px"
                         >
-                        <span class="text-muted smaller"
-                          ><i class="bi bi-person-badge me-1"></i>{{ reemplazo.rut_entrante }}</span
-                        >
+                          {{
+                            getInitials(
+                              reemplazo.nombre_entrante + ' ' + reemplazo.apellido_entrante
+                            )
+                          }}
+                        </div>
+                        <div class="d-flex flex-column">
+                          <span class="fw-bold text-dark x-small"
+                            >{{ reemplazo.nombre_entrante }} {{ reemplazo.apellido_entrante }}</span
+                          >
+                          <span class="text-muted x-small"
+                            ><i class="bi bi-person-badge me-1"></i
+                            >{{ reemplazo.rut_entrante }}</span
+                          >
+                        </div>
                       </div>
                     </td>
-                    <td class="px-3 text-center">
-                      <span class="small text-secondary">{{ reemplazo.tipo_turno }}</span>
+                    <td class="px-3 py-2 text-center">
+                      <span class="x-small text-secondary">{{ reemplazo.tipo_turno }}</span>
                     </td>
-                    <td class="px-3">
-                      <div class="d-flex flex-column smaller text-secondary">
+                    <td class="px-3 py-2">
+                      <div class="d-flex flex-column x-small text-secondary">
                         <span
                           ><i class="bi bi-arrow-right-short text-success me-1"></i
                           >{{ formatearFecha(reemplazo.fecha_inicio) }}</span
@@ -130,21 +156,21 @@
                         >
                       </div>
                     </td>
-                    <td class="px-3">
+                    <td class="px-3 py-2">
                       <span
-                        class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill smaller"
+                        class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill x-small"
                       >
                         {{ reemplazo.servicio }}
                       </span>
                     </td>
-                    <td class="px-3">
-                      <span class="smaller text-muted fw-medium">{{
+                    <td class="px-3 py-2">
+                      <span class="x-small text-muted fw-medium">{{
                         getCreatorName(reemplazo)
                       }}</span>
                     </td>
-                    <td class="px-4 text-center">
+                    <td class="px-4 py-2 text-center">
                       <span
-                        class="badge px-3 py-2 rounded-pill smaller fw-bold"
+                        class="badge px-3 py-1 rounded-pill x-small fw-bold"
                         :class="[
                           reemplazo.status === 'FINALIZADO'
                             ? 'bg-secondary'
@@ -303,6 +329,17 @@ const getCreatorName = (reemplazo: RegisterDataReemplazo): string => {
   return String(creator) || 'Usuario no asignado'
 }
 
+function getInitials(name: string) {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .filter((n) => n.length > 0)
+    .map((n: string) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
 onMounted(async () => {
   try {
     const opciones = await optionStore.mostrarOpciones()
@@ -348,6 +385,14 @@ onMounted(async () => {
 
 .smaller {
   font-size: 0.75rem;
+}
+
+.x-small {
+  font-size: 0.71rem;
+}
+
+.avatar-placeholder {
+  flex-shrink: 0;
 }
 
 .tracking-wider {

@@ -27,7 +27,7 @@
           <div class="modal-body p-4 bg-white">
             <!-- 🔍 Filtros -->
             <div class="row g-3 mb-4">
-              <div class="col-md-3">
+              <div class="col-md-2">
                 <label class="form-label text-secondary fw-semibold small mb-1">Fecha Inicio</label>
                 <div class="input-group input-group-sm rounded-3 overflow-hidden shadow-xs border">
                   <span class="input-group-text bg-light border-0"
@@ -41,7 +41,7 @@
                 </div>
               </div>
 
-              <div class="col-md-3">
+              <div class="col-md-2">
                 <label class="form-label text-secondary fw-semibold small mb-1"
                   >Fecha Término</label
                 >
@@ -57,7 +57,7 @@
                 </div>
               </div>
 
-              <div class="col-md-2">
+              <div class="col-md-4">
                 <label class="form-label text-secondary fw-semibold small mb-1">Servicio</label>
                 <div class="input-group input-group-sm rounded-3 shadow-xs border bg-white">
                   <span class="input-group-text bg-light border-0"
@@ -68,7 +68,7 @@
                     :options="listaServicios"
                     placeholder="Todos"
                     class="custom-v-select flex-grow-1"
-                    :clearable="true"
+                    :clearable="false"
                     :searchable="true"
                   />
                 </div>
@@ -324,6 +324,11 @@ function formatearFecha(fecha: string) {
   font-weight: 500;
   margin: 0;
   padding: 0 0.5rem;
+  line-height: 27px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .custom-v-select :deep(.vs__actions) {
@@ -342,6 +347,7 @@ function formatearFecha(fecha: string) {
   padding: 8px;
   font-size: 0.8125rem;
   z-index: 1050;
+  overflow: hidden; /* Ensures child elements don't overlap rounded corners */
 }
 
 .custom-v-select :deep(.vs__dropdown-option) {

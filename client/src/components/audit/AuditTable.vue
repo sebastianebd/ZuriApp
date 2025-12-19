@@ -3,24 +3,24 @@
     <table class="table table-hover align-middle mb-0">
       <thead class="bg-primary bg-gradient text-white">
         <tr>
-          <th scope="col" class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider">
+          <th scope="col" class="py-2 px-4 x-small fw-bold text-uppercase tracking-wider">
             Fecha / Hora
           </th>
-          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
             Usuario Resp.
           </th>
-          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
             Módulo
           </th>
-          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
             Acción
           </th>
-          <th scope="col" class="py-3 px-3 smaller fw-bold text-uppercase tracking-wider">
+          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
             Descripción
           </th>
           <th
             scope="col"
-            class="py-3 px-4 smaller fw-bold text-uppercase tracking-wider text-center"
+            class="py-2 px-4 x-small fw-bold text-uppercase tracking-wider text-center"
           >
             Detalles
           </th>
@@ -34,55 +34,55 @@
           </td>
         </tr>
         <tr v-for="log in logs" :key="log._id" class="border-bottom hover-row">
-          <td class="px-4 py-3">
+          <td class="px-4 py-2">
             <div class="d-flex flex-column">
-              <span class="fw-bold text-dark">{{ formatDate(log.created_at) }}</span>
-              <span class="smaller text-secondary">{{ formatTime(log.created_at) }} hrs</span>
+              <span class="fw-bold text-dark x-small">{{ formatDate(log.created_at) }}</span>
+              <span class="x-small text-secondary">{{ formatTime(log.created_at) }} hrs</span>
             </div>
           </td>
-          <td class="px-3">
+          <td class="px-3 py-2">
             <div class="d-flex align-items-center">
               <div
-                class="avatar-placeholder me-2 rounded-3 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center text-primary fw-bold smaller border border-primary border-opacity-10"
-                style="width: 34px; height: 34px"
+                class="avatar-placeholder me-2 rounded-3 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center text-primary fw-bold x-small border border-primary border-opacity-10"
+                style="width: 28px; height: 28px"
               >
                 {{ getInitials(log.user_name) }}
               </div>
               <div class="d-flex flex-column">
-                <span class="fw-semibold text-dark small">{{
+                <span class="fw-semibold text-dark x-small">{{
                   log.user_name || 'Desconocido'
                 }}</span>
-                <span v-if="log.user_id" class="smaller text-muted" style="font-size: 0.7rem">
+                <span v-if="log.user_id" class="text-muted" style="font-size: 0.65rem">
                   ID: ...{{ getUserId(log) }}
                 </span>
               </div>
             </div>
           </td>
-          <td class="px-3">
+          <td class="px-3 py-2">
             <span
-              class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill smaller fw-bold"
+              class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill x-small fw-bold"
             >
               {{ log.module }}
             </span>
           </td>
-          <td class="px-3">
+          <td class="px-3 py-2">
             <span
-              :class="['badge rounded-pill px-3 py-1 smaller fw-bold', getActionColor(log.action)]"
+              :class="['badge rounded-pill px-2 py-1 x-small fw-bold', getActionColor(log.action)]"
             >
               {{ log.action }}
             </span>
           </td>
-          <td class="px-3">
-            <span class="small text-secondary fw-medium">{{ log.description }}</span>
+          <td class="px-3 py-2">
+            <span class="x-small text-secondary fw-medium">{{ log.description }}</span>
           </td>
-          <td class="px-4 text-center">
+          <td class="px-4 py-2 text-center">
             <button
-              class="btn btn-light btn-sm border shadow-xs"
+              class="btn btn-light btn-sm border shadow-xs py-0 px-2"
               @click="verDetalles(log)"
               title="Ver Detalles Técnicos"
             >
-              <i class="bi bi-braces text-primary me-1"></i>
-              <span class="smaller fw-bold">JSON</span>
+              <i class="bi bi-braces text-primary me-1" style="font-size: 0.7rem"></i>
+              <span class="x-small fw-bold">JSON</span>
             </button>
           </td>
         </tr>
@@ -182,6 +182,10 @@ function getActionColor(action: string) {
 
 .smaller {
   font-size: 0.75rem;
+}
+
+.x-small {
+  font-size: 0.71rem;
 }
 
 .tracking-wider {

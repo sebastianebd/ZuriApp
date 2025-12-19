@@ -122,6 +122,10 @@ defineExpose({
   font-weight: 500;
   margin: 0;
   padding: 0 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .custom-v-select :deep(.vs__actions) {
@@ -139,6 +143,7 @@ defineExpose({
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   padding: 8px;
   font-size: 0.8125rem;
+  overflow: hidden;
 }
 
 .custom-v-select :deep(.vs__dropdown-option) {

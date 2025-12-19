@@ -80,28 +80,31 @@
               <table class="table table-hover align-middle mb-0">
                 <thead class="bg-primary bg-gradient text-white">
                   <tr>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="py-2 px-3 tracking-wider x-small fw-bold text-uppercase">
                       RUT
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="py-2 px-2 tracking-wider x-small fw-bold text-uppercase">
                       Nombre
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="py-2 px-2 tracking-wider x-small fw-bold text-uppercase">
                       Apellido
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="py-2 px-2 tracking-wider x-small fw-bold text-uppercase">
                       Cargo
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="py-2 px-2 tracking-wider x-small fw-bold text-uppercase">
                       Dirección
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="py-2 px-2 tracking-wider x-small fw-bold text-uppercase">
                       Teléfono
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="py-2 px-2 tracking-wider x-small fw-bold text-uppercase">
                       Email
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th
+                      scope="col"
+                      class="py-2 px-3 tracking-wider x-small fw-bold text-uppercase text-center"
+                    >
                       Habilitado
                     </th>
                   </tr>
@@ -112,28 +115,42 @@
                     v-for="(usuario, index) in paginatedUsuarios"
                     :key="index"
                     @click="handleClick(usuario)"
-                    class="cursor-pointer"
+                    class="cursor-pointer border-bottom hover-row"
                     :class="{
-                      'table-primary-light fw-bold': usuarioSeleccionado?.rut === usuario.rut
+                      'table-active fw-bold': usuarioSeleccionado?.rut === usuario.rut
                     }"
                   >
-                    <td class="small px-3">{{ usuario.rut }}</td>
-                    <td class="small px-3">{{ usuario.nombre }}</td>
-                    <td class="small px-3">{{ usuario.apellido }}</td>
-                    <td class="small px-3">
+                    <td class="px-3 py-2">
+                      <span class="fw-bold text-dark x-small">{{ usuario.rut }}</span>
+                    </td>
+                    <td class="px-2 py-2 text-dark x-small">{{ usuario.nombre }}</td>
+                    <td class="px-2 py-2 text-dark x-small">{{ usuario.apellido }}</td>
+                    <td class="px-2 py-2">
                       <span
-                        class="badge bg-light text-primary border border-primary border-opacity-25"
-                        >{{ usuario.tipo_cargo }}</span
+                        class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill x-small fw-bold"
                       >
+                        {{ usuario.tipo_cargo }}
+                      </span>
                     </td>
-                    <td class="small px-3 text-secondary">{{ usuario.direccion }}</td>
-                    <td class="small px-3 text-secondary">{{ usuario.telefono }}</td>
-                    <td class="small px-3 text-secondary text-truncate" style="max-width: 150px">
-                      {{ usuario.email }}
+                    <td class="px-2 py-2">
+                      <span class="x-small text-secondary">{{ usuario.direccion }}</span>
                     </td>
-                    <td class="small px-3">
+                    <td class="px-2 py-2">
+                      <span class="x-small text-secondary">
+                        <i class="bi bi-telephone me-1"></i>{{ usuario.telefono }}
+                      </span>
+                    </td>
+                    <td class="px-2 py-2">
                       <span
-                        class="badge rounded-pill"
+                        class="x-small text-secondary text-truncate d-inline-block"
+                        style="max-width: 140px"
+                      >
+                        <i class="bi bi-envelope me-1"></i>{{ usuario.email }}
+                      </span>
+                    </td>
+                    <td class="px-3 py-2 text-center">
+                      <span
+                        class="badge px-2 py-1 rounded-pill x-small fw-bold shadow-xs"
                         :class="
                           usuario.habilitado
                             ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
@@ -306,12 +323,20 @@ function handleClick(usuario: User) {
   cursor: pointer;
 }
 
-.table-primary-light {
+.hover-row:hover {
+  background-color: #f8fafc !important;
+}
+
+.table-active {
   background-color: rgba(37, 99, 235, 0.05) !important;
 }
 
 .smaller {
   font-size: 0.75rem;
+}
+
+.x-small {
+  font-size: 0.7rem;
 }
 
 .tracking-wider {
@@ -337,6 +362,10 @@ function handleClick(usuario: User) {
   margin: 0;
   padding: 0 0.5rem;
   line-height: 27px; /* Align with input-group height */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .custom-v-select :deep(.vs__actions) {
@@ -355,6 +384,7 @@ function handleClick(usuario: User) {
   padding: 8px;
   font-size: 0.8125rem;
   z-index: 1050;
+  overflow: hidden;
 }
 
 .custom-v-select :deep(.vs__dropdown-option) {
@@ -400,5 +430,13 @@ button {
 
 button:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+
+th {
+  border: none !important;
+}
+
+.table td {
+  border-color: #f1f5f9;
 }
 </style>

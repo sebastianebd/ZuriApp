@@ -152,8 +152,8 @@ aside {
   }
 
   .menu-container {
+    padding-top: 2.5rem;
     flex: 1;
-    padding: 1rem 0;
     overflow-y: auto;
     overflow-x: hidden;
 
@@ -169,6 +169,7 @@ aside {
   .menu-group {
     margin-bottom: 1.5rem;
     padding: 0 0.75rem;
+    padding-bottom: 0.7rem;
 
     h3 {
       color: #64748b;

@@ -458,6 +458,10 @@ function cancelarConfirmacion() {
   font-size: 0.875rem;
   color: #1e293b;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .custom-v-select :deep(.vs__actions svg) {
@@ -471,6 +475,7 @@ function cancelarConfirmacion() {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   padding: 8px;
   font-size: 0.875rem;
+  overflow: hidden;
 }
 
 .custom-v-select :deep(.vs__dropdown-option) {
