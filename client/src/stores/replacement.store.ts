@@ -111,7 +111,7 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
-    //ESTA FUNCION ES PARA ANULAR REEMPLAZO (FUTURO, AUN NO EN CURSO) NO ELIMINAR
+    //ESTA FUNCION ES PARA ANULAR REEMPLAZO (FUTURO, TODAVIA NO ENTRA EN CURSO) NO ELIMINAR
     async anularReemplazo(reemplazoId: string) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()

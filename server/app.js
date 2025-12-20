@@ -5,6 +5,10 @@ const corsOptions = require("./config/cors.config");
 const credentialsMiddleware = require("./middleware/credentials.middleware");
 const errorHandlerMiddleware = require("./middleware/errorHandler.middleware");
 
+// Swagger
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpecs = require("./config/swagger.config");
+
 const app = express();
 
 app.use(credentialsMiddleware);
@@ -12,6 +16,9 @@ app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Documentación API
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 const authRoutes = require("./routes/api/auth.routes");
 const userRoutes = require("./routes/api/users.routes");

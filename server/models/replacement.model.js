@@ -1,6 +1,92 @@
 const mongoose = require("mongoose");
 const Counter = require("./counter");
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Reemplazo:
+ *       type: object
+ *       required:
+ *         - id_saliente
+ *         - rut_saliente
+ *         - nombre_saliente
+ *         - apellido_saliente
+ *         - id_entrante
+ *         - rut_entrante
+ *         - nombre_entrante
+ *         - apellido_entrante
+ *         - tipo_turno
+ *         - fecha_inicio
+ *         - fecha_termino
+ *         - servicio
+ *         - creado_por
+ *       properties:
+ *         id_saliente:
+ *           type: string
+ *           description: Mongo ID del usuario saliente
+ *         rut_saliente:
+ *           type: string
+ *         nombre_saliente:
+ *           type: string
+ *         apellido_saliente:
+ *           type: string
+ *         id_entrante:
+ *           type: string
+ *           description: Mongo ID del usuario entrante
+ *         rut_entrante:
+ *           type: string
+ *         nombre_entrante:
+ *           type: string
+ *         apellido_entrante:
+ *           type: string
+ *         tipo_turno:
+ *           type: string
+ *           enum: [DIURNO, NOCTURNO, 24 HORAS]
+ *         fecha_inicio:
+ *           type: string
+ *           format: date
+ *         fecha_termino:
+ *           type: string
+ *           format: date
+ *         servicio:
+ *           type: string
+ *           example: "ARO"
+ *         creado_por:
+ *           type: string
+ *           description: Mongo ID del usuario que crea el reemplazo
+ *
+ *     Sustitucion:
+ *       type: object
+ *       required:
+ *         - id_registro_a
+ *         - fecha_corte_a
+ *         - nuevo_entrante
+ *         - datos_base_evento
+ *       properties:
+ *         id_registro_a:
+ *           type: string
+ *           description: ID del reemplazo a cortar
+ *         fecha_corte_a:
+ *           type: string
+ *           format: date
+ *         nuevo_entrante:
+ *           type: object
+ *           properties:
+ *             id_entrante:
+ *               type: string
+ *             rut_entrante:
+ *               type: string
+ *             nombre_entrante:
+ *               type: string
+ *             apellido_entrante:
+ *               type: string
+ *         datos_base_evento:
+ *           type: object
+ *           description: Copia de los datos del evento original para el nuevo
+ *
+ */
+
 const replacementSchema = new mongoose.Schema(
   {
     id_negocio: {

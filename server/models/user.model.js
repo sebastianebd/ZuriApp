@@ -1,6 +1,50 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         rut:
+ *           type: string
+ *           description: Identificador único nacional
+ *         nombre:
+ *           type: string
+ *         apellido:
+ *           type: string
+ *         fecha_nac:
+ *           type: string
+ *         direccion:
+ *           type: string
+ *         ciudad:
+ *           type: string
+ *         telefono:
+ *           type: string
+ *         email:
+ *           type: string
+ *           format: email
+ *         tipo_cargo:
+ *           type: string
+ *           enum: [ADMIN, TENS, JEFA SERVICIO]
+ *         habilitado:
+ *           type: string
+ *           enum: [HABILITADO, NO HABILITADO]
+ *       example:
+ *         rut: 12345678-9
+ *         nombre: JUAN
+ *         apellido: PEREZ
+ *         fecha_nac: 2024-01-01
+ *         direccion: 123 calle
+ *         ciudad: SANTIAGO
+ *         telefono: 12345678
+ *         email: juan@test.com
+ *         tipo_cargo: TENS
+ *         habilitado: HABILITADO
+ */
+
 const userSchema = new mongoose.Schema(
   {
     rut: {
