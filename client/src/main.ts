@@ -13,7 +13,7 @@ const app = createApp(App)
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
-app.component('v-select', vSelect)
+app.component('v-select', vSelect as any)
 
 app.use(router)
 // --- Supresión de errores conocidos de v-calendar ---
