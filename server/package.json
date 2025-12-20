@@ -5,12 +5,17 @@
   "main": "server.js",
   "scripts": {
     "start": "node server",
-    "dev": "nodemon server"
+    "dev": "nodemon server",
+    "test": "vitest"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "nodemon": "^2.0.21"
+    "@vitest/coverage-v8": "^4.0.16",
+    "mongodb-memory-server": "^11.0.0",
+    "nodemon": "^2.0.21",
+    "supertest": "^7.1.4",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
