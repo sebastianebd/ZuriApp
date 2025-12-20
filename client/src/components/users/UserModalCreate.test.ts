@@ -22,6 +22,29 @@ describe('UserModalCreate.vue', () => {
         listaTipoCargo: ['TENS', 'JEFA'],
         listaHabilitado: ['SI', 'NO'],
         listaServicios: ['UCI']
+      },
+      global: {
+        stubs: {
+          'v-select': {
+            props: [
+              'modelValue',
+              'options',
+              'placeholder',
+              'clearable',
+              'searchable',
+              'attributes'
+            ],
+            template: '<div class="v-select-stub"></div>'
+          },
+          DatePicker: {
+            // Important: Define 'attributes' prop to prevent it falling through to the DOM element
+            // where it clashes with the read-only 'attributes' property of the Element.
+            props: ['modelValue', 'popover', 'masks', 'attributes'],
+            template:
+              '<div class="date-picker-stub"><slot :inputValue="modelValue" :inputEvents="{}" /></div>'
+          },
+          ConfirmationModal: true
+        }
       }
     })
 
@@ -42,6 +65,19 @@ describe('UserModalCreate.vue', () => {
         listaTipoCargo: [],
         listaHabilitado: [],
         listaServicios: []
+      },
+      global: {
+        stubs: {
+          'v-select': {
+            props: ['modelValue', 'options', 'attributes'],
+            template: '<div class="v-select-stub"></div>'
+          },
+          DatePicker: {
+            props: ['modelValue', 'popover', 'masks', 'attributes'],
+            template: '<div class="date-picker-stub"></div>'
+          },
+          ConfirmationModal: true
+        }
       }
     })
 
