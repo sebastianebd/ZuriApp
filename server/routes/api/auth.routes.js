@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../../controllers/auth.controller");
 const authMiddleware = require("../../middleware/authentication.middleware");
+const { authLimiter } = require("../../config/limiter.config");
 
 /**
  * @swagger
@@ -56,7 +57,7 @@ const authMiddleware = require("../../middleware/authentication.middleware");
  *         description: Credenciales inválidas
  */
 // Rutas públicas
-router.post("/login", authController.login);
+router.post("/login", authLimiter, authController.login);
 
 /**
  * @swagger

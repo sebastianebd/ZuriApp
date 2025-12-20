@@ -4,6 +4,7 @@ const cookieParser = require("cookie-parser");
 const corsOptions = require("./config/cors.config");
 const credentialsMiddleware = require("./middleware/credentials.middleware");
 const errorHandlerMiddleware = require("./middleware/errorHandler.middleware");
+const { globalLimiter } = require("./config/limiter.config");
 
 // Swagger
 const swaggerUi = require("swagger-ui-express");
@@ -26,6 +27,7 @@ const app = express();
 
 app.use(credentialsMiddleware);
 app.use(cors(corsOptions));
+app.use(globalLimiter);
 // Usar formato combinado + usuario
 app.use(
   morgan(
