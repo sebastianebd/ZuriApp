@@ -25,6 +25,9 @@ morgan.token("user", (req) => {
 
 const app = express();
 
+// Confiar en el proxy (Nginx) para obtener la IP real
+app.set("trust proxy", 1);
+
 app.use(credentialsMiddleware);
 app.use(cors(corsOptions));
 app.use(globalLimiter);

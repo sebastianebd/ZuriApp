@@ -11,7 +11,6 @@ async function login(req, res) {
         httpOnly: true,
         sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
         secure: process.env.NODE_ENV === "production",
-        sameSite: "Strict",
       })
       .json({ access_token: accessToken, user });
 
