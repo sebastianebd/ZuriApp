@@ -256,7 +256,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
-import { validateRut, cleanRut } from '@fdograph/rut-utilities'
+import { validateRut } from '@fdograph/rut-utilities'
+import { formatRut, cleanRutForStorage } from '@/utils/rut.util'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/dist/style.css'
 
@@ -374,29 +375,7 @@ const validateForm = () => {
 }
 
 function handleRutInput() {
-  // Limpiar: solo números y K/k. Limitado a 9 caracteres (8 cuerpo + 1 DV)
-  let val = form.value.rut.replace(/[^0-9kK]/g, '').toUpperCase()
-  if (val.length > 9) val = val.slice(0, 9)
-
-  if (val.length < 2) {
-    form.value.rut = val
-  } else {
-    // El último es el DV, el resto es el cuerpo
-    const cuerpo = val.slice(0, -1)
-    const dv = val.slice(-1)
-
-    // Formatear cuerpo: puntos cada 3 dígitos de derecha a izquierda
-    const cuerpoFormateado = cuerpo
-      .split('')
-      .reverse()
-      .join('')
-      .replace(/(\d{3})(?!$)/g, '$1.')
-      .split('')
-      .reverse()
-      .join('')
-
-    form.value.rut = `${cuerpoFormateado}-${dv}`
-  }
+  form.value.rut = formatRut(form.value.rut)
   delete errors.value.rut
 }
 
@@ -412,11 +391,7 @@ function cerrarConfirmacion() {
 
 function confirmarGuardar() {
   // El usuario requiere formato 12345678-9 para la BD (sin puntos, con guion)
-  const cleaned = cleanRut(form.value.rut)
-  let dbRut = cleaned
-  if (cleaned.length > 1) {
-    dbRut = cleaned.slice(0, -1) + '-' + cleaned.slice(-1)
-  }
+  const dbRut = cleanRutForStorage(form.value.rut)
 
   const dataToSave = {
     ...form.value,
