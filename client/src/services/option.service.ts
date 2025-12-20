@@ -1,4 +1,4 @@
-import { useApiPrivate } from '../composables/useApi'
+import type { useApiPrivate } from '../composables/useApi'
 import { errorHandler } from '../utils/errorHandler'
 
 export const mostrarOpciones = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
@@ -7,7 +7,7 @@ export const mostrarOpciones = async (apiPrivate: ReturnType<typeof useApiPrivat
     const { data: tiposTurno } = await apiPrivate.get('/api/options/tipo-turnos')
     const { data: tipoCargo } = await apiPrivate.get('/api/options/tipo-cargos')
     const { data: habilitado } = await apiPrivate.get('/api/options/habilitado')
-    
+
     return {
       servicios,
       tiposTurno,

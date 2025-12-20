@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const User = require("../models/user.model");
+const logger = require("../config/logger.config");
 
 async function register(data) {
   const {

@@ -41,4 +41,6 @@ const auditLogSchema = new mongoose.Schema(
   }
 );
 
+auditLogSchema.plugin(require("mongoose-paginate-v2"));
+
 module.exports = mongoose.model("AuditLog", auditLogSchema);

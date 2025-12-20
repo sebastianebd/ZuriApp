@@ -1,3 +1,3 @@
-import { HistoryFilter  } from "./HistorialFilter.vue";
+import HistoryFilter from './HistorialFilter.vue'
 
 export { HistoryFilter }

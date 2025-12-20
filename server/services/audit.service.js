@@ -18,27 +18,23 @@ async function logAction(
   user,
   description,
   details = null,
-  resourceId = null
+  entityId = null
 ) {
   try {
-    // Si no hay usuario (ej. error de sistema), se deja null
-    const userId = user ? user._id : null;
-    const userName = user
-      ? `${user.nombre} ${user.apellido}`
-      : "Sistema / Desconocido";
-
-    await AuditLog.create({
+    const logEntry = new AuditLog({
       action,
       module,
+      user_id: user.id, // ID del usuario que realizó la acción
+      user_name: `${user.nombre} ${user.apellido}`, // Nombre legible
+      rut: user.rut,
       description,
       details,
-      user_id: userId,
-      user_name: userName,
-      resource_id: resourceId,
+      entity_id: entityId,
     });
+
+    await logEntry.save();
   } catch (error) {
-    console.error("Error al registrar auditoría:", error);
-    // No lanzamos error para no interrumpir el flujo principal del negocio
+    logger.error(`Error al registrar auditoría: ${error.message}`); // Fallo silencioso para no bloquear el flujo principal
   }
 }
 

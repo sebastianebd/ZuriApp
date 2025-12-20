@@ -1,4 +1,5 @@
 const { Server } = require("socket.io");
+const logger = require("./logger.config");
 
 let ioInstance;
 
@@ -15,10 +16,10 @@ const init = (httpServer, clientUrl) => {
   });
 
   ioInstance.on("connection", (socket) => {
-    console.log(`🟢 Cliente conectado: ${socket.id}`);
+    logger.info(`🟢 Cliente conectado: ${socket.id}`);
 
     socket.on("disconnect", () => {
-      console.log(`🔴 Cliente desconectado: ${socket.id}`);
+      logger.info(`🔴 Cliente desconectado: ${socket.id}`);
     });
   });
 

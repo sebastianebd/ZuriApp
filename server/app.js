@@ -9,10 +9,30 @@ const errorHandlerMiddleware = require("./middleware/errorHandler.middleware");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./config/swagger.config");
 
+// Logging
+const morgan = require("morgan");
+const logger = require("./config/logger.config");
+
+// Definir token personalizado para Morgan
+morgan.token("user", (req) => {
+  if (req.user) {
+    const name = `${req.user.nombre} ${req.user.apellido}`;
+    return `[User: ${name}]`;
+  }
+  return "[Anon]";
+});
+
 const app = express();
 
 app.use(credentialsMiddleware);
 app.use(cors(corsOptions));
+// Usar formato combinado + usuario
+app.use(
+  morgan(
+    ":remote-addr :user :method :url :status :res[content-length] - :response-time ms",
+    { stream: { write: (message) => logger.info(message.trim()) } }
+  )
+);
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());

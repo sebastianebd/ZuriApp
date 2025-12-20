@@ -6,7 +6,7 @@ class AuthError extends Error {
   constructor(message = "Rut o contraseña incorrecta") {
     super(message);
     this.name = "AuthError";
-    this.status = 401; 
+    this.status = 401;
   }
 }
 
@@ -14,16 +14,14 @@ class ValidationError extends Error {
   constructor(message = "Campos inválidos") {
     super(message);
     this.name = "ValidationError";
-    this.status = 422; 
+    this.status = 422;
   }
 }
 
 const generateAccessToken = (userId) => {
-  return jwt.sign(
-    { id: userId },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "1800s" } 
-  );
+  return jwt.sign({ id: userId }, process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: "1800s",
+  });
 };
 
 const generateRefreshToken = (userId) => {
@@ -56,7 +54,7 @@ async function login({ rut, password }) {
   user.refresh_token = hashedRefreshToken;
   await user.save();
 
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, user };
 }
 
 async function logout(refreshToken) {

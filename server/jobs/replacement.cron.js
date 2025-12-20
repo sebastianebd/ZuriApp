@@ -1,6 +1,7 @@
 const { getIO } = require("../config/socket");
 const cron = require("node-cron");
-const replacement = require("../models/replacement.model");
+const Reemplazo = require("../models/replacement.model");
+const logger = require("../config/logger.config");
 
 cron.schedule("53 11 * * *", async () => {
   try {
@@ -9,7 +10,7 @@ cron.schedule("53 11 * * *", async () => {
       Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
     );
 
-    const transicionEnCurso = await replacement.updateMany(
+    const transicionEnCurso = await Reemplazo.updateMany(
       {
         status: "PENDIENTE",
         fecha_inicio: { $lte: fechaActual },
@@ -19,7 +20,7 @@ cron.schedule("53 11 * * *", async () => {
       }
     );
 
-    const transicionFinalizada = await replacement.updateMany(
+    const transicionFinalizada = await Reemplazo.updateMany(
       {
         status: "EN CURSO",
         fecha_termino: { $lt: fechaActual },
@@ -29,7 +30,7 @@ cron.schedule("53 11 * * *", async () => {
       }
     );
 
-    const transicionInterrumpida = await replacement.updateMany(
+    const transicionInterrumpida = await Reemplazo.updateMany(
       {
         status: "EN CURSO",
         corte_anticipado: true,
@@ -41,7 +42,9 @@ cron.schedule("53 11 * * *", async () => {
     );
 
     const totalModificados =
-      transicionEnCurso.modifiedCount + transicionFinalizada.modifiedCount + transicionInterrumpida.modifiedCount;
+      transicionEnCurso.modifiedCount +
+      transicionFinalizada.modifiedCount +
+      transicionInterrumpida.modifiedCount;
 
     if (totalModificados > 0) {
       const io = getIO();
@@ -51,6 +54,6 @@ cron.schedule("53 11 * * *", async () => {
       });
     }
   } catch (error) {
-    console.error("❌ Error en cron de estados:", error);
+    logger.error(`❌ Error en cron de estados: ${error.message}`);
   }
 });

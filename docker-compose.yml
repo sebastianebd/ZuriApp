@@ -1,0 +1,28 @@
+
+services:
+  server:
+    build: ./server
+    ports:
+      - "3500:3500"
+    environment:
+      - PORT=3500
+      - NODE_ENV=production
+      # Reemplaza o pasa estas variables en un archivo .env
+      - DATABASE_URI=${DATABASE_URI} 
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+    networks:
+      - app-network
+
+  client:
+    build: ./client
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

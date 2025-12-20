@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 import { ref } from 'vue'
+import { useAuthStore } from './auth.store'
 
 export const useAuditStore = defineStore('audit', () => {
+  const authStore = useAuthStore()
   const logs = ref<any[]>([])
   const total = ref(0)
   const currentPage = ref(1)
@@ -38,6 +39,7 @@ export const useAuditStore = defineStore('audit', () => {
       if (filters.startDate) params.append('startDate', filters.startDate)
       if (filters.endDate) params.append('endDate', filters.endDate)
 
+      const axios = authStore.usePrivateApi()
       const response = await axios.get(`/api/audit?${params.toString()}`)
 
       logs.value = response.data.logs

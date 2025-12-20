@@ -1,5 +1,5 @@
 import { errorHandler } from '@/utils/errorHandler'
-import { useApiPrivate } from '../composables/useApi'
+import type { useApiPrivate } from '../composables/useApi'
 import type { registrarUsuario } from '../types/models'
 
 export const crearUsuario = async (

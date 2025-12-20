@@ -1,5 +1,5 @@
 import { errorHandler } from '@/utils/errorHandler'
-import { useApiPrivate } from '../composables/useApi'
+import type { useApiPrivate } from '../composables/useApi'
 
 export const getReplacementStats = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {

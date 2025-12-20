@@ -1,17 +1,23 @@
 const authService = require("../services/auth.service");
+const logger = require("../config/logger.config");
 
 async function login(req, res) {
   try {
-    const tokens = await authService.login(req.body);
+    const { accessToken, refreshToken, user } = await authService.login(
+      req.body
+    );
     res
-      .cookie("refresh_token", tokens.refreshToken, {
+      .cookie("refresh_token", refreshToken, {
         httpOnly: true,
         sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
         secure: process.env.NODE_ENV === "production",
         sameSite: "Strict",
-
       })
-      .json({ access_token: tokens.accessToken });
+      .json({ access_token: accessToken, user });
+
+    logger.info(
+      `✅ Login exitoso: ${user.rut} ${user.nombre} ${user.apellido}`
+    );
   } catch (error) {
     res.status(error.status || 500).json({ mensaje: error.message });
   }
@@ -25,6 +31,12 @@ async function logout(req, res) {
       sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
       secure: process.env.NODE_ENV === "production",
     });
+
+    if (req.user) {
+      logger.info(
+        `👋 Logout realizado: User ${req.user.rut} ${req.user.nombre} ${req.user.apellido}`
+      );
+    }
     res.sendStatus(204);
   } catch (error) {
     res.status(error.status || 500).json({ mensaje: error.message });

@@ -1,5 +1,6 @@
 // middleware/auth.middleware.js
 const jwt = require("jsonwebtoken");
+const logger = require("../config/logger.config");
 const User = require("../models/user.model");
 
 async function authMiddleware(req, res, next) {
@@ -9,7 +10,7 @@ async function authMiddleware(req, res, next) {
     if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
-        message: "Acceso no autorizado: se requiere token"
+        message: "Acceso no autorizado: se requiere token",
       });
     }
 
@@ -19,7 +20,7 @@ async function authMiddleware(req, res, next) {
       if (err) {
         return res.status(403).json({
           success: false,
-          message: "Token inválido o expirado"
+          message: "Token inválido o expirado",
         });
       }
 
@@ -30,7 +31,7 @@ async function authMiddleware(req, res, next) {
       if (!user) {
         return res.status(401).json({
           success: false,
-          message: "Usuario no encontrado"
+          message: "Usuario no encontrado",
         });
       }
 
@@ -41,7 +42,7 @@ async function authMiddleware(req, res, next) {
     console.error("❌ Error en authMiddleware:", error);
     return res.status(500).json({
       success: false,
-      message: "Error interno de autenticación"
+      message: "Error interno de autenticación",
     });
   }
 }
