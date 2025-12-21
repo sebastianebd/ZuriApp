@@ -7,7 +7,7 @@ export const crearUsuario = async (
   payload: registrarUsuario
 ) => {
   try {
-    const { data } = await apiPrivate.post('/api/users/', payload)
+    const { data } = await apiPrivate.post('/users/', payload)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -20,7 +20,7 @@ export const actualizarUsuario = async (
   payload: registrarUsuario
 ) => {
   try {
-    const { data } = await apiPrivate.put(`/api/users/${usuarioId}`, payload)
+    const { data } = await apiPrivate.put(`/users/${usuarioId}`, payload)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -29,7 +29,7 @@ export const actualizarUsuario = async (
 
 export const eliminarUsuario = async (apiPrivate: ReturnType<typeof useApiPrivate>, id: string) => {
   try {
-    const { data } = await apiPrivate.delete(`/api/users/${id}`)
+    const { data } = await apiPrivate.delete(`/users/${id}`)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -38,7 +38,7 @@ export const eliminarUsuario = async (apiPrivate: ReturnType<typeof useApiPrivat
 
 export const mostrarUsersCargoTens = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get(`/api/users/tens`)
+    const { data } = await apiPrivate.get(`/users/tens`)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -47,7 +47,7 @@ export const mostrarUsersCargoTens = async (apiPrivate: ReturnType<typeof useApi
 
 export const mostrarTodosUsuarios = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get(`/api/users/`)
+    const { data } = await apiPrivate.get(`/users/`)
     return data
   } catch (error) {
     throw errorHandler(error)

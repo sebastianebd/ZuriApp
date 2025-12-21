@@ -3,7 +3,7 @@ import type { useApiPrivate } from '../composables/useApi'
 
 export const getReplacementStats = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get('/api/profile/stats/replacements')
+    const { data } = await apiPrivate.get('/profile/stats/replacements')
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -12,7 +12,7 @@ export const getReplacementStats = async (apiPrivate: ReturnType<typeof useApiPr
 
 export const getServiceStats = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get('/api/profile/stats/services')
+    const { data } = await apiPrivate.get('/profile/stats/services')
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -21,7 +21,7 @@ export const getServiceStats = async (apiPrivate: ReturnType<typeof useApiPrivat
 
 export const getRecentActivity = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get('/api/profile/activity/recent')
+    const { data } = await apiPrivate.get('/profile/activity/recent')
     return data
   } catch (error) {
     throw errorHandler(error)
