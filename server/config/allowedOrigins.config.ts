@@ -4,4 +4,8 @@ const allowedOrigins: string[] = [
   "http://localhost:8080",
 ];
 
+if (process.env.CLIENT_URL) {
+  allowedOrigins.push(process.env.CLIENT_URL);
+}
+
 export default allowedOrigins;
