@@ -6,7 +6,7 @@ const Api = useApi()
 
 export const login = async (payload: LoginData) => {
   try {
-    const { data } = await Api.post('/api/auth/login', payload)
+    const { data } = await Api.post('/auth/login', payload)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -15,7 +15,7 @@ export const login = async (payload: LoginData) => {
 
 export const refresh = async () => {
   try {
-    const { data } = await Api.post('/api/auth/refresh')
+    const { data } = await Api.post('/auth/refresh')
     console.log('Refresh Token obtenido')
     return data
   } catch (error) {
@@ -25,7 +25,7 @@ export const refresh = async () => {
 
 export const logout = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.post('/api/auth/logout')
+    const { data } = await apiPrivate.post('/auth/logout')
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -34,7 +34,7 @@ export const logout = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
 
 export const getUser = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get('/api/auth/user')
+    const { data } = await apiPrivate.get('/auth/user')
     return data
   } catch (error) {
     throw errorHandler(error)
