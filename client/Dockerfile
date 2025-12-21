@@ -9,6 +9,8 @@ RUN npm run build
 # Production Stage
 FROM nginx:alpine as production-stage
 COPY --from=build-stage /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Nginx 1.19+ supports auto-envsubst if placed in /etc/nginx/templates/
+# It will output to /etc/nginx/conf.d/default.conf
+
