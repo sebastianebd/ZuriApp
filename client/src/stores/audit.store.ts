@@ -39,6 +39,7 @@ export const useAuditStore = defineStore('audit', () => {
       if (filters.startDate) params.append('startDate', filters.startDate)
       if (filters.endDate) params.append('endDate', filters.endDate)
 
+      // Force fresh build to fix api path
       const axios = authStore.usePrivateApi()
       const response = await axios.get(`/audit?${params.toString()}`)
 
