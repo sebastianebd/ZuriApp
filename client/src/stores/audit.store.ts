@@ -40,7 +40,7 @@ export const useAuditStore = defineStore('audit', () => {
       if (filters.endDate) params.append('endDate', filters.endDate)
 
       const axios = authStore.usePrivateApi()
-      const response = await axios.get(`/api/audit?${params.toString()}`)
+      const response = await axios.get(`/audit?${params.toString()}`)
 
       logs.value = response.data.logs
       total.value = response.data.total
