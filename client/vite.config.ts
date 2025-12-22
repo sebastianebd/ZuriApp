@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { fileURLToPath, URL } from 'node:url'
 
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 
@@ -9,12 +9,13 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'jsdom'
+    environment: 'jsdom',
+    exclude: ['**/node_modules/**', '**/dist/**', '**/tests/e2e/**']
   },
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3500',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:3500',
         changeOrigin: true,
         secure: false
       }

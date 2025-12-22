@@ -18,8 +18,6 @@ const allowedOrigins = process.env.CLIENT_URL
     )
   : ["http://localhost:5173", "http://localhost:4173", "http://localhost:5174"];
 
-console.log("Allowed Origins for Socket.io:", allowedOrigins);
-
 socketIO.init(server, allowedOrigins);
 
 connectDB();
