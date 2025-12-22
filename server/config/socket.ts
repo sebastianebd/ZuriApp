@@ -13,6 +13,7 @@ const init = (httpServer: HttpServer, clientUrl: string | string[]): Server => {
     cors: {
       origin: clientUrl,
       methods: ["GET", "POST"],
+      credentials: true,
     },
   });
 
