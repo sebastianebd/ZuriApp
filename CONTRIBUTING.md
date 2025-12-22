@@ -1,53 +1,53 @@
-# Contributing to ZuriApp
+# Contribuyendo a ZuriApp
 
-We follow a professional workflow to ensure code quality and stability. Please follow these guidelines when contributing.
+Seguimos un flujo de trabajo profesional para asegurar la calidad y estabilidad del código. Por favor sigue estas pautas al contribuir.
 
-## Branching Strategy & Deployment
+## Estrategia de Ramas y Despliegue
 
-We use a structured flow to move code from development to production.
+Usamos un flujo estructurado para mover el código desde desarrollo hasta producción.
 
-### 1. Development (Local)
+### 1. Desarrollo (Local)
 
-- Create a new branch for your feature: `git checkout -b feature/my-feature`.
-- Run the app locally with Docker:
+- Crea una nueva rama para tu funcionalidad: `git checkout -b feature/mi-funcionalidad`.
+- Ejecuta la apicación localmente con Docker:
   ```bash
   docker-compose up
   ```
-- This starts the full environment with hot-reloading.
+- Esto inicia el entorno completo con recarga en caliente (hot-reloading).
 
-### 2. Staging (Pre-Production)
+### 2. Staging (Pre-Producción)
 
-- **Goal**: Verify changes in a production-like environment.
-- **Action**: Create a Pull Request (PR) from your feature branch to the **`staging`** branch.
-- **Deployment**: Merging to `staging` automatically deploys to the **ZuriApp-Staging** environment on Railway.
-- **Verification**: Test your changes in the Staging URL.
+- **Objetivo**: Verificar cambios en un entorno similar a producción.
+- **Acción**: Crea un Pull Request (PR) desde tu rama feature hacia la rama **`stage`**.
+- **Despliegue**: Al fusionar (merge) en `stage` se despliega automáticamente al entorno **ZuriApp-Staging** en Railway.
+- **Verificación**: Prueba tus cambios en la URL de Staging.
 
-### 3. Production (Live)
+### 3. Producción (En Vivo)
 
-- **Goal**: Release detailed and verified changes to users.
-- **Action**: Create a Pull Request from `staging` to **`main`**.
-- **Deployment**: Merging to `main` automatically deploys to the **ZuriApp-Production** environment on Railway.
+- **Objetivo**: Liberar cambios detallados y verificados a los usuarios.
+- **Acción**: Crea un Pull Request desde `stage` hacia **`main`**.
+- **Despliegue**: Al fusionar en `main` se despliega automáticamente al entorno **ZuriApp-Production** en Railway.
 
-## Quality Checks (CI)
+## Controles de Calidad (CI)
 
-Our GitHub Actions pipeline runs automatically on every Pull Request to ensure:
+Nuestro pipeline de GitHub Actions se ejecuta automáticamente en cada Pull Request para asegurar:
 
-- Dependencies install correctly.
-- All automated tests pass.
+- Que las dependencias se instalen correctamente.
+- Que todas las pruebas automatizadas pasen.
 
-Ensure you run tests locally before pushing:
+Asegúrate de correr los tests localmente antes de hacer push:
 
 ```bash
-# Server
+# Servidor
 cd server
 npm test
 
-# Client
+# Cliente
 cd client
 npm test
 ```
 
-## Environment Variables
+## Variables de Entorno
 
-- `.env.development`: Key-value pairs for local development (git-ignored).
-- `.env.production`: Template/Reference for production variables.
+- `.env.development`: Pares llave-valor para desarrollo local (ignorado por git).
+- `.env.production`: Plantilla/Referencia para variables de producción.
