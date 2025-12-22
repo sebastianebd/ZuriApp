@@ -10,7 +10,7 @@ services:
       - app-network
 
   server:
-    image: node:18-alpine
+    image: node:22-alpine
     container_name: zuri_server
     working_dir: /app
     volumes:
@@ -32,7 +32,7 @@ services:
       - app-network
 
   client:
-    image: node:18-alpine
+    image: node:22-alpine
     container_name: zuri_client
     working_dir: /app
     volumes:

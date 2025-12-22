@@ -8,7 +8,9 @@
     "dev": "nodemon --exec ts-node server.ts",
     "build": "tsc",
     "type-check": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest",
+    "seed": "ts-node scripts/seed.ts",
+    "seed:prod": "node dist/scripts/seed.js"
   },
   "author": "",
   "license": "ISC",
