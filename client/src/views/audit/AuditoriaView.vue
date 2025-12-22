@@ -36,7 +36,7 @@
             <div class="spinner-border text-primary mb-3" role="status">
               <span class="visually-hidden">Cargando...</span>
             </div>
-            <p class="text-muted small">Actualizando registros de auditoría...</p>
+            <p class="text-muted small">Cargando registros de auditoría...</p>
           </div>
 
           <!-- Error State -->

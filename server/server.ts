@@ -12,7 +12,10 @@ const PORT = process.env.PORT || 3500;
 
 const server = http.createServer(app);
 
-socketIO.init(server, process.env.CLIENT_URL || "");
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(",")
+  : ["http://localhost:5173", "http://localhost:4173", "http://localhost:5174"];
+socketIO.init(server, allowedOrigins);
 
 connectDB();
 

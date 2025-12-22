@@ -32,11 +32,11 @@ export function useApiPrivate(
           !prevRequest.sent
         ) {
           prevRequest.sent = true
-          console.log('Token expirado, intentando renovarlo...')
+          // console.log('Token expirado, intentando renovarlo...')
 
           try {
             const newAccessToken = await refreshToken()
-            console.log('newAccessToken', newAccessToken)
+            // console.log('newAccessToken', newAccessToken)
             prevRequest.headers['Authorization'] = `Bearer ${newAccessToken}`
             return axiosPrivateInstance(prevRequest)
           } catch (refreshError) {
