@@ -7,19 +7,19 @@ test.describe('Login Flow', () => {
     // Ensure app is hydrated (prevents native form submit race condition)
     await page.waitForLoadState('networkidle')
 
-    // 2. Fill form
-    await page.fill('input[type="text"]', '11596065-2') // Use a valid test user RUT
-    await page.fill('input[type="password"]', '9f4e14') // Assume this is a test password
+    // 2. Fill form (Using Seeded Admin)
+    await page.fill('#rut', '12345678-5')
+    await page.fill('input[type="password"]', 'admin123')
 
     // 3. Submit
     await page.click('button[type="submit"]')
 
-    // 4. Verify Redirection (Dashboard or similar)
-    // Note: Adjust URL based on actual redirect - /app/user is the default landing
-    await expect(page).toHaveURL(/\/app\/user/, { timeout: 15000 })
+    // 4. Verify Redirection (Dashboard default is usually /app/user or /app/reemplazos depending on role)
+    // We expect successful redirection away from login
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
-    // 5. Verify User name in Navbar (using the new logging logic as reference)
-    // await expect(page.locator('.navbar')).toContainText('ENRIQUE DIAZ');
+    // Optional: Verify Welcome message or Navbar element for "ADMIN PRINCIPAL"
+    // await expect(page.locator('body')).toContainText('ADMIN PRINCIPAL');
   })
 
   test('should show error with invalid credentials', async ({ page }) => {

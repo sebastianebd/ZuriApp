@@ -21,13 +21,21 @@ async function register(req: AuthRequest, res: Response) {
 }
 
 async function mostrarUsuarios(req: Request, res: Response) {
-  const usuarios = await userService.obtenerUsuariosTENS();
-  res.json(usuarios);
+  try {
+    const usuarios = await userService.obtenerUsuariosTENS();
+    res.json(usuarios);
+  } catch (error: any) {
+    res.status(error.status || 500).json({ mensaje: error.message });
+  }
 }
 
 async function mostrarTodos(req: Request, res: Response) {
-  const usuarios = await userService.obtenerTodos();
-  res.json(usuarios);
+  try {
+    const usuarios = await userService.obtenerTodos();
+    res.json(usuarios);
+  } catch (error: any) {
+    res.status(error.status || 500).json({ mensaje: error.message });
+  }
 }
 
 async function actualizarUsuario(req: AuthRequest, res: Response) {

@@ -64,7 +64,36 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
+  // Debug Auth State
+  console.log('[Router] navigating to:', to.fullPath)
+  const stored = localStorage.getItem('auth')
+  console.log('[Router] localStorage check:', stored ? 'EXISTS' : 'EMPTY')
+
+  // Manual Hydration Fallback (Fix for Persistence Race Condition)
+  if (!authStore.isAuthenticated && stored) {
+    try {
+      const parsed = JSON.parse(stored)
+      if (parsed.accessToken) {
+        console.log('[Router] Manually hydrating auth store from localStorage')
+        authStore.authReady = true
+        authStore.user = parsed.user
+        authStore.accessToken = parsed.accessToken
+      }
+    } catch (e) {
+      console.error('[Router] Hydration error:', e)
+    }
+  }
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    console.error(
+      '[Router] Redirecting to login due to missing auth. Token:',
+      authStore.accessToken
+    )
+    return next({ name: 'login', query: { redirect: to.fullPath } })
+  }
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    console.log('[Router] Redirecting to login due to missing auth.')
     return next({ name: 'login', query: { redirect: to.fullPath } })
   }
 

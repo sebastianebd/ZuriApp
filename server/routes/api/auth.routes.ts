@@ -12,6 +12,21 @@ const router = express.Router();
  *   description: Autenticación y gestión de sesiones
  */
 
+// Health check endpoint for CI/CD
+/**
+ * @swagger
+ * /auth/health:
+ *   get:
+ *     summary: Health check
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Server is healthy
+ */
+router.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // Rutas públicas
 
 /**

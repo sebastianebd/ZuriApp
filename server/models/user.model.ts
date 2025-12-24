@@ -59,7 +59,7 @@ const userSchema: Schema = new Schema(
       required: true,
       unique: true,
       validate: {
-        validator: (val: string) => /^[0-9]{8,15}$/.test(val),
+        validator: (val: string) => /^\+?[0-9]{8,15}$/.test(val),
         message: "Número de teléfono no válido",
       },
     },

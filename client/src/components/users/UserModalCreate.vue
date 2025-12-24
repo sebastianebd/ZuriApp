@@ -155,12 +155,22 @@
                       <label class="mb-2 form-label text-secondary fw-semibold small"
                         >Teléfono</label
                       >
-                      <input
-                        v-model="form.telefono"
-                        class="form-control bg-white border-0 shadow-sm rounded-3"
-                        :class="{ 'is-invalid': errors.telefono }"
-                        placeholder="+56 9 1234 5678"
-                      />
+                      <div class="input-group">
+                        <span
+                          class="input-group-text bg-white border-0 shadow-sm rounded-start-3 text-secondary fw-bold"
+                        >
+                          +56
+                        </span>
+                        <input
+                          v-model="form.telefono"
+                          type="text"
+                          class="form-control bg-white border-0 shadow-sm rounded-end-3"
+                          :class="{ 'is-invalid': errors.telefono }"
+                          placeholder="912345678"
+                          maxlength="9"
+                          @input="form.telefono = form.telefono.replace(/[^0-9]/g, '')"
+                        />
+                      </div>
                       <div v-if="errors.telefono" class="text-danger x-small mt-1 px-1 fw-bold">
                         <i class="bi bi-exclamation-circle me-1"></i>{{ errors.telefono }}
                       </div>
@@ -191,7 +201,7 @@
                         class="custom-v-select"
                         :class="{ 'is-invalid': errors.tipo_cargo }"
                         :clearable="false"
-                        :searchable="false"
+                        :searchable="true"
                       />
                       <div v-if="errors.tipo_cargo" class="text-danger x-small mt-1 px-1 fw-bold">
                         <i class="bi bi-exclamation-circle me-1"></i>{{ errors.tipo_cargo }}
@@ -210,7 +220,7 @@
                         class="custom-v-select"
                         :class="{ 'is-invalid': errors.habilitado }"
                         :clearable="false"
-                        :searchable="false"
+                        :searchable="true"
                       />
                       <div v-if="errors.habilitado" class="text-danger x-small mt-1 px-1 fw-bold">
                         <i class="bi bi-exclamation-circle me-1"></i>{{ errors.habilitado }}
@@ -241,12 +251,15 @@
           </div>
 
           <!-- Modal de confirmación -->
-          <ConfirmationModal
-            :visible="confirmVisible"
-            mensaje="¿Seguro que deseas crear este usuario?"
-            @confirmar="confirmarGuardar"
-            @cancelar="cerrarConfirmacion"
-          />
+          <Teleport to="body">
+            <ConfirmationModal
+              v-if="confirmVisible"
+              :visible="confirmVisible"
+              mensaje="¿Seguro que deseas crear este usuario?"
+              @confirmar="confirmarGuardar"
+              @cancelar="cerrarConfirmacion"
+            />
+          </Teleport>
         </div>
       </div>
     </div>
@@ -349,8 +362,8 @@ const validateForm = () => {
   // Validar Teléfono
   if (!form.value.telefono) {
     newErrors.telefono = 'El teléfono es obligatorio'
-  } else if (!/^\+569\d{8}$/.test(form.value.telefono)) {
-    newErrors.telefono = 'Formato inválido (+569XXXXXXXX)'
+  } else if (!/^\d{9}$/.test(form.value.telefono)) {
+    newErrors.telefono = 'Debe tener 9 dígitos'
   }
 
   // Validar Email
@@ -393,9 +406,13 @@ function confirmarGuardar() {
   // El usuario requiere formato 12345678-9 para la BD (sin puntos, con guion)
   const dbRut = cleanRutForStorage(form.value.rut)
 
+  // Format phone number with +56 prefix
+  const formattedPhone = `+56${form.value.telefono}`
+
   const dataToSave = {
     ...form.value,
     rut: dbRut,
+    telefono: formattedPhone,
     fecha_nac: form.value.fecha_nac ? new Date(form.value.fecha_nac as any).toISOString() : null
   }
   emit('guardar', dataToSave)
