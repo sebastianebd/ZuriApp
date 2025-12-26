@@ -14,7 +14,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',
-    storageState: 'c:/Users/sebas/workspace/Proyecto_ZuriApp/client/playwright/.auth/user.json'
+    storageState: 'playwright/.auth/user.json'
   },
   ...(process.env.CI
     ? {}
