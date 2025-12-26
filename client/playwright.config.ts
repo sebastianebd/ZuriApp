@@ -7,6 +7,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
+  timeout: process.env.CI ? 90000 : 30000, // 90s in CI, 30s locally
   globalSetup: './tests/e2e/global-setup.ts',
   use: {
     baseURL: 'http://localhost:5173',
