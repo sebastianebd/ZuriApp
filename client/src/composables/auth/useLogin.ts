@@ -51,9 +51,6 @@ export function useLogin() {
 
     const { valid } = await validate()
 
-    // We also need to check our manual validations before stopping
-    // But typically we stop if schema validation fails first
-
     // Manual RUT Validation check
     let manualValid = true
     if (!validateRut(loginData.rut)) {

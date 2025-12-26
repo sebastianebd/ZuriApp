@@ -1,4 +1,3 @@
-console.log('MAIN.TS LOADED - VERIFYING HMR')
 import { createApp } from 'vue'
 
 import { createPinia } from 'pinia'
@@ -32,7 +31,7 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0
 })
 // --- Supresión de errores conocidos de v-calendar ---
-app.config.errorHandler = (err, _instance, _info) => {
+app.config.errorHandler = (err) => {
   // Ignorar error específico de dayIndex en v-calendar
   if (err instanceof TypeError && err.message.includes('dayIndex')) {
     return

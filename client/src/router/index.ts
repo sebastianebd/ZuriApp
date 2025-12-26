@@ -64,10 +64,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // Debug Auth State
-  console.log('[Router] navigating to:', to.fullPath)
   const stored = localStorage.getItem('auth')
-  console.log('[Router] localStorage check:', stored ? 'EXISTS' : 'EMPTY')
 
   // Manual Hydration Fallback (Fix for Persistence Race Condition)
   if (!authStore.isAuthenticated && stored) {
