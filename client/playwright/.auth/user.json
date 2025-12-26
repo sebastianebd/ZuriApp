@@ -2,7 +2,7 @@
   "cookies": [
     {
       "name": "refresh_token",
-      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDk4MzBhYzM1ZjUzOWExOWRhNzM2YyIsImlhdCI6MTc2NjcyNTU4MiwiZXhwIjoxNzY2ODExOTgyfQ.1FOq1KC9DAPagJRAeShQztqEj5k3jTJSwcg4rJ-xFtI",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDk4MzBhYzM1ZjUzOWExOWRhNzM2YyIsImlhdCI6MTc2NjcyNjE2NiwiZXhwIjoxNzY2ODEyNTY2fQ.f-SJ4VDMZ0xLf37wovPR-U8HK7SEMu8Jzh8Yn1nSRao",
       "domain": "localhost",
       "path": "/",
       "expires": -1,
@@ -17,7 +17,7 @@
       "localStorage": [
         {
           "name": "auth",
-          "value": "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDk4MzBhYzM1ZjUzOWExOWRhNzM2YyIsImlhdCI6MTc2NjcyNTU4MiwiZXhwIjoxNzY2NzI3MzgyfQ.b__ExQcXD5FWUwBn_dcq4KTsXyVl0BQmjAAsD4ZxGmc\",\"user\":{\"_id\":\"6949830ac35f539a19da736c\",\"rut\":\"12345678-5\",\"nombre\":\"ADMIN\",\"apellido\":\"PRINCIPAL\",\"fecha_nac\":\"1990-01-01T00:00:00.000Z\",\"direccion\":\"CALLE FALSA 123\",\"telefono\":\"912345678\",\"email\":\"admin@zuriapp.cl\",\"ciudad\":\"SANTIAGO\",\"tipo_cargo\":\"ADMIN-TI\",\"eliminado\":false,\"password\":\"$2b$10$o4Zh6PncoMJNMPMICfSVbO4APVACRaJlzZ0MA2DprhqZtFdm4R0ee\",\"habilitado\":\"HABILITADO\",\"created_at\":\"2025-12-22T17:42:34.885Z\",\"updated_at\":\"2025-12-26T05:06:22.428Z\",\"__v\":0,\"refresh_token\":\"$2b$10$EvcThYQ0pFMOgcKLFYovMO3aZbUAdNLFHHRFI6RK/IyTbkOEP9njS\",\"id\":\"6949830ac35f539a19da736c\",\"full_name\":\"ADMIN PRINCIPAL\"},\"authReady\":true}"
+          "value": "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDk4MzBhYzM1ZjUzOWExOWRhNzM2YyIsImlhdCI6MTc2NjcyNjE2NiwiZXhwIjoxNzY2NzI3OTY2fQ.3539cbPOzFB1zTiSScE-Mn_hDneJhDaRvSXB-LlEh70\",\"user\":{\"_id\":\"6949830ac35f539a19da736c\",\"rut\":\"12345678-5\",\"nombre\":\"ADMIN\",\"apellido\":\"PRINCIPAL\",\"fecha_nac\":\"1990-01-01T00:00:00.000Z\",\"direccion\":\"CALLE FALSA 123\",\"telefono\":\"912345678\",\"email\":\"admin@zuriapp.cl\",\"ciudad\":\"SANTIAGO\",\"tipo_cargo\":\"ADMIN-TI\",\"eliminado\":false,\"password\":\"$2b$10$o4Zh6PncoMJNMPMICfSVbO4APVACRaJlzZ0MA2DprhqZtFdm4R0ee\",\"habilitado\":\"HABILITADO\",\"created_at\":\"2025-12-22T17:42:34.885Z\",\"updated_at\":\"2025-12-26T05:16:06.273Z\",\"__v\":0,\"refresh_token\":\"$2b$10$g2MiEUtFzmrSJPK92iJvlehcV1sLagp63kK/mqCORr2PW/ThClo0e\",\"id\":\"6949830ac35f539a19da736c\",\"full_name\":\"ADMIN PRINCIPAL\"},\"authReady\":true}"
         }
       ]
     }
