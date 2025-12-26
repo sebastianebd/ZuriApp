@@ -15,14 +15,18 @@ export default defineConfig({
     video: 'off',
     storageState: 'c:/Users/sebas/workspace/Proyecto_ZuriApp/client/playwright/.auth/user.json'
   },
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 180 * 1000,
-    stdout: 'pipe',
-    stderr: 'pipe'
-  },
+  ...(process.env.CI
+    ? {}
+    : {
+        webServer: {
+          command: 'npm run dev',
+          url: 'http://localhost:5173',
+          reuseExistingServer: true,
+          timeout: 180 * 1000,
+          stdout: 'pipe',
+          stderr: 'pipe'
+        }
+      }),
   projects: [
     {
       name: 'chromium',
