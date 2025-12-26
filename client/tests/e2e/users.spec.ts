@@ -4,9 +4,7 @@ import { generateRut } from '@fdograph/rut-utilities'
 test.describe('User Management', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/app/ver_usuarios')
-
     await expect(page).toHaveURL(/ver_usuarios/)
-
     await page.waitForSelector('aside.is-expanded, aside', { state: 'visible' })
   })
 
@@ -25,17 +23,12 @@ test.describe('User Management', () => {
     await expect(page.locator('.modal-title')).toContainText(/crear/i)
   })
   test('should create a new user', async ({ page }) => {
-    const optionsPromise = Promise.all([
-      page.waitForResponse(
-        (r) => r.url().includes('/api/options/tipo-cargos') && r.status() === 200
-      ),
-      page.waitForResponse((r) => r.url().includes('/api/options/habilitado') && r.status() === 200)
-    ]).catch(() => {})
-
     await page.goto('/app/ver_usuarios')
-    await optionsPromise.catch(() => {})
+    await page.waitForLoadState('networkidle') // Wait for all network requests including options
+    await page.waitForTimeout(500) // Small buffer for Firefox
+
     const createBtn = page.getByRole('button', { name: 'Crear Usuario' })
-    await createBtn.waitFor({ state: 'visible' })
+    await createBtn.waitFor({ state: 'visible', timeout: 10000 })
     await createBtn.click()
     await expect(page.locator('.modal-title')).toContainText('CREAR NUEVO USUARIO')
     await page.evaluate(() => {
