@@ -104,6 +104,13 @@ jobs:
         run: |
           npx wait-on http://localhost:3500/api/auth/health http://localhost:5173 --timeout 60000 || (echo "Services failed to start" && exit 1)
 
+      - name: Seed Test Database
+        run: |
+          cd server
+          npm run seed
+        env:
+          DATABASE_URI: mongodb://localhost:27017/zuriapp_test
+
       - name: Run E2E Tests
         run: |
           cd client
