@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { generateRut } from '@fdograph/rut-utilities'
 
 test.describe('User Management', () => {
   test.beforeEach(async ({ page }) => {
@@ -46,7 +47,7 @@ test.describe('User Management', () => {
       }
     })
 
-    const validRut = '18963546-k'
+    const validRut = generateRut()
 
     const activeModal = page
       .locator('.modal.show')
@@ -61,7 +62,10 @@ test.describe('User Management', () => {
     await activeModal.getByPlaceholder('Ingrese nombre').fill('Sebastian')
     await activeModal.getByPlaceholder('Ingrese apellido').fill('Echeverria')
     await activeModal.getByPlaceholder('correo@ejemplo.com').fill(`e2e-${Date.now()}@test.com`)
-    await activeModal.getByPlaceholder('912345678').fill('987654321')
+
+    // Generate unique Chilean phone number (9 + 8 random digits)
+    const randomPhone = '9' + Math.floor(10000000 + Math.random() * 90000000).toString()
+    await activeModal.getByPlaceholder('912345678').fill(randomPhone)
     await activeModal.getByPlaceholder('Calle, Número, Depto').fill('Calle Falsa 123')
     await activeModal.getByPlaceholder('Ingrese ciudad').fill('Santiago')
     const fechaInput = activeModal.getByPlaceholder('Seleccione fecha')
