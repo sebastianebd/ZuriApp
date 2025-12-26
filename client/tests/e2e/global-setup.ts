@@ -1,4 +1,6 @@
 import { chromium, type FullConfig } from '@playwright/test'
+import * as fs from 'fs'
+import * as path from 'path'
 
 async function globalSetup(config: FullConfig) {
   const { baseURL, storageState } = config.projects[0].use
@@ -86,7 +88,26 @@ async function globalSetup(config: FullConfig) {
 
     // 4. Save signed-in state to 'storageState.json'.
     console.log('Saving storage state...')
+    console.log('Storage state path:', storageState)
+
+    // Ensure directory exists
+    const storageDir = path.dirname(storageState as string)
+    if (!fs.existsSync(storageDir)) {
+      console.log('Creating directory:', storageDir)
+      fs.mkdirSync(storageDir, { recursive: true })
+    }
+
     await page.context().storageState({ path: storageState as string })
+    console.log('Storage state saved successfully!')
+
+    // Verify file exists
+    if (fs.existsSync(storageState as string)) {
+      const stats = fs.statSync(storageState as string)
+      console.log('File size:', stats.size, 'bytes')
+      console.log('Absolute path:', path.resolve(storageState as string))
+    } else {
+      console.error('WARNING: Storage state file was not created!')
+    }
   } catch (e) {
     console.error('Global Setup Failed:', e)
     await page.screenshot({ path: 'global-setup-failure.png' })
