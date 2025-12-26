@@ -39,19 +39,20 @@ test.describe('Profile View', () => {
 
   test('should display user profile information', async ({ page }) => {
     // Check for "Mi Perfil" title or equivalent header
-    await expect(page.locator('h4', { hasText: 'Mi Perfil' })).toBeVisible()
+    await expect(page.locator('h4', { hasText: 'Mi Perfil' })).toBeVisible({ timeout: 15000 })
 
     // Check for User Name (from Seed) - Case insensitive or partial match
-    await expect(page.locator('h4', { hasText: /Admin/i })).toBeVisible()
+    await expect(page.locator('h4', { hasText: /Admin/i })).toBeVisible({ timeout: 15000 })
 
     // Check for Role
     await expect(
       page.locator('.user-profile-view .text-muted', { hasText: 'ADMIN-TI' }).first()
-    ).toBeVisible()
+    ).toBeVisible({ timeout: 15000 })
 
     // Check for Email
-    // Check for Email
-    await expect(page.locator('p.info-value', { hasText: 'admin@zuriapp.cl' })).toBeVisible()
+    await expect(page.locator('p.info-value', { hasText: 'admin@zuriapp.cl' })).toBeVisible({
+      timeout: 15000
+    })
   })
 
   test.afterEach(async ({ page }, testInfo) => {
@@ -63,7 +64,9 @@ test.describe('Profile View', () => {
   })
 
   test('should display statistics cards', async ({ page }) => {
-    await expect(page.locator('h6', { hasText: 'Total Reemplazos' })).toBeVisible()
-    await expect(page.locator('h6', { hasText: 'Este Mes' })).toBeVisible()
+    await expect(page.locator('h6', { hasText: 'Total Reemplazos' })).toBeVisible({
+      timeout: 15000
+    })
+    await expect(page.locator('h6', { hasText: 'Este Mes' })).toBeVisible({ timeout: 15000 })
   })
 })

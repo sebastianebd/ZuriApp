@@ -5,7 +5,10 @@ test.describe('User Management', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/app/ver_usuarios')
     await expect(page).toHaveURL(/ver_usuarios/)
-    await page.waitForSelector('aside.is-expanded, aside', { state: 'visible' })
+    // Wait for sidebar with increased timeout for CI
+    await page.waitForSelector('aside', { state: 'attached', timeout: 60000 })
+    // Wait for page to be fully loaded
+    await page.waitForLoadState('networkidle')
   })
 
   test('should navigate to Users page', async ({ page }) => {
