@@ -16,7 +16,24 @@ test.describe('Profile View', () => {
       }
     })
 
-    // Go to profile directly (storageState handles auth)
+    // Wait for auth to be ready BEFORE navigating
+    await page.goto('http://localhost:5173/')
+    await page.waitForFunction(
+      () => {
+        const auth = localStorage.getItem('auth')
+        if (!auth) return false
+        try {
+          const parsed = JSON.parse(auth)
+          return !!parsed.accessToken && !!parsed.authReady
+        } catch {
+          return false
+        }
+      },
+      null,
+      { timeout: 10000 }
+    )
+
+    // Now navigate to profile
     await page.goto('/app/user')
 
     // Wait for the app to hydrate and router to settle
