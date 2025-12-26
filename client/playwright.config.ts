@@ -8,13 +8,11 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   timeout: process.env.CI ? 90000 : 30000, // 90s in CI, 30s locally
-  globalSetup: './tests/e2e/global-setup.ts',
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'off',
-    storageState: 'playwright/.auth/user.json'
+    video: 'off'
   },
   ...(process.env.CI
     ? {}
@@ -32,33 +30,21 @@ export default defineConfig({
     ? [
         {
           name: 'chromium',
-          use: {
-            ...devices['Desktop Chrome'],
-            storageState: 'playwright/.auth/user.json'
-          }
+          use: { ...devices['Desktop Chrome'] }
         }
       ]
     : [
         {
           name: 'chromium',
-          use: {
-            ...devices['Desktop Chrome'],
-            storageState: 'playwright/.auth/user.json'
-          }
+          use: { ...devices['Desktop Chrome'] }
         },
         {
           name: 'firefox',
-          use: {
-            ...devices['Desktop Firefox'],
-            storageState: 'playwright/.auth/user.json'
-          }
+          use: { ...devices['Desktop Firefox'] }
         },
         {
           name: 'webkit',
-          use: {
-            ...devices['Desktop Safari'],
-            storageState: 'playwright/.auth/user.json'
-          }
+          use: { ...devices['Desktop Safari'] }
         }
       ]
 })

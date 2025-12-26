@@ -3,29 +3,12 @@ import { generateRut } from '@fdograph/rut-utilities'
 
 test.describe('User Management', () => {
   test.beforeEach(async ({ page }) => {
-    // Wait for auth to be ready BEFORE navigating
-    await page.goto('http://localhost:5173/')
-    await page.waitForFunction(
-      () => {
-        const auth = sessionStorage.getItem('auth')
-        if (!auth) return false
-        try {
-          const parsed = JSON.parse(auth)
-          return !!parsed.accessToken && !!parsed.authReady
-        } catch {
-          return false
-        }
-      },
-      null,
-      { timeout: 10000 }
-    )
+    // Login before each test
+    const { login } = await import('./helpers/auth')
+    await login(page)
 
-    // Now navigate to users page
+    // Navigate to users page
     await page.goto('/app/ver_usuarios')
-    await expect(page).toHaveURL(/ver_usuarios/)
-    // Wait for sidebar with increased timeout for CI
-    await page.waitForSelector('aside', { state: 'attached', timeout: 60000 })
-    // Wait for page to be fully loaded
     await page.waitForLoadState('networkidle')
   })
 

@@ -2,56 +2,13 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Profile View', () => {
   test.beforeEach(async ({ page }) => {
-    // Capture browser logs (filtered)
-    page.on('console', (msg) => {
-      const text = msg.text()
-      if (!text.includes('Sentry Logger')) {
-        console.log(`BROWSER: ${text}`)
-      }
-    })
-    // Capture network errors
-    page.on('response', (response) => {
-      if (response.status() >= 400) {
-        console.log(`NETWORK ERROR: ${response.status()} ${response.url()}`)
-      }
-    })
+    // Login before each test
+    const { login } = await import('./helpers/auth')
+    await login(page)
 
-    // Wait for auth to be ready BEFORE navigating
-    await page.goto('http://localhost:5173/')
-    await page.waitForFunction(
-      () => {
-        const auth = sessionStorage.getItem('auth')
-        if (!auth) return false
-        try {
-          const parsed = JSON.parse(auth)
-          return !!parsed.accessToken && !!parsed.authReady
-        } catch {
-          return false
-        }
-      },
-      null,
-      { timeout: 10000 }
-    )
-
-    // Now navigate to profile
+    // Navigate to profile page
     await page.goto('/app/user')
-
-    // Wait for the app to hydrate and router to settle
-    try {
-      await expect(page).toHaveURL(/.*\/user/, { timeout: 15000 })
-      await page.waitForLoadState('networkidle')
-      // Debug: Check if NavBar is present
-      if ((await page.locator('nav').count()) === 0) {
-        console.log('NavBar not found!')
-        console.log('Current URL:', page.url())
-        const storage = await page.evaluate(() => JSON.stringify(window.sessionStorage))
-        console.log('SessionStorage:', storage)
-      }
-    } catch (e) {
-      console.log('Navigation/Wait failed. Dumping body:')
-      console.log(await page.content())
-      throw e
-    }
+    await page.waitForLoadState('networkidle')
   })
 
   test('should display user profile information', async ({ page }) => {
