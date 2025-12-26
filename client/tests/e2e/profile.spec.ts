@@ -20,7 +20,7 @@ test.describe('Profile View', () => {
     await page.goto('http://localhost:5173/')
     await page.waitForFunction(
       () => {
-        const auth = localStorage.getItem('auth')
+        const auth = sessionStorage.getItem('auth')
         if (!auth) return false
         try {
           const parsed = JSON.parse(auth)
@@ -44,8 +44,8 @@ test.describe('Profile View', () => {
       if ((await page.locator('nav').count()) === 0) {
         console.log('NavBar not found!')
         console.log('Current URL:', page.url())
-        const storage = await page.evaluate(() => JSON.stringify(window.localStorage))
-        console.log('LocalStorage:', storage)
+        const storage = await page.evaluate(() => JSON.stringify(window.sessionStorage))
+        console.log('SessionStorage:', storage)
       }
     } catch (e) {
       console.log('Navigation/Wait failed. Dumping body:')

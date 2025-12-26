@@ -7,7 +7,7 @@ test.describe('User Management', () => {
     await page.goto('http://localhost:5173/')
     await page.waitForFunction(
       () => {
-        const auth = localStorage.getItem('auth')
+        const auth = sessionStorage.getItem('auth')
         if (!auth) return false
         try {
           const parsed = JSON.parse(auth)
