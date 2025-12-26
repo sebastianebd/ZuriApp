@@ -111,6 +111,13 @@ jobs:
         env:
           DATABASE_URI: mongodb://localhost:27017/zuriapp_test
 
+      - name: Seed Options (Master Data)
+        run: |
+          cd server
+          npm run seed:options
+        env:
+          DATABASE_URI: mongodb://localhost:27017/zuriapp_test
+
       - name: Run E2E Tests
         run: |
           cd client
