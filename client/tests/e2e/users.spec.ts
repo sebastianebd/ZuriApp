@@ -79,6 +79,10 @@ test.describe('User Management', () => {
       .locator('..')
       .getByRole('combobox')
     await selectCargo.click({ force: true })
+
+    // Wait for dropdown menu to open
+    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
+
     const optionTens = page.locator('.vs__dropdown-option').filter({ hasText: /^TENS$/ })
     await optionTens.waitFor({ state: 'visible' })
     await optionTens.click()
