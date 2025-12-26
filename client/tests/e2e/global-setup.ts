@@ -65,15 +65,15 @@ async function globalSetup(config: FullConfig) {
     // Manually inject (bypass persistence race condition)
     if (authState) {
       await page.evaluate((state) => {
-        localStorage.setItem('auth', JSON.stringify(state))
+        sessionStorage.setItem('auth', JSON.stringify(state))
       }, authState)
-      console.log('Manually injected auth state into localStorage')
+      console.log('Manually injected auth state into sessionStorage')
     }
 
-    // Explicitly wait for localStorage to be populated with 'auth' key
+    // Explicitly wait for sessionStorage to be populated with 'auth' key
     await page.waitForFunction(
       () => {
-        const auth = localStorage.getItem('auth')
+        const auth = sessionStorage.getItem('auth')
         if (!auth) return false
         try {
           const parsed = JSON.parse(auth)
