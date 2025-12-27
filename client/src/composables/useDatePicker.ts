@@ -5,16 +5,15 @@ interface DataPickerProps {
 }
 
 export function useDatePicker(props: DataPickerProps) {
-  // Convertir strings a objetos Date para disabled-dates
   const isDisabled = computed(() => {
     if (!props.fechasBloqueadas || props.fechasBloqueadas.length === 0) {
-      return [] // ← CAMBIO CLAVE: undefined en lugar de []
+      return []
     }
 
     return props.fechasBloqueadas
       .map((f) => {
         const [year, month, day] = f.split('-').map(Number)
-        const date = new Date(year, month - 1, day) // Fecha local sin 'T00:00:00'
+        const date = new Date(year, month - 1, day)
         return date
       })
       .filter((d) => !isNaN(d.getTime()))

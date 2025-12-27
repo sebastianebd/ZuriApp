@@ -34,7 +34,6 @@ export function authResponseErrorInterceptor(
       } catch (refreshError) {
         console.error('Auto-logout failed, forcing redirect', refreshError)
         await logout()
-        // Critical Safety Net: If we are here, everything failed. Force reload to login.
         window.location.href = '/login'
         return Promise.reject(refreshError)
       }

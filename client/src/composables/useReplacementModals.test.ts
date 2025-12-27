@@ -62,7 +62,7 @@ describe('useReplacementModals', () => {
 
     expect(modals.substituteModalVisible.value).toBe(false)
     expect(modals.fechaCorteSustitucion.value).toBe('')
-    expect(modals.registroActual.value).toEqual({}) // Should close update modal too
+    expect(modals.registroActual.value).toEqual({})
   })
 
   it('filters cargo based on context', () => {
@@ -97,13 +97,13 @@ describe('useReplacementModals', () => {
     // Assign Saliente
     modals.assignUserData(registro, mockUser, true)
     expect(registro.id_saliente).toBe('u1')
-    expect(registro.tipo_cargo).toBe('MEDICO') // Saliente sets cargo
+    expect(registro.tipo_cargo).toBe('MEDICO')
 
     // Assign Entrante
     const registroEntrante: any = {}
     modals.assignUserData(registroEntrante, mockUser, false)
     expect(registroEntrante.id_entrante).toBe('u1')
-    expect(registroEntrante.tipo_cargo).toBeUndefined() // Entrante doesn't set cargo
+    expect(registroEntrante.tipo_cargo).toBeUndefined()
   })
 
   it('creates substitution payload correctly', () => {
