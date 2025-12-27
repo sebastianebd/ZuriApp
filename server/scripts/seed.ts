@@ -6,7 +6,7 @@ import path from "path";
 
 // Cargar variables de entorno desde .env (en root) o .env.development
 // Intentamos cargar desde el directorio padre
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const DATABASE_URI =
   process.env.DATABASE_URI || "mongodb://localhost:27017/zuri_db";

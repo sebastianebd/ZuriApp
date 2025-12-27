@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
@@ -15,9 +16,22 @@ pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 app.component('v-select', vSelect as any)
 
+import * as Sentry from '@sentry/vue'
+
 app.use(router)
+
+Sentry.init({
+  app,
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  integrations: [Sentry.browserTracingIntegration({ router }), Sentry.replayIntegration()],
+  // Tracing
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0
+})
 // --- Supresión de errores conocidos de v-calendar ---
-app.config.errorHandler = (err, _instance, _info) => {
+app.config.errorHandler = (err) => {
   // Ignorar error específico de dayIndex en v-calendar
   if (err instanceof TypeError && err.message.includes('dayIndex')) {
     return

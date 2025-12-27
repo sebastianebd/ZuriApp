@@ -27,7 +27,7 @@
       class="card border-0 shadow-sm rounded-4 overflow-hidden flex-grow-1 d-flex flex-column min-height-0"
     >
       <div class="card-body p-4 calendar-container d-flex flex-column flex-grow-1 min-height-0">
-        <FullCalendar ref="fullCalendar" :options="calendarOptions" />
+        <FullCalendar :options="calendarOptions" />
       </div>
     </div>
 
@@ -168,132 +168,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import interactionPlugin from '@fullcalendar/interaction'
-import { useReplacementStore } from '@/stores/replacement.store'
+import { useCalendar } from '@/composables/replacement/useCalendar'
 
-const replacementStore = useReplacementStore()
-const calendarEvents = ref<any[]>([])
-const fullCalendar = ref<InstanceType<typeof FullCalendar> | null>(null)
+const {
+  // Calendar Config
+  calendarOptions,
 
-// Modal State
-const modalVisible = ref(false)
-const eventoSeleccionado = ref<any>(null)
+  // Modal State & Actions
+  modalVisible,
+  eventoSeleccionado,
+  closeModal,
 
-// Opciones del calendario
-const calendarOptions = ref({
-  plugins: [dayGridPlugin, interactionPlugin],
-  initialView: 'dayGridMonth',
-  locale: 'es',
-  firstDay: 1,
-  events: calendarEvents, // Vinculado a la ref
-  views: {
-    dayGridMonth: {
-      dayMaxEvents: 2 // Límite solo para la vista de mes
-    },
-    dayGridWeek: {
-      dayMaxEvents: false // Sin límite en vista de semana
-    },
-    dayGridDay: {
-      dayMaxEvents: false // Sin límite en vista de día
-    }
-  },
-  showNonCurrentDates: false, // Oculta días de otros meses
-  fixedWeekCount: false, // Muestra solo las semanas del mes actual (4 o 5 en lugar de siempre 6)
-  expandRows: true, // Fuerza a que las filas se ajusten al contenedor sin crecer
-  headerToolbar: {
-    left: 'prev,next today',
-    center: 'title',
-    right: 'dayGridMonth,dayGridWeek,dayGridDay'
-  },
-  buttonText: {
-    today: 'Hoy',
-    month: 'Mes',
-    week: 'Semana',
-    day: 'Día'
-  },
-  height: '100%',
-  contentHeight: '100%',
-  eventClick: handleEventClick,
-  dateClick: handleDateClick,
-  eventDisplay: 'block',
-  themeSystem: 'standard'
-})
-
-function handleDateClick(info: any) {
-  // Al hacer click en un día (celda vacía o fondo), cambiamos a la vista de día
-  if (fullCalendar.value) {
-    const calendarApi = fullCalendar.value.getApi()
-    calendarApi.changeView('dayGridDay', info.dateStr)
-  }
-}
-
-function handleEventClick(info: any) {
-  console.log('Evento clickeado:', info.event)
-  eventoSeleccionado.value = info.event.extendedProps
-  modalVisible.value = true
-}
-
-function closeModal() {
-  modalVisible.value = false
-  eventoSeleccionado.value = null
-}
-
-onMounted(async () => {
-  try {
-    const reemplazos = await replacementStore.mostrarReemplazos()
-
-    // Transformar los datos para FullCalendar
-    calendarEvents.value = reemplazos.map((r: any) => {
-      const start = r.fecha_inicio ? r.fecha_inicio.slice(0, 10) : ''
-      const end = r.fecha_termino ? sumarUnDia(r.fecha_termino) : ''
-
-      return {
-        title: `${r.nombre_entrante} ${r.apellido_entrante} - ${r.servicio}`,
-        start: start,
-        end: end,
-        backgroundColor: getColorByStatus(r.status),
-        borderColor: 'transparent',
-        extendedProps: { ...r },
-        classNames: ['custom-calendar-event']
-      }
-    })
-  } catch (error) {
-    console.error('Error cargando eventos al calendario:', error)
-  }
-})
-
-// Función auxiliar para sumar 1 día a una fecha (para fix de FullCalendar end exclusive)
-function sumarUnDia(fechaIso: string): string {
-  if (!fechaIso) return ''
-  const date = new Date(fechaIso)
-  date.setUTCDate(date.getUTCDate() + 1)
-  return date.toISOString().slice(0, 10)
-}
-
-// Función auxiliar para formatear fechas a DD-MM-YYYY
-function formatDateDDMMYYYY(fechaIso: string): string {
-  if (!fechaIso) return '-'
-  const [year, month, day] = fechaIso.slice(0, 10).split('-')
-  return `${day}-${month}-${year}`
-}
-
-function getColorByStatus(status: string) {
-  switch (status) {
-    case 'EN CURSO':
-      return '#10b981' // Esmerald 500
-    case 'PENDIENTE':
-      return '#f59e0b' // Amber 500
-    case 'FINALIZADO':
-      return '#64748b' // Slate 500
-    case 'ANULADO':
-      return '#ef4444' // Red 500
-    default:
-      return '#3b82f6' // Blue 500
-  }
-}
+  // Helpers
+  formatDateDDMMYYYY,
+  getColorByStatus
+} = useCalendar()
 </script>
 
 <style>

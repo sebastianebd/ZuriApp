@@ -131,9 +131,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
-import { useUserStore } from '@/stores/user.store'
-import { useOptionStore } from '@/stores/option.store'
+import { useUsers } from '@/composables/user/useUsers'
 import {
   UserFilter,
   UserTable,
@@ -141,142 +139,52 @@ import {
   UserModalCreate,
   UserModalDetail
 } from '@/components/users'
-import type { User } from '@/types/models'
-import { useAuthStore } from '@/stores/auth.store'
-import { useReplacementStore } from '@/stores/replacement.store'
 
-const showAlert = inject<(title: string, message: string) => void>('showAlert')
+const {
+  // State
+  usuariosFiltrados,
+  paginatedUsuarios,
+  userLoged,
 
-// --- STORES
-const userStore = useUserStore()
-const optionStore = useOptionStore()
-const authStore = useAuthStore()
-const replacementStore = useReplacementStore()
+  // Filters
+  filtroRut,
+  filtroNombre,
+  tipoCargo,
+  filtroHabilitado,
 
-// --- REFS
-const usuarios = ref<any[]>([])
-const filtroRut = ref('')
-const filtroNombre = ref('')
-const tipoCargo = ref('')
-const filtroHabilitado = ref('')
-const listaTipoCargo = ref<string[]>([])
-const listaHabilitado = ref<string[]>([])
-const listaServicios = ref<string[]>([])
-const updateModalVisible = ref(false)
-const createModalVisible = ref(false)
-const historialModalVisible = ref(false)
-const usuarioSeleccionado = ref<any>(null)
-const usuarioActual = ref<any>({})
-const historialUsuario = ref<any[]>([])
+  // Lists
+  listaTipoCargo,
+  listaHabilitado,
+  listaServicios,
 
-// --- PAGINACIÓN
-const currentPage = ref(1)
-const itemsPerPage = 10
+  // Pagination
+  currentPage,
+  totalPages,
+  changePage,
 
-const totalPages = computed(() => {
-  return Math.ceil(usuariosFiltrados.value.length / itemsPerPage)
-})
+  // Modals Visibility
+  updateModalVisible,
+  createModalVisible,
+  historialModalVisible,
 
-const userLoged = computed(() => {
-  return authStore.user
-})
+  // Selected Data
+  usuarioActual,
+  usuarioSeleccionado,
+  historialUsuario,
 
-// --- Abrir modal de historial ---
-async function openHistorialModal(usuario: any) {
-  usuarioSeleccionado.value = usuario
-  historialModalVisible.value = true
-  try {
-    historialUsuario.value = await replacementStore.mostrarHistorialUsuario(usuario._id)
-  } catch (error) {
-    console.error('Error cargando historial:', error)
-    showAlert?.('Error', 'No se pudo cargar el historial del usuario.')
-  }
-}
+  // Actions
+  openHistorialModal,
+  closeHistorialModal,
+  openUpdateModal,
+  closeUpdateModal,
+  openCreateModal,
+  closeCreateModal,
 
-function closeHistorialModal() {
-  historialModalVisible.value = false
-  usuarioSeleccionado.value = null
-  historialUsuario.value = []
-}
-
-function changePage(page: number) {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-  }
-}
-
-// --- CARGA INICIAL
-onMounted(async () => {
-  usuarios.value = await userStore.mostrarTodos()
-  const opciones = await optionStore.mostrarOpciones()
-  listaTipoCargo.value = opciones.tipoCargo
-  listaHabilitado.value = opciones.habilitado
-  listaServicios.value = opciones.servicios
-})
-
-// --- FILTRO + ORDEN
-const usuariosFiltrados = computed(() => {
-  const filtrados = usuarios.value.filter((u) => {
-    const coincideRut = !filtroRut.value || u.rut.startsWith(filtroRut.value)
-    const coincideCargo = !tipoCargo.value || u.tipo_cargo === tipoCargo.value
-    const coincideHabilitado = !filtroHabilitado.value || u.habilitado === filtroHabilitado.value
-    const nombreCompleto = ((u.nombre || '') + ' ' + (u.apellido || '')).toLowerCase()
-    const busquedaNombre = (filtroNombre.value || '').toLowerCase()
-    const coincideNombre = !busquedaNombre || nombreCompleto.includes(busquedaNombre)
-    return coincideRut && coincideCargo && coincideHabilitado && coincideNombre
-  })
-  return filtrados.sort((a, b) => {
-    const nombreA = (a.nombre || '').toLowerCase()
-    const nombreB = (b.nombre || '').toLowerCase()
-    return nombreA.localeCompare(nombreB)
-  })
-})
-
-const paginatedUsuarios = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return usuariosFiltrados.value.slice(start, end)
-})
-
-// --- MODALES
-function openUpdateModal(usuario: User) {
-  usuarioActual.value = { ...usuario }
-  updateModalVisible.value = true
-}
-
-function closeUpdateModal() {
-  updateModalVisible.value = false
-  usuarioActual.value = {}
-}
-
-function openCreateModal() {
-  createModalVisible.value = true
-}
-
-function closeCreateModal() {
-  createModalVisible.value = false
-}
-
-// CRUD HANDLERS
-async function handleUpdate(usuario: User) {
-  await userStore.actualizarUsuario(usuario._id, usuario)
-  usuarios.value = await userStore.mostrarTodos()
-  closeUpdateModal()
-  showAlert?.('Modificado', 'El registro se ha modificado correctamente.')
-}
-
-async function handleDelete(id: string) {
-  await userStore.eliminarUsuario(id)
-  usuarios.value = usuarios.value.filter((u) => u._id !== id)
-  showAlert?.('Eliminado', 'El usuario se ha eliminado correctamente.')
-}
-
-async function handleCreate(nuevoUsuario: User) {
-  const usuarioCreado = await userStore.crearUsuario(nuevoUsuario)
-  usuarios.value.push(usuarioCreado)
-  closeCreateModal()
-  showAlert?.('Guardado', 'El usuario se ha creado correctamente.')
-}
+  // CRUD
+  handleUpdate,
+  handleDelete,
+  handleCreate
+} = useUsers()
 </script>
 
 <style scoped>

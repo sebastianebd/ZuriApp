@@ -56,14 +56,19 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
-      const apiPrivate = this.usePrivateApi()
-      const data = await AuthService.logout(apiPrivate)
-      this.accessToken = ''
-      this.user = null
-      sessionStorage.clear()
-      return data
-    },
-
+      try {
+        const apiPrivate = this.usePrivateApi()
+        await AuthService.logout(apiPrivate)
+      } catch (error) {
+        console.error('Logout API failed, forcing local cleanup', error)
+      } finally {
+        this.accessToken = ''
+        this.user = null
+        sessionStorage.clear()
+        localStorage.clear() // Safety cleanup for migrated users
+        // window.location.reload() // Optional aggressive cleanup
+      }
+    }
   },
 
   persist: {

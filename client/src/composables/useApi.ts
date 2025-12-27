@@ -1,7 +1,48 @@
 import { axiosInstance, axiosPrivateInstance } from '../config/axios'
 import type { AxiosInstance } from 'axios'
 
-let interceptorsInitialized = false
+export let interceptorsInitialized = false
+
+export function resetInterceptors() {
+  console.log('UseApi: Resetting interceptors')
+  interceptorsInitialized = false
+}
+
+export function authRequestInterceptor(getAccessToken: () => string) {
+  return (config: any) => {
+    const token = getAccessToken()
+    if (token && !config.headers['Authorization']) {
+      config.headers['Authorization'] = `Bearer ${token}`
+    }
+    return config
+  }
+}
+
+export function authResponseErrorInterceptor(
+  refreshToken: () => Promise<string>,
+  logout: () => Promise<void>
+) {
+  return async (error: any) => {
+    const prevRequest = error?.config
+
+    if ((error?.response?.status === 401 || error?.response?.status === 403) && !prevRequest.sent) {
+      prevRequest.sent = true
+      try {
+        const newAccessToken = await refreshToken()
+        prevRequest.headers['Authorization'] = `Bearer ${newAccessToken}`
+        return axiosPrivateInstance(prevRequest)
+      } catch (refreshError) {
+        console.error('Auto-logout failed, forcing redirect', refreshError)
+        await logout()
+        // Critical Safety Net: If we are here, everything failed. Force reload to login.
+        window.location.href = '/login'
+        return Promise.reject(refreshError)
+      }
+    }
+
+    return Promise.reject(error)
+  }
+}
 
 export function useApiPrivate(
   getAccessToken: () => string,
@@ -11,42 +52,13 @@ export function useApiPrivate(
   if (!interceptorsInitialized) {
     interceptorsInitialized = true
 
-    axiosPrivateInstance.interceptors.request.use(
-      (config) => {
-        const token = getAccessToken()
-        if (token && !config.headers['Authorization']) {
-          config.headers['Authorization'] = `Bearer ${token}`
-        }
-        return config
-      },
-      (error) => Promise.reject(error)
+    axiosPrivateInstance.interceptors.request.use(authRequestInterceptor(getAccessToken), (error) =>
+      Promise.reject(error)
     )
 
     axiosPrivateInstance.interceptors.response.use(
       (response) => response,
-      async (error) => {
-        const prevRequest = error?.config
-
-        if (
-          (error?.response?.status === 401 || error?.response?.status === 403) &&
-          !prevRequest.sent
-        ) {
-          prevRequest.sent = true
-          // console.log('Token expirado, intentando renovarlo...')
-
-          try {
-            const newAccessToken = await refreshToken()
-            // console.log('newAccessToken', newAccessToken)
-            prevRequest.headers['Authorization'] = `Bearer ${newAccessToken}`
-            return axiosPrivateInstance(prevRequest)
-          } catch (refreshError) {
-            await logout()
-            return Promise.reject(refreshError)
-          }
-        }
-
-        return Promise.reject(error)
-      }
+      authResponseErrorInterceptor(refreshToken, logout)
     )
   }
 

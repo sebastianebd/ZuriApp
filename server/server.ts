@@ -1,3 +1,4 @@
+import "./instrument";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -25,4 +26,15 @@ connectDB();
 mongoose.connection.once("open", () => {
   logger.info(`DB connected: ${mongoose.connection.name}`);
   server.listen(PORT, () => logger.info(`Server running on port ${PORT}`));
+});
+
+// Global error handlers to prevent server crashes
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+  // Don't exit the process, just log the error
+});
+
+process.on("uncaughtException", (error) => {
+  logger.error("❌ Uncaught Exception:", error);
+  // Don't exit the process, just log the error
 });
