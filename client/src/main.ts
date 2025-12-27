@@ -20,16 +20,20 @@ import * as Sentry from '@sentry/vue'
 
 app.use(router)
 
-Sentry.init({
-  app,
-  dsn: import.meta.env.VITE_SENTRY_DSN,
-  integrations: [Sentry.browserTracingIntegration({ router }), Sentry.replayIntegration()],
-  // Tracing
-  tracesSampleRate: 1.0, //  Capture 100% of the transactions
-  // Session Replay
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0
-})
+if (import.meta.env.PROD) {
+  Sentry.init({
+    app,
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    integrations: [Sentry.browserTracingIntegration({ router }), Sentry.replayIntegration()],
+    // Environment (development, production)
+    environment: import.meta.env.MODE,
+    // Tracing
+    tracesSampleRate: 1.0, //  Capture 100% of the transactions
+    // Session Replay
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0
+  })
+}
 // --- Supresión de errores conocidos de v-calendar ---
 app.config.errorHandler = (err) => {
   // Ignorar error específico de dayIndex en v-calendar
