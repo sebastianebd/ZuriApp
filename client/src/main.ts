@@ -36,15 +36,21 @@ if (import.meta.env.PROD) {
 }
 // --- Supresión de errores conocidos de v-calendar ---
 // --- Supresión de errores conocidos de v-calendar ---
-app.config.errorHandler = (err, instance, info) => {
+app.config.errorHandler = (err, _instance, _info) => {
   // Ignorar error específico de dayIndex en v-calendar
   if (err instanceof TypeError && err.message.includes('dayIndex')) {
     return
   }
 
+  // Debug Sentry
+  console.log('[DEBUG] Error Handler Catch:', err)
+  console.log('[DEBUG] Is PROD?', import.meta.env.PROD)
+
   // Reportar a Sentry manualmente si estamos en producción
   if (import.meta.env.PROD) {
-    Sentry.captureException(err)
+    console.log('[DEBUG] Sending to Sentry...')
+    const eventId = Sentry.captureException(err)
+    console.log('[DEBUG] Sentry Event ID:', eventId)
   }
 
   // Re-lanzar o loguear otros errores
