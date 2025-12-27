@@ -29,14 +29,6 @@ test.describe('Profile View', () => {
     })
   })
 
-  test.afterEach(async ({ page }, testInfo) => {
-    if (testInfo.status !== 'passed') {
-      console.log(`Test failed: ${testInfo.title}`)
-      console.log('Dumping body:')
-      console.log(await page.content())
-    }
-  })
-
   test('should display statistics cards', async ({ page }) => {
     await expect(page.locator('h6', { hasText: 'Total Reemplazos' })).toBeVisible({
       timeout: 15000
