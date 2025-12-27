@@ -66,6 +66,10 @@ app.all("*", (req: Request, res: Response) => {
   res.status(404).json({ error: "404 Not Found" });
 });
 
+// Sentry Error Handler
+import * as Sentry from "@sentry/node";
+Sentry.setupExpressErrorHandler(app);
+
 app.use(errorHandlerMiddleware);
 
 export default app;

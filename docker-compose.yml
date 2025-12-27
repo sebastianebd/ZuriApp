@@ -25,6 +25,7 @@ services:
       - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
       - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
       - CLIENT_URL=${CLIENT_URL}
+      - SENTRY_DSN=${SENTRY_DSN}
     command: sh -c "npm install && npm run dev"
     depends_on:
       - mongo
@@ -42,6 +43,7 @@ services:
       - "5173:5173"
     environment:
       - VITE_PROXY_TARGET=http://server:3500
+      - VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
     command: sh -c "npm install --legacy-peer-deps && npm run dev -- --host"
     depends_on:
       - server

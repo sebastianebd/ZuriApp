@@ -1,35 +1,49 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Login Flow', () => {
-  test('should login successfully with valid credentials', async ({ page }) => {
-    // 1. Visit Login Page
+  test.beforeEach(async ({ page, context }) => {
+    // Clear all storage before each test to ensure clean state
+    await context.clearCookies()
     await page.goto('/')
-    // Ensure app is hydrated (prevents native form submit race condition)
+    await page.evaluate(() => {
+      sessionStorage.clear()
+      localStorage.clear()
+    })
+  })
+
+  test('should login successfully with valid credentials', async ({ page }) => {
+    await page.goto('/')
     await page.waitForLoadState('networkidle')
 
-    // 2. Fill form
-    await page.fill('input[type="text"]', '11596065-2') // Use a valid test user RUT
-    await page.fill('input[type="password"]', '9f4e14') // Assume this is a test password
+    await page.fill('#rut', '12345678-5')
+    await page.fill('input[type="password"]', 'admin123')
 
-    // 3. Submit
     await page.click('button[type="submit"]')
 
-    // 4. Verify Redirection (Dashboard or similar)
-    // Note: Adjust URL based on actual redirect - /app/user is the default landing
-    await expect(page).toHaveURL(/\/app\/user/, { timeout: 15000 })
+    // Verify redirection away from login
+    await expect(page).not.toHaveURL(/\/$/, { timeout: 15000 })
 
-    // 5. Verify User name in Navbar (using the new logging logic as reference)
-    // await expect(page.locator('.navbar')).toContainText('ENRIQUE DIAZ');
+    // Verify user name appears in navbar (indicates successful login and layout change)
+    await expect(page.locator('nav')).toContainText('ADMIN PRINCIPAL', {
+      timeout: 10000
+    })
   })
 
   test('should show error with invalid credentials', async ({ page }) => {
     await page.goto('/')
-    await page.fill('input[type="text"]', '12345678-9')
+    await page.waitForLoadState('networkidle')
+
+    // Use a RUT that doesn't exist in the database
+    await page.fill('#rut', '99999999-9')
     await page.fill('input[type="password"]', 'wrongpassword')
+
     await page.click('button[type="submit"]')
 
-    // Verify error toast or message
-    // Adjust selector based on your UI library (e.g., swal2-popup)
-    // await expect(page.locator('.swal2-title')).toContainText('Error');
+    // Verify we stay on login page (root path)
+    await expect(page).toHaveURL(/\/$/, { timeout: 5000 })
+
+    // Verify error message appears
+    const errorMessage = page.locator('.text-danger').last()
+    await expect(errorMessage).toBeVisible({ timeout: 5000 })
   })
 })
