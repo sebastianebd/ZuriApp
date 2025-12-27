@@ -49,7 +49,7 @@ describe('useApi', () => {
   describe('authResponseErrorInterceptor', () => {
     it('handles 401 error and refreshes token', async () => {
       const interceptor = authResponseErrorInterceptor(mockRefreshToken, mockLogout)
-      const error = {
+      const error: any = {
         config: { headers: {}, sent: false },
         response: { status: 401 }
       }
@@ -64,7 +64,7 @@ describe('useApi', () => {
 
     it('logs out if refresh fails', async () => {
       const interceptor = authResponseErrorInterceptor(mockRefreshToken, mockLogout)
-      const error = {
+      const error: any = {
         config: { headers: {}, sent: false },
         response: { status: 401 }
       }
