@@ -60,6 +60,11 @@ router.post("/tunnel", async (req: Request, res: Response) => {
     return res.status(500).json({
       error: "Tunnel failed",
       details: error instanceof Error ? error.message : String(error),
+      debug: {
+        contentType: req.headers["content-type"],
+        bodyType: typeof req.body,
+        bodyLength: req.body ? req.body.length : 0,
+      },
     });
   }
 });
