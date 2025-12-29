@@ -24,18 +24,31 @@ router.post("/tunnel", async (req: Request, res: Response) => {
     // Sin embargo, la forma más limpia es leer el DSN del envelope header.
 
     // Dado que Express + JSON parser puede complicar la lectura de raw body,
-    // vamos a confiar en que la data viene en req.body si el content-type es correcto
-    // o necesitamos usar express.text() solo para esta ruta.
+    // Verificamos el tipo de body que llegó
+    let header: any = {};
 
-    // Parsear el envelope para obtener el DSN correcto (Frontend Project)
-    const pieces = typeof envelope === "string" ? envelope.split("\n") : [];
-    const header = pieces.length > 0 ? JSON.parse(pieces[0]) : {};
+    if (typeof envelope === "string") {
+      const pieces = envelope.split("\n");
+      if (pieces.length > 0 && pieces[0]) {
+        header = JSON.parse(pieces[0]);
+      }
+    } else if (typeof envelope === "object" && envelope !== null) {
+      // Si ya llegó parseado (ej: express.json lo atrapó y era JSON válido)
+      header = envelope;
+    }
 
-    // Si el envelope trae DSN, lo usamos. Si no, error.
+    // debug log si no hay DSN, para que el usuario vea qué llegó en 'debug' field
+    if (!header.dsn) {
+      // Intentar buscar dsn en root si el formato es distinto
+      if ((envelope as any)?.dsn) header = envelope;
+    }
+
     const dsn = header.dsn;
 
     if (!dsn) {
-      throw new Error("No DSN found in envelope header");
+      throw new Error(
+        `No DSN found in envelope header. Body Type: ${typeof envelope}`
+      );
     }
 
     const { host, pathname } = new URL(dsn);
@@ -63,7 +76,8 @@ router.post("/tunnel", async (req: Request, res: Response) => {
       debug: {
         contentType: req.headers["content-type"],
         bodyType: typeof req.body,
-        bodyLength: req.body ? req.body.length : 0,
+        bodyKeys: req.body ? Object.keys(req.body) : [],
+        bodyLength: req.body ? JSON.stringify(req.body).length : 0,
       },
     });
   }
