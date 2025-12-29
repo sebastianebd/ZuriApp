@@ -21,9 +21,11 @@ import * as Sentry from '@sentry/vue'
 app.use(router)
 
 if (import.meta.env.PROD) {
+  console.log('🚀 Initializing Sentry with Tunnel: /api/sentry/tunnel')
   Sentry.init({
     app,
     dsn: import.meta.env.VITE_SENTRY_DSN,
+    tunnel: '/api/sentry/tunnel', // Proxy a través de nuestro backend para evitar AdBlockers
     integrations: [Sentry.browserTracingIntegration({ router }), Sentry.replayIntegration()],
     // Environment (development, production)
     environment: import.meta.env.MODE,
