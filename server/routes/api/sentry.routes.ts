@@ -51,7 +51,12 @@ router.post("/tunnel", async (req: Request, res: Response) => {
     return res.status(200).json({ status: "ok" });
   } catch (error) {
     logger.error("Error tunneling to Sentry:", error);
-    return res.status(500).json({ error: "Tunnel failed" });
+    return res
+      .status(500)
+      .json({
+        error: "Tunnel failed",
+        details: error instanceof Error ? error.message : String(error),
+      });
   }
 });
 
