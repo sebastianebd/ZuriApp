@@ -61,6 +61,17 @@ app.use("/api/reemplazos", replacementRoutes);
 app.use("/api/options", optionRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/profile", profileRoutes);
+app.use(cookieParser());
+
+// Documentación API
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/reemplazos", replacementRoutes);
+app.use("/api/options", optionRoutes);
+app.use("/api/audit", auditRoutes);
+app.use("/api/profile", profileRoutes);
 
 // Sentry Tunnel - Debe ir antes del catch-all *
 import sentryRoutes from "./routes/api/sentry.routes";
