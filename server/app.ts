@@ -48,21 +48,7 @@ app.use(
     { stream: { write: (message: string) => logger.info(message.trim()) } }
   )
 );
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-app.use(cookieParser());
-
-// Documentación API
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
-
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/reemplazos", replacementRoutes);
-app.use("/api/options", optionRoutes);
-app.use("/api/audit", auditRoutes);
-app.use("/api/profile", profileRoutes);
-
-// Sentry Tunnel - Debe ir antes del catch-all *
+// Sentry Tunnel - Dbe ir antes de los body parsers globales
 import sentryRoutes from "./routes/api/sentry.routes";
 // El envelope de Sentry es text/plain o application/x-sentry-envelope
 app.use(
@@ -73,6 +59,9 @@ app.use(
   }),
   sentryRoutes
 );
+
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
 app.all("*", (req: Request, res: Response) => {
   res.status(404).json({ error: "404 Not Found" });
