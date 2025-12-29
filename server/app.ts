@@ -62,6 +62,18 @@ app.use("/api/options", optionRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/profile", profileRoutes);
 
+// Sentry Tunnel - Debe ir antes del catch-all *
+import sentryRoutes from "./routes/api/sentry.routes";
+// El envelope de Sentry es text/plain o application/x-sentry-envelope
+app.use(
+  "/api/sentry",
+  express.text({
+    type: ["application/json", "application/x-sentry-envelope", "text/plain"],
+    limit: "50mb",
+  }),
+  sentryRoutes
+);
+
 app.all("*", (req: Request, res: Response) => {
   res.status(404).json({ error: "404 Not Found" });
 });
