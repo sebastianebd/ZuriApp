@@ -48,14 +48,8 @@ app.use(
     { stream: { write: (message: string) => logger.info(message.trim()) } }
   )
 );
-// Sentry Tunnel Body Parser (MUST be before global parsers)
-app.use(
-  "/api/sentry",
-  express.text({
-    limit: "50mb",
-    type: ["application/json", "application/x-sentry-envelope", "text/plain"],
-  })
-);
+// Sentry Tunnel Body Parser (Capturar todo como buffer crudo para evitar corrupción)
+app.use("/api/sentry", express.raw({ limit: "50mb", type: () => true }));
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
