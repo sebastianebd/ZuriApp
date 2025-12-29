@@ -27,9 +27,15 @@ router.post("/tunnel", async (req: Request, res: Response) => {
     // vamos a confiar en que la data viene en req.body si el content-type es correcto
     // o necesitamos usar express.text() solo para esta ruta.
 
-    const dsn = process.env.SENTRY_DSN;
+    // Parsear el envelope para obtener el DSN correcto (Frontend Project)
+    const pieces = typeof envelope === "string" ? envelope.split("\n") : [];
+    const header = pieces.length > 0 ? JSON.parse(pieces[0]) : {};
+
+    // Si el envelope trae DSN, lo usamos. Si no, error.
+    const dsn = header.dsn;
+
     if (!dsn) {
-      throw new Error("Sentry DSN not configured on server");
+      throw new Error("No DSN found in envelope header");
     }
 
     const { host, pathname } = new URL(dsn);
@@ -51,12 +57,10 @@ router.post("/tunnel", async (req: Request, res: Response) => {
     return res.status(200).json({ status: "ok" });
   } catch (error) {
     logger.error("Error tunneling to Sentry:", error);
-    return res
-      .status(500)
-      .json({
-        error: "Tunnel failed",
-        details: error instanceof Error ? error.message : String(error),
-      });
+    return res.status(500).json({
+      error: "Tunnel failed",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 });
 
