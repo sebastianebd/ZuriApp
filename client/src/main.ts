@@ -21,7 +21,6 @@ import * as Sentry from '@sentry/vue'
 app.use(router)
 
 if (import.meta.env.PROD) {
-  console.log('🚀 Initializing Sentry with Tunnel: /api/sentry/tunnel')
   Sentry.init({
     app,
     dsn: import.meta.env.VITE_SENTRY_DSN,
