@@ -24,34 +24,44 @@ router.post("/tunnel", async (req: Request, res: Response) => {
     // Sin embargo, la forma más limpia es leer el DSN del envelope header.
 
     // Dado que Express + JSON parser puede complicar la lectura de raw body,
-    // Verificamos el tipo de body que llegó
-    let header: any = {};
+    // Manejamos Buffer, String u Object
+    let envelopeText = "";
 
-    if (typeof envelope === "string") {
-      const pieces = envelope.split("\n");
-      if (pieces.length > 0 && pieces[0]) {
-        header = JSON.parse(pieces[0]);
-      }
-    } else if (typeof envelope === "object" && envelope !== null) {
-      // Si ya llegó parseado (ej: express.json lo atrapó y era JSON válido)
-      header = envelope;
+    if (Buffer.isBuffer(envelope)) {
+      envelopeText = envelope.toString("utf8");
+    } else if (typeof envelope === "string") {
+      envelopeText = envelope;
+    } else if (typeof envelope === "object") {
+      // Si por alguna razón llegó como objeto, tratamos de stringificarlo o sacar el header
+      // Pero con express.raw() esto no debería pasar.
+      envelopeText = JSON.stringify(envelope);
     }
 
-    // debug log si no hay DSN, para que el usuario vea qué llegó en 'debug' field
-    if (!header.dsn) {
-      // Intentar buscar dsn en root si el formato es distinto
-      if ((envelope as any)?.dsn) header = envelope;
-    }
+    const pieces = envelopeText.split("\n");
+    let header: any =
+      pieces.length > 0 && pieces[0] ? JSON.parse(pieces[0]) : {};
 
     const dsn = header.dsn;
 
     if (!dsn) {
-      throw new Error(
-        `No DSN found in envelope header. Body Type: ${typeof envelope}`
-      );
+      // Intento desesperado: ver si el objeto original tenía dsn
+      if ((envelope as any)?.dsn) {
+        // caso raro donde express.json ganó la carrera
+        header = envelope;
+      } else {
+        throw new Error(
+          `No DSN found. Body Type: ${typeof envelope}, IsBuffer: ${Buffer.isBuffer(
+            envelope
+          )}, Content: ${envelopeText.substring(0, 100)}...`
+        );
+      }
     }
 
-    const { host, pathname } = new URL(dsn);
+    // Recalculamos dsn por si cayó en el "Intento desesperado"
+    const finalDsn = header.dsn || (envelope as any)?.dsn;
+    if (!finalDsn) throw new Error("DSN really missing");
+
+    const { host, pathname } = new URL(finalDsn);
     const projectId = pathname.replace("/", "");
     const sentryUrl = `https://${host}/api/${projectId}/envelope/`; // Endpoint de ingestión oficial
 
