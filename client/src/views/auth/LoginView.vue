@@ -70,9 +70,8 @@ import { useLogin } from '../../composables/auth/useLogin'
 import { onMounted } from 'vue'
 
 onMounted(() => {
-  setTimeout(() => {
-    throw new Error('Sentry Runtime Verification Error 💥')
-  }, 2000)
+  // Error síncrono que Vue atrapa y envía a nuestro errorHandler
+  throw new Error('Sentry Runtime Verification Error (Vue Managed) 💥')
 })
 
 const {
