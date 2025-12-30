@@ -230,9 +230,16 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
   try {
     const { pagina, limite, ...filtros } = req.query;
 
-    // Create a unique cache key based on all query parameters
+    // Create a unique, deterministic cache key by sorting query parameters
+    const sortedQuery = Object.keys(req.query)
+      .sort()
+      .reduce((acc: any, key) => {
+        acc[key] = req.query[key];
+        return acc;
+      }, {});
+
     const cacheKey = `replacements:history:paginated:${JSON.stringify(
-      req.query
+      sortedQuery
     )}`;
     const cachedData = await get(cacheKey);
     if (cachedData) return res.json(cachedData);
