@@ -241,7 +241,6 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
     const cacheKey = `replacements:history:paginated:${JSON.stringify(
       sortedQuery
     )}`;
-    console.log("DEBUG: Generated Cache Key:", cacheKey); // Temporary debug log
     const paginaNum = parseInt(pagina as string) || 1;
     const limiteNum = parseInt(limite as string) || 10;
 
