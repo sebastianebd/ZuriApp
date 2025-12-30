@@ -109,8 +109,13 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
     );
     await delPattern("replacements:*"); // Invalidate cache
 
-    const io = socketIO.getIO();
-    io.emit("history:update", { action: "finalize", id: req.params.id });
+    // Emit socket event
+    try {
+      const io = socketIO.getIO();
+      io.emit("history:update", { action: "finalize", id: req.params.id });
+    } catch (err) {
+      // Socket not ready, ignore
+    }
 
     res.json(data);
   } catch (error: any) {
@@ -137,8 +142,13 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
     );
     await delPattern("replacements:*"); // Invalidate cache
 
-    const io = socketIO.getIO();
-    io.emit("history:update", { action: "annul", id: req.params.id });
+    // Emit socket event
+    try {
+      const io = socketIO.getIO();
+      io.emit("history:update", { action: "annul", id: req.params.id });
+    } catch (err) {
+      // Socket not ready, ignore
+    }
 
     res.json(data);
   } catch (error: any) {
@@ -195,11 +205,16 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
     );
     await delPattern("replacements:*");
 
-    const io = socketIO.getIO();
-    io.emit("history:update", {
-      action: "substitute",
-      id: registroA_cortado._id,
-    });
+    // Emit socket event
+    try {
+      const io = socketIO.getIO();
+      io.emit("history:update", {
+        action: "substitute",
+        id: registroA_cortado._id,
+      });
+    } catch (err) {
+      // Socket not ready, ignore
+    }
 
     res.status(200).json({
       mensaje: "Sustitución procesada exitosamente.",

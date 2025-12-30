@@ -19,8 +19,12 @@ async function register(req: AuthRequest, res: Response) {
     await delPattern("users:*"); // Invalidate cache
 
     // Emit socket event
-    const io = socketIO.getIO();
-    io.emit("users:update", { action: "create", user: data });
+    try {
+      const io = socketIO.getIO();
+      io.emit("users:update", { action: "create", user: data });
+    } catch (err) {
+      // Socket not ready, ignore
+    }
 
     res.status(201).json(data);
   } catch (error: any) {
@@ -84,8 +88,12 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
     await delPattern("users:*"); // Invalidate cache
 
     // Emit socket event
-    const io = socketIO.getIO();
-    io.emit("users:update", { action: "update", userId: req.params.id });
+    try {
+      const io = socketIO.getIO();
+      io.emit("users:update", { action: "update", userId: req.params.id });
+    } catch (err) {
+      // Socket not ready, ignore
+    }
 
     res.json(usuarios);
   } catch (error: any) {
@@ -107,8 +115,12 @@ async function eliminarUsuario(req: AuthRequest, res: Response) {
     await delPattern("users:*"); // Invalidate cache
 
     // Emit socket event
-    const io = socketIO.getIO();
-    io.emit("users:update", { action: "delete", userId: req.params.id });
+    try {
+      const io = socketIO.getIO();
+      io.emit("users:update", { action: "delete", userId: req.params.id });
+    } catch (err) {
+      // Socket not ready, ignore
+    }
 
     res.json(usuarios);
   } catch (error: any) {
