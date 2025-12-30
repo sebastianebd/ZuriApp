@@ -244,27 +244,19 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
     const paginaNum = parseInt(pagina as string) || 1;
     const limiteNum = parseInt(limite as string) || 10;
 
-    console.time("Redis-Get");
     const cachedData = await get(cacheKey);
-    console.timeEnd("Redis-Get");
 
     if (cachedData) {
-      console.log("🟢 CACHE HIT:", cacheKey);
       return res.json(cachedData);
     }
-    console.log("🔴 CACHE MISS:", cacheKey);
 
-    console.time("Mongo-Query");
     const data = await replacementService.obtenerInactivosPaginados(
       filtros,
       paginaNum,
       limiteNum
     );
-    console.timeEnd("Mongo-Query");
 
-    console.time("Redis-Set");
     await set(cacheKey, data, 300);
-    console.timeEnd("Redis-Set");
 
     res.json(data);
   } catch (error: any) {
