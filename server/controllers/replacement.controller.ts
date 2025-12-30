@@ -3,6 +3,7 @@ import replacementService from "../services/replacement.service";
 import auditService from "../services/audit.service";
 import Reemplazo from "../models/replacement.model";
 import { AuthRequest } from "../middleware/authentication.middleware";
+import { get, set, delPattern } from "../config/redis.config";
 
 async function registerReemplazo(req: AuthRequest, res: Response) {
   try {
@@ -16,6 +17,7 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
       req.body,
       nuevoReemplazo._id as string
     );
+    await delPattern("replacements:*"); // Invalidate cache
     res.sendStatus(201);
   } catch (error: any) {
     res.status(400).json({ mensaje: error.message });
@@ -24,30 +26,31 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
 
 async function mostrarReemplazos(req: Request, res: Response) {
   // Note: obtenerActivos doesn't really need params currently
-  const data = await replacementService.obtenerActivos();
-  res.json(data);
+  try {
+    const cacheKey = "replacements:active";
+    const cachedData = await get(cacheKey);
+    if (cachedData) return res.json(cachedData);
+
+    const data = await replacementService.obtenerActivos();
+    await set(cacheKey, data, 300);
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ mensaje: error.message });
+  }
 }
 
 async function mostrarHistorial(req: Request, res: Response) {
-  // NOTE: obtenerInactivos doesn't exist in service.js!
-  // service.js has 'obtenerInactivosPaginados'.
-  // Controller line 29 calls `replacementService.obtenerInactivos()`.
-  // Checking `replacement.service.js` in Step 2228:
-  // Exports: `registrar`, `obtenerActivos`, `actualizar`, `finalizarReemplazo`, `anularReemplazo`, `obtenerHistorialUsuario`, `sustituir`, `obtenerInactivosPaginados`, `obtenerPorId`.
-  // `obtenerInactivos` IS NOT EXPORTED.
-  // So `mostrarHistorial` (line 29) MUST BE BROKEN in JS version unless I missed an export?
-  // Or maybe it was `obtenerHistorialUsuario`? No.
-  // I will check `replacement.service.js` again.
-  // Code view 2228 shows 256 lines. Exports lines 245-255. `obtenerInactivos` is NOT there.
-  // So... `mostrarHistorial` in controller was calling undefined function!
-  // IF the route uses `mostrarHistorial` it would crash.
-  // Route `replacement.routes.js`: `router.get('/historial', replacementController.mostrarHistorial);`? I haven't read routes yet.
-  // Assuming bug? Or maybe I missed it.
-  // BUT, `mostrarHistorialPaginado` (line 153) calls `obtenerInactivosPaginados`.
-  // I'll leave `mostrarHistorial` broken or point it to `obtenerInactivosPaginados` with defaults?
-  // Actually, let's just make it call `obtenerInactivosPaginados` to fix it.
-  const data = await replacementService.obtenerInactivosPaginados();
-  res.json(data);
+  try {
+    const cacheKey = "replacements:history:all";
+    const cachedData = await get(cacheKey);
+    if (cachedData) return res.json(cachedData);
+
+    const data = await replacementService.obtenerInactivosPaginados();
+    await set(cacheKey, data, 300);
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ mensaje: error.message });
+  }
 }
 
 async function actualizarReemplazo(req: AuthRequest, res: Response) {
@@ -79,6 +82,7 @@ async function actualizarReemplazo(req: AuthRequest, res: Response) {
       req.body,
       req.params.id
     );
+    await delPattern("replacements:*"); // Invalidate cache
     res.json(data);
   } catch (error: any) {
     res.status(400).json({ mensaje: error.message });
@@ -102,6 +106,7 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
       null,
       req.params.id
     );
+    await delPattern("replacements:*"); // Invalidate cache
     res.json(data);
   } catch (error: any) {
     res.status(400).json({ mensaje: error.message });
@@ -125,6 +130,7 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
       null,
       req.params.id
     );
+    await delPattern("replacements:*"); // Invalidate cache
     res.json(data);
   } catch (error: any) {
     res.status(400).json({ mensaje: error.message });
@@ -133,9 +139,15 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
 
 async function obtenerHistorialUsuario(req: Request, res: Response) {
   try {
+    // This is user specific, maybe less critical to cache widely, but effective if user refreshes
+    const cacheKey = `replacements:user_history:${req.params.id}`;
+    const cachedData = await get(cacheKey);
+    if (cachedData) return res.json(cachedData);
+
     const data = await replacementService.obtenerHistorialUsuario(
       req.params.id
     );
+    await set(cacheKey, data, 300);
     res.json(data);
   } catch (error: any) {
     res.status(400).json({ mensaje: error.message });
@@ -146,12 +158,24 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
   try {
     const [registroA_cortado, nuevoRegistroB] =
       await replacementService.sustituir(req.body);
-    res.status(200).json({
-      mensaje: "Sustitución procesada exitosamente.",
-      registro_anterior: registroA_cortado,
-      nuevo_registro: nuevoRegistroB,
-    });
-    // Log Auditoría
+
+    // Log Auditoría has to be before response or handled async, but here it was after response in original code.
+    // I will keep it as is but add invalidation.
+    // Wait, original code sent response THEN logged?
+    // "res.status(200).json(...) ... await auditService.logAction(...)"
+    // The await after response *might* not finish if serverless/lambda, but in node container it continues.
+    // I should probably await before response or not await (fire and forget).
+    // Original code:
+    // res.status(200).json({...});
+    // await auditService.logAction(...);
+    //
+    // I will add invalidation after logAction.
+
+    // Actually, let's just do it slightly cleaner: await log, await invalidation, then respond.
+    // Or keep original flow to not change latency?
+    // If I change flow, I delay response.
+    // I will put invalidation with logAction.
+
     await auditService.logAction(
       "SUSTITUCION",
       "REEMPLAZOS",
@@ -160,6 +184,13 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
       req.body,
       req.body.id_registro_a
     );
+    await delPattern("replacements:*");
+
+    res.status(200).json({
+      mensaje: "Sustitución procesada exitosamente.",
+      registro_anterior: registroA_cortado,
+      nuevo_registro: nuevoRegistroB,
+    });
   } catch (error: any) {
     res.status(400).json({ mensaje: error.message });
   }
@@ -168,6 +199,13 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
 async function mostrarHistorialPaginado(req: Request, res: Response) {
   try {
     const { pagina, limite, ...filtros } = req.query;
+
+    // Create a unique cache key based on all query parameters
+    const cacheKey = `replacements:history:paginated:${JSON.stringify(
+      req.query
+    )}`;
+    const cachedData = await get(cacheKey);
+    if (cachedData) return res.json(cachedData);
 
     const paginaNum = parseInt(pagina as string) || 1;
     const limiteNum = parseInt(limite as string) || 10;
@@ -178,6 +216,7 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
       limiteNum
     );
 
+    await set(cacheKey, data, 300);
     res.json(data);
   } catch (error: any) {
     res.status(500).json({

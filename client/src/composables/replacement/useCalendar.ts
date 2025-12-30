@@ -24,7 +24,6 @@ export function useCalendar() {
   }
 
   function handleEventClick(info: any) {
-    console.log('Evento clickeado:', info.event)
     eventoSeleccionado.value = info.event.extendedProps
     modalVisible.value = true
   }
