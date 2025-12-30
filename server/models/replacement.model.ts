@@ -108,6 +108,13 @@ const replacementSchema: Schema = new Schema(
   }
 );
 
+// Indexes for performance optimization
+replacementSchema.index({ status: 1, fecha_inicio: -1 }); // Critical for History view: Filter by status + Sort by date
+replacementSchema.index({ servicio: 1 });
+replacementSchema.index({ rut_saliente: 1 });
+replacementSchema.index({ rut_entrante: 1 });
+replacementSchema.index({ id_negocio: 1 }); // Optimize lookups by replacement ID
+
 replacementSchema.virtual("id").get(function (this: any) {
   return this._id.toHexString();
 });
