@@ -3,6 +3,7 @@ import userService from "../services/user.service";
 import auditService from "../services/audit.service";
 import { AuthRequest } from "../middleware/authentication.middleware";
 import { get, set, delPattern } from "../config/redis.config";
+import socketIO from "../config/socket";
 
 async function register(req: AuthRequest, res: Response) {
   try {
@@ -16,6 +17,11 @@ async function register(req: AuthRequest, res: Response) {
       data._id as string
     );
     await delPattern("users:*"); // Invalidate cache
+
+    // Emit socket event
+    const io = socketIO.getIO();
+    io.emit("users:update", { action: "create", user: data });
+
     res.status(201).json(data);
   } catch (error: any) {
     res.status(error.status || 400).json({ mensaje: error.message });
@@ -76,6 +82,11 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
       req.params.id
     );
     await delPattern("users:*"); // Invalidate cache
+
+    // Emit socket event
+    const io = socketIO.getIO();
+    io.emit("users:update", { action: "update", userId: req.params.id });
+
     res.json(usuarios);
   } catch (error: any) {
     res.status(error.status || 400).json({ mensaje: error.message });
@@ -94,6 +105,11 @@ async function eliminarUsuario(req: AuthRequest, res: Response) {
       req.params.id
     );
     await delPattern("users:*"); // Invalidate cache
+
+    // Emit socket event
+    const io = socketIO.getIO();
+    io.emit("users:update", { action: "delete", userId: req.params.id });
+
     res.json(usuarios);
   } catch (error: any) {
     res.status(error.status || 400).json({ mensaje: error.message });

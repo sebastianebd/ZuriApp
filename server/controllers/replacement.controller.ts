@@ -4,6 +4,7 @@ import auditService from "../services/audit.service";
 import Reemplazo from "../models/replacement.model";
 import { AuthRequest } from "../middleware/authentication.middleware";
 import { get, set, delPattern } from "../config/redis.config";
+import socketIO from "../config/socket";
 
 async function registerReemplazo(req: AuthRequest, res: Response) {
   try {
@@ -107,6 +108,10 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
       req.params.id
     );
     await delPattern("replacements:*"); // Invalidate cache
+
+    const io = socketIO.getIO();
+    io.emit("history:update", { action: "finalize", id: req.params.id });
+
     res.json(data);
   } catch (error: any) {
     res.status(400).json({ mensaje: error.message });
@@ -131,6 +136,10 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
       req.params.id
     );
     await delPattern("replacements:*"); // Invalidate cache
+
+    const io = socketIO.getIO();
+    io.emit("history:update", { action: "annul", id: req.params.id });
+
     res.json(data);
   } catch (error: any) {
     res.status(400).json({ mensaje: error.message });
@@ -185,6 +194,12 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
       req.body.id_registro_a
     );
     await delPattern("replacements:*");
+
+    const io = socketIO.getIO();
+    io.emit("history:update", {
+      action: "substitute",
+      id: registroA_cortado._id,
+    });
 
     res.status(200).json({
       mensaje: "Sustitución procesada exitosamente.",

@@ -3,6 +3,7 @@ import AuditLog, { IAuditLog } from "../models/audit.model";
 import "../models/user.model";
 import logger from "../config/logger.config";
 import { delPattern } from "../config/redis.config";
+import socketIO from "../config/socket";
 
 async function logAction(
   action: string,
@@ -25,6 +26,20 @@ async function logAction(
 
     await logEntry.save();
     await delPattern("audit:*"); // Invalidate cache on new log
+
+    // Emit socket event
+    // Try/catch for socket to avoid breaking main auditing if socket fails (unlikely if locally initialized)
+    try {
+      const io = socketIO.getIO();
+      io.emit("audit:update", {
+        action,
+        module,
+        user: user.nombre,
+        description,
+      });
+    } catch (err) {
+      // Socket might not be init if running in script or test env
+    }
   } catch (error: any) {
     logger.error(`Error al registrar auditoría: ${error.message}`);
   }
