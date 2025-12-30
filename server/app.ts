@@ -48,6 +48,9 @@ app.use(
     { stream: { write: (message: string) => logger.info(message.trim()) } }
   )
 );
+// Sentry Tunnel Body Parser (Capturar todo como buffer crudo para evitar corrupción)
+app.use("/api/sentry", express.raw({ limit: "50mb", type: () => true }));
+
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
@@ -61,6 +64,29 @@ app.use("/api/reemplazos", replacementRoutes);
 app.use("/api/options", optionRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/profile", profileRoutes);
+app.use(cookieParser());
+
+// Documentación API
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/reemplazos", replacementRoutes);
+app.use("/api/options", optionRoutes);
+app.use("/api/audit", auditRoutes);
+app.use("/api/profile", profileRoutes);
+
+// Sentry Tunnel - Debe ir antes del catch-all *
+import sentryRoutes from "./routes/api/sentry.routes";
+// El envelope de Sentry es text/plain o application/x-sentry-envelope
+app.use(
+  "/api/sentry",
+  express.text({
+    type: ["application/json", "application/x-sentry-envelope", "text/plain"],
+    limit: "50mb",
+  }),
+  sentryRoutes
+);
 
 app.all("*", (req: Request, res: Response) => {
   res.status(404).json({ error: "404 Not Found" });

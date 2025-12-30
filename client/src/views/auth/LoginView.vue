@@ -51,19 +51,6 @@
               {{ isSubmitting ? 'Ingresando...' : 'Ingresar' }}
             </button>
           </div>
-
-          <!-- TEMP SENTRY TEST -->
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-danger mt-3"
-            @click="
-              () => {
-                throw new Error('Sentry Button Test 🚨')
-              }
-            "
-          >
-            Test Sentry Error
-          </button>
         </form>
       </div>
 
@@ -80,6 +67,7 @@
 
 <script setup lang="ts">
 import { useLogin } from '../../composables/auth/useLogin'
+import { onMounted } from 'vue'
 
 const {
   loginData,

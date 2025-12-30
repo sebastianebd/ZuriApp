@@ -24,6 +24,7 @@ if (import.meta.env.PROD) {
   Sentry.init({
     app,
     dsn: import.meta.env.VITE_SENTRY_DSN,
+    tunnel: '/api/sentry/tunnel', // Proxy a través de nuestro backend para evitar AdBlockers
     integrations: [Sentry.browserTracingIntegration({ router }), Sentry.replayIntegration()],
     // Environment (development, production)
     environment: import.meta.env.MODE,
@@ -35,11 +36,17 @@ if (import.meta.env.PROD) {
   })
 }
 // --- Supresión de errores conocidos de v-calendar ---
-app.config.errorHandler = (err) => {
+// --- Supresión de errores conocidos de v-calendar ---
+app.config.errorHandler = (err, _instance, _info) => {
   // Ignorar error específico de dayIndex en v-calendar
   if (err instanceof TypeError && err.message.includes('dayIndex')) {
     return
   }
+  // Reportar a Sentry manualmente si estamos en producción
+  if (import.meta.env.PROD) {
+    Sentry.captureException(err)
+  }
+
   // Re-lanzar o loguear otros errores
   console.error(err)
 }
