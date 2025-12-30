@@ -99,11 +99,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuditStore } from '@/stores/audit.store'
 import AuditFilter from '@/components/audit/AuditFilter.vue'
 import AuditTable from '@/components/audit/AuditTable.vue'
+import socket from '@/plugins/socket'
 
 const auditStore = useAuditStore()
 const { logs, loading, error, currentPage, totalPages, currentFilters } = storeToRefs(auditStore)
@@ -134,6 +135,14 @@ function limpiarFiltros() {
 
 onMounted(() => {
   auditStore.fetchLogs(1, 10)
+
+  socket.on('audit:update', () => {
+    auditStore.fetchLogs(currentPage.value, 10, currentFilters.value)
+  })
+})
+
+onUnmounted(() => {
+  socket.off('audit:update')
 })
 </script>
 

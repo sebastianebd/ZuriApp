@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import * as UserService from '../services/user.service'
 import { useAuthStore } from './auth.store'
-import type { registrarUsuario  } from '../types/models'
+import type { registrarUsuario } from '../types/models'
 import type { AxiosInstance } from 'axios'
 
 export const useUserStore = defineStore('user', {
@@ -14,7 +14,7 @@ export const useUserStore = defineStore('user', {
         return data
       } catch (error) {
         console.error('Error al cargar usuarios TENS:', error)
-        throw error 
+        throw error
       }
     },
 
@@ -26,10 +26,9 @@ export const useUserStore = defineStore('user', {
         return data
       } catch (error) {
         console.error('Error al cargar usuarios:', error)
-        throw error 
+        throw error
       }
     },
-  
 
     async eliminarUsuario(id: string) {
       const authStore = useAuthStore()
@@ -38,7 +37,7 @@ export const useUserStore = defineStore('user', {
         await UserService.eliminarUsuario(apiPrivate, id)
       } catch (error) {
         console.error('Error al eliminar usuario:', error)
-        throw error 
+        throw error
       }
     },
 
@@ -49,7 +48,7 @@ export const useUserStore = defineStore('user', {
         await UserService.actualizarUsuario(apiPrivate, id, datosActualizados)
       } catch (error) {
         console.error('Error al actualizar usuario:', error)
-        throw error 
+        throw error
       }
     },
 
@@ -58,12 +57,11 @@ export const useUserStore = defineStore('user', {
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       try {
         const data = await UserService.crearUsuario(apiPrivate, usuario)
-        console.log('Usuario creado en el store:', data)
         return data
       } catch (error) {
         console.error('Error al crear usuario:', error)
-        throw error 
+        throw error
       }
-    },
+    }
   }
 })

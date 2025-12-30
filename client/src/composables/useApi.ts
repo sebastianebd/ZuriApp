@@ -4,7 +4,6 @@ import type { AxiosInstance } from 'axios'
 export let interceptorsInitialized = false
 
 export function resetInterceptors() {
-  console.log('UseApi: Resetting interceptors')
   interceptorsInitialized = false
 }
 
