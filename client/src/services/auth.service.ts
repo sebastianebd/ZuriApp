@@ -16,7 +16,6 @@ export const login = async (payload: LoginData) => {
 export const refresh = async () => {
   try {
     const { data } = await Api.post('/auth/refresh')
-    console.log('Refresh Token obtenido')
     return data
   } catch (error) {
     throw errorHandler(error)

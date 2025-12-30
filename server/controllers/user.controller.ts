@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import userService from "../services/user.service";
 import auditService from "../services/audit.service";
 import { AuthRequest } from "../middleware/authentication.middleware";
+import { get, set, delPattern } from "../config/redis.config";
+import socketIO from "../config/socket";
 
 async function register(req: AuthRequest, res: Response) {
   try {
@@ -12,8 +14,18 @@ async function register(req: AuthRequest, res: Response) {
       req.user,
       `Se creó al usuario RUT ${req.body.rut}`,
       req.body,
-      data._id as string // assuming _id exists on returned data
+      data._id as string
     );
+    await delPattern("users:*"); // Invalidate cache
+
+    // Emit socket event
+    try {
+      const io = socketIO.getIO();
+      io.emit("users:update", { action: "create", user: data });
+    } catch (err) {
+      // Socket not ready, ignore
+    }
+
     res.status(201).json(data);
   } catch (error: any) {
     res.status(error.status || 400).json({ mensaje: error.message });
@@ -22,7 +34,14 @@ async function register(req: AuthRequest, res: Response) {
 
 async function mostrarUsuarios(req: Request, res: Response) {
   try {
+    const cacheKey = "users:tens";
+    const cachedData = await get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     const usuarios = await userService.obtenerUsuariosTENS();
+    await set(cacheKey, usuarios, 300); // Cache for 5 minutes
     res.json(usuarios);
   } catch (error: any) {
     res.status(error.status || 500).json({ mensaje: error.message });
@@ -31,7 +50,14 @@ async function mostrarUsuarios(req: Request, res: Response) {
 
 async function mostrarTodos(req: Request, res: Response) {
   try {
+    const cacheKey = "users:all";
+    const cachedData = await get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     const usuarios = await userService.obtenerTodos();
+    await set(cacheKey, usuarios, 300); // Cache for 5 minutes
     res.json(usuarios);
   } catch (error: any) {
     res.status(error.status || 500).json({ mensaje: error.message });
@@ -59,6 +85,16 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
       req.body,
       req.params.id
     );
+    await delPattern("users:*"); // Invalidate cache
+
+    // Emit socket event
+    try {
+      const io = socketIO.getIO();
+      io.emit("users:update", { action: "update", userId: req.params.id });
+    } catch (err) {
+      // Socket not ready, ignore
+    }
+
     res.json(usuarios);
   } catch (error: any) {
     res.status(error.status || 400).json({ mensaje: error.message });
@@ -76,6 +112,16 @@ async function eliminarUsuario(req: AuthRequest, res: Response) {
       null,
       req.params.id
     );
+    await delPattern("users:*"); // Invalidate cache
+
+    // Emit socket event
+    try {
+      const io = socketIO.getIO();
+      io.emit("users:update", { action: "delete", userId: req.params.id });
+    } catch (err) {
+      // Socket not ready, ignore
+    }
+
     res.json(usuarios);
   } catch (error: any) {
     res.status(error.status || 400).json({ mensaje: error.message });

@@ -180,13 +180,13 @@ export function useReplacements() {
   onMounted(async () => {
     await loadData()
 
-    socket.on('replacementsUpdated', async () => {
+    socket.on('replacements:update', async () => {
       await replacementStore.mostrarReemplazos()
     })
   })
 
   onUnmounted(() => {
-    socket.off('replacementsUpdated')
+    socket.off('replacements:update')
   })
 
   return {

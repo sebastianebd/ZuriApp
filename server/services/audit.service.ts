@@ -2,6 +2,8 @@ import mongoose, { FilterQuery } from "mongoose";
 import AuditLog, { IAuditLog } from "../models/audit.model";
 import "../models/user.model";
 import logger from "../config/logger.config";
+import { delPattern } from "../config/redis.config";
+import socketIO from "../config/socket";
 
 async function logAction(
   action: string,
@@ -17,18 +19,27 @@ async function logAction(
       module,
       user_id: user.id || user._id,
       user_name: `${user.nombre} ${user.apellido}`,
-      resource_id: entityId, // Fixed field name matching schema
-      // Audit schema doesn't seem to have 'rut' explicitly?
-      // Checking audit.model.ts in step 2186:
-      // action, module, description, details, user_id, user_name, resource_id.
-      // JS code had: rut: user.rut.
-      // This 'rut' was also likely dropped if not in schema. I will omit it if not in schema.
-      // description... details...
+      resource_id: entityId,
       description,
       details,
     });
 
     await logEntry.save();
+    await delPattern("audit:*"); // Invalidate cache on new log
+
+    // Emit socket event
+    // Try/catch for socket to avoid breaking main auditing if socket fails (unlikely if locally initialized)
+    try {
+      const io = socketIO.getIO();
+      io.emit("audit:update", {
+        action,
+        module,
+        user: user.nombre,
+        description,
+      });
+    } catch (err) {
+      // Socket might not be init if running in script or test env
+    }
   } catch (error: any) {
     logger.error(`Error al registrar auditoría: ${error.message}`);
   }

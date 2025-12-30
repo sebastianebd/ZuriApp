@@ -1,8 +1,9 @@
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useOptionStore } from '@/stores/option.store'
 import { obtenerInactivosPaginados } from '@/services/replacement.service'
 import type { RegisterDataReemplazo, User } from '@/types/models'
+import socket from '@/plugins/socket'
 
 export function useHistory() {
   // --- ESTADO Y STORES ---
@@ -106,9 +107,17 @@ export function useHistory() {
       const opciones = await optionStore.mostrarOpciones()
       listaDeServicios.value = opciones.servicios
       await cargarHistorial()
+
+      socket.on('history:update', async () => {
+        await cargarHistorial()
+      })
     } catch (error) {
       console.error('Error en el montaje:', error)
     }
+  })
+
+  onUnmounted(() => {
+    socket.off('history:update')
   })
 
   return {
