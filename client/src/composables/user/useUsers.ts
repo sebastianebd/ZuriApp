@@ -1,9 +1,10 @@
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useUserStore } from '@/stores/user.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import type { User } from '@/types/models'
+import socket from '@/plugins/socket'
 
 export function useUsers() {
   const showAlert = inject<(title: string, message: string) => void>('showAlert')
@@ -147,6 +148,14 @@ export function useUsers() {
 
   onMounted(async () => {
     await loadUsers()
+
+    socket.on('users:update', async () => {
+      await loadUsers()
+    })
+  })
+
+  onUnmounted(() => {
+    socket.off('users:update')
   })
 
   return {
