@@ -34,25 +34,41 @@
       <!-- Fecha Inicio -->
       <div class="col-md-2">
         <label for="fechaInicio" class="form-label fw-semibold text-secondary small">Desde:</label>
-        <input
-          type="date"
-          :value="modelValue.fechaInicio"
-          @input="updateFilter('fechaInicio', $event)"
-          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
-          id="fechaInicio"
-        />
+        <DatePicker
+          :model-value="modelValue.fechaInicio"
+          @update:model-value="(val) => updateFilter('fechaInicio', val)"
+          :popover="popoverConfig"
+          :masks="{ input: 'DD/MM/YYYY' }"
+        >
+          <template #default="{ inputValue, inputEvents }">
+            <input
+              class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+              :value="inputValue"
+              v-on="inputEvents"
+              placeholder="Fecha Inicio"
+            />
+          </template>
+        </DatePicker>
       </div>
 
       <!-- Fecha Fin -->
       <div class="col-md-2">
         <label for="fechaFin" class="form-label fw-semibold text-secondary small">Hasta:</label>
-        <input
-          type="date"
-          :value="modelValue.fechaFin"
-          @input="updateFilter('fechaFin', $event)"
-          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
-          id="fechaFin"
-        />
+        <DatePicker
+          :model-value="modelValue.fechaFin"
+          @update:model-value="(val) => updateFilter('fechaFin', val)"
+          :popover="popoverConfig"
+          :masks="{ input: 'DD/MM/YYYY' }"
+        >
+          <template #default="{ inputValue, inputEvents }">
+            <input
+              class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+              :value="inputValue"
+              v-on="inputEvents"
+              placeholder="Fecha Termino"
+            />
+          </template>
+        </DatePicker>
       </div>
 
       <!-- Servicio -->
@@ -89,11 +105,14 @@
 </template>
 
 <script setup lang="ts">
+import { DatePicker } from 'v-calendar'
+import 'v-calendar/dist/style.css'
+
 interface HistoryFiltros {
   rutSaliente: string
   rutEntrante: string
-  fechaInicio: string
-  fechaFin: string
+  fechaInicio: any
+  fechaFin: any
   servicio: string
 }
 
@@ -106,9 +125,26 @@ const emit = defineEmits<{
   (e: 'update:modelValue', newFilters: HistoryFiltros): void
 }>()
 
-const updateFilter = (key: keyof HistoryFiltros, event: Event) => {
-  const target = event.target as HTMLInputElement | HTMLSelectElement
-  const value = target?.value ?? ''
+const popoverConfig = {
+  visibility: 'focus' as const,
+  placement: 'bottom' as const,
+  modifiers: [
+    {
+      name: 'offset',
+      options: {
+        offset: [0, 8]
+      }
+    }
+  ]
+}
+
+const updateFilter = (key: keyof HistoryFiltros, valueOrEvent: any) => {
+  let value = valueOrEvent
+
+  if (valueOrEvent instanceof Event) {
+    const target = valueOrEvent.target as HTMLInputElement | HTMLSelectElement
+    value = target?.value ?? ''
+  }
 
   emit('update:modelValue', {
     ...props.modelValue,
@@ -118,6 +154,12 @@ const updateFilter = (key: keyof HistoryFiltros, event: Event) => {
 </script>
 
 <style scoped>
+/* Ajustar tamaño del calendario */
+:deep(.vc-container) {
+  font-size: 0.85rem;
+  --vc-font-size-lg: 0.9rem;
+}
+
 /* Estilos unificados tipo AuditFilter */
 /* Custom v-select */
 .custom-v-select :deep(.vs__dropdown-toggle) {
