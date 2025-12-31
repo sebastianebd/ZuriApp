@@ -121,7 +121,17 @@
                         <i class="bi bi-pie-chart me-2"></i>
                         Demanda de Servicios
                       </h5>
-                      <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                      <div
+                        v-if="loading"
+                        class="d-flex align-items-center justify-content-center h-100"
+                        style="min-height: 250px"
+                      >
+                        <TableLoader text="Cargando servicios..." />
+                      </div>
+                      <div
+                        v-else
+                        class="flex-grow-1 d-flex align-items-center justify-content-center"
+                      >
                         <div
                           v-if="chartData.labels.length > 0"
                           class="w-100"
@@ -147,26 +157,40 @@
                         Últimos Movimientos
                       </h5>
 
-                      <div v-if="recentActivity.length > 0" class="timeline">
-                        <div
-                          v-for="activity in recentActivity"
-                          :key="activity.id"
-                          class="timeline-item"
-                        >
-                          <div class="timeline-dot" :class="getActionClass(activity.action)"></div>
-                          <div class="timeline-content">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                              <span class="fw-bold small text-dark">{{ activity.action }}</span>
-                              <span class="text-muted smaller">{{
-                                formatRelativeTime(activity.created_at)
-                              }}</span>
+                      <div
+                        v-if="loading"
+                        class="d-flex align-items-center justify-content-center"
+                        style="min-height: 300px"
+                      >
+                        <TableLoader text="Cargando movimientos..." />
+                      </div>
+                      <div v-else>
+                        <div v-if="recentActivity.length > 0" class="timeline">
+                          <div
+                            v-for="activity in recentActivity"
+                            :key="activity.id"
+                            class="timeline-item"
+                          >
+                            <div
+                              class="timeline-dot"
+                              :class="getActionClass(activity.action)"
+                            ></div>
+                            <div class="timeline-content">
+                              <div class="d-flex justify-content-between align-items-start mb-1">
+                                <span class="fw-bold small text-dark">{{ activity.action }}</span>
+                                <span class="text-muted smaller">{{
+                                  formatRelativeTime(activity.created_at)
+                                }}</span>
+                              </div>
+                              <p class="mb-0 text-secondary smaller">
+                                {{ activity.description }}
+                              </p>
                             </div>
-                            <p class="mb-0 text-secondary smaller">{{ activity.description }}</p>
                           </div>
                         </div>
-                      </div>
-                      <div v-else class="text-center py-4 text-muted">
-                        <p class="mb-0">No se registran movimientos recientes</p>
+                        <div v-else class="text-center py-4 text-muted">
+                          <p class="mb-0">No se registran movimientos recientes</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -191,6 +215,7 @@
 
 <script setup lang="ts">
 import { useUserProfile } from '../../composables/user/useUserProfile'
+import TableLoader from '@/components/common/TableLoader.vue'
 import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale } from 'chart.js'
 
@@ -204,7 +229,8 @@ const {
   recentActivity,
   formatDate,
   formatRelativeTime,
-  getActionClass
+  getActionClass,
+  loading
 } = useUserProfile()
 </script>
 
