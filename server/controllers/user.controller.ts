@@ -7,7 +7,10 @@ import socketIO from "../config/socket";
 
 async function register(req: AuthRequest, res: Response) {
   try {
-    const data = await userService.register(req.body);
+    const data = await userService.register(
+      req.body,
+      req.user?.tipo_cargo || ""
+    );
     await auditService.logAction(
       "CREAR",
       "USUARIOS",

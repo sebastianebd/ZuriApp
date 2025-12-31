@@ -2,23 +2,40 @@
   <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
     <div class="row g-3 align-items-end">
       <!-- Rango de Fechas -->
+      <!-- Rango de Fechas -->
       <div class="col-md-3">
         <label class="form-label fw-semibold text-secondary small">Desde:</label>
-        <input
-          type="date"
-          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+        <DatePicker
           v-model="filters.startDate"
-          @change="emitFilters"
-        />
+          :popover="popoverConfig"
+          :masks="{ input: 'DD/MM/YYYY' }"
+        >
+          <template #default="{ inputValue, inputEvents }">
+            <input
+              class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+              :value="inputValue"
+              v-on="inputEvents"
+              placeholder="Fecha Inicio"
+            />
+          </template>
+        </DatePicker>
       </div>
       <div class="col-md-3">
         <label class="form-label fw-semibold text-secondary small">Hasta:</label>
-        <input
-          type="date"
-          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+        <DatePicker
           v-model="filters.endDate"
-          @change="emitFilters"
-        />
+          :popover="popoverConfig"
+          :masks="{ input: 'DD/MM/YYYY' }"
+        >
+          <template #default="{ inputValue, inputEvents }">
+            <input
+              class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+              :value="inputValue"
+              v-on="inputEvents"
+              placeholder="Fecha Termino"
+            />
+          </template>
+        </DatePicker>
       </div>
 
       <!-- Filtro Módulo -->
@@ -74,7 +91,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { DatePicker } from 'v-calendar'
+import 'v-calendar/dist/style.css'
 
 const emit = defineEmits(['filter'])
 
@@ -88,9 +107,30 @@ const filters = ref({
 })
 
 function emitFilters() {
+  // Convert timestamps/Dates to string format expected by backend if necessary
   emit('filter', { ...filters.value })
 }
 
+watch(
+  filters,
+  () => {
+    emitFilters()
+  },
+  { deep: true }
+)
+
+const popoverConfig = {
+  visibility: 'focus' as const,
+  placement: 'bottom' as const,
+  modifiers: [
+    {
+      name: 'offset',
+      options: {
+        offset: [0, 8]
+      }
+    }
+  ]
+}
 // Opcional: limpiar filtros desde el padre si fuera necesario
 defineExpose({
   clear() {
@@ -106,7 +146,14 @@ defineExpose({
 </script>
 
 <style scoped>
+/* Ajustar tamaño del calendario */
+:deep(.vc-container) {
+  font-size: 0.85rem;
+  --vc-font-size-lg: 0.9rem;
+}
+
 /* Estilos unificados tipo ReplacementFilter */
+
 /* Custom v-select */
 .custom-v-select :deep(.vs__dropdown-toggle) {
   background: #f8f9fa;

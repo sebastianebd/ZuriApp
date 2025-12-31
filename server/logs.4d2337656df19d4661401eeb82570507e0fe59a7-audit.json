@@ -31,9 +31,9 @@
             "hash": "450acd482a24d0d552c04d5f1c1d9ede10c65d4213c20d33cfc3834b781822ea"
         },
         {
-            "date": 1767181684769,
+            "date": 1767190675121,
             "name": "logs/application-2025-12-31.log",
-            "hash": "78a4461857afdfbf63a17633a67416e1b6fa129edb8b64e0344a01fe688f18b7"
+            "hash": "c148d5374ae472b7840491bf482c1ae08d5ccc7bdd623b739daff6f996c99310"
         }
     ],
     "hashType": "sha256"

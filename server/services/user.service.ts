@@ -17,7 +17,7 @@ interface RegisterData {
   servicio?: string;
 }
 
-async function register(data: RegisterData) {
+async function register(data: RegisterData, creatorRole: string) {
   const {
     rut,
     nombre,
@@ -30,6 +30,18 @@ async function register(data: RegisterData) {
     tipo_cargo,
   } = data;
 
+  // 1. Permission Validation
+  if (
+    creatorRole === "RECURSOS HUMANOS" &&
+    ["ADMIN-TI", "RECURSOS HUMANOS"].includes(tipo_cargo)
+  ) {
+    throw {
+      status: 403,
+      message:
+        "No tienes permisos para crear usuarios con acceso al sistema (ADMIN-TI o RRHH)",
+    };
+  }
+
   const exists = await Promise.all([
     User.exists({ rut }),
     User.exists({ telefono }),
@@ -39,8 +51,16 @@ async function register(data: RegisterData) {
   if (exists.some(Boolean))
     throw { status: 409, message: "Usuario ya registrado" };
 
-  const generarPassword = crypto.randomBytes(3).toString("hex");
-  const hashedPassword = await bcrypt.hash(generarPassword, 10);
+  // 2. Conditional Password Generation
+  let hashedPassword = undefined;
+  const rolesWithPassword = ["ADMIN-TI", "RECURSOS HUMANOS"];
+
+  if (rolesWithPassword.includes(tipo_cargo)) {
+    const generarPassword = crypto.randomBytes(3).toString("hex");
+    hashedPassword = await bcrypt.hash(generarPassword, 10);
+    // TODO: Send email with credentials here (placeholder)
+    logger.info(`Generated password for ${rut} (${tipo_cargo})`);
+  }
 
   const nuevoUsuario: any = {
     rut,
@@ -58,10 +78,15 @@ async function register(data: RegisterData) {
   if (tipo_cargo === "TENS") nuevoUsuario.habilitado = data.habilitado;
   if (tipo_cargo === "JEFA SERVICIO") nuevoUsuario.servicio = data.servicio;
 
-  await User.create(nuevoUsuario);
+  // Sanitize password if undefined to prevent DB issues
+  if (nuevoUsuario.password === undefined) {
+    delete nuevoUsuario.password;
+  }
 
-  logger.info(`Nuevo usuario registrado en service: ${nuevoUsuario.rut}`);
-  return nuevoUsuario;
+  const userCreated = await User.create(nuevoUsuario);
+
+  logger.info(`Nuevo usuario registrado en service: ${userCreated.rut}`);
+  return userCreated;
 }
 
 async function obtenerUsuariosTENS() {

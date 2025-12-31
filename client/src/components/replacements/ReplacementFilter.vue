@@ -32,23 +32,39 @@
       <!-- Fecha Inicio -->
       <div class="col-md-2">
         <label for="fechaInicio" class="form-label fw-semibold text-secondary small">Desde:</label>
-        <input
-          type="date"
+        <DatePicker
           v-model="store.fechaInicio"
-          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
-          id="fechaInicio"
-        />
+          :popover="popoverConfig"
+          :masks="{ input: 'YYYY-MM-DD' }"
+        >
+          <template #default="{ inputValue, inputEvents }">
+            <input
+              class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+              :value="inputValue"
+              v-on="inputEvents"
+              placeholder="Fecha Inicio"
+            />
+          </template>
+        </DatePicker>
       </div>
 
       <!-- Fecha Fin -->
       <div class="col-md-2">
         <label for="fechaFin" class="form-label fw-semibold text-secondary small">Hasta:</label>
-        <input
-          type="date"
+        <DatePicker
           v-model="store.fechaFin"
-          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
-          id="fechaFin"
-        />
+          :popover="popoverConfig"
+          :masks="{ input: 'YYYY-MM-DD' }"
+        >
+          <template #default="{ inputValue, inputEvents }">
+            <input
+              class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+              :value="inputValue"
+              v-on="inputEvents"
+              placeholder="Fecha Termino"
+            />
+          </template>
+        </DatePicker>
       </div>
 
       <!-- Servicio -->
@@ -82,6 +98,8 @@
 
 <script setup lang="ts">
 import { useReplacementStore } from '@/stores/replacement.store'
+import { DatePicker } from 'v-calendar'
+import 'v-calendar/dist/style.css'
 
 // 💡 Props: El componente de filtros recibe las opciones para el select
 defineProps({
@@ -94,9 +112,28 @@ defineProps({
 // 💡 Acceso Directo al Store:
 // Los v-model apuntan directamente al estado del store, sin necesidad de emitir eventos.
 const store = useReplacementStore()
+
+const popoverConfig = {
+  visibility: 'focus' as const, // Cierra otros al enfocar este
+  placement: 'bottom' as const,
+  modifiers: [
+    {
+      name: 'offset',
+      options: {
+        offset: [0, 8]
+      }
+    }
+  ]
+}
 </script>
 
 <style scoped>
+/* Ajustar tamaño del calendario */
+:deep(.vc-container) {
+  font-size: 0.85rem;
+  --vc-font-size-lg: 0.9rem;
+}
+
 /* Custom v-select */
 .custom-v-select :deep(.vs__dropdown-toggle) {
   background: #f8f9fa;

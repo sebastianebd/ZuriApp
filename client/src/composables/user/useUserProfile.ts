@@ -81,8 +81,12 @@ export function useUserProfile() {
     }
   }
 
+  // Loading State
+  const loading = ref(false)
+
   async function loadProfileData() {
     const apiPrivate = authStore.usePrivateApi()
+    loading.value = true
     try {
       const [statsRes, serviceRes, activityRes] = await Promise.all([
         profileService.getReplacementStats(apiPrivate),
@@ -99,6 +103,8 @@ export function useUserProfile() {
       recentActivity.value = activityRes
     } catch (error) {
       console.error('Error loading profile data:', error)
+    } finally {
+      loading.value = false
     }
   }
 
@@ -116,6 +122,7 @@ export function useUserProfile() {
   return {
     user,
     stats,
+    loading,
     chartData,
     chartOptions,
     recentActivity,

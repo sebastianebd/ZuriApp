@@ -29,18 +29,29 @@ export const del = async (key: string) => {
   await redis.del(key);
 };
 
-export const delPattern = async (pattern: string) => {
-  const stream = redis.scanStream({
-    match: pattern,
-  });
-  stream.on("data", (keys) => {
-    if (keys.length) {
-      const pipeline = redis.pipeline();
-      keys.forEach((key: any) => {
-        pipeline.del(key);
-      });
-      pipeline.exec();
-    }
+export const delPattern = (pattern: string) => {
+  return new Promise<void>((resolve, reject) => {
+    const stream = redis.scanStream({
+      match: pattern,
+    });
+
+    stream.on("data", (keys) => {
+      if (keys.length) {
+        const pipeline = redis.pipeline();
+        keys.forEach((key: any) => {
+          pipeline.del(key);
+        });
+        pipeline.exec();
+      }
+    });
+
+    stream.on("end", () => {
+      resolve();
+    });
+
+    stream.on("error", (err) => {
+      reject(err);
+    });
   });
 };
 
