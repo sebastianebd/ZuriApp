@@ -115,7 +115,7 @@
 
     <UserModalCreate
       :visible="createModalVisible"
-      :lista-tipo-cargo="listaTipoCargo"
+      :lista-tipo-cargo="rolesDisponiblesCreacion"
       :lista-habilitado="listaHabilitado"
       :lista-servicios="listaServicios"
       @cerrar="closeCreateModal"
@@ -158,6 +158,7 @@ const {
 
   // Lists
   listaTipoCargo,
+  rolesDisponiblesCreacion,
   listaHabilitado,
   listaServicios,
 

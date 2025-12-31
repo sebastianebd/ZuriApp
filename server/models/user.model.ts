@@ -87,7 +87,7 @@ const userSchema: Schema = new Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
       select: false,
     },
     servicio: {

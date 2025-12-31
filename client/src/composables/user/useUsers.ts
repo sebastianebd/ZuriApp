@@ -49,6 +49,18 @@ export function useUsers() {
   })
 
   // --- FILTER & SORT LOGIC
+  const rolesDisponiblesCreacion = computed(() => {
+    if (!userLoged.value) return []
+    const cargoActual = userLoged.value.tipo_cargo
+
+    if (cargoActual === 'ADMIN-TI') {
+      return listaTipoCargo.value
+    } else if (cargoActual === 'RECURSOS HUMANOS') {
+      return listaTipoCargo.value.filter((rol) => !['ADMIN-TI', 'RECURSOS HUMANOS'].includes(rol))
+    }
+    return []
+  })
+
   const usuariosFiltrados = computed(() => {
     const filtrados = usuarios.value.filter((u) => {
       const coincideRut = !filtroRut.value || u.rut.startsWith(filtroRut.value)
@@ -180,6 +192,7 @@ export function useUsers() {
 
     // Lists
     listaTipoCargo,
+    rolesDisponiblesCreacion,
     listaHabilitado,
     listaServicios,
 
