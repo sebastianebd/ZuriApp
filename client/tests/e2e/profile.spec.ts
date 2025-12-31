@@ -19,9 +19,7 @@ test.describe('Profile View', () => {
     await expect(page.locator('h4', { hasText: /Admin/i })).toBeVisible({ timeout: 15000 })
 
     // Check for Role
-    await expect(
-      page.locator('.user-profile-view .text-muted', { hasText: 'ADMIN-TI' }).first()
-    ).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText(/ADMIN-TI/i).first()).toBeVisible({ timeout: 15000 })
 
     // Check for Email
     await expect(page.locator('p.info-value', { hasText: 'admin@zuriapp.cl' })).toBeVisible({

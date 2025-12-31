@@ -19,7 +19,7 @@
     </div>
 
     <!-- Main Card Container -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card border-0 shadow-sm rounded-4">
       <div class="card-body p-4">
         <!-- Filter Section -->
         <div class="">
@@ -29,15 +29,7 @@
         <!-- Table Container -->
         <div class="table-container position-relative">
           <!-- Loading State -->
-          <div
-            v-if="loading"
-            class="loading-overlay d-flex flex-column align-items-center justify-content-center py-5"
-          >
-            <div class="spinner-border text-primary mb-3" role="status">
-              <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="text-muted small">Cargando registros de auditoría...</p>
-          </div>
+          <TableLoader v-if="loading" text="Cargando registros de auditoría..." />
 
           <!-- Error State -->
           <div v-else-if="error" class="alert alert-danger border-0 shadow-sm rounded-3 py-3">
@@ -105,6 +97,7 @@ import { useAuditStore } from '@/stores/audit.store'
 import AuditFilter from '@/components/audit/AuditFilter.vue'
 import AuditTable from '@/components/audit/AuditTable.vue'
 import socket from '@/plugins/socket'
+import TableLoader from '@/components/common/TableLoader.vue'
 
 const auditStore = useAuditStore()
 const { logs, loading, error, currentPage, totalPages, currentFilters } = storeToRefs(auditStore)

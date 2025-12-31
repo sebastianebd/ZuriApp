@@ -16,7 +16,7 @@
     </div>
 
     <!-- Main Content Card -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card border-0 shadow-sm rounded-4">
       <div class="card-body p-4">
         <!-- Filter Section -->
         <div class="">
@@ -29,15 +29,7 @@
 
         <!-- History Table Section -->
         <div class="table-container position-relative">
-          <div
-            v-if="cargando"
-            class="loading-overlay d-flex flex-column align-items-center justify-content-center py-5"
-          >
-            <div class="spinner-border text-primary mb-3" role="status">
-              <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="text-muted">Cargando historial...</p>
-          </div>
+          <TableLoader v-if="cargando" text="Cargando historial..." />
 
           <div v-else-if="reemplazosHistorico.length === 0" class="empty-state text-center py-5">
             <div class="empty-icon-container mb-3 mx-auto">
@@ -239,6 +231,7 @@
 <script setup lang="ts">
 import { useHistory } from '@/composables/replacement/useHistory'
 import HistoryFilter from '@/components/historial/HistorialFilter.vue'
+import TableLoader from '@/components/common/TableLoader.vue'
 
 const {
   // Data & State
@@ -271,10 +264,6 @@ const {
 
 .filter-section {
   background-color: #f1f5f9 !important;
-}
-
-.loading-overlay {
-  min-height: 400px;
 }
 
 .empty-state {
