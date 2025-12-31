@@ -95,12 +95,26 @@
 
                     <div class="mb-0">
                       <label class="form-label text-secondary fw-semibold small">Teléfono</label>
-                      <input
-                        v-model="editableUsuario.telefono"
-                        type="text"
-                        class="form-control bg-white border-0 shadow-sm rounded-3"
-                        placeholder="Teléfono"
-                      />
+                      <div class="input-group">
+                        <span
+                          class="input-group-text bg-white border-0 shadow-sm rounded-start-3 text-secondary fw-bold"
+                        >
+                          +56
+                        </span>
+                        <input
+                          v-model="editableUsuario.telefono"
+                          type="text"
+                          class="form-control bg-white border-0 shadow-sm rounded-end-3"
+                          placeholder="912345678"
+                          maxlength="9"
+                          @input="
+                            editableUsuario.telefono = String(editableUsuario.telefono).replace(
+                              /[^0-9]/g,
+                              ''
+                            )
+                          "
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -191,7 +205,20 @@ const editableUsuario = ref<registrarUsuario>({ ...props.usuario })
 watch(
   () => props.usuario,
   (nuevoUsuario) => {
-    editableUsuario.value = { ...nuevoUsuario }
+    // Copiar usuario
+    const usuarioCopia = { ...nuevoUsuario }
+
+    // Limpiar teléfono para quitar el +56 si viene del backend
+    if (usuarioCopia.telefono) {
+      let phoneStr = String(usuarioCopia.telefono)
+      if (phoneStr.startsWith('+56')) {
+        phoneStr = phoneStr.replace('+56', '')
+      }
+      // Asignamos como any para evitar conflicto con tipo number si la interfaz está mal definida
+      ;(usuarioCopia as any).telefono = phoneStr
+    }
+
+    editableUsuario.value = usuarioCopia
   },
   { immediate: true }
 )
@@ -208,7 +235,13 @@ function cerrarConfirmacion() {
 }
 
 function confirmarGuardar() {
-  emit('guardar', editableUsuario.value)
+  const usuarioAGuardar = { ...editableUsuario.value }
+  // Agregar prefijo +56 antes de enviar
+  if (usuarioAGuardar.telefono) {
+    usuarioAGuardar.telefono = `+56${usuarioAGuardar.telefono}` as any
+  }
+
+  emit('guardar', usuarioAGuardar)
   confirmVisible.value = false
 }
 </script>
