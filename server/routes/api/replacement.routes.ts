@@ -1,7 +1,12 @@
 import express from "express";
 import replacementController from "../../controllers/replacement.controller";
 import authMiddleware from "../../middleware/authentication.middleware";
-
+import { validateSchema } from "../../middleware/validate.middleware";
+import {
+  createReplacementSchema,
+  updateReplacementSchema,
+  substitutionSchema,
+} from "../../schemas/replacement.schema";
 const router = express.Router();
 
 /**
@@ -32,7 +37,11 @@ router.use(authMiddleware);
  *         description: Reemplazo creado
  */
 
-router.post("/", replacementController.registerReemplazo);
+router.post(
+  "/",
+  validateSchema(createReplacementSchema),
+  replacementController.registerReemplazo
+);
 
 /**
  * @swagger
@@ -51,7 +60,11 @@ router.post("/", replacementController.registerReemplazo);
  *       200:
  *         description: Reemplazo actualizado
  */
-router.put("/:id", replacementController.actualizarReemplazo);
+router.put(
+  "/:id",
+  validateSchema(updateReplacementSchema),
+  replacementController.actualizarReemplazo
+);
 
 /**
  * @swagger
@@ -107,7 +120,11 @@ router.put("/anular/:id", replacementController.anularReemplazo);
  *       200:
  *         description: Sustitución procesada
  */
-router.post("/sustituir", replacementController.procesarSustitucion);
+router.post(
+  "/sustituir",
+  validateSchema(substitutionSchema),
+  replacementController.procesarSustitucion
+);
 
 /**
  * @swagger
