@@ -36,15 +36,7 @@
 
         <!-- Table Section -->
         <div class="table-container position-relative">
-          <div
-            v-if="replacementStore.cargando"
-            class="loading-overlay d-flex flex-column align-items-center justify-content-center py-5"
-          >
-            <div class="spinner-border text-primary mb-3" role="status">
-              <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="text-muted">Actualizando registros...</p>
-          </div>
+          <TableLoader v-if="replacementStore.cargando" text="Actualizando registros..." />
 
           <div
             v-else-if="replacementStore.reemplazosFiltrados.length === 0"
@@ -171,6 +163,7 @@ import {
   ReplacementModalCreate,
   ReplacementModalSubstitute
 } from '@/components/replacements'
+import TableLoader from '@/components/common/TableLoader.vue'
 
 const {
   replacementStore,
@@ -225,10 +218,6 @@ const {
 
 .filter-section {
   background-color: #f1f5f9 !important;
-}
-
-.loading-overlay {
-  min-height: 300px;
 }
 
 .empty-state {

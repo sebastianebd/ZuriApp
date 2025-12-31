@@ -36,8 +36,10 @@
         </div>
 
         <!-- User Table Section -->
-        <div class="table-container">
-          <div v-if="usuariosFiltrados.length === 0" class="empty-state text-center py-5">
+        <div class="table-container position-relative">
+          <TableLoader v-if="loading" text="Cargando usuarios..." />
+
+          <div v-else-if="usuariosFiltrados.length === 0" class="empty-state text-center py-5">
             <div class="empty-icon-container mb-3 mx-auto">
               <i class="bi bi-people fs-1 text-muted opacity-50"></i>
             </div>
@@ -139,12 +141,14 @@ import {
   UserModalCreate,
   UserModalDetail
 } from '@/components/users'
+import TableLoader from '@/components/common/TableLoader.vue'
 
 const {
   // State
   usuariosFiltrados,
   paginatedUsuarios,
   userLoged,
+  loading,
 
   // Filters
   filtroRut,

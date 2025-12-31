@@ -17,6 +17,7 @@ export function useUsers() {
 
   // --- REFS
   const usuarios = ref<any[]>([])
+  const loading = ref(false)
 
   // Filters
   const filtroRut = ref('')
@@ -139,11 +140,16 @@ export function useUsers() {
   }
 
   async function loadUsers() {
-    usuarios.value = await userStore.mostrarTodos()
-    const opciones = await optionStore.mostrarOpciones()
-    listaTipoCargo.value = opciones.tipoCargo
-    listaHabilitado.value = opciones.habilitado
-    listaServicios.value = opciones.servicios
+    loading.value = true
+    try {
+      usuarios.value = await userStore.mostrarTodos()
+      const opciones = await optionStore.mostrarOpciones()
+      listaTipoCargo.value = opciones.tipoCargo
+      listaHabilitado.value = opciones.habilitado
+      listaServicios.value = opciones.servicios
+    } finally {
+      loading.value = false
+    }
   }
 
   onMounted(async () => {
@@ -161,6 +167,7 @@ export function useUsers() {
   return {
     // State
     usuarios,
+    loading,
     usuariosFiltrados,
     paginatedUsuarios,
     userLoged,
