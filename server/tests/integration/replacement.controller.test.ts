@@ -23,10 +23,19 @@ describe("Replacement Controller - Integration", () => {
   describe("POST /api/reemplazos", () => {
     it("should create a replacement and log audit", async () => {
       const mockPayload = {
+        id_saliente: "507f1f77bcf86cd799439011",
+        rut_saliente: "12345678-9",
         nombre_saliente: "JUAN",
         apellido_saliente: "PEREZ",
-        id_entrante: "user_id_123",
-        // Add missing required fields to pass validation if any, primarily mocked service handles it.
+        id_entrante: "507f1f77bcf86cd799439012",
+        rut_entrante: "87654321-0",
+        nombre_entrante: "PEDRO",
+        apellido_entrante: "GOMEZ",
+        tipo_turno: "DIURNO",
+        fecha_inicio: "2024-01-01",
+        fecha_termino: "2024-01-15",
+        servicio: "MEDICINA",
+        creado_por: "507f1f77bcf86cd799439013",
       };
 
       const mockCreated = {

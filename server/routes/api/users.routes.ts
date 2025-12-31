@@ -33,7 +33,10 @@ router.use(authMiddleware);
  *         description: Usuario ya existe
  */
 
-router.post("/", userController.register);
+import { validateSchema } from "../../middleware/validate.middleware";
+import { createUserSchema, updateUserSchema } from "../../schemas/user.schema";
+
+router.post("/", validateSchema(createUserSchema), userController.register);
 
 /**
  * @swagger
@@ -59,7 +62,11 @@ router.post("/", userController.register);
  *       200:
  *         description: Usuario actualizado
  */
-router.put("/:id", userController.actualizarUsuario);
+router.put(
+  "/:id",
+  validateSchema(updateUserSchema),
+  userController.actualizarUsuario
+);
 /**
  * @swagger
  * /users:

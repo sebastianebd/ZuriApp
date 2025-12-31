@@ -73,7 +73,16 @@ router.get("/health", (req, res) => {
  *         description: Credenciales inválidas
  */
 // Rutas públicas
-router.post("/login", authLimiter, authController.login);
+import { validateSchema } from "../../middleware/validate.middleware";
+import { loginSchema } from "../../schemas/auth.schema";
+
+// Rutas públicas
+router.post(
+  "/login",
+  authLimiter,
+  validateSchema(loginSchema),
+  authController.login
+);
 
 /**
  * @swagger

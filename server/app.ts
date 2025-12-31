@@ -25,8 +25,8 @@ import "./jobs/replacement.cron"; // Import execution
 
 // Definir token personalizado para Morgan
 morgan.token("user", (req: Request) => {
-  if ((req as any).user) {
-    const user = (req as any).user;
+  if (req.user) {
+    const user = req.user;
     const name = `${user.nombre} ${user.apellido}`;
     return `[User: ${name}]`;
   }
@@ -53,17 +53,6 @@ app.use("/api/sentry", express.raw({ limit: "50mb", type: () => true }));
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(cookieParser());
-
-// Documentación API
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
-
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/reemplazos", replacementRoutes);
-app.use("/api/options", optionRoutes);
-app.use("/api/audit", auditRoutes);
-app.use("/api/profile", profileRoutes);
 app.use(cookieParser());
 
 // Documentación API
