@@ -257,7 +257,7 @@ watch([filtroRutLocal, filtroNombreLocal, filtroCargoLocal, () => props.visible]
 
 // --- Filtrar usuarios
 const usuariosFiltrados = computed(() => {
-  let lista = props.usuarios
+  let lista = props.usuarios.filter((u) => !['ADMIN-TI', 'RECURSOS HUMANOS'].includes(u.tipo_cargo))
 
   // Filtro RUT
   if (filtroRutLocal.value) {
