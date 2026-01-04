@@ -215,7 +215,7 @@ watch(
         phoneStr = phoneStr.replace('+56', '')
       }
       // Asignamos como any para evitar conflicto con tipo number si la interfaz está mal definida
-      ;(usuarioCopia as any).telefono = phoneStr
+      usuarioCopia.telefono = phoneStr
     }
 
     editableUsuario.value = usuarioCopia
@@ -238,7 +238,7 @@ function confirmarGuardar() {
   const usuarioAGuardar = { ...editableUsuario.value }
   // Agregar prefijo +56 antes de enviar
   if (usuarioAGuardar.telefono) {
-    usuarioAGuardar.telefono = `+56${usuarioAGuardar.telefono}` as any
+    usuarioAGuardar.telefono = `+56${usuarioAGuardar.telefono}`
   }
 
   emit('guardar', usuarioAGuardar)
