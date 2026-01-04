@@ -5,7 +5,7 @@ export interface User {
   apellido: string
   fecha_nac: Date
   direccion: string
-  telefono: number
+  telefono: string
   email: string
   ciudad: string
   habilitado: string
@@ -50,7 +50,7 @@ export interface registrarUsuario {
   apellido: string
   fecha_nac: Date
   direccion: string
-  telefono: number
+  telefono: string
   email: string
   ciudad: string
   tipo_cargo: string
