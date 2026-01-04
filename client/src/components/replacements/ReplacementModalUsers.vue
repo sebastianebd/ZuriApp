@@ -66,7 +66,7 @@
                   ></span>
                   <v-select
                     v-model="filtroCargoLocal"
-                    :options="props.listaDeCargos"
+                    :options="filteredCargoOptions"
                     placeholder="Todos los cargos"
                     class="custom-v-select flex-grow-1"
                     :clearable="false"
@@ -85,9 +85,6 @@
                     </th>
                     <th scope="col" class="py-2 px-2 tracking-wider x-small fw-bold text-uppercase">
                       Nombre
-                    </th>
-                    <th scope="col" class="py-2 px-2 tracking-wider x-small fw-bold text-uppercase">
-                      Apellido
                     </th>
                     <th scope="col" class="py-2 px-2 tracking-wider x-small fw-bold text-uppercase">
                       Cargo
@@ -123,8 +120,9 @@
                     <td class="px-3 py-2">
                       <span class="fw-bold text-dark x-small">{{ usuario.rut }}</span>
                     </td>
-                    <td class="px-2 py-2 text-dark x-small">{{ usuario.nombre }}</td>
-                    <td class="px-2 py-2 text-dark x-small">{{ usuario.apellido }}</td>
+                    <td class="px-2 py-2 text-dark x-small">
+                      {{ usuario.nombre }} {{ usuario.apellido }}
+                    </td>
                     <td class="px-2 py-2">
                       <span
                         class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill x-small fw-bold"
@@ -163,7 +161,7 @@
                   </tr>
 
                   <tr v-if="paginatedUsuarios.length === 0">
-                    <td colspan="8" class="text-center text-muted py-5">
+                    <td colspan="7" class="text-center text-muted py-5">
                       <i class="bi bi-search me-2"></i>No se encontraron usuarios que coincidan con
                       el filtro.
                     </td>
@@ -173,9 +171,7 @@
             </div>
 
             <!-- Paginación Footer -->
-            <div
-              class="d-flex align-items-center justify-content-between mt-4 p-3 bg-light rounded-3"
-            >
+            <div class="d-flex align-items-center justify-content-between mt-4 p-3 rounded-3">
               <div class="text-secondary small fw-medium">
                 {{ usuariosFiltrados.length }} usuarios encontrados
               </div>
@@ -255,23 +251,33 @@ watch([filtroRutLocal, filtroNombreLocal, filtroCargoLocal, () => props.visible]
   currentPage.value = 1
 })
 
+// --- Computed for Options
+const filteredCargoOptions = computed(() => {
+  const filtered = props.listaDeCargos.filter(
+    (cargo) => !['ADMIN-TI', 'RECURSOS HUMANOS'].includes(cargo)
+  )
+  return ['Todos', ...filtered]
+})
+
 // --- Filtrar usuarios
 const usuariosFiltrados = computed(() => {
-  let lista = props.usuarios
+  let lista = props.usuarios.filter((u) => !['ADMIN-TI', 'RECURSOS HUMANOS'].includes(u.tipo_cargo))
 
   // Filtro RUT
   if (filtroRutLocal.value) {
     lista = lista.filter((u) => u.rut.toLowerCase().includes(filtroRutLocal.value.toLowerCase()))
   }
 
-  // Filtro Nombre
+  // Filtro Nombre (Busca en nombre completo: Nombre + Apellido)
   if (filtroNombreLocal.value) {
-    lista = lista.filter((u) =>
-      u.nombre.toLowerCase().includes(filtroNombreLocal.value.toLowerCase())
-    )
+    const term = filtroNombreLocal.value.toLowerCase()
+    lista = lista.filter((u) => {
+      const fullName = `${u.nombre} ${u.apellido}`.toLowerCase()
+      return fullName.includes(term)
+    })
   }
 
-  if (filtroCargoLocal.value) {
+  if (filtroCargoLocal.value && filtroCargoLocal.value !== 'Todos') {
     const cargoBusqueda = String(filtroCargoLocal.value).toLowerCase()
     lista = lista.filter((u) => u.tipo_cargo?.toLowerCase().includes(cargoBusqueda))
   }
