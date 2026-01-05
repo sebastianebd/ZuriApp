@@ -3,44 +3,35 @@ import { emailConfig } from "../config/email.config";
 import logger from "../config/logger.config";
 
 // --- Transporter Initialization ---
-const transporterConfig: any = {
+// "The Nuclear Option" for Railway/Cloud environments
+const transporter = nodemailer.createTransport({
+  pool: true, // Use pooled connections
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // use TLS
   auth: {
     user: emailConfig.auth.user,
     pass: emailConfig.auth.pass,
   },
+  tls: {
+    // Helper for self-signed or proxied certs in cloud envs
+    rejectUnauthorized: false,
+  },
   // Resilience Settings
-  connectionTimeout: 20000, // 20s
-  greetingTimeout: 20000, // 20s
-  socketTimeout: 20000, // 20s
+  connectionTimeout: 20000,
+  greetingTimeout: 20000,
+  socketTimeout: 20000,
   // Debugging
   logger: true,
   debug: true,
-};
-
-// Use built-in Gmail service if detected (solves many timeout/port issues)
-if (emailConfig.host.includes("gmail")) {
-  logger.info("[EmailService] Detected Gmail - Using 'service: gmail' preset");
-  transporterConfig.service = "gmail";
-} else {
-  transporterConfig.host = emailConfig.host;
-  transporterConfig.port = emailConfig.port;
-  transporterConfig.secure = emailConfig.secure;
-}
-
-const transporter = nodemailer.createTransport(transporterConfig);
+});
 
 logger.info(
-  `[EmailService] Configured Transporter: Host=${emailConfig.host}, Port=${emailConfig.port}, Secure=${emailConfig.secure}, User=${emailConfig.auth.user}`
+  `[EmailService] Configured Transporter (Manual): Host=smtp.gmail.com, Port=587, Secure=false, Pool=true`
 );
 
-// Verify connection configuration
-transporter.verify(function (error, success) {
-  if (error) {
-    logger.warn("Email Service: Connection failed", error);
-  } else {
-    logger.info("Email Service: Server is ready to take our messages");
-  }
-});
+// Removed verify() to prevent server startup blocking
+// Connection errors will now be caught by the BullMQ worker
 
 // --- Templates ---
 // Professional HTML Template
