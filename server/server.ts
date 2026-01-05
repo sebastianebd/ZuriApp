@@ -1,6 +1,7 @@
 import "./instrument";
 import dotenv from "dotenv";
 import path from "path";
+import { setupEmailWorker } from "./queues/email.queue";
 
 // Load .env from root (parent of server/)
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -25,6 +26,12 @@ const allowedOrigins = process.env.CLIENT_URL
   : ["http://localhost:5173", "http://localhost:4173", "http://localhost:5174"];
 
 socketIO.init(server, allowedOrigins);
+
+// Initialize Workers
+setupEmailWorker();
+
+// Initialize Workers
+setupEmailWorker();
 
 connectDB();
 

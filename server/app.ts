@@ -14,6 +14,13 @@ import swaggerSpecs from "./config/swagger.config";
 import morgan from "morgan";
 import logger from "./config/logger.config";
 
+// Bull Board
+import { createBullBoard } from "@bull-board/api";
+import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
+import { ExpressAdapter } from "@bull-board/express";
+import { emailQueue } from "./queues/email.queue";
+import basicAuth from "express-basic-auth";
+
 import authRoutes from "./routes/api/auth.routes";
 import userRoutes from "./routes/api/users.routes";
 import replacementRoutes from "./routes/api/replacement.routes";
@@ -76,6 +83,29 @@ app.use(
   }),
   sentryRoutes
 );
+
+// --- Bull Board Setup ---
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath("/admin/queues");
+
+createBullBoard({
+  queues: [new BullMQAdapter(emailQueue)],
+  serverAdapter: serverAdapter,
+});
+
+// Protect Dashboard with Basic Auth
+const dashboardUser = process.env.BULL_BOARD_USER || "admin";
+const dashboardPass = process.env.BULL_BOARD_PASS || "admin123";
+
+app.use(
+  "/admin/queues",
+  basicAuth({
+    users: { [dashboardUser]: dashboardPass },
+    challenge: true,
+  }),
+  serverAdapter.getRouter()
+);
+// ------------------------
 
 app.all("*", (req: Request, res: Response) => {
   res.status(404).json({ error: "404 Not Found" });

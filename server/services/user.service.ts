@@ -2,7 +2,8 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import User, { IUser } from "../models/user.model";
 import logger from "../config/logger.config";
-import emailService from "./email.service";
+// import emailService from "./email.service"; // Decoupled: used by Worker now
+import { emailQueue } from "../queues/email.queue";
 
 interface RegisterData {
   rut: string;
@@ -68,13 +69,13 @@ async function register(data: RegisterData, creatorRole: string) {
     const generarPassword = crypto.randomBytes(3).toString("hex");
     hashedPassword = await bcrypt.hash(generarPassword, 10);
 
-    // Send email asynchronously (non-blocking)
-    emailService.sendWelcomeEmail(
-      normalizedEmail,
-      `${nombre} ${apellido}`,
-      normalizedRut,
-      generarPassword
-    );
+    // Dispatch email job to Queue (Fire and Forget)
+    await emailQueue.add("send-welcome-email", {
+      to: normalizedEmail,
+      nombre: `${nombre} ${apellido}`,
+      rut: normalizedRut,
+      pass: generarPassword,
+    });
 
     logger.info(`Generated password for ${normalizedRut} (${tipo_cargo})`);
   }
