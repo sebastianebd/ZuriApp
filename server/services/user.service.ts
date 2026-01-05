@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import User, { IUser } from "../models/user.model";
 import logger from "../config/logger.config";
+import emailService from "./email.service";
 
 interface RegisterData {
   rut: string;
@@ -66,7 +67,15 @@ async function register(data: RegisterData, creatorRole: string) {
   if (rolesWithPassword.includes(tipo_cargo)) {
     const generarPassword = crypto.randomBytes(3).toString("hex");
     hashedPassword = await bcrypt.hash(generarPassword, 10);
-    // TODO: Send email with credentials here (placeholder)
+
+    // Send email asynchronously (non-blocking)
+    emailService.sendWelcomeEmail(
+      normalizedEmail,
+      `${nombre} ${apellido}`,
+      normalizedRut,
+      generarPassword
+    );
+
     logger.info(`Generated password for ${normalizedRut} (${tipo_cargo})`);
   }
 

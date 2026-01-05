@@ -1,5 +1,10 @@
 import "./instrument";
 import dotenv from "dotenv";
+import path from "path";
+
+// Load .env from root (parent of server/)
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+// Fallback: also try local .env just in case, though root should win if loaded first
 dotenv.config();
 
 import mongoose from "mongoose";
