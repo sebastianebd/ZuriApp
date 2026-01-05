@@ -3,7 +3,7 @@ import emailService from "../services/email.service";
 import logger from "../config/logger.config";
 
 // Redis connection details (reuse from env or config)
-const redisConnection = {
+const redisConnection: any = {
   host: "localhost", // Default for dev when running locally
   port: 6379,
 };
@@ -13,6 +13,8 @@ if (process.env.REDIS_URL) {
   const url = new URL(process.env.REDIS_URL);
   redisConnection.host = url.hostname;
   redisConnection.port = Number(url.port);
+  redisConnection.password = url.password;
+  redisConnection.username = url.username;
 }
 
 const QUEUE_NAME = "email-queue";
