@@ -11,7 +11,18 @@ const transporter = nodemailer.createTransport({
     user: emailConfig.auth.user,
     pass: emailConfig.auth.pass,
   },
+  // Resilience Settings
+  connectionTimeout: 20000, // 20s
+  greetingTimeout: 20000, // 20s
+  socketTimeout: 20000, // 20s
+  // Debugging
+  logger: true,
+  debug: true,
 });
+
+logger.info(
+  `[EmailService] Configured Transporter: Host=${emailConfig.host}, Port=${emailConfig.port}, Secure=${emailConfig.secure}, User=${emailConfig.auth.user}`
+);
 
 // Verify connection configuration
 transporter.verify(function (error, success) {

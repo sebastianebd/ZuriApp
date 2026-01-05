@@ -52,7 +52,10 @@ app.use(globalLimiter);
 app.use(
   morgan(
     ":remote-addr :user :method :url :status :res[content-length] - :response-time ms",
-    { stream: { write: (message: string) => logger.info(message.trim()) } }
+    {
+      stream: { write: (message: string) => logger.info(message.trim()) },
+      skip: (req: Request) => req.url.startsWith("/admin/queues"),
+    }
   )
 );
 // Sentry Tunnel Body Parser (Capturar todo como buffer crudo para evitar corrupción)
