@@ -3,10 +3,7 @@ import { emailConfig } from "../config/email.config";
 import logger from "../config/logger.config";
 
 // --- Transporter Initialization ---
-const transporter = nodemailer.createTransport({
-  host: emailConfig.host,
-  port: emailConfig.port,
-  secure: emailConfig.secure,
+const transporterConfig: any = {
   auth: {
     user: emailConfig.auth.user,
     pass: emailConfig.auth.pass,
@@ -18,7 +15,19 @@ const transporter = nodemailer.createTransport({
   // Debugging
   logger: true,
   debug: true,
-});
+};
+
+// Use built-in Gmail service if detected (solves many timeout/port issues)
+if (emailConfig.host.includes("gmail")) {
+  logger.info("[EmailService] Detected Gmail - Using 'service: gmail' preset");
+  transporterConfig.service = "gmail";
+} else {
+  transporterConfig.host = emailConfig.host;
+  transporterConfig.port = emailConfig.port;
+  transporterConfig.secure = emailConfig.secure;
+}
+
+const transporter = nodemailer.createTransport(transporterConfig);
 
 logger.info(
   `[EmailService] Configured Transporter: Host=${emailConfig.host}, Port=${emailConfig.port}, Secure=${emailConfig.secure}, User=${emailConfig.auth.user}`
