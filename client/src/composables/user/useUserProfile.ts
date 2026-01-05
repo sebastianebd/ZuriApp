@@ -51,36 +51,6 @@ export function useUserProfile() {
   // Activity
   const recentActivity = ref<any[]>([])
 
-  function formatDate(dateString: string | Date) {
-    if (!dateString) return 'N/A'
-    const date = dateString instanceof Date ? dateString : new Date(dateString)
-    return date.toLocaleDateString('es-CL', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
-
-  function formatRelativeTime(dateString: string) {
-    return formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: es })
-  }
-
-  function getActionClass(action: string) {
-    switch (action) {
-      case 'CREAR':
-        return 'bg-success'
-      case 'MODIFICAR':
-        return 'bg-warning'
-      case 'ELIMINAR':
-      case 'ANULAR':
-        return 'bg-danger'
-      case 'FINALIZAR':
-        return 'bg-info'
-      default:
-        return 'bg-primary'
-    }
-  }
-
   // Loading State
   const loading = ref(false)
 
@@ -129,5 +99,35 @@ export function useUserProfile() {
     formatDate,
     formatRelativeTime,
     getActionClass
+  }
+}
+
+export function formatDate(dateString: string | Date) {
+  if (!dateString) return 'N/A'
+  const date = dateString instanceof Date ? dateString : new Date(dateString)
+  return date.toLocaleDateString('es-CL', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+export function formatRelativeTime(dateString: string) {
+  return formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: es })
+}
+
+export function getActionClass(action: string) {
+  switch (action) {
+    case 'CREAR':
+      return 'bg-success'
+    case 'MODIFICAR':
+      return 'bg-warning'
+    case 'ELIMINAR':
+    case 'ANULAR':
+      return 'bg-danger'
+    case 'FINALIZAR':
+      return 'bg-info'
+    default:
+      return 'bg-primary'
   }
 }

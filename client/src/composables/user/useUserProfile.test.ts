@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useUserProfile } from './useUserProfile'
+import { useUserProfile, formatDate, getActionClass } from './useUserProfile'
 import { setActivePinia, createPinia } from 'pinia'
 import { mount } from '@vue/test-utils'
 
@@ -70,7 +70,6 @@ describe('useUserProfile Composable', () => {
   })
 
   it('should format dates correctly', () => {
-    const { formatDate } = useUserProfile()
     const result = formatDate('2023-01-01T00:00:00')
     // Check for Spanish format (depending on locale availability in test env)
     // Adjust expectation based on Node environment locale
@@ -78,7 +77,6 @@ describe('useUserProfile Composable', () => {
   })
 
   it('should get correct action class', () => {
-    const { getActionClass } = useUserProfile()
     expect(getActionClass('CREAR')).toBe('bg-success')
     expect(getActionClass('ELIMINAR')).toBe('bg-danger')
     expect(getActionClass('UNKNOWN')).toBe('bg-primary')
