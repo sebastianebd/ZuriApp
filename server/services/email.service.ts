@@ -90,16 +90,10 @@ export const sendWelcomeEmail = async (
     html: htmlContent,
   };
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    logger.info(`Email sent to ${to}: ${info.messageId}`);
-    return info;
-  } catch (error) {
-    logger.error(`Error sending email to ${to}:`, error);
-    // We don't throw here to avoid failing user creation if email fails
-    // But in a "Professional" system maybe we should queue retry
-    return null;
-  }
+  // Let the error propagate so BullMQ can handle retries
+  const info = await transporter.sendMail(mailOptions);
+  logger.info(`Email sent to ${to}: ${info.messageId}`);
+  return info;
 };
 
 export default {
