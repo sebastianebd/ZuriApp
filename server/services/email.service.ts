@@ -3,7 +3,12 @@ import { emailConfig } from "../config/email.config";
 import logger from "../config/logger.config";
 
 // --- Resend Initialization ---
-const resend = new Resend(emailConfig.resendApiKey);
+let resend: Resend | null = null;
+if (emailConfig.resendApiKey) {
+  resend = new Resend(emailConfig.resendApiKey);
+} else {
+  logger.warn("[EmailService] RESEND_API_KEY missing. Email sending disabled.");
+}
 
 // --- Templates ---
 // Professional HTML Template
@@ -67,6 +72,13 @@ export const sendWelcomeEmail = async (
   const htmlContent = getWelcomeTemplate(nombre, rut, pass);
 
   try {
+    if (!resend) {
+      logger.warn(
+        `[EmailService] Skipping email to ${to} (No API Key configured)`
+      );
+      return null;
+    }
+
     const { data, error } = await resend.emails.send({
       from: emailConfig.from, // e.g., "onboarding@resend.dev" or your verified domain
       to: [to],
