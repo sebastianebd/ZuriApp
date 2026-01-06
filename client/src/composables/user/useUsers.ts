@@ -7,7 +7,10 @@ import type { User } from '@/types/models'
 import socket from '@/plugins/socket'
 
 export function useUsers() {
-  const showAlert = inject<(title: string, message: string) => void>('showAlert')
+  const showAlert =
+    inject<(title: string, message: string, type?: 'success' | 'error' | 'info') => void>(
+      'showAlert'
+    )
 
   // --- STORES
   const userStore = useUserStore()
@@ -145,10 +148,17 @@ export function useUsers() {
   }
 
   async function handleCreate(nuevoUsuario: User) {
-    const usuarioCreado = await userStore.crearUsuario(nuevoUsuario)
-    usuarios.value.push(usuarioCreado)
-    closeCreateModal()
-    showAlert?.('Guardado', 'El usuario se ha creado correctamente.')
+    try {
+      const usuarioCreado = await userStore.crearUsuario(nuevoUsuario)
+      usuarios.value.push(usuarioCreado)
+      closeCreateModal()
+      showAlert?.('Guardado', 'El usuario se ha creado correctamente.')
+    } catch (error: any) {
+      // El errorHandler devuelve directamente el objeto data (ej: { mensaje: "..." })
+      // o el error original axios si falla algo más. Verificamos ambas estructuras.
+      const message = error.mensaje || error.response?.data?.mensaje || 'Error al crear usuario.'
+      showAlert?.('Error', message, 'error')
+    }
   }
 
   async function loadUsers() {

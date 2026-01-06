@@ -81,6 +81,6 @@ describe("User Controller - Integration", () => {
     const response = await request(app).post("/api/users").send(newUser);
 
     expect(response.status).toBe(409);
-    expect(response.body.mensaje).toBe("Usuario ya registrado");
+    expect(response.body.mensaje).toBe("El RUT ya está registrado.");
   });
 });

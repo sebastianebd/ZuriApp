@@ -2,6 +2,8 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import User, { IUser } from "../models/user.model";
 import logger from "../config/logger.config";
+// import emailService from "./email.service"; // Decoupled: used by Worker now
+import { emailQueue } from "../queues/email.queue";
 
 interface RegisterData {
   rut: string;
@@ -42,14 +44,22 @@ async function register(data: RegisterData, creatorRole: string) {
     };
   }
 
-  const exists = await Promise.all([
-    User.exists({ rut }),
-    User.exists({ telefono }),
-    User.exists({ email }),
-  ]);
+  // Normalize data for checks
+  const normalizedRut = rut.toUpperCase();
+  const normalizedEmail = email.toLowerCase();
+  // Phone usually doesn't need casing, but trim is good
+  const normalizedTelef = telefono.trim(); // Assuming we rely on frontend +56
 
-  if (exists.some(Boolean))
-    throw { status: 409, message: "Usuario ya registrado" };
+  // 2. Validate Uniqueness
+  if (await User.exists({ rut: normalizedRut })) {
+    throw { status: 409, message: "El RUT ya está registrado." };
+  }
+  if (await User.exists({ email: normalizedEmail })) {
+    throw { status: 409, message: "Ya existe un usuario con ese email." };
+  }
+  if (await User.exists({ telefono: normalizedTelef })) {
+    throw { status: 409, message: "Ya existe un usuario con ese teléfono." };
+  }
 
   // 2. Conditional Password Generation
   let hashedPassword = undefined;
@@ -58,19 +68,27 @@ async function register(data: RegisterData, creatorRole: string) {
   if (rolesWithPassword.includes(tipo_cargo)) {
     const generarPassword = crypto.randomBytes(3).toString("hex");
     hashedPassword = await bcrypt.hash(generarPassword, 10);
-    // TODO: Send email with credentials here (placeholder)
-    logger.info(`Generated password for ${rut} (${tipo_cargo})`);
+
+    // Dispatch email job to Queue (Fire and Forget)
+    await emailQueue.add("send-welcome-email", {
+      to: normalizedEmail,
+      nombre: `${nombre} ${apellido}`,
+      rut: normalizedRut,
+      pass: generarPassword,
+    });
+
+    logger.info(`Generated password for ${normalizedRut} (${tipo_cargo})`);
   }
 
   const nuevoUsuario: any = {
-    rut,
-    nombre,
-    apellido,
+    rut: normalizedRut,
+    nombre: nombre.toUpperCase(),
+    apellido: apellido.toUpperCase(),
     fecha_nac,
-    direccion,
-    telefono,
-    email,
-    ciudad,
+    direccion: direccion.toUpperCase(),
+    telefono: normalizedTelef,
+    email: normalizedEmail,
+    ciudad: ciudad.toUpperCase(),
     tipo_cargo,
     password: hashedPassword,
   };
@@ -83,7 +101,23 @@ async function register(data: RegisterData, creatorRole: string) {
     delete nuevoUsuario.password;
   }
 
-  const userCreated = await User.create(nuevoUsuario);
+  let userCreated;
+  try {
+    userCreated = await User.create(nuevoUsuario);
+  } catch (error: any) {
+    if (error.code === 11000) {
+      if (error.keyPattern.rut)
+        throw { status: 409, message: "El RUT ya está registrado." };
+      if (error.keyPattern.email)
+        throw { status: 409, message: "Ya existe un usuario con ese email." };
+      if (error.keyPattern.telefono)
+        throw {
+          status: 409,
+          message: "Ya existe un usuario con ese teléfono.",
+        };
+    }
+    throw error;
+  }
 
   logger.info(`Nuevo usuario registrado en service: ${userCreated.rut}`);
   return userCreated;

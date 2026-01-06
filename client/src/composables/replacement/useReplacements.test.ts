@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useReplacements } from './useReplacements'
 import { setActivePinia, createPinia } from 'pinia'
 import { ref } from 'vue'
+import { mount } from '@vue/test-utils'
 
 // Mocks
 const mockShowAlert = vi.fn()
@@ -85,6 +86,17 @@ vi.mock('@/composables/useReplacementModals', () => ({
   useReplacementModals: () => mockModalLogic
 }))
 
+function withSetup<T>(composable: () => T) {
+  let result: T
+  const wrapper = mount({
+    setup() {
+      result = composable()
+      return () => {}
+    }
+  })
+  return { result: result!, wrapper }
+}
+
 describe('useReplacements', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -93,14 +105,8 @@ describe('useReplacements', () => {
   })
 
   it('loads data on mount', async () => {
-    // We need to mount the composable logic.
-    // Since onMounted is used, we should call it inside a setup context or just invoke the function.
-    // However, testing onMounted in pure unit tests without mount() helper requires care.
-    // Ideally we use a helper like `withSetup` (Vue Test Utils) but for coverage we can just call loadData manually
-    // if we exported it or if we test the return values.
-
-    // Fortunately, useReplacements returns `loadData`.
-    const { loadData, listaDeTurnos } = useReplacements()
+    const { result } = withSetup(() => useReplacements())
+    const { loadData, listaDeTurnos } = result
 
     await loadData()
 
@@ -110,15 +116,10 @@ describe('useReplacements', () => {
   })
 
   it('confirms substitution with valid data', async () => {
-    const { confirmingSustitucion, nuevoEntranteSustitucion: nuevoEntranteRef } =
-      useReplacements() as any
-    // Note: nuevoEntranteSustitucion is from modalLogic mock which is ref
+    const { result } = withSetup(() => useReplacements())
+    const { confirmarSustitucion } = result
 
     mockModalLogic.nuevoEntranteSustitucion.value = { rut_entrante: '123' }
-
-    // We need to call confirmingSustitucion.
-    // Wait, the returned function is `confirmarSustitucion`.
-    const { confirmarSustitucion } = useReplacements()
 
     await confirmarSustitucion()
 
@@ -133,7 +134,8 @@ describe('useReplacements', () => {
 
   it('shows error if confirming substitution without entrant', async () => {
     mockModalLogic.nuevoEntranteSustitucion.value = { rut_entrante: '' }
-    const { confirmarSustitucion } = useReplacements()
+    const { result } = withSetup(() => useReplacements())
+    const { confirmarSustitucion } = result
 
     await confirmarSustitucion()
 
@@ -142,7 +144,8 @@ describe('useReplacements', () => {
   })
 
   it('saves new replacement', async () => {
-    const { guardarNuevoReemplazo } = useReplacements()
+    const { result } = withSetup(() => useReplacements())
+    const { guardarNuevoReemplazo } = result
     const data = { id: 'new' } as any
 
     await guardarNuevoReemplazo(data)
@@ -153,7 +156,8 @@ describe('useReplacements', () => {
   })
 
   it('handles update replacement', async () => {
-    const { handleUpdate } = useReplacements()
+    const { result } = withSetup(() => useReplacements())
+    const { handleUpdate } = result
     mockModalLogic.registroActual.value = { _id: 'r1', data: 'update' }
 
     await handleUpdate()
@@ -167,14 +171,16 @@ describe('useReplacements', () => {
   })
 
   it('handles finalize replacement', async () => {
-    const { handleFinalizar } = useReplacements()
+    const { result } = withSetup(() => useReplacements())
+    const { handleFinalizar } = result
     await handleFinalizar('r1')
     expect(mockReplacementStore.finalizarReemplazo).toHaveBeenCalledWith('r1')
     expect(mockShowAlert).toHaveBeenCalledWith('Finalizado', expect.any(String))
   })
 
   it('handles annul replacement', async () => {
-    const { handleAnular } = useReplacements()
+    const { result } = withSetup(() => useReplacements())
+    const { handleAnular } = result
     await handleAnular('r1')
     expect(mockReplacementStore.anularReemplazo).toHaveBeenCalledWith('r1')
     expect(mockShowAlert).toHaveBeenCalledWith('Anulado', expect.any(String))

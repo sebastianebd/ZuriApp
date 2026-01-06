@@ -13,9 +13,17 @@ const handleSidebarToggle = (value: boolean) => {
 
 const alertRef = ref<InstanceType<typeof AlertMessage> | null>(null)
 
-provide('showAlert', (title: string, message: string) => {
-  alertRef.value?.show(title, message)
-})
+provide(
+  'showAlert',
+  (
+    title: string,
+    message: string,
+    type: 'success' | 'error' | 'info' = 'success',
+    duration = 2000
+  ) => {
+    alertRef.value?.show(title, message, type, duration)
+  }
+)
 </script>
 
 <template>
