@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 import validator from "validator";
+import bcrypt from "bcrypt";
 
 export interface IUser extends Document {
   rut: string;
@@ -126,6 +127,20 @@ userSchema.virtual("id").get(function (this: any) {
 
 userSchema.virtual("full_name").get(function (this: any) {
   return `${this.nombre} ${this.apellido}`;
+});
+
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password as string, salt);
+    next();
+  } catch (error: any) {
+    next(error);
+  }
 });
 
 export default mongoose.model<IUser>("User", userSchema);

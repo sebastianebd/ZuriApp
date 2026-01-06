@@ -134,4 +134,30 @@ async function refresh(refreshToken: string) {
   return accessToken;
 }
 
-export default { login, logout, refresh };
+async function changePassword(
+  userId: string,
+  current: string,
+  newPass: string
+) {
+  const user = await User.findById(userId).select("+password");
+  if (!user) {
+    throw new AuthError("Usuario no encontrado");
+  }
+
+  const match = await bcrypt.compare(current, user.password as string);
+  if (!match) {
+    throw new AuthError("La contraseña actual es incorrecta");
+  }
+
+  // Passwords will be hashed by the pre-save hook in the User model
+  user.password = newPass;
+
+  // DEBUG: Log the new password explicitly requested by user for confirmation
+  console.log(
+    `[DEBUG] Contraseña actualizada para usuario ${user.rut}: ${newPass}`
+  );
+
+  await user.save();
+}
+
+export default { login, logout, refresh, changePassword };

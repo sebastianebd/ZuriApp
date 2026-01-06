@@ -57,4 +57,23 @@ async function user(req: AuthRequest, res: Response) {
   res.status(200).json(req.user);
 }
 
-export default { login, logout, refresh, user };
+async function changePassword(req: AuthRequest, res: Response) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    // Assuming authMiddleware populates req.user
+    if (!req.user) {
+      return res.status(401).json({ mensaje: "Usuario no autenticado" });
+    }
+
+    await authService.changePassword(req.user.id, currentPassword, newPassword);
+
+    logger.info(
+      `🔐 Contraseña cambiada exitosamente para usuario ${req.user.id}`
+    );
+    res.status(200).json({ mensaje: "Contraseña actualizada exitosamente" });
+  } catch (error: any) {
+    res.status(error.status || 500).json({ mensaje: error.message });
+  }
+}
+
+export default { login, logout, refresh, user, changePassword };

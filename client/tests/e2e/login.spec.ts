@@ -16,7 +16,7 @@ test.describe('Login Flow', () => {
     await page.waitForLoadState('networkidle')
 
     await page.fill('#rut', '12345678-5')
-    await page.fill('input[type="password"]', 'admin123')
+    await page.fill('input[type="password"]', '2716xD!')
 
     await page.click('button[type="submit"]')
 

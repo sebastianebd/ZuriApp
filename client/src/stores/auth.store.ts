@@ -55,6 +55,23 @@ export const useAuthStore = defineStore('auth', {
       return data
     },
 
+    async changePassword(currentPassword: string, newPassword: string, confirmPassword: string) {
+      try {
+        const privateApi = this.usePrivateApi()
+        const { data } = await privateApi.post('/auth/change-password', {
+          currentPassword,
+          newPassword,
+          confirmPassword
+        })
+        return { success: true, message: data.mensaje }
+      } catch (error: any) {
+        return {
+          success: false,
+          message: error.response?.data?.mensaje || 'Error al cambiar la contraseña'
+        }
+      }
+    },
+
     async logout() {
       try {
         const apiPrivate = this.usePrivateApi()
