@@ -5,9 +5,17 @@ import { AuthRequest } from "../middleware/authentication.middleware";
 
 async function login(req: Request, res: Response) {
   try {
-    const { accessToken, refreshToken, user } = await authService.login(
-      req.body
-    );
+    const ip =
+      (req.headers["x-forwarded-for"] as string) ||
+      req.socket.remoteAddress ||
+      "Unknown";
+    const userAgent = req.headers["user-agent"] || "Unknown";
+
+    const { accessToken, refreshToken, user } = await authService.login({
+      ...req.body,
+      ip,
+      userAgent,
+    });
     res
       .cookie("refresh_token", refreshToken, {
         httpOnly: true,
@@ -76,4 +84,16 @@ async function changePassword(req: AuthRequest, res: Response) {
   }
 }
 
-export default { login, logout, refresh, user, changePassword };
+export default { login, logout, refresh, user, changePassword, getHistory };
+
+async function getHistory(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ mensaje: "Usuario no autenticado" });
+    }
+    const history = await authService.getLoginHistory(req.user.id);
+    res.status(200).json(history);
+  } catch (error: any) {
+    res.status(500).json({ mensaje: error.message });
+  }
+}

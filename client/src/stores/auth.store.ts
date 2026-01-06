@@ -85,6 +85,12 @@ export const useAuthStore = defineStore('auth', {
         localStorage.clear() // Safety cleanup for migrated users
         // window.location.reload() // Optional aggressive cleanup
       }
+    },
+
+    async fetchLoginHistory() {
+      const privateApi = this.usePrivateApi()
+      const { data } = await privateApi.get('/auth/history')
+      return data
     }
   },
 

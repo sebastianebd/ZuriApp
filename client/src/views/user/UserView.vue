@@ -219,10 +219,13 @@
               </div>
             </div>
 
-            <!-- Pestaña: Seguridad (Cambiar Contraseña) -->
-            <div v-else-if="activeTab === 'security'" class="row justify-content-center fade-in">
-              <div class="col-12 col-md-8 col-xl-6">
-                <div class="card border-0 shadow-sm rounded-4">
+            <!-- Pestaña: Seguridad (Cambiar Contraseña & Historial) -->
+            <div
+              v-else-if="activeTab === 'security'"
+              class="row justify-content-center align-items-stretch fade-in g-4"
+            >
+              <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
                   <div class="card-body p-4">
                     <h5 class="fw-bold mb-3 text-primary d-flex align-items-center gap-2">
                       <i class="bi bi-key-fill"></i> Cambiar Contraseña
@@ -370,16 +373,103 @@
                           <span v-else>Actualizar Contraseña</span>
                         </button>
                       </div>
-
-                      <!-- (Removed inline feedback message) -->
                     </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Historial de Inicios de Sesión -->
+              <div class="col-12 col-lg-6 mt-4 mt-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                  <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4 text-primary d-flex align-items-center gap-2">
+                      <i class="bi bi-clock-history"></i> Historial de Accesos
+                    </h5>
+
+                    <div v-if="loadingHistory" class="text-center py-5">
+                      <div class="spinner-border text-primary spinner-border-sm" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                      </div>
+                    </div>
+
+                    <div v-else-if="loginHistory.length === 0" class="text-center py-5 text-muted">
+                      <i class="bi bi-shield-check fs-1 mb-2 d-block"></i>
+                      <p class="mb-0">No hay registros recientes</p>
+                    </div>
+
+                    <div v-else class="table-responsive">
+                      <table class="table table-borderless align-middle mb-0">
+                        <thead class="text-muted small text-uppercase">
+                          <tr>
+                            <th class="fw-semibold ps-0">Estado</th>
+                            <th class="fw-semibold">Fecha</th>
+                            <th class="fw-semibold text-end pe-0">IP</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr
+                            v-for="(log, index) in loginHistory"
+                            :key="index"
+                            class="border-bottom"
+                          >
+                            <td class="ps-0 py-3">
+                              <div class="d-flex align-items-center gap-2">
+                                <div
+                                  class="icon-circle"
+                                  :class="
+                                    log.status === 'SUCCESS'
+                                      ? 'bg-success bg-opacity-10 text-success'
+                                      : 'bg-danger bg-opacity-10 text-danger'
+                                  "
+                                >
+                                  <i
+                                    class="bi"
+                                    :class="log.status === 'SUCCESS' ? 'bi-check-lg' : 'bi-x-lg'"
+                                  ></i>
+                                </div>
+                                <div>
+                                  <span
+                                    class="d-block fw-semibold small"
+                                    :class="
+                                      log.status === 'SUCCESS' ? 'text-success' : 'text-danger'
+                                    "
+                                  >
+                                    {{ log.status === 'SUCCESS' ? 'Exitoso' : 'Fallido' }}
+                                  </span>
+                                  <span
+                                    class="text-muted smaller text-truncate d-block"
+                                    style="max-width: 150px"
+                                  >
+                                    {{ parseUserAgent(log.userAgent) }}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td class="py-3">
+                              <span class="text-dark small fw-medium">{{
+                                formatDate(log.timestamp)
+                              }}</span>
+                              <span class="d-block text-muted smaller">{{
+                                formatRelativeTime(log.timestamp)
+                              }}</span>
+                            </td>
+                            <td class="text-end pe-0 py-3">
+                              <span
+                                class="badge bg-light text-secondary border fw-normal font-monospace"
+                              >
+                                {{ log.ip }}
+                              </span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </template>
-
         <template #fallback>
           <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
@@ -389,17 +479,17 @@
           </div>
         </template>
       </Suspense>
-
-      <!-- Components -->
-      <ConfirmationModal
-        :visible="showConfirmModal"
-        mensaje="¿Estás seguro de que deseas cambiar tu contraseña? Tendrás que iniciar sesión nuevamente."
-        @confirmar="confirmChangePassword"
-        @cancelar="showConfirmModal = false"
-      />
-
-      <AlertMessage ref="alertComponent" />
     </div>
+
+    <!-- Components -->
+    <ConfirmationModal
+      :visible="showConfirmModal"
+      mensaje="¿Estás seguro de que deseas cambiar tu contraseña?"
+      @confirmar="confirmChangePassword"
+      @cancelar="showConfirmModal = false"
+    />
+
+    <AlertMessage ref="alertComponent" />
   </div>
 </template>
 
@@ -448,6 +538,39 @@ const showPassword = reactive({
 const isSubmitting = ref(false)
 const showConfirmModal = ref(false)
 const alertComponent = ref<InstanceType<typeof AlertMessage> | null>(null)
+
+// History Logic
+const loginHistory = ref<any[]>([])
+const loadingHistory = ref(false)
+
+const loadHistory = async () => {
+  loadingHistory.value = true
+  try {
+    loginHistory.value = await authStore.fetchLoginHistory()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
+// Watch activeTab to load history
+import { watch } from 'vue'
+watch(activeTab, (newTab) => {
+  if (newTab === 'security') {
+    loadHistory()
+  }
+})
+
+// User Agent Parser Helper
+const parseUserAgent = (ua: string) => {
+  if (ua.includes('Windows')) return 'Windows PC'
+  if (ua.includes('Macintosh')) return 'Mac'
+  if (ua.includes('Linux')) return 'Linux PC'
+  if (ua.includes('Android')) return 'Android'
+  if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS'
+  return 'Desconocido'
+}
 
 // Real-time Requirements
 const reqs = reactive({
@@ -699,5 +822,18 @@ const confirmChangePassword = async () => {
 
 .password-toggle:hover {
   color: #4e73df;
+}
+.password-toggle:hover {
+  color: #4e73df;
+}
+
+.icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
 }
 </style>

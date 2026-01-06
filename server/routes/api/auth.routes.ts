@@ -181,4 +181,26 @@ router.post("/logout", authController.logout);
  */
 router.get("/user", authController.user);
 
+/**
+ * @swagger
+ * /auth/history:
+ *   get:
+ *     summary: Obtener historial de inicios de sesión
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de últimos inicios de sesión
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/LoginHistory'
+ *       401:
+ *         description: No autorizado
+ */
+router.get("/history", authController.getHistory);
+
 export default router;

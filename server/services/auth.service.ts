@@ -32,7 +32,19 @@ const generateRefreshToken = (userId: string) => {
   });
 };
 
-async function login({ rut, password }: { rut?: string; password?: string }) {
+import LoginHistory from "../models/login-history.model";
+
+async function login({
+  rut,
+  password,
+  ip,
+  userAgent,
+}: {
+  rut?: string;
+  password?: string;
+  ip?: string;
+  userAgent?: string;
+}) {
   if (!rut || !password) {
     throw new ValidationError("Campos de autenticación requeridos.");
   }
@@ -40,13 +52,34 @@ async function login({ rut, password }: { rut?: string; password?: string }) {
   const user = await User.findOne({ rut }).select("+password").exec();
 
   if (!user) {
+    // Log Failed Attempt (Unknown User or Wrong User)
+    // Need a user ID to log? If user doesn't exist, we can't link it to a user.
+    // For security, maybe we only log history for EXISTING users to avoid DB spam
+    // OR we log it with a null user if valuable? The model requires a user.
+    // Ideally we'd log against the attempted RUT but that's PII without a user link.
+    // Decision: Only log history for found users to avoid clutter/DOS.
     throw new AuthError("Rut o contraseña incorrecta.");
   }
 
   const match = await bcrypt.compare(password, user.password as string);
   if (!match) {
+    // Log Failed Attempt
+    await LoginHistory.create({
+      user: user._id,
+      ip: ip || "Unknown",
+      userAgent: userAgent || "Unknown",
+      status: "FAILED",
+    });
     throw new AuthError("Rut o contraseña incorrecta.");
   }
+
+  // Log Success Attempt
+  await LoginHistory.create({
+    user: user._id,
+    ip: ip || "Unknown",
+    userAgent: userAgent || "Unknown",
+    status: "SUCCESS",
+  });
 
   const accessToken = generateAccessToken(user.id);
   const refreshToken = generateRefreshToken(user.id);
@@ -57,6 +90,13 @@ async function login({ rut, password }: { rut?: string; password?: string }) {
   await user.save();
 
   return { accessToken, refreshToken, user };
+}
+
+async function getLoginHistory(userId: string) {
+  return await LoginHistory.find({ user: userId })
+    .sort({ timestamp: -1 })
+    .limit(20)
+    .exec();
 }
 
 async function logout(refreshToken: string) {
@@ -160,4 +200,4 @@ async function changePassword(
   await user.save();
 }
 
-export default { login, logout, refresh, changePassword };
+export default { login, logout, refresh, changePassword, getLoginHistory };
