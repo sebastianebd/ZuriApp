@@ -1,37 +1,9 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { emailConfig } from "../config/email.config";
 import logger from "../config/logger.config";
 
-// --- Transporter Initialization ---
-// "The Nuclear Option" for Railway/Cloud environments
-const transporter = nodemailer.createTransport({
-  pool: true, // Use pooled connections
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // use TLS
-  auth: {
-    user: emailConfig.auth.user,
-    pass: emailConfig.auth.pass,
-  },
-  tls: {
-    // Helper for self-signed or proxied certs in cloud envs
-    rejectUnauthorized: false,
-  },
-  // Resilience Settings
-  connectionTimeout: 20000,
-  greetingTimeout: 20000,
-  socketTimeout: 20000,
-  // Debugging
-  logger: true,
-  debug: true,
-});
-
-logger.info(
-  `[EmailService] Configured Transporter (Manual): Host=smtp.gmail.com, Port=587, Secure=false, Pool=true`
-);
-
-// Removed verify() to prevent server startup blocking
-// Connection errors will now be caught by the BullMQ worker
+// --- Resend Initialization ---
+const resend = new Resend(emailConfig.resendApiKey);
 
 // --- Templates ---
 // Professional HTML Template
@@ -94,17 +66,25 @@ export const sendWelcomeEmail = async (
 ) => {
   const htmlContent = getWelcomeTemplate(nombre, rut, pass);
 
-  const mailOptions = {
-    from: emailConfig.from,
-    to: to,
-    subject: "Bienvenido a ZuriApp - Credenciales de Acceso",
-    html: htmlContent,
-  };
+  try {
+    const { data, error } = await resend.emails.send({
+      from: emailConfig.from, // e.g., "onboarding@resend.dev" or your verified domain
+      to: [to],
+      subject: "Bienvenido a ZuriApp - Credenciales de Acceso",
+      html: htmlContent,
+    });
 
-  // Let the error propagate so BullMQ can handle retries
-  const info = await transporter.sendMail(mailOptions);
-  logger.info(`Email sent to ${to}: ${info.messageId}`);
-  return info;
+    if (error) {
+      logger.error("Resend API Error:", error);
+      throw new Error(`Resend Error: ${error.message}`);
+    }
+
+    logger.info(`Email sent successfully via Resend to ${to}. ID: ${data?.id}`);
+    return data;
+  } catch (error: any) {
+    logger.error(`Failed to send email to ${to}:`, error.message);
+    throw error; // Propagate to BullMQ for retry
+  }
 };
 
 export default {
