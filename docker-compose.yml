@@ -40,6 +40,7 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_FROM=${SMTP_FROM}
+      - RESEND_API_KEY=${RESEND_API_KEY}
     command: sh -c "npm install && npm run dev"
     depends_on:
       - mongo
