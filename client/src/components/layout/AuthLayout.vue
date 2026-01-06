@@ -10,7 +10,6 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color:#c2bae2
+  background-color: var(--light);
 }
-
 </style>
