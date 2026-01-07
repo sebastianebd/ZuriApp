@@ -3,6 +3,7 @@ import * as AuthService from '../services/auth.service'
 import { useApiPrivate } from '../composables/useApi'
 import type { State, LoginData } from '../types/models'
 import type { AxiosInstance } from 'axios'
+import socket from '../plugins/socket'
 
 let privateApiInstance: AxiosInstance | null = null
 
@@ -45,6 +46,13 @@ export const useAuthStore = defineStore('auth', {
       this.accessToken = data.access_token
       await this.getUser()
       this.authReady = true
+
+      // Connect Socket with User ID
+      if (this.user && this.user._id) {
+        socket.auth = { userId: this.user._id }
+        socket.connect()
+      }
+
       return data
     },
 
@@ -81,6 +89,7 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.accessToken = ''
         this.user = null
+        socket.disconnect() // Disconnect socket
         sessionStorage.clear()
         localStorage.clear() // Safety cleanup for migrated users
         // window.location.reload() // Optional aggressive cleanup

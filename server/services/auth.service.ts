@@ -32,6 +32,10 @@ const generateRefreshToken = (userId: string) => {
   });
 };
 
+// Import dependencies for Concurrent Login Check
+import socketConfig from "../config/socket";
+import redis from "../config/redis.config";
+
 import LoginHistory from "../models/login-history.model";
 
 async function login({
@@ -70,8 +74,40 @@ async function login({
       userAgent: userAgent || "Unknown",
       status: "FAILED",
     });
+    // Ideally we'd log against the attempted RUT but that's PII without a user link.
+    // Decision: Only log history for found users to avoid clutter/DOS.
     throw new AuthError("Rut o contraseña incorrecta.");
   }
+
+  // --- CONCURRENT LOGIN CHECK ---
+  // Check if user has an active session in Redis (Only if password matches)
+  const activeSession = await redis.get(`active_session:${user._id}`);
+
+  if (activeSession) {
+    const sessionData = JSON.parse(activeSession);
+    const io = socketConfig.getIO();
+
+    // Verify if socket is truly connected
+    const connectedSockets = io.sockets.sockets; // Map<string, Socket>
+    if (connectedSockets.has(sessionData.socket_id)) {
+      // User is connected! Reject login.
+      // We log the attempt but do NOT return details to client (Security)
+      console.warn(
+        `[Security] Login bloqueado para usuario ${user.rut}. Ya tiene sesión activa en ${sessionData.device}`
+      );
+
+      // Return 409 Conflict
+      const error = new Error("Cuenta conectada");
+      (error as any).status = 409;
+      throw error;
+    } else {
+      // Socket ID in Redis but not in IO -> Stale session (e.g. server restart or crash)
+      // Allow login and it will be overwritten when client connects socket.
+      console.log(`[Info] Limpiando sesión stale para usuario ${user.rut}`);
+      await redis.del(`active_session:${user._id}`);
+    }
+  }
+  // -----------------------------
 
   // Log Success Attempt
   await LoginHistory.create({

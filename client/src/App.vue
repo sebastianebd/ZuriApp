@@ -1,6 +1,8 @@
-<script setup lang="ts">
-import { RouterView } from 'vue-router'
-</script>
+import { RouterView } from 'vue-router' import { onMounted } from 'vue' import { useAuthStore } from
+'./stores/auth.store' import socket from './plugins/socket' const authStore = useAuthStore()
+onMounted(() => { // Reconnect socket on App reload if authenticated if (authStore.isAuthenticated
+&& authStore.user && authStore.user._id) { socket.auth = { userId: authStore.user._id }
+socket.connect() } })
 
 <template>
   <div id="app">
