@@ -10,9 +10,19 @@
           Consulta el registro histórico de movimientos ({{ totalRegistros }} registros encontrados)
         </p>
       </div>
-      <button @click="limpiarFiltros" class="btn btn-light border fw-semibold shadow-sm px-3">
-        <i class="bi bi-eraser me-2"></i>Limpiar Filtros
-      </button>
+      <div class="d-flex gap-2">
+        <button
+          @click="handleExport"
+          class="btn btn-light border fw-semibold shadow-sm px-3"
+          :disabled="exportLoading"
+        >
+          <i v-if="exportLoading" class="spinner-border spinner-border-sm me-2"></i>
+          <i v-else class="bi bi-file-earmark-pdf text-danger me-2"></i>Exportar PDF
+        </button>
+        <button @click="limpiarFiltros" class="btn btn-light border fw-semibold shadow-sm px-3">
+          <i class="bi bi-eraser me-2"></i>Limpiar Filtros
+        </button>
+      </div>
     </div>
 
     <!-- Main Content Card -->
@@ -230,6 +240,10 @@
 
 <script setup lang="ts">
 import { useHistory } from '@/composables/replacement/useHistory'
+import { useExport } from '@/composables/useExport'
+import { useAuthStore } from '@/stores/auth.store'
+import { obtenerInactivosPaginados } from '@/services/replacement.service'
+import { ref } from 'vue'
 import HistoryFilter from '@/components/historial/HistorialFilter.vue'
 import TableLoader from '@/components/common/TableLoader.vue'
 
@@ -255,6 +269,25 @@ const {
   getCreatorName,
   getInitials
 } = useHistory()
+
+const { exportHistoryToPDF } = useExport()
+const authStore = useAuthStore()
+const api = authStore.usePrivateApi()
+
+const exportLoading = ref(false)
+
+const handleExport = async () => {
+  exportLoading.value = true
+  try {
+    // 5000 limit to simulate "fetch all" for report
+    const { registros } = await obtenerInactivosPaginados(api, filtros.value, 1, 5000)
+    exportHistoryToPDF(registros, filtros.value)
+  } catch (error) {
+    console.error('Error exporting PDF:', error)
+  } finally {
+    exportLoading.value = false
+  }
+}
 </script>
 
 <style scoped>

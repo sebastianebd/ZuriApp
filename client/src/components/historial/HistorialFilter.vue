@@ -79,11 +79,7 @@
         <v-select
           id="filtroServicio"
           :model-value="modelValue.servicio"
-          @update:model-value="
-            (newValue: any) => {
-              updateFilter('servicio', { target: { value: newValue } } as any)
-            }
-          "
+          @update:model-value="(newValue: any) => updateFilter('servicio', newValue)"
           :options="[
             { label: 'TODOS', value: '' },
             ...listaServicios.map((s) => ({ label: s, value: s }))
