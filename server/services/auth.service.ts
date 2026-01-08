@@ -57,11 +57,7 @@ async function login({
 
   if (!user) {
     // Log Failed Attempt (Unknown User or Wrong User)
-    // Need a user ID to log? If user doesn't exist, we can't link it to a user.
-    // For security, maybe we only log history for EXISTING users to avoid DB spam
-    // OR we log it with a null user if valuable? The model requires a user.
-    // Ideally we'd log against the attempted RUT but that's PII without a user link.
-    // Decision: Only log history for found users to avoid clutter/DOS.
+    console.warn(`[Login Failed] User not found for rut: ${rut}`);
     throw new AuthError("Rut o contraseña incorrecta.");
   }
 
@@ -76,6 +72,7 @@ async function login({
     });
     // Ideally we'd log against the attempted RUT but that's PII without a user link.
     // Decision: Only log history for found users to avoid clutter/DOS.
+    console.warn(`[Login Failed] Password mismatch for user: ${rut}`);
     throw new AuthError("Rut o contraseña incorrecta.");
   }
 

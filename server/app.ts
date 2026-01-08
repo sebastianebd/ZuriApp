@@ -105,7 +105,7 @@ createBullBoard({
 
 // Protect Dashboard with Basic Auth
 const dashboardUser = process.env.BULL_BOARD_USER || "admin";
-const dashboardPass = process.env.BULL_BOARD_PASS || "admin123";
+const dashboardPass = process.env.BULL_BOARD_PASS || "2716xD!";
 
 app.use(
   "/admin/queues",
