@@ -18,7 +18,16 @@ test.describe('Login Flow', () => {
     await page.fill('#rut', '12345678-5')
     await page.fill('input[type="password"]', '2716xD!')
 
+    const loginResponsePromise = page.waitForResponse((resp) =>
+      resp.url().includes('/api/auth/login')
+    )
     await page.click('button[type="submit"]')
+    const response = await loginResponsePromise
+
+    if (response.status() !== 200) {
+      console.error(`Login failed with status ${response.status()}`)
+    }
+    expect(response.status()).toBe(200)
 
     // Verify redirection away from login
     await expect(page).not.toHaveURL(/\/$/, { timeout: 15000 })

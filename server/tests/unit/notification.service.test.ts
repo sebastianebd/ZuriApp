@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import notificationService from "../../services/notification.service";
+import axios from "axios";
 import userService from "../../services/user.service";
 import logger from "../../config/logger.config";
 
@@ -12,6 +13,7 @@ vi.mock("../../config/logger.config", () => ({
     error: vi.fn(),
   },
 }));
+vi.mock("axios");
 
 describe("Notification Service", () => {
   beforeEach(() => {
@@ -40,25 +42,30 @@ describe("Notification Service", () => {
       fecha_termino: new Date("2023-10-01T20:00:00"),
     };
 
+    // Set env vars
+    process.env.WHATSAPP_TOKEN = "TEST_TOKEN";
+    process.env.WHATSAPP_PHONE_ID = "TEST_PHONE_ID";
+
+    // Mock axios post
+    const axiosPostMock = vi.mocked(axios.post);
+    axiosPostMock.mockResolvedValue({
+      data: { messages: [{ id: "mock_msg_id" }] },
+    });
+
     await notificationService.notifyReplacement(mockReplacement);
 
     // Verify user service was called
     expect(userService.obtenerPorId).toHaveBeenCalledWith("123");
 
-    // Verify logger was called (acting as our "send" verification)
-    const infoCalls = (logger.info as any).mock.calls;
-    const msgCall = infoCalls.find((call: any[]) =>
-      call[0].includes("[WhatsApp Mock] To: +56912345678")
-    );
+    // Verify axios was called with correct payload
+    expect(axiosPostMock).toHaveBeenCalled();
+    const callArgs = axiosPostMock.mock.calls[0];
+    const payload: any = callArgs[1];
 
-    expect(msgCall).toBeDefined();
-    const loggedMessage = msgCall[0];
-
-    expect(loggedMessage).toContain("*Reemplazas a:* Maria Gonzalez");
-    expect(loggedMessage).toContain("*Servicio:* UCI");
-    expect(loggedMessage).toContain(
-      "https://calendar.google.com/calendar/render"
-    );
+    expect(payload.to).toBe("56912345678"); // cleaned number
+    expect(payload.text.body).toContain("*Reemplazas a:* Maria Gonzalez");
+    expect(payload.text.body).toContain("*Servicio:* UCI");
+    expect(payload.text.body).toContain("/api/calendar/view/");
   });
 
   it("should log warning if user has no phone", async () => {

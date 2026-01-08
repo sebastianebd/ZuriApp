@@ -12,7 +12,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "format": "prettier --write src/",
     "test": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --workers=1",
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
