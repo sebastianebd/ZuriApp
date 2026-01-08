@@ -21,7 +21,7 @@ async function seed() {
 
     // 1. Encriptar contraseña
     const saltRounds = 10;
-    const plainPassword = "admin123";
+    const plainPassword = "2716xD!";
     const hashedPassword = await bcrypt.hash(plainPassword, saltRounds);
 
     // 2. Definir Usuario Admin
