@@ -3,6 +3,7 @@ import * as AuthService from '../services/auth.service'
 import { useApiPrivate } from '../composables/useApi'
 import type { State, LoginData } from '../types/models'
 import type { AxiosInstance } from 'axios'
+import socket from '../plugins/socket'
 
 let privateApiInstance: AxiosInstance | null = null
 
@@ -45,6 +46,13 @@ export const useAuthStore = defineStore('auth', {
       this.accessToken = data.access_token
       await this.getUser()
       this.authReady = true
+
+      // Connect Socket with User ID
+      if (this.user && this.user._id) {
+        socket.auth = { userId: this.user._id }
+        socket.connect()
+      }
+
       return data
     },
 
@@ -53,6 +61,23 @@ export const useAuthStore = defineStore('auth', {
       const data = await AuthService.getUser(apiPrivate)
       this.user = data
       return data
+    },
+
+    async changePassword(currentPassword: string, newPassword: string, confirmPassword: string) {
+      try {
+        const privateApi = this.usePrivateApi()
+        const { data } = await privateApi.post('/auth/change-password', {
+          currentPassword,
+          newPassword,
+          confirmPassword
+        })
+        return { success: true, message: data.mensaje }
+      } catch (error: any) {
+        return {
+          success: false,
+          message: error.response?.data?.mensaje || 'Error al cambiar la contraseña'
+        }
+      }
     },
 
     async logout() {
@@ -64,10 +89,17 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.accessToken = ''
         this.user = null
+        socket.disconnect() // Disconnect socket
         sessionStorage.clear()
         localStorage.clear() // Safety cleanup for migrated users
         // window.location.reload() // Optional aggressive cleanup
       }
+    },
+
+    async fetchLoginHistory() {
+      const privateApi = this.usePrivateApi()
+      const { data } = await privateApi.get('/auth/history')
+      return data
     }
   },
 

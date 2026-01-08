@@ -19,10 +19,8 @@ async function seed() {
     await mongoose.connect(DATABASE_URI);
     console.log("✅ Conexión exitosa a MongoDB");
 
-    // 1. Encriptar contraseña
-    const saltRounds = 10;
-    const plainPassword = "admin123";
-    const hashedPassword = await bcrypt.hash(plainPassword, saltRounds);
+    // 1. Definir contraseña (sin encriptar manualmente, el modelo lo hace)
+    const plainPassword = "2716xD!";
 
     // 2. Definir Usuario Admin
     const adminUser = {
@@ -35,7 +33,7 @@ async function seed() {
       email: "admin@zuriapp.cl",
       ciudad: "Santiago",
       tipo_cargo: "ADMIN-TI",
-      password: hashedPassword,
+      password: plainPassword, // Se encriptará en el hook pre-save del modelo
       eliminado: false,
     };
 

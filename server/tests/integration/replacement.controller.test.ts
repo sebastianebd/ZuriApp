@@ -14,6 +14,11 @@ vi.mock("../../middleware/authentication.middleware", () => ({
 
 vi.mock("../../services/replacement.service");
 vi.mock("../../services/audit.service");
+vi.mock("../../services/notification.service", () => ({
+  default: {
+    notifyReplacement: vi.fn(),
+  },
+}));
 
 describe("Replacement Controller - Integration", () => {
   beforeEach(() => {
