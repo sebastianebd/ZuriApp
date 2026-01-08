@@ -37,6 +37,7 @@ export function useUsers() {
   const updateModalVisible = ref(false)
   const createModalVisible = ref(false)
   const historialModalVisible = ref(false)
+  const exportModalVisible = ref(false)
 
   // Selection
   const usuarioSeleccionado = ref<any>(null)
@@ -215,6 +216,7 @@ export function useUsers() {
     updateModalVisible,
     createModalVisible,
     historialModalVisible,
+    exportModalVisible,
 
     // Selected Data
     usuarioActual,
@@ -228,6 +230,8 @@ export function useUsers() {
     closeUpdateModal,
     openCreateModal,
     closeCreateModal,
+    openExportModal: () => (exportModalVisible.value = true),
+    closeExportModal: () => (exportModalVisible.value = false),
 
     // CRUD
     handleUpdate,

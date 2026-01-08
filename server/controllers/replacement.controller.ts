@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import replacementService from "../services/replacement.service";
+import genericNotificationService from "../services/notification.service";
 import auditService from "../services/audit.service";
 import Reemplazo from "../models/replacement.model";
 import { AuthRequest } from "../middleware/authentication.middleware";
@@ -19,6 +20,10 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
       nuevoReemplazo._id as string
     );
     await delPattern("replacements:*"); // Invalidate cache
+
+    // Send WhatsApp Notification (Enterprise Standard: Async / Non-blocking if performance critical, but safe to await here)
+    await genericNotificationService.notifyReplacement(nuevoReemplazo);
+
     res.sendStatus(201);
   } catch (error: any) {
     res.status(400).json({ mensaje: error.message });

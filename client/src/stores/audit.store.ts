@@ -54,6 +54,32 @@ export const useAuditStore = defineStore('audit', () => {
     }
   }
 
+  // Fetch for export (No limit/High limit)
+  async function getLogsForExport(filters: any = {}) {
+    loading.value = true
+    try {
+      // Construir query params
+      const params = new URLSearchParams()
+      params.append('page', '1')
+      params.append('limit', '10000') // Fetch "all"
+
+      if (filters.module && filters.module !== 'TODOS') params.append('module', filters.module)
+      if (filters.action && filters.action !== 'TODOS') params.append('action', filters.action)
+      if (filters.userId) params.append('userId', filters.userId)
+      if (filters.startDate) params.append('startDate', filters.startDate)
+      if (filters.endDate) params.append('endDate', filters.endDate)
+
+      const axios = authStore.usePrivateApi()
+      const response = await axios.get(`/audit?${params.toString()}`)
+      return response.data.logs
+    } catch (err: any) {
+      console.error('Error fetching export logs:', err)
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     logs,
     total,
@@ -62,6 +88,7 @@ export const useAuditStore = defineStore('audit', () => {
     loading,
     error,
     currentFilters,
-    fetchLogs
+    fetchLogs,
+    getLogsForExport
   }
 })

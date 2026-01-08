@@ -12,6 +12,9 @@
         </p>
       </div>
       <div class="d-flex gap-2">
+        <button class="btn btn-light border fw-semibold shadow-sm px-3" @click="openExportModal">
+          <i class="bi bi-cloud-download text-primary me-2"></i>Exportar
+        </button>
         <button @click="limpiarFiltros" class="btn btn-light border fw-semibold shadow-sm px-3">
           <i class="bi bi-eraser me-2"></i>Limpiar Filtros
         </button>
@@ -87,6 +90,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Export Modal -->
+    <ExportFormatModal
+      :visible="exportModalVisible"
+      @close="closeExportModal"
+      @select="handleExportFormat"
+    />
   </div>
 </template>
 
@@ -96,12 +106,29 @@ import { storeToRefs } from 'pinia'
 import { useAuditStore } from '@/stores/audit.store'
 import AuditFilter from '@/components/audit/AuditFilter.vue'
 import AuditTable from '@/components/audit/AuditTable.vue'
-import socket from '@/plugins/socket'
 import TableLoader from '@/components/common/TableLoader.vue'
+import ExportFormatModal from '@/components/users/ExportFormatModal.vue'
+import socket from '@/plugins/socket'
+import { useExport } from '@/composables/useExport'
 
 const auditStore = useAuditStore()
 const { logs, loading, error, currentPage, totalPages, currentFilters } = storeToRefs(auditStore)
 const filterComponent = ref<InstanceType<typeof AuditFilter> | null>(null)
+
+const { exportAuditToPDF, exportAuditToExcel } = useExport()
+const exportModalVisible = ref(false)
+const openExportModal = () => (exportModalVisible.value = true)
+const closeExportModal = () => (exportModalVisible.value = false)
+
+const handleExportFormat = async (format: 'pdf' | 'excel') => {
+  const allLogs = await auditStore.getLogsForExport(currentFilters.value)
+  if (format === 'pdf') {
+    exportAuditToPDF(allLogs, currentFilters.value)
+  } else {
+    exportAuditToExcel(allLogs)
+  }
+  closeExportModal()
+}
 
 function handleFilter(filters: any) {
   auditStore.fetchLogs(1, 10, filters)

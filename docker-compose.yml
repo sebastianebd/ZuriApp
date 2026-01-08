@@ -41,6 +41,10 @@ services:
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_FROM=${SMTP_FROM}
       - RESEND_API_KEY=${RESEND_API_KEY}
+      - WHATSAPP_VERSION=${WHATSAPP_VERSION}
+      - WHATSAPP_PHONE_ID=${WHATSAPP_PHONE_ID}
+      - WHATSAPP_TOKEN=${WHATSAPP_TOKEN}
+      - API_URL=${API_URL}
     command: sh -c "npm install && npm run dev"
     depends_on:
       - mongo

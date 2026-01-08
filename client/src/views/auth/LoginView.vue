@@ -45,10 +45,13 @@
                   class="form-control-custom"
                 />
               </div>
-              <small v-if="errors.password || passwordError" class="text-danger mt-1 d-block">
+              <small v-if="errors.password || passwordError" class="text-danger mt-1 d-block |">
                 {{ errors.password || passwordError }}
               </small>
-              <small v-if="loginError" class="text-danger mt-1 d-block">
+              <small v-if="accountInUseError" class="text-danger mt-1 d-block">
+                {{ accountInUseError }}
+              </small>
+              <small v-else-if="loginError" class="text-danger mt-1 d-block">
                 {{ loginError }}
               </small>
             </div>
@@ -82,6 +85,7 @@ const {
   rutError,
   passwordError,
   loginError,
+  accountInUseError,
   isSubmitting,
   validateRutInput,
   onSubmit
@@ -113,7 +117,7 @@ const {
   color: #e74c3c;
   font-size: 0.85rem;
   font-weight: 500;
-  padding-left: 1rem;
+  text-align: center;
 }
 
 /* --- Layout Principal --- */

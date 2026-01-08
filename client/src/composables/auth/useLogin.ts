@@ -28,6 +28,7 @@ export function useLogin() {
   const rutError = ref<string>('')
   const passwordError = ref<string>('')
   const loginError = ref<string>('')
+  const accountInUseError = ref<string>('')
   const isSubmitting = ref(false)
 
   function validateRutInput() {
@@ -48,6 +49,7 @@ export function useLogin() {
   async function onSubmit() {
     isSubmitting.value = true
     loginError.value = '' // Clear previous errors
+    accountInUseError.value = ''
 
     const { valid } = await validate()
 
@@ -76,8 +78,14 @@ export function useLogin() {
     try {
       await authStore.login(loginData)
       router.replace({ name: 'user' })
-    } catch (err) {
-      loginError.value = 'Rut o Contraseña incorrectos'
+    } catch (err: any) {
+      // Check for 409 status (injected by errorHandler or raw response)
+      const status = err.status || (err.response && err.response.status)
+      if (status === 409) {
+        accountInUseError.value = 'Cuenta conectada'
+      } else {
+        loginError.value = 'Rut o Contraseña incorrectos'
+      }
     } finally {
       isSubmitting.value = false
     }
@@ -91,6 +99,7 @@ export function useLogin() {
     loginError,
     isSubmitting,
     validateRutInput,
-    onSubmit
+    onSubmit,
+    accountInUseError
   }
 }

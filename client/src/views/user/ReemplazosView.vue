@@ -55,6 +55,7 @@
               @finalizar="handleFinalizar"
               @anular="handleAnular"
               @modificar="openUpdateModal"
+              @exportar="exportReplacementToPDF"
             />
 
             <!-- Pagination -->
@@ -155,6 +156,7 @@
 
 <script setup lang="ts">
 import { useReplacements } from '@/composables/replacement/useReplacements'
+import { useExport } from '@/composables/useExport'
 import {
   ReplacementFilter,
   ReplacementTable,
@@ -209,6 +211,8 @@ const {
   seleccionarGrupo,
   seleccionarUsuario
 } = useReplacements()
+
+const { exportReplacementToPDF } = useExport()
 </script>
 
 <style scoped>

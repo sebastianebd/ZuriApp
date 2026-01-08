@@ -110,6 +110,43 @@ router.post("/refresh", authController.refresh);
 
 // Rutas protegidas
 router.use(authMiddleware);
+
+import { changePasswordSchema } from "../../schemas/auth.schema";
+
+/**
+ * @swagger
+ * /auth/change-password:
+ *   post:
+ *     summary: Cambiar contraseña
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *               - confirmPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *               confirmPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada exitosamente
+ */
+router.post(
+  "/change-password",
+  validateSchema(changePasswordSchema),
+  authController.changePassword
+);
 /**
  * @swagger
  * /auth/logout:
@@ -143,5 +180,27 @@ router.post("/logout", authController.logout);
  *         description: No autorizado
  */
 router.get("/user", authController.user);
+
+/**
+ * @swagger
+ * /auth/history:
+ *   get:
+ *     summary: Obtener historial de inicios de sesión
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de últimos inicios de sesión
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/LoginHistory'
+ *       401:
+ *         description: No autorizado
+ */
+router.get("/history", authController.getHistory);
 
 export default router;

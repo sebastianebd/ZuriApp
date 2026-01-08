@@ -11,9 +11,14 @@
           registrados)
         </p>
       </div>
-      <button class="btn btn-primary fw-bold shadow-sm px-4" @click="openCreateModal">
-        <i class="bi bi-person-plus-fill me-2"></i>Crear Usuario
-      </button>
+      <div class="d-flex gap-2">
+        <button class="btn btn-light border fw-semibold shadow-sm px-3" @click="openExportModal">
+          <i class="bi bi-cloud-download text-primary me-2"></i>Exportar
+        </button>
+        <button class="btn btn-primary fw-bold shadow-sm px-4" @click="openCreateModal">
+          <i class="bi bi-person-plus-fill me-2"></i>Crear Usuario
+        </button>
+      </div>
     </div>
 
     <!-- Main Content Card -->
@@ -129,6 +134,11 @@
       :reemplazos="historialUsuario"
       @cerrar="closeHistorialModal"
     />
+    <ExportFormatModal
+      :visible="exportModalVisible"
+      @close="closeExportModal"
+      @select="handleExportFormat"
+    />
   </div>
 </template>
 
@@ -141,6 +151,8 @@ import {
   UserModalCreate,
   UserModalDetail
 } from '@/components/users'
+import ExportFormatModal from '@/components/users/ExportFormatModal.vue'
+import { useExport } from '@/composables/useExport'
 import TableLoader from '@/components/common/TableLoader.vue'
 
 const {
@@ -188,8 +200,24 @@ const {
   // CRUD
   handleUpdate,
   handleDelete,
-  handleCreate
+  handleCreate,
+
+  // Export
+  exportModalVisible,
+  openExportModal,
+  closeExportModal
 } = useUsers()
+
+const { exportUsersToPDF, exportUsersToExcel } = useExport()
+
+const handleExportFormat = (format: 'pdf' | 'excel') => {
+  if (format === 'pdf') {
+    exportUsersToPDF(usuariosFiltrados.value)
+  } else {
+    exportUsersToExcel(usuariosFiltrados.value)
+  }
+  closeExportModal()
+}
 </script>
 
 <style scoped>
