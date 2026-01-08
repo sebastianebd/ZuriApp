@@ -70,10 +70,17 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+import calendarRoutes from "./routes/api/calendar.routes";
+
+// ... existing code ...
+
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/reemplazos", replacementRoutes);
 app.use("/api/options", optionRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/calendar", calendarRoutes);
 
 // Sentry Tunnel - Debe ir antes del catch-all *
 import sentryRoutes from "./routes/api/sentry.routes";
