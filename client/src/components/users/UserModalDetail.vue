@@ -7,7 +7,7 @@
       v-if="visible"
       style="background-color: rgba(30, 41, 59, 0.5); backdrop-filter: blur(4px)"
     >
-      <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+      <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 80vw">
         <div class="modal-content shadow-lg border-0 rounded-4">
           <!-- Header -->
           <div class="modal-header border-0 bg-primary bg-gradient text-white p-4 rounded-top-4">
@@ -29,35 +29,57 @@
             <div class="row g-3 mb-4">
               <div class="col-md-2">
                 <label class="form-label text-secondary fw-semibold small mb-1">Fecha Inicio</label>
-                <div class="input-group input-group-sm rounded-3 overflow-hidden shadow-xs border">
-                  <span class="input-group-text bg-light border-0"
-                    ><i class="bi bi-calendar-event smaller text-primary"></i
-                  ></span>
-                  <input
-                    type="date"
-                    class="form-control border-0 bg-white"
-                    v-model="filtroFechaInicio"
-                  />
-                </div>
+                <DatePicker
+                  v-model="filtroFechaInicio"
+                  :popover="{ visibility: 'focus' }"
+                  :masks="{ input: 'DD/MM/YYYY' }"
+                >
+                  <template #default="{ inputValue, inputEvents }">
+                    <div
+                      class="input-group input-group-sm rounded-3 overflow-hidden shadow-xs border"
+                    >
+                      <span class="input-group-text bg-light border-0"
+                        ><i class="bi bi-calendar-event smaller text-primary"></i
+                      ></span>
+                      <input
+                        class="form-control border-0 bg-white"
+                        :value="inputValue"
+                        v-on="inputEvents"
+                        placeholder="dd/mm/aaaa"
+                      />
+                    </div>
+                  </template>
+                </DatePicker>
               </div>
 
               <div class="col-md-2">
                 <label class="form-label text-secondary fw-semibold small mb-1"
                   >Fecha Término</label
                 >
-                <div class="input-group input-group-sm rounded-3 overflow-hidden shadow-xs border">
-                  <span class="input-group-text bg-light border-0"
-                    ><i class="bi bi-calendar-check smaller text-primary"></i
-                  ></span>
-                  <input
-                    type="date"
-                    class="form-control border-0 bg-white"
-                    v-model="filtroFechaTermino"
-                  />
-                </div>
+                <DatePicker
+                  v-model="filtroFechaTermino"
+                  :popover="{ visibility: 'focus' }"
+                  :masks="{ input: 'DD/MM/YYYY' }"
+                >
+                  <template #default="{ inputValue, inputEvents }">
+                    <div
+                      class="input-group input-group-sm rounded-3 overflow-hidden shadow-xs border"
+                    >
+                      <span class="input-group-text bg-light border-0"
+                        ><i class="bi bi-calendar-check smaller text-primary"></i
+                      ></span>
+                      <input
+                        class="form-control border-0 bg-white"
+                        :value="inputValue"
+                        v-on="inputEvents"
+                        placeholder="dd/mm/aaaa"
+                      />
+                    </div>
+                  </template>
+                </DatePicker>
               </div>
 
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label text-secondary fw-semibold small mb-1">Servicio</label>
                 <div class="input-group input-group-sm rounded-3 shadow-xs border bg-white">
                   <span class="input-group-text bg-light border-0"
@@ -65,11 +87,28 @@
                   ></span>
                   <v-select
                     v-model="filtroServicio"
-                    :options="listaServicios"
+                    :options="['TODOS', ...listaServicios]"
                     placeholder="Todos"
                     class="custom-v-select flex-grow-1"
-                    :clearable="false"
+                    :clearable="true"
                     :searchable="true"
+                  />
+                </div>
+              </div>
+
+              <div class="col-md-2">
+                <label class="form-label text-secondary fw-semibold small mb-1">Tipo Turno</label>
+                <div class="input-group input-group-sm rounded-3 shadow-xs border bg-white">
+                  <span class="input-group-text bg-light border-0"
+                    ><i class="bi bi-clock smaller text-primary"></i
+                  ></span>
+                  <v-select
+                    v-model="filtroTipoTurno"
+                    :options="['TODOS', ...listaTiposTurno]"
+                    placeholder="Todos"
+                    class="custom-v-select flex-grow-1"
+                    :clearable="true"
+                    :searchable="false"
                   />
                 </div>
               </div>
@@ -90,10 +129,10 @@
                 </div>
               </div>
 
-              <div class="col-md-2 d-flex align-items-end justify-content-center pb-1">
-                <div class="form-check form-switch">
+              <div class="col-md-1 d-flex align-items-end justify-content-center pb-1">
+                <div class="form-check form-switch ps-0">
                   <input
-                    class="form-check-input"
+                    class="form-check-input ms-0 me-2"
                     type="checkbox"
                     id="mostrarAnulados"
                     v-model="mostrarAnulados"
@@ -102,7 +141,7 @@
                     class="form-check-label small text-secondary fw-medium"
                     for="mostrarAnulados"
                   >
-                    Ver Anulados
+                    Anulados
                   </label>
                 </div>
               </div>
@@ -115,98 +154,77 @@
             </div>
 
             <div v-else class="table-responsive rounded-3 border shadow-xs">
-              <table class="table table-hover align-middle mb-0">
+              <table class="table table-hover table-sm align-middle mb-0">
                 <thead class="bg-primary bg-gradient text-white">
                   <tr>
                     <th
                       scope="col"
-                      class="smaller fw-bold text-uppercase tracking-wider py-3 px-3 text-center"
+                      class="smaller fw-bold text-uppercase tracking-wider py-2 px-2 text-center"
                     >
                       Código
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-2 px-2">
                       Servicio
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-2 px-2">
                       Tipo Turno
                     </th>
                     <th
                       scope="col"
-                      class="smaller fw-bold text-uppercase tracking-wider py-3 px-3 text-center"
+                      class="smaller fw-bold text-uppercase tracking-wider py-2 px-2 text-center"
                     >
                       Fecha Inicio
                     </th>
                     <th
                       scope="col"
-                      class="smaller fw-bold text-uppercase tracking-wider py-3 px-3 text-center"
+                      class="smaller fw-bold text-uppercase tracking-wider py-2 px-2 text-center"
                     >
                       Fecha Término
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-2 px-2">
                       Entrante
                     </th>
-                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-3 px-3">
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-2 px-2">
                       Saliente
                     </th>
                     <th
                       scope="col"
-                      class="smaller fw-bold text-uppercase tracking-wider py-3 px-3 text-center"
+                      class="smaller fw-bold text-uppercase tracking-wider py-2 px-2 text-center"
                     >
-                      Activo
-                    </th>
-                    <th
-                      scope="col"
-                      class="smaller fw-bold text-uppercase tracking-wider py-3 px-3 text-center"
-                    >
-                      Anulado
+                      Estado
                     </th>
                   </tr>
                 </thead>
 
                 <tbody>
                   <tr v-for="(rep, index) in reemplazosFiltrados" :key="index">
-                    <td class="small text-secondary text-center px-3">{{ rep.id_negocio }}</td>
-                    <td class="small px-3">
+                    <td class="small text-secondary text-center px-2 py-1">{{ rep.id_negocio }}</td>
+                    <td class="small px-2 py-1">
                       <span
                         class="badge bg-light text-primary border border-primary border-opacity-25"
                         >{{ rep.servicio }}</span
                       >
                     </td>
-                    <td class="small px-3">{{ rep.tipo_turno }}</td>
-                    <td class="small text-center px-3">{{ formatearFecha(rep.fecha_inicio) }}</td>
-                    <td class="small text-center px-3">{{ formatearFecha(rep.fecha_termino) }}</td>
-                    <td class="small px-3">
-                      <div class="fw-bold text-success">
+                    <td class="small px-2 py-1">{{ rep.tipo_turno }}</td>
+                    <td class="small text-center px-2 py-1">
+                      {{ formatearFecha(rep.fecha_inicio) }}
+                    </td>
+                    <td class="small text-center px-2 py-1">
+                      {{ formatearFecha(rep.fecha_termino) }}
+                    </td>
+                    <td class="small px-2 py-1">
+                      <div class="fw-medium text-success">
                         {{ rep.nombre_entrante }} {{ rep.apellido_entrante }}
                       </div>
                     </td>
-                    <td class="small px-3">
-                      <div class="fw-bold text-primary">
+                    <td class="small px-2 py-1">
+                      <div class="fw-medium text-primary">
                         {{ rep.nombre_saliente }} {{ rep.apellido_saliente }}
                       </div>
                     </td>
-                    <td class="small text-center px-3">
-                      <span
-                        class="badge rounded-pill"
-                        :class="
-                          rep.activo
-                            ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
-                            : 'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25'
-                        "
-                      >
-                        {{ rep.activo ? 'Sí' : 'No' }}
-                      </span>
-                    </td>
-                    <td class="small text-center px-3">
-                      <span
-                        class="badge rounded-pill"
-                        :class="
-                          rep.anulado
-                            ? 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25'
-                            : 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
-                        "
-                      >
-                        {{ rep.anulado ? 'Sí' : 'No' }}
+                    <td class="small text-center px-2 py-1">
+                      <span class="badge rounded-pill border" :class="getStatusClass(rep.status)">
+                        {{ rep.status || 'SIN ESTADO' }}
                       </span>
                     </td>
                   </tr>
@@ -233,34 +251,46 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { DatePicker } from 'v-calendar'
+import 'v-calendar/dist/style.css'
 
 const props = defineProps<{
   visible: boolean
   usuario: any
   reemplazos: any[]
   listaServicios: string[]
+  listaTiposTurno: string[]
 }>()
 
 defineEmits(['cerrar'])
 
 // 🔽 Filtros reactivos
-const filtroFechaInicio = ref('')
-const filtroFechaTermino = ref('')
-const filtroServicio = ref('')
+const filtroFechaInicio = ref<Date | null>(null)
+const filtroFechaTermino = ref<Date | null>(null)
+const filtroServicio = ref<string | null>(null)
+const filtroTipoTurno = ref<string | null>(null)
 const filtroRol = ref('TODOS')
 const mostrarAnulados = ref(false)
 
 // 💡 Computed: aplica filtros en cascada
 const reemplazosFiltrados = computed(() => {
-  return props.reemplazos.filter((rep) => {
+  const filtrados = props.reemplazos.filter((rep) => {
     // Filtrar por fechas
-    if (filtroFechaInicio.value && rep.fecha_inicio < filtroFechaInicio.value) return false
-    if (filtroFechaTermino.value && rep.fecha_termino > filtroFechaTermino.value) return false
+    const repFechaInicio = new Date(rep.fecha_inicio)
+    const repFechaTermino = new Date(rep.fecha_termino)
+
+    if (filtroFechaInicio.value && repFechaInicio < filtroFechaInicio.value) return false
+    if (filtroFechaTermino.value && repFechaTermino > filtroFechaTermino.value) return false
 
     // Filtrar por servicio
-    if (filtroServicio.value) {
+    if (filtroServicio.value && filtroServicio.value !== 'TODOS') {
       const sBusqueda = String(filtroServicio.value).toLowerCase()
       if (!rep.servicio?.toLowerCase().includes(sBusqueda)) return false
+    }
+
+    // Filtrar por tipo turno
+    if (filtroTipoTurno.value && filtroTipoTurno.value !== 'TODOS') {
+      if (rep.tipo_turno !== filtroTipoTurno.value) return false
     }
 
     // Filtrar por rol (entrante / saliente)
@@ -269,10 +299,30 @@ const reemplazosFiltrados = computed(() => {
       if (rBusqueda === 'ENTRANTE' && rep.id_entrante !== props.usuario._id) return false
       if (rBusqueda === 'SALIENTE' && rep.id_saliente !== props.usuario._id) return false
     }
+
     // Filtrar por anulados
+    if (!mostrarAnulados.value && rep.status === 'ANULADO') return false
+    // Also check legacy boolean if present
     if (!mostrarAnulados.value && rep.anulado) return false
 
     return true
+  })
+
+  // Ordenar descendente por código (id_negocio)
+  // id_negocio suele tener formato "R-1065", así que podemos intentar parsear el número
+  // o simplemente string compare (pero string compare con números variables fallará: R-10 vs R-2)
+  return filtrados.sort((a, b) => {
+    const codeA = String(a.id_negocio || '')
+    const codeB = String(b.id_negocio || '')
+
+    // Intentar extraer parte numérica
+    const numA = parseInt(codeA.replace(/\D/g, ''), 10) || 0
+    const numB = parseInt(codeB.replace(/\D/g, ''), 10) || 0
+
+    if (numA !== numB) {
+      return numB - numA // Descendente numérico
+    }
+    return codeB.localeCompare(codeA) // Fallback string descendente
   })
 })
 
@@ -282,6 +332,27 @@ function formatearFecha(fecha: string) {
     return new Date(fecha).toLocaleDateString('es-CL')
   } catch {
     return '—'
+  }
+}
+
+function getStatusClass(status: string) {
+  if (!status) return 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25'
+
+  const s = status.toUpperCase()
+  switch (s) {
+    case 'CONFIRMADO':
+    case 'EN CURSO':
+    case 'COMETIDO':
+      return 'bg-success bg-opacity-10 text-success border-success border-opacity-25'
+    case 'PENDIENTE':
+      return 'bg-warning bg-opacity-10 text-warning border-warning border-opacity-25'
+    case 'ANULADO':
+    case 'RECHAZADO':
+      return 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25'
+    case 'FINALIZADO':
+      return 'bg-primary bg-opacity-10 text-primary border-primary border-opacity-25'
+    default:
+      return 'bg-secondary bg-opacity-10 text-secondary border-secondary border-opacity-25'
   }
 }
 </script>
@@ -300,6 +371,12 @@ function formatearFecha(fecha: string) {
 
 .smaller {
   font-size: 0.75rem;
+}
+
+/* Custom table font sizes */
+.table td,
+.table th {
+  font-size: 0.8rem;
 }
 
 .tracking-wider {

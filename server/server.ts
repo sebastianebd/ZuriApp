@@ -1,4 +1,4 @@
-import "./instrument";
+import "./config/instrument.config";
 import dotenv from "dotenv";
 import path from "path";
 import { setupEmailWorker } from "./queues/email.queue";
