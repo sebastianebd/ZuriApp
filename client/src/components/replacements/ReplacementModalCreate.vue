@@ -5,270 +5,293 @@
       v-if="visible"
       tabindex="-1"
       role="dialog"
-      style="background-color: rgba(30, 41, 59, 0.5); backdrop-filter: blur(4px)"
+      style="background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px)"
     >
-      <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-        <div class="modal-content shadow-lg border-0 rounded-4">
+      <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content shadow-2xl border-0 rounded-4">
           <!-- HEADER -->
-          <div class="modal-header border-0 bg-primary bg-gradient text-white p-4 rounded-top-4">
-            <h5 class="modal-title fw-bold">
-              <i class="bi bi-plus-circle-fill me-2"></i>Creación de Nuevo Reemplazo
-            </h5>
+          <div class="modal-header border-0 bg-white p-4 pb-3">
+            <div>
+              <h5 class="modal-title fw-bold text-dark">
+                <i class="bi bi-plus-circle-fill text-primary me-2"></i>Nuevo Reemplazo
+              </h5>
+              <p class="text-secondary small mb-0 mt-1">
+                Configure los detalles de la transacción y el período.
+              </p>
+            </div>
             <button
               type="button"
-              class="btn-close btn-close-white"
+              class="btn-close"
               @click="$emit('cerrar')"
               aria-label="Close"
             ></button>
           </div>
 
           <!-- BODY -->
-          <div class="modal-body p-4 bg-white">
-            <p v-if="errorMessage" class="alert alert-danger py-2 border-0 shadow-sm rounded-3">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
-            </p>
+          <div class="modal-body p-4 bg-light bg-opacity-50">
+            <!-- ALERTAS DE VALIDACIÓN -->
+            <div
+              v-if="validationError"
+              class="alert alert-danger border-0 shadow-sm rounded-3 d-flex align-items-center mb-4 animate-shake"
+            >
+              <i class="bi bi-exclamation-triangle-fill fs-5 me-3"></i>
+              <div>
+                <div class="fw-bold">Conflicto de Usuarios</div>
+                <div class="small">{{ validationError }}</div>
+              </div>
+            </div>
 
-            <transition name="fade-step" mode="out-in">
-              <div :key="currentStep">
-                <!-- Paso 1 -->
-                <div v-if="currentStep === 1">
-                  <h5 class="fw-bold mb-3 text-dark smaller text-uppercase tracking-wider">
-                    Paso 1: Datos de Funcionario (SALIDA)
-                  </h5>
-
-                  <button
-                    @click.prevent="$emit('buscar-usuario', 1)"
-                    class="btn btn-warning btn-sm mb-4 fw-bold shadow-sm border-0 px-3"
+            <!-- SECCIÓN TRANSACCIÓN (Saliente -> Entrante) -->
+            <div class="transaction-container bg-white rounded-4 shadow-sm p-4 mb-4 border">
+              <div class="row align-items-center g-0">
+                <!-- SALIENTE CARD -->
+                <div class="col-md-5">
+                  <div
+                    class="user-card outgoing p-3 rounded-3 border border-danger border-opacity-25 bg-danger bg-opacity-10 position-relative"
                   >
-                    <i class="bi bi-search me-2"></i>Buscar Funcionario
-                  </button>
+                    <div
+                      class="badge bg-danger text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
+                    >
+                      SALIENTE
+                    </div>
 
-                  <div class="form-floating mb-3">
-                    <input
-                      v-model="registroLocal.rut_saliente"
-                      type="text"
-                      class="form-control bg-light border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="RUT"
-                    />
-                    <label class="text-secondary fw-semibold">RUT Saliente</label>
-                  </div>
+                    <div class="text-center py-2" v-if="!registroLocal.rut_saliente">
+                      <div
+                        class="avatar-empty mx-auto mb-2 text-danger bg-white border border-danger border-opacity-25"
+                      >
+                        <i class="bi bi-person"></i>
+                      </div>
+                      <p class="text-muted small mb-2">No seleccionado</p>
+                      <button
+                        class="btn btn-sm btn-light border text-danger fw-bold shadow-xs"
+                        @click="$emit('buscar-usuario', 1)"
+                      >
+                        <i class="bi bi-search me-1"></i> Buscar
+                      </button>
+                    </div>
 
-                  <div class="form-floating mb-3">
-                    <input
-                      v-model="registroLocal.nombre_saliente"
-                      type="text"
-                      class="form-control bg-light border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="Nombre"
-                    />
-                    <label class="text-secondary fw-semibold">Nombre</label>
-                  </div>
-
-                  <div class="form-floating mb-4">
-                    <input
-                      v-model="registroLocal.apellido_saliente"
-                      type="text"
-                      class="form-control bg-light border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="Apellido"
-                    />
-                    <label class="text-secondary fw-semibold">Apellido</label>
-                  </div>
-
-                  <div class="text-end pt-3 border-top">
-                    <button @click="nextStep" class="btn btn-primary px-4 fw-bold shadow-sm">
-                      Siguiente<i class="bi bi-arrow-right ms-2"></i>
-                    </button>
+                    <div v-else class="d-flex align-items-center">
+                      <div class="avatar-filled bg-gradient-danger text-white shadow-sm me-3">
+                        {{
+                          getInitials(
+                            registroLocal.nombre_saliente + ' ' + registroLocal.apellido_saliente
+                          )
+                        }}
+                      </div>
+                      <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-bold text-dark text-truncate">
+                          {{ registroLocal.nombre_saliente }} {{ registroLocal.apellido_saliente }}
+                        </div>
+                        <div class="text-secondary x-small font-monospace">
+                          {{ registroLocal.rut_saliente }}
+                        </div>
+                      </div>
+                      <button
+                        class="btn btn-icon btn-light text-secondary ms-2"
+                        @click="$emit('buscar-usuario', 1)"
+                        title="Cambiar"
+                      >
+                        <i class="bi bi-arrow-repeat"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Paso 2 -->
-                <div v-else-if="currentStep === 2">
-                  <h5 class="fw-bold mb-3 text-dark smaller text-uppercase tracking-wider">
-                    Paso 2: Datos de Funcionario (ENTRANTE)
-                  </h5>
-
-                  <button
-                    @click.prevent="$emit('buscar-usuario', 2)"
-                    class="btn btn-warning btn-sm mb-4 fw-bold shadow-sm border-0 px-3"
+                <!-- ARROW CONNECTOR -->
+                <div class="col-md-2 text-center py-3 py-md-0">
+                  <div
+                    class="connector-icon bg-white text-secondary shadow-sm rounded-circle d-inline-flex align-items-center justify-content-center border"
                   >
-                    <i class="bi bi-search me-2"></i>Buscar Funcionario
-                  </button>
-
-                  <div class="form-floating mb-3">
-                    <input
-                      v-model="registroLocal.rut_entrante"
-                      type="text"
-                      class="form-control bg-light border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="RUT"
-                    />
-                    <label class="text-secondary fw-semibold">RUT Entrante</label>
-                  </div>
-
-                  <div class="form-floating mb-3">
-                    <input
-                      v-model="registroLocal.nombre_entrante"
-                      type="text"
-                      class="form-control bg-light border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="Nombre"
-                    />
-                    <label class="text-secondary fw-semibold">Nombre</label>
-                  </div>
-
-                  <div class="form-floating mb-4">
-                    <input
-                      v-model="registroLocal.apellido_entrante"
-                      type="text"
-                      class="form-control bg-light border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="Apellido"
-                    />
-                    <label class="text-secondary fw-semibold">Apellido</label>
-                  </div>
-
-                  <div class="d-flex justify-content-between pt-3 border-top">
-                    <button
-                      @click="prevStep"
-                      class="btn btn-light border px-3 fw-bold text-secondary"
-                    >
-                      <i class="bi bi-arrow-left me-2"></i>Volver
-                    </button>
-                    <button @click="nextStep" class="btn btn-primary px-4 fw-bold shadow-sm">
-                      Siguiente<i class="bi bi-arrow-right ms-2"></i>
-                    </button>
+                    <i class="bi bi-arrow-right fs-4 d-none d-md-block"></i>
+                    <i class="bi bi-arrow-down fs-4 d-md-none"></i>
                   </div>
                 </div>
 
-                <!-- Paso 3 -->
-                <div v-else-if="currentStep === 3">
-                  <h5 class="fw-bold mb-3 text-dark smaller text-uppercase tracking-wider">
-                    Paso 3: Configuración de Turno
-                  </h5>
-
-                  <div class="mb-3">
-                    <label class="form-label text-secondary fw-semibold small">Tipo de Turno</label>
-                    <v-select
-                      id="tipo_turno"
-                      v-model="registroLocal.tipo_turno"
-                      :options="listaDeTurnos"
-                      :clearable="false"
-                      :searchable="true"
-                      placeholder="Seleccione un turno"
-                      class="custom-v-select"
-                    />
-                  </div>
-
-                  <!-- Fecha de Inicio -->
-                  <div class="mb-3">
-                    <label class="form-label text-secondary fw-semibold small"
-                      >Fecha de Inicio</label
+                <!-- ENTRANTE CARD -->
+                <div class="col-md-5">
+                  <div
+                    class="user-card incoming p-3 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10 position-relative"
+                  >
+                    <div
+                      class="badge bg-success text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
                     >
-                    <DatePicker
-                      ref="dpInicio"
-                      v-model="fechaInicioComputed"
-                      :disabled-dates="isDisabled"
-                      :min-date="today"
-                      :masks="{ input: 'DD/MM/YYYY' }"
-                      :popover="popoverConfig"
-                      :attributes="dateAttributes"
-                      is-required
-                      color="blue"
-                    >
-                      <template #default="{ inputValue, inputEvents }">
-                        <div class="input-group">
-                          <span class="input-group-text bg-light border-0 shadow-sm"
-                            ><i class="bi bi-calendar-event text-primary"></i
-                          ></span>
-                          <input
-                            class="form-control bg-light border-0 shadow-sm"
-                            :value="inputValue"
-                            v-on="inputEvents"
-                            @click="handleInicioClick"
-                            placeholder="Seleccione fecha de Inicio"
-                            readonly
-                          />
+                      ENTRANTE
+                    </div>
+
+                    <div class="text-center py-2" v-if="!registroLocal.rut_entrante">
+                      <div
+                        class="avatar-empty mx-auto mb-2 text-success bg-white border border-success border-opacity-25"
+                      >
+                        <i class="bi bi-person-plus"></i>
+                      </div>
+                      <p class="text-muted small mb-2">No seleccionado</p>
+                      <button
+                        class="btn btn-sm btn-light border text-success fw-bold shadow-xs"
+                        @click="$emit('buscar-usuario', 2)"
+                      >
+                        <i class="bi bi-search me-1"></i> Buscar
+                      </button>
+                    </div>
+
+                    <div v-else class="d-flex align-items-center">
+                      <div class="avatar-filled bg-gradient-success text-white shadow-sm me-3">
+                        {{
+                          getInitials(
+                            registroLocal.nombre_entrante + ' ' + registroLocal.apellido_entrante
+                          )
+                        }}
+                      </div>
+                      <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-bold text-dark text-truncate">
+                          {{ registroLocal.nombre_entrante }} {{ registroLocal.apellido_entrante }}
                         </div>
-                      </template>
-                    </DatePicker>
-                  </div>
-
-                  <!-- Fecha de Término -->
-                  <div class="mb-3">
-                    <label class="form-label text-secondary fw-semibold small"
-                      >Fecha de Término</label
-                    >
-                    <DatePicker
-                      ref="dpTermino"
-                      v-model="fechaTerminoComputed"
-                      :disabled-dates="isDisabled"
-                      :min-date="today"
-                      :masks="{ input: 'DD/MM/YYYY' }"
-                      :popover="popoverConfig"
-                      :attributes="dateAttributes"
-                      is-required
-                      color="blue"
-                    >
-                      <template #default="{ inputValue, inputEvents }">
-                        <div class="input-group">
-                          <span class="input-group-text bg-light border-0 shadow-sm"
-                            ><i class="bi bi-calendar-event text-danger"></i
-                          ></span>
-                          <input
-                            class="form-control bg-light border-0 shadow-sm"
-                            :value="inputValue"
-                            v-on="inputEvents"
-                            @click="handleTerminoClick"
-                            placeholder="Seleccione fecha de Termino"
-                            readonly
-                          />
+                        <div class="text-secondary x-small font-monospace">
+                          {{ registroLocal.rut_entrante }}
                         </div>
-                      </template>
-                    </DatePicker>
-                  </div>
-
-                  <div class="mb-4">
-                    <label class="form-label text-secondary fw-semibold small">Servicio</label>
-                    <v-select
-                      id="servicio"
-                      v-model="registroLocal.servicio"
-                      :options="listaDeServicios"
-                      :clearable="false"
-                      :searchable="true"
-                      placeholder="Seleccione un servicio"
-                      class="custom-v-select"
-                    />
-                  </div>
-
-                  <div class="d-flex justify-content-between pt-3 border-top">
-                    <button
-                      @click="prevStep"
-                      class="btn btn-light border px-3 fw-bold text-secondary"
-                    >
-                      <i class="bi bi-arrow-left me-2"></i>Volver
-                    </button>
-                    <button
-                      @click="abrirConfirmacion"
-                      class="btn btn-success px-4 fw-bold shadow-sm"
-                    >
-                      <i class="bi bi-check-circle me-2"></i>Guardar Reemplazo
-                    </button>
+                      </div>
+                      <button
+                        class="btn btn-icon btn-light text-secondary ms-2"
+                        @click="$emit('buscar-usuario', 2)"
+                        title="Cambiar"
+                      >
+                        <i class="bi bi-arrow-repeat"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </transition>
-          </div>
-        </div>
+            </div>
 
-        <!-- Modal de confirmación -->
-        <ConfirmationModal
-          :visible="showConfirmacion"
-          mensaje="¿Deseas guardar los cambios realizados?"
-          @confirmar="confirmarGuardar"
-          @cancelar="cancelarConfirmacion"
-        />
+            <!-- SECCIÓN CONTEXTO -->
+            <div class="context-container bg-white rounded-4 shadow-sm p-4 border">
+              <h6 class="text-uppercase text-secondary fw-bold x-small mb-3 tracking-wider">
+                Detalles del Período
+              </h6>
+
+              <div class="row g-3">
+                <!-- SERVICIO -->
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold text-secondary"
+                    >Servicio Clínico</label
+                  >
+                  <v-select
+                    id="servicio"
+                    v-model="registroLocal.servicio"
+                    :options="listaDeServicios"
+                    :clearable="false"
+                    :searchable="true"
+                    placeholder="Seleccione servicio..."
+                    class="custom-v-select"
+                  />
+                </div>
+
+                <!-- TIPO TURNO -->
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold text-secondary">Tipo de Turno</label>
+                  <v-select
+                    id="tipo_turno"
+                    v-model="registroLocal.tipo_turno"
+                    :options="listaDeTurnos"
+                    :clearable="false"
+                    :searchable="true"
+                    placeholder="Tipo de turno..."
+                    class="custom-v-select"
+                  />
+                </div>
+
+                <!-- FECHAS -->
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold text-secondary">Inicio</label>
+                  <DatePicker
+                    ref="dpInicio"
+                    v-model="fechaInicioComputed"
+                    :disabled-dates="isDisabled"
+                    :min-date="today"
+                    :masks="{ input: 'DD/MM/YYYY' }"
+                    :popover="popoverConfig"
+                    :attributes="dateAttributes"
+                    is-required
+                    color="blue"
+                  >
+                    <template #default="{ inputValue, inputEvents }">
+                      <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted"
+                          ><i class="bi bi-calendar3"></i
+                        ></span>
+                        <input
+                          class="form-control bg-white border-start-0 ps-0"
+                          :value="inputValue"
+                          v-on="inputEvents"
+                          @click="handleInicioClick"
+                          placeholder="Seleccione fecha inicio"
+                          readonly
+                        />
+                      </div>
+                    </template>
+                  </DatePicker>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold text-secondary">Término</label>
+                  <DatePicker
+                    ref="dpTermino"
+                    v-model="fechaTerminoComputed"
+                    :disabled-dates="isDisabled"
+                    :min-date="fechaInicioComputed || today"
+                    :masks="{ input: 'DD/MM/YYYY' }"
+                    :popover="popoverConfig"
+                    :attributes="dateAttributes"
+                    is-required
+                    color="blue"
+                  >
+                    <template #default="{ inputValue, inputEvents }">
+                      <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted"
+                          ><i class="bi bi-calendar3"></i
+                        ></span>
+                        <input
+                          class="form-control bg-white border-start-0 ps-0"
+                          :value="inputValue"
+                          v-on="inputEvents"
+                          @click="handleTerminoClick"
+                          placeholder="Seleccione fecha término"
+                          readonly
+                        />
+                      </div>
+                    </template>
+                  </DatePicker>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FOOTER -->
+          <div class="modal-footer border-top bg-light p-3">
+            <button
+              type="button"
+              class="btn btn-light border fw-bold text-secondary px-4 me-2"
+              @click="$emit('cerrar')"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              @click="abrirConfirmacion"
+              class="btn btn-primary fw-bold px-4 shadow-sm"
+              :disabled="!!validationError || !isFormComplete"
+            >
+              <i class="bi bi-check-lg me-2"></i>Crear Reemplazo
+            </button>
+          </div>
+
+          <!-- Modal de confirmación -->
+          <ConfirmationModal
+            :visible="showConfirmacion"
+            mensaje="¿Confirmas la creación de este reemplazo?"
+            @confirmar="confirmarGuardar"
+            @cancelar="cancelarConfirmacion"
+          />
+        </div>
       </div>
     </div>
   </Transition>
@@ -297,28 +320,49 @@ const emit = defineEmits<{
 }>()
 
 const registroLocal = reactive({ ...props.registro })
-const currentStep = ref(1)
-const errorMessage = ref('')
+const showConfirmacion = ref(false)
 
-// --- Elementos de calendario para control de popover
-const dpInicio = ref<any>(null)
-const dpTermino = ref<any>(null)
-
-function handleInicioClick() {
-  if (dpTermino.value) {
-    dpTermino.value.hidePopover()
+// --- Validation Logic ---
+const validationError = computed(() => {
+  // 1. Validar conflicto de usuarios
+  if (registroLocal.rut_saliente && registroLocal.rut_entrante) {
+    if (registroLocal.rut_saliente === registroLocal.rut_entrante) {
+      return 'El funcionario saliente y entrante no pueden ser la misma persona.'
+    }
   }
-}
 
-function handleTerminoClick() {
-  if (dpInicio.value) {
-    dpInicio.value.hidePopover()
+  // 2. Validar Fechas
+  if (registroLocal.fecha_inicio) {
+    const start = new Date(registroLocal.fecha_inicio + 'T00:00:00')
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+
+    if (start < now) {
+      return 'La fecha de inicio no puede ser anterior a hoy.'
+    }
+
+    if (registroLocal.fecha_termino) {
+      const end = new Date(registroLocal.fecha_termino + 'T00:00:00')
+      if (end < start) {
+        return 'La fecha de término no puede ser anterior a la fecha de inicio.'
+      }
+    }
   }
-}
+  return ''
+})
 
-// --- Configuración de calendario
-const { popoverConfig, isDisabled, dateAttributes } = useDatePicker(props)
+const isFormComplete = computed(() => {
+  return (
+    registroLocal.rut_saliente &&
+    registroLocal.rut_entrante &&
+    registroLocal.tipo_turno &&
+    registroLocal.servicio &&
+    registroLocal.fecha_inicio &&
+    registroLocal.fecha_termino
+  )
+})
 
+// --- Watchers ---
 watch(
   () => props.registro,
   (nuevo) => {
@@ -326,6 +370,34 @@ watch(
   },
   { deep: true }
 )
+
+watch(
+  () => props.visible,
+  (nuevoValor) => {
+    if (nuevoValor) {
+      // Reset logic if needed
+      if (!registroLocal.fecha_inicio) registroLocal.fecha_inicio = todayString()
+      if (!registroLocal.fecha_termino) registroLocal.fecha_termino = todayString()
+    }
+  }
+)
+
+// Sync Termino with Inicio
+watch(
+  () => registroLocal.fecha_inicio,
+  (newVal) => {
+    if (newVal) {
+      registroLocal.fecha_termino = newVal
+    }
+  }
+)
+
+// --- Date Logic ---
+const dpInicio = ref<any>(null)
+const dpTermino = ref<any>(null)
+const { popoverConfig, isDisabled, dateAttributes } = useDatePicker(props)
+const today = new Date()
+today.setHours(0, 0, 0, 0)
 
 function todayString() {
   const d = new Date()
@@ -335,24 +407,13 @@ function todayString() {
   return `${yyyy}-${mm}-${dd}`
 }
 
-watch(
-  () => props.visible,
-  (nuevoValor) => {
-    if (nuevoValor) {
-      currentStep.value = 1
-      errorMessage.value = ''
+function handleInicioClick() {
+  if (dpTermino.value) dpTermino.value.hidePopover()
+}
 
-      Object.assign(registroLocal, props.registro)
-
-      if (!registroLocal.fecha_inicio) registroLocal.fecha_inicio = todayString()
-
-      if (!registroLocal.fecha_termino) registroLocal.fecha_termino = todayString()
-    }
-  }
-)
-
-const today = new Date()
-today.setHours(0, 0, 0, 0)
+function handleTerminoClick() {
+  if (dpInicio.value) dpInicio.value.hidePopover()
+}
 
 const fechaInicioComputed = computed({
   get: () => {
@@ -398,34 +459,20 @@ const fechaTerminoComputed = computed({
   }
 })
 
-function nextStep() {
-  errorMessage.value = ''
-  if (currentStep.value === 1 && !registroLocal.rut_saliente) {
-    errorMessage.value = 'Debe seleccionar un usuario para continuar.'
-    return
-  }
-  if (currentStep.value === 2 && !registroLocal.rut_entrante) {
-    errorMessage.value = 'Debe seleccionar un usuario para continuar.'
-    return
-  }
-  if (currentStep.value === 2 && registroLocal.rut_entrante === registroLocal.rut_saliente) {
-    errorMessage.value =
-      'El funcionario entrante no puede ser el mismo que el funcionario saliente. Por favor, seleccione otro funcionario.'
-    return
-  }
-  currentStep.value++
+// --- Helpers ---
+function getInitials(name: string) {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .filter((n) => n.length > 0)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
 }
-
-function prevStep() {
-  if (currentStep.value > 1) {
-    currentStep.value--
-    errorMessage.value = ''
-  }
-}
-
-const showConfirmacion = ref(false)
 
 function abrirConfirmacion() {
+  if (validationError.value) return
   showConfirmacion.value = true
 }
 
@@ -440,48 +487,113 @@ function cancelarConfirmacion() {
 </script>
 
 <style scoped>
-/* Transitions */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+.modal-content {
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
-.fade-step-enter-active,
-.fade-step-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
-.fade-step-enter-from {
-  opacity: 0;
-  transform: translateX(20px);
-}
-.fade-step-leave-to {
-  opacity: 0;
-  transform: translateX(-20px);
+@keyframes shake {
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
 }
 
-/* Custom v-select */
+/* User Cards */
+.user-card {
+  transition: all 0.2s ease;
+  height: 100%;
+}
+.user-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.avatar-empty {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.avatar-filled {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.bg-gradient-danger {
+  background: linear-gradient(135deg, #fecaca 0%, #ef4444 100%);
+}
+.bg-gradient-success {
+  background: linear-gradient(135deg, #bbf7d0 0%, #22c55e 100%);
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.connector-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.form-control:focus {
+  box-shadow: none;
+  background-color: #f8fafc;
+}
+
 .custom-v-select :deep(.vs__dropdown-toggle) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 4px;
   background: white;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 4px 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.075);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .custom-v-select :deep(.vs__selected) {
   font-size: 0.875rem;
   color: #1e293b;
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
 }
 
 .custom-v-select :deep(.vs__actions svg) {
@@ -495,13 +607,16 @@ function cancelarConfirmacion() {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   padding: 8px;
   font-size: 0.875rem;
-  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  max-height: 210px; /* Limit to approx 5 items */
+  overflow-y: auto;
 }
 
 .custom-v-select :deep(.vs__dropdown-option) {
   border-radius: 0.375rem;
   padding: 8px 12px;
   margin-bottom: 2px;
+  color: #475569;
 }
 
 .custom-v-select :deep(.vs__dropdown-option--highlight) {
@@ -509,24 +624,24 @@ function cancelarConfirmacion() {
   color: white;
 }
 
-.smaller {
-  font-size: 0.75rem;
+/* Typography */
+.x-small {
+  font-size: 0.7rem;
 }
-
+.shadow-xs {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
 .tracking-wider {
   letter-spacing: 0.05em;
 }
 
-button {
-  transition: all 0.2s ease;
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
 }
-
-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-}
-
-button:active {
-  transform: translateY(0);
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
