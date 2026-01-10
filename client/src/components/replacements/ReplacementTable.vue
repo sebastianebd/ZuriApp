@@ -1,155 +1,166 @@
 <template>
-  <div class="table-responsive rounded-3 border overflow-hidden shadow-sm">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="bg-primary bg-gradient text-white">
+  <div class="modern-table-container">
+    <table class="table modern-table mb-0">
+      <thead>
         <tr>
-          <th scope="col" class="py-2 px-4 x-small fw-bold text-uppercase tracking-wider">
-            Código
+          <th scope="col" class="ps-4">Código</th>
+          <th scope="col">
+            Transacción (Saliente <i class="bi bi-arrow-right mx-1 text-muted"></i> Entrante)
           </th>
-          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
-            Funcionario Saliente
-          </th>
-          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
-            Reemplazante (Entrante)
-          </th>
-          <th
-            scope="col"
-            class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider text-center"
-          >
-            Turno
-          </th>
-          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
-            Período
-          </th>
-          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
-            Servicio
-          </th>
-          <th scope="col" class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider">
-            Creado por
-          </th>
-          <th
-            scope="col"
-            class="py-2 px-3 x-small fw-bold text-uppercase tracking-wider text-center"
-          >
-            Status
-          </th>
-          <th
-            scope="col"
-            class="py-2 px-4 x-small fw-bold text-uppercase tracking-wider text-center"
-          >
-            Acciones
-          </th>
+          <th scope="col">Contexto</th>
+          <th scope="col">Línea de Tiempo</th>
+          <th scope="col" class="text-center">Estado</th>
+          <th scope="col" class="text-end pe-4">Acciones</th>
         </tr>
       </thead>
 
       <tbody>
-        <tr v-for="reemplazo in reemplazos" :key="reemplazo._id" class="border-bottom hover-row">
-          <td class="px-4 py-2">
-            <span class="badge bg-light text-dark fw-bold border x-small">{{
-              reemplazo.id_negocio
-            }}</span>
-          </td>
-          <td class="px-3 py-2">
-            <div class="d-flex align-items-center">
-              <div
-                class="avatar-placeholder me-2 rounded-3 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center text-primary fw-bold x-small border border-primary border-opacity-10"
-                style="width: 28px; height: 28px"
+        <tr
+          v-for="(reemplazo, index) in reemplazos"
+          :key="reemplazo._id"
+          class="data-row"
+          :style="{ animationDelay: `${index * 50}ms` }"
+        >
+          <!-- Código -->
+          <td class="ps-4 first-cell">
+            <div class="d-flex align-items-center" style="height: 100%">
+              <button
+                class="code-badge font-monospace border-0 d-flex align-items-center gap-2"
+                @click.stop="copyCode(reemplazo.id_negocio)"
+                title="Copiar Código"
               >
-                {{ getInitials(reemplazo.nombre_saliente + ' ' + reemplazo.apellido_saliente) }}
-              </div>
-              <div class="d-flex flex-column">
-                <span class="fw-bold text-dark x-small"
-                  >{{ reemplazo.nombre_saliente }} {{ reemplazo.apellido_saliente }}</span
-                >
-                <span class="text-muted x-small"
-                  ><i class="bi bi-person-badge me-1"></i>{{ reemplazo.rut_saliente }}</span
-                >
-              </div>
+                <span :class="{ 'text-success': copiedId === reemplazo.id_negocio }">
+                  {{ reemplazo.id_negocio }}
+                </span>
+                <i
+                  class="bi"
+                  :class="
+                    copiedId === reemplazo.id_negocio
+                      ? 'bi-check-lg text-success'
+                      : 'bi-clipboard opacity-50'
+                  "
+                  style="font-size: 0.7rem"
+                ></i>
+              </button>
             </div>
-          </td>
-          <td class="px-3 py-2">
-            <div class="d-flex align-items-center">
-              <div
-                class="avatar-placeholder me-2 rounded-3 bg-success bg-opacity-10 d-flex align-items-center justify-content-center text-success fw-bold x-small border border-success border-opacity-10"
-                style="width: 28px; height: 28px"
-              >
-                {{ getInitials(reemplazo.nombre_entrante + ' ' + reemplazo.apellido_entrante) }}
-              </div>
-              <div class="d-flex flex-column">
-                <span class="fw-bold text-dark x-small"
-                  >{{ reemplazo.nombre_entrante }} {{ reemplazo.apellido_entrante }}</span
-                >
-                <span class="text-muted x-small"
-                  ><i class="bi bi-person-badge me-1"></i>{{ reemplazo.rut_entrante }}</span
-                >
-              </div>
-            </div>
-          </td>
-          <td class="px-3 py-2 text-center">
-            <span class="x-small text-secondary">{{ reemplazo.tipo_turno }}</span>
-          </td>
-          <td class="px-3 py-2">
-            <div class="d-flex flex-column x-small text-secondary">
-              <span
-                ><i class="bi bi-arrow-right-short text-success me-1"></i
-                >{{ formatearFecha(reemplazo.fecha_inicio) }}</span
-              >
-              <span
-                ><i class="bi bi-arrow-left-short text-danger me-1"></i
-                >{{ formatearFecha(reemplazo.fecha_termino) }}</span
-              >
-            </div>
-          </td>
-          <td class="px-3 py-2">
-            <span
-              class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill x-small"
-            >
-              {{ reemplazo.servicio }}
-            </span>
-          </td>
-          <td class="px-3 py-2">
-            <span class="x-small text-muted fw-medium">{{ getCreatorName(reemplazo) }}</span>
-          </td>
-          <td class="px-3 py-2 text-center">
-            <span
-              class="badge px-3 py-1 rounded-pill x-small fw-bold shadow-xs"
-              :class="[reemplazo.status === 'PENDIENTE' ? 'bg-warning text-dark' : 'bg-success']"
-            >
-              {{ reemplazo.status }}
-            </span>
           </td>
 
-          <td class="px-4 text-center">
-            <div class="d-flex gap-1 justify-content-center">
+          <!-- Transacción (Saliente -> Entrante) -->
+          <td>
+            <div class="d-flex align-items-center py-2 h-100">
+              <!-- Saliente -->
+              <div class="user-node position-relative">
+                <div class="avatar-modern bg-gradient-danger text-white shadow-sm">
+                  {{ getInitials(reemplazo.nombre_saliente + ' ' + reemplazo.apellido_saliente) }}
+                </div>
+                <div class="user-info ms-3">
+                  <div class="fw-bold text-dark text-truncate">
+                    {{ formatShortName(reemplazo.nombre_saliente, reemplazo.apellido_saliente) }}
+                  </div>
+                  <div class="rut-text">{{ reemplazo.rut_saliente }}</div>
+                </div>
+              </div>
+
+              <!-- Connector -->
+              <div class="connector-line mx-3 d-flex align-items-center justify-content-center">
+                <i class="bi bi-chevron-right text-muted opacity-25"></i>
+              </div>
+
+              <!-- Entrante -->
+              <div class="user-node">
+                <div class="avatar-modern bg-gradient-success text-white shadow-sm">
+                  {{ getInitials(reemplazo.nombre_entrante + ' ' + reemplazo.apellido_entrante) }}
+                </div>
+                <div class="user-info ms-3">
+                  <div class="fw-bold text-dark text-truncate">
+                    {{ formatShortName(reemplazo.nombre_entrante, reemplazo.apellido_entrante) }}
+                  </div>
+                  <div class="rut-text">{{ reemplazo.rut_entrante }}</div>
+                </div>
+              </div>
+            </div>
+          </td>
+
+          <!-- Contexto -->
+          <td>
+            <div class="d-flex flex-column justify-content-center h-100">
+              <span class="badge-modern-context mb-1">
+                <i class="bi bi-hospital me-1"></i> {{ reemplazo.servicio }}
+              </span>
+              <span class="text-secondary x-small ms-1">
+                {{ reemplazo.tipo_turno }}
+              </span>
+            </div>
+          </td>
+
+          <!-- Período -->
+          <td>
+            <div
+              class="d-flex flex-column justify-content-center h-100 border-start ps-3 border-light-subtle"
+            >
+              <div class="d-flex align-items-center mb-1">
+                <span class="date-dot start me-2"></span>
+                <span class="date-text fw-medium">{{
+                  formatearFecha(reemplazo.fecha_inicio)
+                }}</span>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="date-dot end me-2"></span>
+                <span class="date-text text-muted">{{
+                  formatearFecha(reemplazo.fecha_termino)
+                }}</span>
+              </div>
+            </div>
+          </td>
+
+          <!-- Estado -->
+          <td class="text-center">
+            <div class="h-100 d-flex flex-column align-items-center justify-content-center">
+              <span class="status-glass" :class="getStatusClass(reemplazo.status)">
+                {{ reemplazo.status }}
+              </span>
+              <small class="creator-text mt-1">
+                {{ getCreatorName(reemplazo).split(' ')[0] }}
+              </small>
+            </div>
+          </td>
+
+          <!-- Acciones -->
+          <td class="pe-4 text-end last-cell">
+            <div class="actions-wrapper h-100 d-flex align-items-center justify-content-end gap-2">
               <button
                 @click="$emit('modificar', reemplazo)"
-                class="btn btn-light btn-sm border shadow-xs"
+                class="btn-glass btn-edit"
                 title="Editar"
               >
-                <i class="bi bi-pencil-square text-primary"></i>
+                <i class="bi bi-pencil-fill"></i>
               </button>
+
               <button
                 @click="$emit('exportar', reemplazo)"
-                class="btn btn-light btn-sm border shadow-xs"
+                class="btn-glass btn-export"
                 title="Exportar"
               >
-                <i class="bi bi-file-earmark-pdf text-danger"></i>
+                <i class="bi bi-file-earmark-pdf-fill"></i>
               </button>
+
+              <div class="vr mx-1 opacity-25"></div>
+
               <button
                 v-if="turnoEnCurso(reemplazo)"
                 @click="confirmarFinalizar(reemplazo._id)"
-                class="btn btn-light btn-sm border shadow-xs"
-                title="Finalizar"
+                class="btn-glass btn-finalize"
+                title="Finalizar Turno"
               >
-                <i class="bi bi-check-circle-fill text-success"></i>
+                <i class="bi bi-check-lg"></i>
               </button>
               <button
                 v-else
                 @click="confirmarAnular(reemplazo._id)"
-                class="btn btn-light btn-sm border shadow-xs"
+                class="btn-glass btn-delete"
                 title="Anular"
               >
-                <i class="bi bi-x-circle-fill text-danger"></i>
+                <i class="bi bi-x-lg"></i>
               </button>
             </div>
           </td>
@@ -184,7 +195,10 @@ defineProps({
 })
 
 function turnoEnCurso(reemplazo: RegisterDataReemplazo) {
-  return reemplazo.status === 'EN CURSO'
+  if (!reemplazo.status) return false
+  const s = String(reemplazo.status).trim().toUpperCase()
+  // console.log('DEBUG Status:', s, s === 'EN CURSO')
+  return s === 'EN CURSO'
 }
 
 const emit = defineEmits<{
@@ -197,6 +211,7 @@ const emit = defineEmits<{
 const showConfirmacion = ref(false)
 const idRegistro = ref<string | null>(null)
 const accion = ref<'finalizar' | 'anular' | null>(null)
+const copiedId = ref<string | null>(null)
 
 const getCreatorName = (reemplazo: RegisterDataReemplazo): string => {
   const creator = reemplazo.creado_por
@@ -205,19 +220,21 @@ const getCreatorName = (reemplazo: RegisterDataReemplazo): string => {
     const user = creator as User
     return `${user.nombre} ${user.apellido}`
   }
-  return String(creator) || 'Usuario no asignado'
+  return String(creator) || 'N/A'
+}
+
+function confirmingAction(id: string, actionType: 'finalizar' | 'anular') {
+  idRegistro.value = id
+  accion.value = actionType
+  showConfirmacion.value = true
 }
 
 function confirmarFinalizar(id: string) {
-  idRegistro.value = id
-  accion.value = 'finalizar'
-  showConfirmacion.value = true
+  confirmingAction(id, 'finalizar')
 }
 
 function confirmarAnular(id: string) {
-  idRegistro.value = id
-  accion.value = 'anular'
-  showConfirmacion.value = true
+  confirmingAction(id, 'anular')
 }
 
 function confirmarAccion() {
@@ -250,45 +267,307 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
+function formatShortName(nombre: string, apellido: string) {
+  if (!nombre) return ''
+  const n = nombre.split(' ')[0]
+  const a = apellido ? apellido.split(' ')[0].charAt(0) + '.' : ''
+  return `${n} ${a}`.toUpperCase()
+}
+
 const formatearFecha = (fecha: string) => {
   if (!fecha) return ''
   return fecha.split('-').reverse().join('-')
 }
+
+function getStatusClass(status: string) {
+  if (!status) return 'glass-secondary'
+
+  const s = status.toUpperCase()
+  switch (s) {
+    case 'CONFIRMADO':
+    case 'EN CURSO':
+    case 'COMETIDO':
+      return 'glass-success'
+    case 'PENDIENTE':
+      return 'glass-warning'
+    case 'ANULADO':
+    case 'RECHAZADO':
+      return 'glass-danger'
+    case 'FINALIZADO':
+      return 'glass-primary'
+    default:
+      return 'glass-secondary'
+  }
+}
+
+async function copyCode(code: string) {
+  if (!code) return
+  try {
+    await navigator.clipboard.writeText(code)
+    copiedId.value = code
+    setTimeout(() => {
+      copiedId.value = null
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy', err)
+  }
+}
 </script>
 
 <style scoped>
-.hover-row:hover {
-  background-color: #f8fafc !important;
+/* --- Animation Keyframes --- */
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.avatar-placeholder {
+/* --- Container & Table Reset --- */
+.modern-table-container {
+  padding: 0 4px 10px 4px; /* Space for shadows + bottom padding, NO MAX-HEIGHT */
+}
+
+.modern-table {
+  border-collapse: separate;
+  border-spacing: 0 8px; /* Vertical gap between rows */
+  width: 100%;
+}
+
+.modern-table thead th {
+  border: none;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: #94a3b8; /* slate-400 */
+  padding-bottom: 8px;
+  background: transparent;
+}
+
+/* --- Row Styling --- */
+.data-row {
+  animation: slideUpFade 0.5s ease-out forwards;
+  opacity: 0; /* Init hidden for animation */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.data-row td {
+  background-color: white;
+  border-top: 1px solid rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+  padding: 1rem 0.5rem;
+  vertical-align: middle;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.data-row td.first-cell {
+  border-left: 1px solid rgba(0, 0, 0, 0.02);
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.data-row td.last-cell {
+  border-right: 1px solid rgba(0, 0, 0, 0.02);
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.data-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+  position: relative;
+}
+
+/* --- Typography & Components --- */
+.code-badge {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.code-badge:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.user-node {
+  display: flex;
+  align-items: center;
+  width: 180px; /* Fixed width for alignment */
+  flex-shrink: 0; /* Don't shrink */
+}
+
+.avatar-modern {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px; /* Squircle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
-.smaller {
+.bg-gradient-danger {
+  background: linear-gradient(135deg, #fecaca 0%, #ef4444 100%);
+  color: white;
+}
+.bg-gradient-success {
+  background: linear-gradient(135deg, #bbf7d0 0%, #22c55e 100%);
+  color: white;
+}
+
+.user-info {
+  line-height: 1.2;
+}
+
+.rut-text {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.badge-modern-context {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.75rem;
+  font-weight: 600;
+  color: #334155;
+  background-color: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 6px;
+  max-width: fit-content;
 }
 
 .x-small {
-  font-size: 0.71rem;
+  font-size: 0.72rem;
 }
 
-.tracking-wider {
+/* Timeline */
+.date-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.date-dot.start {
+  background-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+.date-dot.end {
+  background-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+.date-text {
+  font-size: 0.78rem;
+  width: 80px;
+}
+
+/* Glass Status Pills */
+.status-glass {
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 700;
   letter-spacing: 0.05em;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-.shadow-xs {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+.glass-success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+.glass-warning {
+  background: rgba(234, 179, 8, 0.1);
+  color: #a16207;
+  border: 1px solid rgba(234, 179, 8, 0.2);
+}
+.glass-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.glass-primary {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.glass-secondary {
+  background: rgba(148, 163, 184, 0.1);
+  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
-th {
-  border: none !important;
+.creator-text {
+  font-size: 0.65rem;
+  color: #cbd5e1;
 }
 
-.table td,
-.table th {
-  border-color: #f1f5f9;
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+/* Glass Buttons */
+.btn-glass {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  color: #cbd5e1; /* Hidden-ish by default */
+}
+
+.data-row:hover .btn-glass {
+  color: #64748b; /* Visible on row hover */
+  background: #f8fafc;
+}
+
+.btn-glass:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-edit:hover {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+.btn-export:hover {
+  background: #fef2f2;
+  color: #ef4444;
+}
+.btn-finalize:hover {
+  background: #f0fdf4;
+  color: #22c55e;
+}
+.btn-delete:hover {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
 }
 </style>
