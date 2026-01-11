@@ -46,7 +46,7 @@ describe('UserModalCreate.vue', () => {
       global: globalOptions
     })
 
-    expect(wrapper.find('.modal-title').text()).toContain('CREAR NUEVO USUARIO')
+    expect(wrapper.find('.modal-title').text()).toContain('Nuevo Usuario')
     expect(wrapper.find('input[placeholder="12.345.678-9"]').exists()).toBe(true)
   })
 
@@ -56,7 +56,7 @@ describe('UserModalCreate.vue', () => {
       global: globalOptions
     })
 
-    await wrapper.find('button.btn-success').trigger('click')
+    await wrapper.find('button.btn-primary').trigger('click')
 
     expect(wrapper.text()).toContain('El RUT es obligatorio')
     expect(wrapper.text()).toContain('El nombre es obligatorio')
@@ -72,7 +72,7 @@ describe('UserModalCreate.vue', () => {
     const rutInput = wrapper.find('input[placeholder="12.345.678-9"]')
     await rutInput.setValue('99.999.999-K')
 
-    await wrapper.find('button.btn-success').trigger('click')
+    await wrapper.find('button.btn-primary').trigger('click')
 
     expect(wrapper.text()).toContain('RUT inválido')
   })
@@ -84,8 +84,8 @@ describe('UserModalCreate.vue', () => {
     })
 
     await wrapper.find('input[placeholder="12.345.678-9"]').setValue('12.345.678-5')
-    await wrapper.find('input[placeholder="Ingrese nombre"]').setValue('Juan')
-    await wrapper.find('input[placeholder="Ingrese apellido"]').setValue('Perez')
+    await wrapper.find('input[placeholder="Ej: Sebastián"]').setValue('Juan')
+    await wrapper.find('input[placeholder="Ej: Barría"]').setValue('Perez')
 
     // Interact with the mocked DatePicker
     const dateInput = wrapper.find('.date-input-mock')
@@ -95,16 +95,20 @@ describe('UserModalCreate.vue', () => {
       throw new Error('DatePicker mock not found')
     }
 
-    await wrapper.find('input[placeholder="Calle, Número, Depto"]').setValue('Calle 123')
-    await wrapper.find('input[placeholder="Ingrese ciudad"]').setValue('Santiago')
+    await wrapper.find('input[placeholder="Calle, Número"]').setValue('Calle 123')
+    await wrapper.find('input[placeholder="Ej: Santiago"]').setValue('Santiago')
     await wrapper.find('input[placeholder="912345678"]').setValue('912345678')
     await wrapper.find('input[placeholder="correo@ejemplo.com"]').setValue('juan@test.com')
 
-    const selects = wrapper.findAll('.v-select-stub')
+    // Select Cargo
+    let selects = wrapper.findAll('.v-select-stub')
     if (selects.length > 0) await selects[0].trigger('click')
+
+    // Habilitado field should appear now. Re-query selects.
+    selects = wrapper.findAll('.v-select-stub')
     if (selects.length > 1) await selects[1].trigger('click')
 
-    await wrapper.find('button.btn-success').trigger('click')
+    await wrapper.find('button.btn-primary').trigger('click')
 
     const confirmModal = wrapper.findComponent(ConfirmationModalStub)
     expect(confirmModal.exists()).toBe(true)
@@ -118,22 +122,24 @@ describe('UserModalCreate.vue', () => {
     })
 
     await wrapper.find('input[placeholder="12.345.678-9"]').setValue('12.345.678-5')
-    await wrapper.find('input[placeholder="Ingrese nombre"]').setValue('Juan')
-    await wrapper.find('input[placeholder="Ingrese apellido"]').setValue('Perez')
+    await wrapper.find('input[placeholder="Ej: Sebastián"]').setValue('Juan')
+    await wrapper.find('input[placeholder="Ej: Barría"]').setValue('Perez')
 
     const dateInput = wrapper.find('.date-input-mock')
     if (dateInput.exists()) await dateInput.setValue('2000-01-01')
 
-    await wrapper.find('input[placeholder="Calle, Número, Depto"]').setValue('Calle 123')
-    await wrapper.find('input[placeholder="Ingrese ciudad"]').setValue('Santiago')
+    await wrapper.find('input[placeholder="Calle, Número"]').setValue('Calle 123')
+    await wrapper.find('input[placeholder="Ej: Santiago"]').setValue('Santiago')
     await wrapper.find('input[placeholder="912345678"]').setValue('912345678')
     await wrapper.find('input[placeholder="correo@ejemplo.com"]').setValue('juan@test.com')
 
-    const selects = wrapper.findAll('.v-select-stub')
+    let selects = wrapper.findAll('.v-select-stub')
     if (selects.length > 0) await selects[0].trigger('click')
+
+    selects = wrapper.findAll('.v-select-stub')
     if (selects.length > 1) await selects[1].trigger('click')
 
-    await wrapper.find('button.btn-success').trigger('click')
+    await wrapper.find('button.btn-primary').trigger('click')
 
     const confirmModal = wrapper.findComponent(ConfirmationModalStub)
     await confirmModal.vm.$emit('confirmar')

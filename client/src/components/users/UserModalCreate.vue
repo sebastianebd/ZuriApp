@@ -233,7 +233,7 @@
                     </div>
 
                     <!-- Habilitado -->
-                    <div class="mb-2 position-relative">
+                    <div v-if="shouldShowHabilitado" class="mb-2 position-relative">
                       <label class="form-label x-small fw-bold text-secondary text-uppercase"
                         >Estado Inicial</label
                       >
@@ -294,7 +294,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 import { validateRut } from '@fdograph/rut-utilities'
 import { formatRut, cleanRutForStorage } from '@/utils/rut.util'
@@ -341,12 +341,29 @@ const popoverConfig = {
   placement: 'bottom' as const
 }
 
+// Logic to conditionally show "Habilitado"
+const shouldShowHabilitado = computed(() => {
+  const cargo = form.value.tipo_cargo
+  if (!cargo) return false
+  return !['RECURSOS HUMANOS', 'ADMIN-TI'].includes(cargo)
+})
+
 // Watchers
 watch(
   () => props.visible,
   (newVal) => {
     if (newVal) {
       resetForm()
+    }
+  }
+)
+
+// Watch for cargo changes to reset hidden fields
+watch(
+  () => form.value.tipo_cargo,
+  () => {
+    if (!shouldShowHabilitado.value) {
+      form.value.habilitado = ''
     }
   }
 )
@@ -423,8 +440,8 @@ const validateForm = () => {
     newErrors.tipo_cargo = 'Debe seleccionar un cargo'
   }
 
-  // Validar Habilitado
-  if (!form.value.habilitado) {
+  // Validar Habilitado (Solo si es visible)
+  if (shouldShowHabilitado.value && !form.value.habilitado) {
     newErrors.habilitado = 'Debe seleccionar un estado'
   }
 

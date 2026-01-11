@@ -24,7 +24,7 @@ test.describe('User Management', () => {
     await createBtn.waitFor({ state: 'visible', timeout: 10000 })
     await createBtn.click()
     await expect(page.locator('.modal')).toBeVisible()
-    await expect(page.locator('.modal-title')).toContainText(/crear/i)
+    await expect(page.locator('.modal-title')).toContainText(/Nuevo Usuario/i)
   })
   test('should create a new user', async ({ page }) => {
     await page.goto('/app/ver_usuarios')
@@ -34,7 +34,7 @@ test.describe('User Management', () => {
     const createBtn = page.getByRole('button', { name: 'Crear Usuario' })
     await createBtn.waitFor({ state: 'visible', timeout: 10000 })
     await createBtn.click()
-    await expect(page.locator('.modal-title')).toContainText('CREAR NUEVO USUARIO')
+    await expect(page.locator('.modal-title')).toContainText('Nuevo Usuario')
     await page.evaluate(() => {
       const modals = document.querySelectorAll('.modal.show')
       if (modals.length > 1) {
@@ -46,25 +46,22 @@ test.describe('User Management', () => {
 
     const validRut = generateRut()
 
-    const activeModal = page
-      .locator('.modal.show')
-      .filter({ hasText: 'CREAR NUEVO USUARIO' })
-      .first()
+    const activeModal = page.locator('.modal.show').filter({ hasText: 'Nuevo Usuario' }).first()
     await expect(activeModal).toBeVisible()
 
     const rutInput = activeModal.getByPlaceholder('12.345.678-9')
     await rutInput.click()
     await rutInput.fill(validRut)
     await rutInput.blur()
-    await activeModal.getByPlaceholder('Ingrese nombre').fill('Sebastian')
-    await activeModal.getByPlaceholder('Ingrese apellido').fill('Echeverria')
+    await activeModal.getByPlaceholder('Ej: Sebastián').fill('Sebastian')
+    await activeModal.getByPlaceholder('Ej: Barría').fill('Echeverria')
     await activeModal.getByPlaceholder('correo@ejemplo.com').fill(`e2e-${Date.now()}@test.com`)
 
     // Generate unique Chilean phone number (9 + 8 random digits)
     const randomPhone = '9' + Math.floor(10000000 + Math.random() * 90000000).toString()
     await activeModal.getByPlaceholder('912345678').fill(randomPhone)
-    await activeModal.getByPlaceholder('Calle, Número, Depto').fill('Calle Falsa 123')
-    await activeModal.getByPlaceholder('Ingrese ciudad').fill('Santiago')
+    await activeModal.getByPlaceholder('Calle, Número').fill('Calle Falsa 123')
+    await activeModal.getByPlaceholder('Ej: Santiago').fill('Santiago')
     const fechaInput = activeModal.getByPlaceholder('Seleccione fecha')
     await fechaInput.evaluate((el) => el.removeAttribute('readonly'))
     await fechaInput.click()
@@ -88,7 +85,7 @@ test.describe('User Management', () => {
     await optionTens.click()
 
     const selectHabilitado = activeModal
-      .getByText(/^Habilitado$/)
+      .getByText(/^Estado Inicial$/)
       .locator('..')
       .getByRole('combobox')
     await selectHabilitado.click()
@@ -97,21 +94,17 @@ test.describe('User Management', () => {
     await optionHab.click()
     await expect(page.locator('.vs__selected').filter({ hasText: /^TENS$/ })).toBeVisible()
     await expect(page.locator('.vs__selected').filter({ hasText: /^HABILITADO$/ })).toBeVisible()
-    await activeModal.getByPlaceholder('Ingrese nombre').press('Enter')
+    await activeModal.getByPlaceholder('Ej: Sebastián').press('Enter')
     await page.waitForTimeout(500)
 
-    const saveBtn = activeModal.locator('.btn-success')
-    if ((await page.getByText('Confirmar Acción').count()) === 0) {
-      await saveBtn.click({ force: true })
-      await page.waitForTimeout(500)
-    }
+    const saveBtn = activeModal.locator('.btn-primary')
+    await saveBtn.click()
 
-    const confirmModal = page.getByText('Confirmar Acción')
-    await expect(confirmModal).toBeAttached({ timeout: 5000 })
+    // Wait for Confirmation Modal
+    const confirmModalTitle = page.getByText('Confirmar Acción', { exact: true })
+    await expect(confirmModalTitle).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('¿Seguro que deseas crear este usuario?')).toBeVisible()
 
-    if (await confirmModal.isVisible()) {
-      await expect(confirmModal).toBeVisible()
-    }
     const responsePromise = page.waitForResponse(
       (resp) =>
         resp.request().method() === 'POST' &&
@@ -119,9 +112,15 @@ test.describe('User Management', () => {
         resp.status() >= 200 &&
         resp.status() < 300
     )
-    await page.getByRole('button', { name: /continuar/i }).click({ force: true })
+
+    // Click "Sí, Continuar"
+    await page.getByRole('button', { name: 'Sí, Continuar' }).click()
+
     await responsePromise
-    await expect(page.getByText('Confirmar Acción')).not.toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('¿Seguro que deseas crear este usuario?')).not.toBeVisible({
+      timeout: 10000
+    })
+
     await expect(page.locator('.modal')).not.toBeVisible({ timeout: 10000 })
   })
 })
