@@ -107,10 +107,19 @@
 
                       <!-- Botones de Acción Inline -->
                       <button
-                        v-if="turnoEnCurso"
+                        v-if="turnoEnCurso && !registro.corte_anticipado"
                         @click.prevent="$emit('sustituir-usuario')"
                         class="btn btn-icon btn-white text-danger shadow-xs ms-2"
                         title="Sustituir"
+                      >
+                        <i class="bi bi-arrow-repeat"></i>
+                      </button>
+                      <button
+                        v-else-if="turnoEnCurso && registro.corte_anticipado"
+                        class="btn btn-icon btn-light text-muted opacity-50 ms-2"
+                        title="Este registro ya fue sustituido anteriormente"
+                        disabled
+                        style="cursor: not-allowed"
                       >
                         <i class="bi bi-arrow-repeat"></i>
                       </button>
