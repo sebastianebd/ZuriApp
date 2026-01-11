@@ -342,12 +342,10 @@ function getStatusClass(status: string) {
   switch (s) {
     case 'CONFIRMADO':
     case 'EN CURSO':
-    case 'COMETIDO':
       return 'bg-success bg-opacity-10 text-success border-success border-opacity-25'
     case 'PENDIENTE':
       return 'bg-warning bg-opacity-10 text-warning border-warning border-opacity-25'
     case 'ANULADO':
-    case 'RECHAZADO':
       return 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25'
     case 'FINALIZADO':
       return 'bg-primary bg-opacity-10 text-primary border-primary border-opacity-25'
