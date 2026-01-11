@@ -283,7 +283,7 @@ const {
 }
 
 .app-logo {
-  height: 48px;
+  height: 85px;
 }
 
 /* --- Mobile Responsiveness (Top App Design) --- */
