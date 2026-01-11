@@ -397,9 +397,9 @@
                       <p class="mb-0">No hay registros recientes</p>
                     </div>
 
-                    <div v-else class="table-responsive">
+                    <div v-else class="table-responsive history-scroll-container">
                       <table class="table table-borderless align-middle mb-0">
-                        <thead class="text-muted small text-uppercase">
+                        <thead class="text-muted small text-uppercase sticky-top bg-white">
                           <tr>
                             <th class="fw-semibold ps-0">Estado</th>
                             <th class="fw-semibold">Fecha</th>
@@ -835,5 +835,32 @@ const confirmChangePassword = async () => {
   align-items: center;
   justify-content: center;
   font-size: 1rem;
+}
+
+/* History Scroll & Sticky Header */
+.history-scroll-container {
+  max-height: 450px; /* Approx 7 rows */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.history-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+.history-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.history-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
+}
+
+/* Ensure sticky header sits on top of content */
+.sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Slight shadow to separate header */
 }
 </style>

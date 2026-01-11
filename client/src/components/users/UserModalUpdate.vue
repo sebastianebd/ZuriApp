@@ -5,106 +5,126 @@
       v-if="visible"
       tabindex="-1"
       role="dialog"
-      style="background-color: rgba(30, 41, 59, 0.5); backdrop-filter: blur(4px)"
+      style="background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px)"
     >
       <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content shadow-lg border-0 rounded-4">
+        <div class="modal-content shadow-2xl border-0 rounded-4">
           <!-- HEADER -->
-          <div class="modal-header border-0 bg-primary bg-gradient text-white p-4 rounded-top-4">
-            <h5 class="modal-title fw-bold">
-              <i class="bi bi-pencil-square me-2"></i>MODIFICAR USUARIO
-            </h5>
+          <div class="modal-header border-bottom p-4">
+            <div>
+              <h5 class="modal-title fw-bold text-dark">
+                <i class="bi bi-pencil-square text-primary me-2"></i>Modificar Usuario
+              </h5>
+              <p class="text-secondary small mb-0 mt-1">
+                Actualiza la información del personal registrado.
+              </p>
+            </div>
             <button
               type="button"
-              class="btn-close btn-close-white"
+              class="btn-close"
               @click="emit('cerrar')"
               aria-label="Close"
             ></button>
           </div>
 
           <!-- BODY -->
-          <div class="modal-body p-4 bg-white">
-            <div class="row g-4">
-              <!-- Columna 1: Datos Personales -->
-              <div class="col-md-6">
-                <div class="p-3 bg-light rounded-3 border border-1 shadow-xs h-100">
-                  <h6 class="text-primary fw-bold mb-3 smaller text-uppercase tracking-wider">
-                    Datos Personales
-                  </h6>
-
-                  <div class="mb-3">
-                    <label class="form-label text-secondary fw-semibold small">Nombre</label>
-                    <input
-                      v-model="editableUsuario.nombre"
-                      type="text"
-                      class="form-control bg-white border-0 shadow-sm rounded-3"
-                      placeholder="Nombre"
-                    />
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label text-secondary fw-semibold small">Apellido</label>
-                    <input
-                      v-model="editableUsuario.apellido"
-                      type="text"
-                      class="form-control bg-white border-0 shadow-sm rounded-3"
-                      placeholder="Apellido"
-                    />
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label text-secondary fw-semibold small">Dirección</label>
-                    <input
-                      v-model="editableUsuario.direccion"
-                      type="text"
-                      class="form-control bg-white border-0 shadow-sm rounded-3"
-                      placeholder="Dirección"
-                    />
-                  </div>
-
-                  <div class="mb-0">
-                    <label class="form-label text-secondary fw-semibold small">Ciudad</label>
-                    <input
-                      v-model="editableUsuario.ciudad"
-                      type="text"
-                      class="form-control bg-white border-0 shadow-sm rounded-3"
-                      placeholder="Ciudad"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Columna 2: Contacto y Laboral -->
-              <div class="col-md-6">
-                <div class="d-flex flex-column gap-4 h-100">
-                  <!-- Info Contacto -->
-                  <div class="p-3 bg-light rounded-3 border border-1 shadow-xs flex-grow-1">
-                    <h6 class="text-primary fw-bold mb-3 smaller text-uppercase tracking-wider">
-                      Información de Contacto
+          <div class="modal-body p-4 bg-light bg-opacity-50">
+            <form @submit.prevent="abrirConfirmacion">
+              <div class="row g-4">
+                <!-- Columna izquierda: Datos Personales -->
+                <div class="col-md-6">
+                  <div class="bg-white p-4 rounded-4 shadow-sm border h-100">
+                    <h6
+                      class="text-uppercase text-secondary fw-bold x-small mb-4 tracking-wider border-bottom pb-2"
+                    >
+                      Datos Personales
                     </h6>
 
-                    <div class="mb-3">
-                      <label class="form-label text-secondary fw-semibold small">Email</label>
+                    <!-- Nombre -->
+                    <div class="mb-4 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Nombre</label
+                      >
                       <input
-                        v-model="editableUsuario.email"
-                        type="email"
-                        class="form-control bg-white border-0 shadow-sm rounded-3"
-                        placeholder="Email"
+                        v-model="editableUsuario.nombre"
+                        class="form-control"
+                        placeholder="Ej: Sebastián"
                       />
                     </div>
 
-                    <div class="mb-0">
-                      <label class="form-label text-secondary fw-semibold small">Teléfono</label>
+                    <!-- Apellido -->
+                    <div class="mb-4 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Apellido</label
+                      >
+                      <input
+                        v-model="editableUsuario.apellido"
+                        class="form-control"
+                        placeholder="Ej: Barría"
+                      />
+                    </div>
+
+                    <!-- Dirección -->
+                    <div class="mb-4 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Dirección</label
+                      >
+                      <input
+                        v-model="editableUsuario.direccion"
+                        class="form-control"
+                        placeholder="Calle, Número"
+                      />
+                    </div>
+
+                    <!-- Ciudad -->
+                    <div class="mb-0 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Ciudad</label
+                      >
+                      <input
+                        v-model="editableUsuario.ciudad"
+                        class="form-control"
+                        placeholder="Ej: Santiago"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Columna derecha: Cuenta y Contacto -->
+                <div class="col-md-6">
+                  <div class="bg-white p-4 rounded-4 shadow-sm border h-100">
+                    <h6
+                      class="text-uppercase text-secondary fw-bold x-small mb-4 tracking-wider border-bottom pb-2"
+                    >
+                      Contacto y Rol
+                    </h6>
+
+                    <!-- Email -->
+                    <div class="mb-4 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Email</label
+                      >
+                      <input
+                        v-model="editableUsuario.email"
+                        type="email"
+                        class="form-control"
+                        placeholder="correo@ejemplo.com"
+                      />
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div class="mb-4 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Teléfono</label
+                      >
                       <div class="input-group">
-                        <span
-                          class="input-group-text bg-white border-0 shadow-sm rounded-start-3 text-secondary fw-bold"
-                        >
+                        <span class="input-group-text bg-light text-secondary fw-bold border-end-0">
                           +56
                         </span>
                         <input
                           v-model="editableUsuario.telefono"
                           type="text"
-                          class="form-control bg-white border-0 shadow-sm rounded-end-3"
+                          class="form-control border-start-0 ps-1"
                           placeholder="912345678"
                           maxlength="9"
                           @input="
@@ -116,50 +136,47 @@
                         />
                       </div>
                     </div>
-                  </div>
 
-                  <!-- Info Laboral -->
-                  <div
-                    class="p-3 bg-light rounded-3 border border-1 shadow-xs flex-grow-1 text-deep"
-                  >
-                    <h6 class="text-primary fw-bold mb-3 smaller text-uppercase tracking-wider">
-                      Información Laboral
-                    </h6>
-
-                    <div class="mb-3">
-                      <label class="form-label text-secondary fw-semibold small">Cargo</label>
+                    <!-- Cargo -->
+                    <div class="mb-4 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Cargo</label
+                      >
                       <v-select
                         v-model="editableUsuario.tipo_cargo"
                         :options="listaTipoCargo"
-                        :clearable="false"
-                        :searchable="false"
-                        placeholder="Seleccione un cargo"
+                        placeholder="Seleccione cargo"
                         class="custom-v-select"
+                        :clearable="false"
+                        :searchable="true"
                       />
                     </div>
 
-                    <div class="mb-0">
-                      <label class="form-label text-secondary fw-semibold small">Habilitado</label>
+                    <!-- Habilitado -->
+                    <div class="mb-0 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Estado</label
+                      >
                       <v-select
                         v-model="editableUsuario.habilitado"
                         :options="listaHabilitado"
-                        :clearable="false"
-                        :searchable="false"
                         placeholder="Seleccione estado"
                         class="custom-v-select"
+                        :clearable="false"
+                        :searchable="true"
                       />
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </form>
           </div>
 
           <!-- FOOTER -->
-          <div class="modal-footer border-0 p-4 pt-0 d-flex justify-content-end gap-2">
+          <div class="modal-footer border-top bg-light p-3">
             <button
               type="button"
-              class="btn btn-light fw-bold px-4 border text-secondary"
+              class="btn btn-light border fw-bold text-secondary px-4 me-2"
               @click="emit('cerrar')"
             >
               Cancelar
@@ -173,13 +190,15 @@
             </button>
           </div>
 
-          <!-- MODAL CONFIRMACIÓN -->
-          <ConfirmationModal
-            :visible="confirmVisible"
-            mensaje="¿Deseas guardar los cambios en este usuario?"
-            @confirmar="confirmarGuardar"
-            @cancelar="cerrarConfirmacion"
-          />
+          <!-- Modal de confirmación -->
+          <Teleport to="body">
+            <ConfirmationModal
+              :visible="confirmVisible"
+              mensaje="¿Deseas guardar los cambios en este usuario?"
+              @confirmar="confirmarGuardar"
+              @cancelar="cerrarConfirmacion"
+            />
+          </Teleport>
         </div>
       </div>
     </div>
@@ -214,13 +233,12 @@ watch(
       if (phoneStr.startsWith('+56')) {
         phoneStr = phoneStr.replace('+56', '')
       }
-      // Asignamos como any para evitar conflicto con tipo number si la interfaz está mal definida
       usuarioCopia.telefono = phoneStr
     }
 
     editableUsuario.value = usuarioCopia
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 )
 
 // Estado del modal de confirmación
@@ -250,7 +268,7 @@ function confirmarGuardar() {
 /* Transitions */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
 .fade-enter-from,
@@ -258,44 +276,60 @@ function confirmarGuardar() {
   opacity: 0;
 }
 
-.smaller {
-  font-size: 0.75rem;
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.x-small {
+  font-size: 0.7rem;
 }
 
 .tracking-wider {
   letter-spacing: 0.05em;
 }
 
-.shadow-xs {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-button {
+/* Inputs & Forms */
+.form-control {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  color: #1e293b;
+  background-color: #fff;
   transition: all 0.2s ease;
 }
 
-button:hover:not(:disabled) {
-  transform: translateY(-1px);
+.form-control:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  background-color: #fff;
 }
 
-/* Custom styles for v-select */
+.form-control::placeholder {
+  color: #94a3b8;
+}
+
+.input-group-text {
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+/* Custom v-select */
 .custom-v-select :deep(.vs__dropdown-toggle) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 3px;
   background: white;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 4px 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.075);
+  box-shadow: none;
 }
 
 .custom-v-select :deep(.vs__selected) {
   font-size: 0.875rem;
   color: #1e293b;
-  font-weight: 500;
-  line-height: 27px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
 }
 
 .custom-v-select :deep(.vs__actions svg) {
@@ -304,18 +338,20 @@ button:hover:not(:disabled) {
 }
 
 .custom-v-select :deep(.vs__dropdown-menu) {
-  border: none;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 5px;
   font-size: 0.875rem;
-  overflow: hidden;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .custom-v-select :deep(.vs__dropdown-option) {
-  border-radius: 0.375rem;
-  padding: 8px 12px;
+  border-radius: 0.25rem;
+  padding: 6px 10px;
   margin-bottom: 2px;
+  color: #475569;
 }
 
 .custom-v-select :deep(.vs__dropdown-option--highlight) {

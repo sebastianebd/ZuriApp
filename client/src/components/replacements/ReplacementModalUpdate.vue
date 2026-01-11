@@ -5,173 +5,198 @@
       v-if="visible"
       tabindex="-1"
       role="dialog"
-      style="background-color: rgba(30, 41, 59, 0.5); backdrop-filter: blur(4px)"
+      style="background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px)"
     >
       <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content shadow-lg border-0 rounded-4">
+        <div class="modal-content shadow-2xl border-0 rounded-4">
           <!-- HEADER -->
-          <div class="modal-header border-0 bg-primary bg-gradient text-white p-4 rounded-top-4">
-            <h5 class="modal-title fw-bold">
-              <i class="bi bi-pencil-square me-2"></i>MODIFICA REGISTRO
-            </h5>
+          <div class="modal-header border-bottom p-3">
+            <div>
+              <h5 class="modal-title fw-bold text-dark">
+                <i class="bi bi-pencil-square text-primary me-2"></i>Modificar Registro
+              </h5>
+              <p class="text-secondary small mb-0 mt-1">
+                Actualiza los detalles del reemplazo o turno.
+              </p>
+            </div>
             <button
               type="button"
-              class="btn-close btn-close-white"
+              class="btn-close"
               @click="$emit('cerrar')"
               aria-label="Close"
             ></button>
           </div>
 
           <!-- BODY -->
-          <div class="modal-body p-4 bg-white">
-            <div class="row g-4">
-              <!-- Grupo 1: Usuario Saliente -->
-              <div class="col-md-6">
-                <div class="p-3 bg-light rounded-3 border border-1 shadow-xs h-100">
-                  <div class="d-flex align-items-center mb-3">
-                    <h6 class="text-primary fw-bold mb-0 smaller text-uppercase tracking-wider">
-                      Funcionario Saliente
-                    </h6>
-                  </div>
-
-                  <div class="form-floating mb-3">
-                    <input
-                      type="text"
-                      id="rutSaliente"
-                      :value="registro.rut_saliente"
-                      class="form-control bg-white border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="RUT"
-                    />
-                    <label for="rutSaliente" class="text-secondary fw-semibold">RUT</label>
-                  </div>
-
-                  <div class="form-floating mb-3">
-                    <input
-                      type="text"
-                      id="nombreSaliente"
-                      :value="registro.nombre_saliente"
-                      class="form-control bg-white border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="Nombre"
-                    />
-                    <label for="nombreSaliente" class="text-secondary fw-semibold">Nombre</label>
-                  </div>
-
-                  <div class="form-floating">
-                    <input
-                      type="text"
-                      id="apellidoSaliente"
-                      :value="registro.apellido_saliente"
-                      class="form-control bg-white border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="Apellido"
-                    />
-                    <label for="apellidoSaliente" class="text-secondary fw-semibold"
-                      >Apellido</label
+          <div class="modal-body p-3 bg-light bg-opacity-50">
+            <!-- TRANSACTIONS CONTAINER (Saliente -> Entrante) -->
+            <div class="bg-white rounded-4 shadow-sm p-3 mb-3 border">
+              <div class="row align-items-center g-0">
+                <!-- COLUMNA SALIENTE -->
+                <div class="col-md-5">
+                  <div
+                    class="user-card outgoing p-2 rounded-3 border border-danger border-opacity-25 bg-danger bg-opacity-10 position-relative h-100"
+                  >
+                    <div
+                      class="badge bg-danger text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
                     >
+                      SALIENTE
+                    </div>
+
+                    <div class="d-flex align-items-center mt-4 pt-1">
+                      <div class="avatar-filled bg-gradient-danger text-white shadow-sm me-3">
+                        {{
+                          getInitials(
+                            (registro.nombre_saliente || '') +
+                              ' ' +
+                              (registro.apellido_saliente || '')
+                          )
+                        }}
+                      </div>
+                      <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-bold text-dark text-truncate small">
+                          {{ registro.nombre_saliente }} {{ registro.apellido_saliente }}
+                        </div>
+                        <div class="text-secondary x-small font-monospace">
+                          {{ registro.rut_saliente }}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Grupo 2: Usuario Entrante -->
-              <div class="col-md-6">
-                <div class="p-3 bg-light rounded-3 border border-1 shadow-xs h-100">
-                  <div class="d-flex align-items-center mb-3">
-                    <h6
-                      class="text-primary flex-grow-1 fw-bold mb-0 smaller text-uppercase tracking-wider"
-                    >
-                      Funcionario Entrante
-                    </h6>
-
-                    <!-- ✅ Botón dinámico -->
-                    <button
-                      v-if="turnoEnCurso"
-                      @click.prevent="$emit('sustituir-usuario')"
-                      class="btn btn-danger btn-sm fw-bold shadow-sm border-0 px-3"
-                    >
-                      <i class="bi bi-arrow-repeat me-1"></i> Sustituir
-                    </button>
-                    <button
-                      v-else
-                      @click.prevent="$emit('buscar-entrante')"
-                      class="btn btn-warning btn-sm fw-bold shadow-sm border-0 px-3"
-                    >
-                      <i class="bi bi-search me-1"></i> Buscar
-                    </button>
+                <!-- CONNECTOR ARROW -->
+                <div class="col-md-2 text-center py-2 py-md-0">
+                  <div
+                    class="connector-icon bg-white text-secondary shadow-sm rounded-circle d-inline-flex align-items-center justify-content-center border"
+                  >
+                    <i class="bi bi-arrow-right fs-5 d-none d-md-block"></i>
+                    <i class="bi bi-arrow-down fs-5 d-md-none"></i>
                   </div>
+                </div>
 
-                  <div class="form-floating mb-3">
-                    <input
-                      type="text"
-                      id="rutEntrante"
-                      :value="registro.rut_entrante"
-                      class="form-control bg-white border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="RUT"
-                    />
-                    <label for="rutEntrante" class="text-secondary fw-semibold">RUT</label>
-                  </div>
-
-                  <div class="form-floating mb-3">
-                    <input
-                      type="text"
-                      id="nombreEntrante"
-                      :value="registro.nombre_entrante"
-                      class="form-control bg-white border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="Nombre"
-                    />
-                    <label for="nombreEntrante" class="text-secondary fw-semibold">Nombre</label>
-                  </div>
-
-                  <div class="form-floating">
-                    <input
-                      type="text"
-                      id="apellidoEntrante"
-                      :value="registro.apellido_entrante"
-                      class="form-control bg-white border-0 shadow-sm rounded-3"
-                      disabled
-                      placeholder="Apellido"
-                    />
-                    <label for="apellidoEntrante" class="text-secondary fw-semibold"
-                      >Apellido</label
+                <!-- COLUMNA ENTRANTE -->
+                <div class="col-md-5">
+                  <div
+                    class="user-card incoming p-2 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10 position-relative h-100"
+                  >
+                    <div
+                      class="badge bg-success text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
                     >
+                      ENTRANTE
+                    </div>
+
+                    <div v-if="registro.rut_entrante" class="d-flex align-items-center mt-4 pt-1">
+                      <div class="avatar-filled bg-gradient-success text-white shadow-sm me-3">
+                        {{
+                          getInitials(
+                            (registro.nombre_entrante || '') +
+                              ' ' +
+                              (registro.apellido_entrante || '')
+                          )
+                        }}
+                      </div>
+                      <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-bold text-dark text-truncate small">
+                          {{ registro.nombre_entrante }} {{ registro.apellido_entrante }}
+                        </div>
+                        <div class="text-secondary x-small font-monospace">
+                          {{ registro.rut_entrante }}
+                        </div>
+                      </div>
+
+                      <!-- Botones de Acción Inline -->
+                      <button
+                        v-if="turnoEnCurso"
+                        @click.prevent="$emit('sustituir-usuario')"
+                        class="btn btn-icon btn-white text-danger shadow-xs ms-2"
+                        title="Sustituir"
+                      >
+                        <i class="bi bi-arrow-repeat"></i>
+                      </button>
+                      <button
+                        v-else
+                        @click.prevent="$emit('buscar-entrante')"
+                        class="btn btn-icon btn-white text-warning shadow-xs ms-2"
+                        title="Buscar / Cambiar"
+                      >
+                        <i class="bi bi-search"></i>
+                      </button>
+                    </div>
+
+                    <div v-else class="text-center py-3">
+                      <p class="text-muted x-small mb-2">Sin asignar</p>
+                      <button
+                        @click.prevent="$emit('buscar-entrante')"
+                        class="btn btn-sm btn-light border text-success fw-bold shadow-xs py-0 px-2"
+                        style="font-size: 0.7rem"
+                      >
+                        <i class="bi bi-search me-1"></i> Asignar
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Grupo 3: Configuración de Turno -->
-            <div class="p-4 bg-light rounded-3 border border-1 shadow-xs mt-4">
-              <h6 class="text-primary fw-bold mb-4 smaller text-uppercase tracking-wider">
-                Configuración del Turno
+            <!-- CONFIGURACION DEL TURNO (Compact) -->
+            <div class="bg-white rounded-4 shadow-sm p-3 border">
+              <h6
+                class="text-uppercase text-secondary fw-bold x-small mb-3 tracking-wider border-bottom pb-2"
+              >
+                Configuración
               </h6>
 
               <div class="row g-3">
-                <div class="col-md-12 mb-2">
-                  <label class="form-label text-secondary fw-semibold small">Tipo de Turno</label>
+                <!-- Fila 1: Turno y Servicio -->
+                <div class="col-md-6">
+                  <label class="form-label x-small fw-bold text-secondary text-uppercase mb-1"
+                    >Tipo Turno</label
+                  >
                   <v-select
-                    id="tipoTurno"
-                    :key="listaDeTurnos.length > 0 ? 'turnos-loaded' : 'turnos-loading'"
                     :options="listaDeTurnos"
                     :model-value="registro.tipo_turno"
                     @update:model-value="(newValue: string) => { 
-                      $emit('update:registro', {
-                          ...registro,
-                          tipo_turno: newValue
-                      })
-                    }"
+                          $emit('update:registro', {
+                              ...registro,
+                              tipo_turno: newValue
+                          })
+                        }"
                     :disabled="turnoEnCurso"
-                    placeholder="Seleccione un turno"
+                    placeholder="Seleccione..."
                     :clearable="false"
                     :searchable="false"
-                    class="custom-v-select"
+                    class="custom-v-select small-select"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label x-small fw-bold text-secondary text-uppercase mb-1"
+                    >Servicio</label
+                  >
+                  <v-select
+                    :options="listaDeServicios"
+                    :model-value="registro.servicio"
+                    @update:model-value="
+                          (newValue: string) => {
+                              $emit('update:registro', {
+                                  ...registro,
+                                  servicio: newValue
+                              })
+                          }
+                        "
+                    :disabled="turnoEnCurso"
+                    placeholder="Seleccione..."
+                    :clearable="false"
+                    :searchable="true"
+                    class="custom-v-select small-select"
                   />
                 </div>
 
+                <!-- Fila 2: Fechas -->
                 <div class="col-md-6">
-                  <label class="form-label text-secondary fw-semibold small">Fecha de Inicio</label>
+                  <label class="form-label x-small fw-bold text-secondary text-uppercase mb-1"
+                    >Inicio</label
+                  >
                   <DatePicker
                     ref="dpInicio"
                     :model-value="
@@ -201,16 +226,16 @@
                     color="blue"
                   >
                     <template #default="{ inputValue, inputEvents }">
-                      <div class="input-group">
-                        <span class="input-group-text bg-white border-0 shadow-sm"
-                          ><i class="bi bi-calendar-event text-primary"></i
-                        ></span>
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                          <i class="bi bi-calendar-event"></i>
+                        </span>
                         <input
-                          class="form-control bg-white border-0 shadow-sm"
+                          class="form-control border-start-0 ps-0"
                           :value="inputValue"
                           v-on="inputEvents"
                           @click="handleInicioClick"
-                          placeholder="Seleccione fecha de inicio"
+                          placeholder="Fecha Inicio"
                           readonly
                           :disabled="turnoEnCurso"
                         />
@@ -218,10 +243,9 @@
                     </template>
                   </DatePicker>
                 </div>
-
                 <div class="col-md-6">
-                  <label class="form-label text-secondary fw-semibold small"
-                    >Fecha de Término</label
+                  <label class="form-label x-small fw-bold text-secondary text-uppercase mb-1"
+                    >Término</label
                   >
                   <DatePicker
                     ref="dpTermino"
@@ -252,16 +276,16 @@
                     color="blue"
                   >
                     <template #default="{ inputValue, inputEvents }">
-                      <div class="input-group">
-                        <span class="input-group-text bg-white border-0 shadow-sm"
-                          ><i class="bi bi-calendar-event text-danger"></i
-                        ></span>
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                          <i class="bi bi-calendar-event"></i>
+                        </span>
                         <input
-                          class="form-control bg-white border-0 shadow-sm"
+                          class="form-control border-start-0 ps-0"
                           :value="inputValue"
                           v-on="inputEvents"
                           @click="handleTerminoClick"
-                          placeholder="Seleccione fecha de Termino"
+                          placeholder="Fecha Término"
                           readonly
                           :disabled="turnoEnCurso"
                         />
@@ -269,57 +293,37 @@
                     </template>
                   </DatePicker>
                 </div>
-
-                <div class="col-md-12 mt-3">
-                  <label class="form-label text-secondary fw-semibold small">Servicio</label>
-                  <v-select
-                    id="servicio"
-                    :options="listaDeServicios"
-                    :model-value="registro.servicio"
-                    @update:model-value="
-                      (newValue: string) => {
-                          $emit('update:registro', {
-                              ...registro,
-                              servicio: newValue
-                          })
-                      }
-                    "
-                    :disabled="turnoEnCurso"
-                    placeholder="Seleccione un servicio"
-                    :clearable="false"
-                    :searchable="true"
-                    class="custom-v-select"
-                  />
-                </div>
               </div>
             </div>
           </div>
 
           <!-- FOOTER -->
-          <div class="modal-footer border-0 p-4 pt-0 d-flex justify-content-end gap-2">
+          <div class="modal-footer border-top bg-light p-2">
             <button
               type="button"
-              class="btn btn-light fw-bold px-4 border text-secondary"
+              class="btn btn-light border fw-bold text-secondary px-3 btn-sm"
               @click="$emit('cerrar')"
             >
               Cancelar
             </button>
             <button
               type="button"
-              class="btn btn-primary fw-bold px-4 shadow-sm"
+              class="btn btn-primary fw-bold px-3 shadow-sm btn-sm"
               @click="abrirConfirmacion"
             >
-              <i class="bi bi-check-lg me-2"></i>Guardar Cambios
+              <i class="bi bi-check-lg me-1"></i>Guardar
             </button>
           </div>
 
           <!-- Modal de confirmación -->
-          <ConfirmationModal
-            :visible="showConfirmacion"
-            mensaje="¿Deseas guardar los cambios realizados?"
-            @confirmar="confirmarGuardar"
-            @cancelar="cancelarConfirmacion"
-          />
+          <Teleport to="body">
+            <ConfirmationModal
+              :visible="showConfirmacion"
+              mensaje="¿Deseas guardar los cambios realizados?"
+              @confirmar="confirmarGuardar"
+              @cancelar="cancelarConfirmacion"
+            />
+          </Teleport>
         </div>
       </div>
     </div>
@@ -357,6 +361,18 @@ const emit = defineEmits<{
 
 const showConfirmacion = ref(false)
 
+// --- Helper Initials ---
+function getInitials(name: string) {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .filter((n) => n.length > 0)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
 // --- Elementos de calendario para control de popover
 const dpInicio = ref<any>(null)
 const dpTermino = ref<any>(null)
@@ -383,9 +399,7 @@ function handleTerminoClick() {
 
 const turnoEnCurso = computed(() => {
   if (!props.registro?.status) return false
-
   const status = props.registro.status
-
   return status === 'EN CURSO'
 })
 
@@ -410,7 +424,7 @@ const { popoverConfig, dateAttributes, isDisabled } = useDatePicker(props)
 /* Transitions */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
 .fade-enter-from,
@@ -418,53 +432,12 @@ const { popoverConfig, dateAttributes, isDisabled } = useDatePicker(props)
   opacity: 0;
 }
 
-/* Custom v-select */
-.custom-v-select :deep(.vs__dropdown-toggle) {
-  background: white;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 4px 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.075);
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
-.custom-v-select :deep(.vs__selected) {
-  font-size: 0.875rem;
-  color: #1e293b;
-  font-weight: 500;
-  line-height: 27px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.custom-v-select :deep(.vs__actions svg) {
-  fill: #64748b;
-  transform: scale(0.8);
-}
-
-.custom-v-select :deep(.vs__dropdown-menu) {
-  border: none;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  padding: 8px;
-  font-size: 0.875rem;
-  overflow: hidden;
-}
-
-.custom-v-select :deep(.vs__dropdown-option) {
-  border-radius: 0.375rem;
-  padding: 8px 12px;
-  margin-bottom: 2px;
-}
-
-.custom-v-select :deep(.vs__dropdown-option--highlight) {
-  background: #3b82f6;
-  color: white;
-}
-
-.smaller {
-  font-size: 0.75rem;
+.x-small {
+  font-size: 0.7rem;
 }
 
 .tracking-wider {
@@ -472,23 +445,119 @@ const { popoverConfig, dateAttributes, isDisabled } = useDatePicker(props)
 }
 
 .shadow-xs {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-button {
+/* User Cards & Avatar */
+.avatar-filled {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.bg-gradient-danger {
+  background: linear-gradient(135deg, #fecaca 0%, #ef4444 100%);
+}
+.bg-gradient-success {
+  background: linear-gradient(135deg, #bbf7d0 0%, #22c55e 100%);
+}
+
+.connector-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-white {
+  background: white;
+}
+.btn-white:hover {
+  background: #f8fafc;
+}
+
+/* Inputs & Forms */
+.form-control {
+  border: 1px solid #e2e8f0;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 0.375rem;
+  color: #1e293b;
+  background-color: #fff;
   transition: all 0.2s ease;
 }
 
-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
+.form-control:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  background-color: #fff;
 }
 
-button:active {
-  transform: translateY(0);
+.input-group-text {
+  border-color: #e2e8f0;
+  color: #64748b;
+  font-size: 0.8rem;
 }
 
-:deep(.modal-content) {
-  overflow: visible;
+/* Custom v-select */
+.custom-v-select :deep(.vs__dropdown-toggle) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 2px;
+  background: white;
+  box-shadow: none;
+  min-height: 32px;
+}
+
+.custom-v-select :deep(.vs__selected) {
+  font-size: 0.8rem;
+  color: #1e293b;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.custom-v-select :deep(.vs__actions svg) {
+  fill: #64748b;
+  transform: scale(0.7);
+}
+
+.custom-v-select :deep(.vs__dropdown-menu) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  font-size: 0.8rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.custom-v-select :deep(.vs__dropdown-option) {
+  border-radius: 0.25rem;
+  padding: 4px 8px;
+  margin-bottom: 2px;
+  color: #475569;
+}
+
+.custom-v-select :deep(.vs__dropdown-option--highlight) {
+  background: #3b82f6;
+  color: white;
 }
 </style>
