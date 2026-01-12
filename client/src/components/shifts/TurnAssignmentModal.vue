@@ -36,17 +36,52 @@
                   <label class="form-label x-small fw-bold text-secondary text-uppercase"
                     >Funcionario</label
                   >
-                  <v-select
-                    v-model="form.user_id"
-                    :options="userOptions"
-                    :reduce="(user: any) => user.value"
-                    label="label"
-                    placeholder="Buscar funcionario..."
-                    class="custom-v-select"
-                    :class="{ 'is-invalid': errors.user_id }"
-                  />
-                  <div v-if="errors.user_id" class="invalid-feedback fw-bold floating-error">
-                    {{ errors.user_id }}
+
+                  <div
+                    v-if="!selectedUser"
+                    class="p-4 border rounded-3 bg-light text-center cursor-pointer hover-bg-light"
+                    @click="showUserModal = true"
+                    :class="{ 'border-danger': errors.user_id }"
+                  >
+                    <div class="text-primary mb-2">
+                      <i class="bi bi-person-plus-fill fs-3"></i>
+                    </div>
+                    <div class="fw-bold text-secondary small">
+                      Click para seleccionar funcionario
+                    </div>
+                    <div v-if="errors.user_id" class="text-danger x-small fw-bold mt-2">
+                      {{ errors.user_id }}
+                    </div>
+                  </div>
+
+                  <div
+                    v-else
+                    class="p-3 border rounded-3 bg-white d-flex align-items-center justify-content-between shadow-sm"
+                  >
+                    <div class="d-flex align-items-center gap-3">
+                      <div
+                        class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center"
+                        style="width: 40px; height: 40px"
+                      >
+                        <span class="fw-bold"
+                          >{{ selectedUser.nombre.charAt(0)
+                          }}{{ selectedUser.apellido.charAt(0) }}</span
+                        >
+                      </div>
+                      <div>
+                        <div class="fw-bold text-dark small">
+                          {{ selectedUser.nombre }} {{ selectedUser.apellido }}
+                        </div>
+                        <div class="text-secondary x-small">{{ selectedUser.rut }}</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-link text-secondary p-0"
+                      @click="clearUser"
+                    >
+                      <i class="bi bi-x-lg"></i>
+                    </button>
                   </div>
                 </div>
 
@@ -172,6 +207,7 @@
                 v-if="loading"
                 class="spinner-border spinner-border-sm me-2"
                 role="status"
+                aria-hidden="true"
               ></span>
               <span v-else><i class="bi bi-save me-2"></i>Asignar Turno</span>
             </button>
@@ -180,6 +216,15 @@
       </div>
     </div>
   </Transition>
+
+  <!-- User Selection Modal -->
+  <TurnAssignmentUserModal
+    :visible="showUserModal"
+    :usuarios="localUsers"
+    :listaDeCargos="cargoOptions"
+    @cerrar="showUserModal = false"
+    @usuario-seleccionado="handleUserSelected"
+  />
 </template>
 
 <script setup lang="ts">
@@ -189,6 +234,8 @@ import 'v-calendar/dist/style.css'
 import { useUserStore } from '@/stores/user.store'
 import { useOptionStore } from '@/stores/option.store'
 import { PATTERNS } from '@/services/turn-pattern.service'
+import type { User } from '@/types/models'
+import TurnAssignmentUserModal from './TurnAssignmentUserModal.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -204,17 +251,19 @@ const usersStore = useUserStore()
 const optionStore = useOptionStore()
 const localUsers = ref<any[]>([])
 
+// Logic State
+const showUserModal = ref(false)
+const selectedUser = ref<User | null>(null)
+
 // Options
 const turnTypeOptions = Object.keys(PATTERNS)
-const userOptions = computed(() => {
-  return localUsers.value.map((u: any) => ({
-    label: `${u.rut} - ${u.nombre} ${u.apellido}`,
-    value: u._id
-  }))
-})
 
 const serviceOptions = computed(() => {
   return optionStore.opciones?.servicios || []
+})
+
+const cargoOptions = computed(() => {
+  return optionStore.opciones?.tipoCargo || []
 })
 
 // Form State
@@ -255,7 +304,20 @@ function resetForm() {
     start_date: null,
     end_date: null
   }
+  selectedUser.value = null
   errors.value = {}
+}
+
+function handleUserSelected(user: User) {
+  selectedUser.value = user
+  form.value.user_id = user._id
+  showUserModal.value = false
+  if (errors.value.user_id) delete errors.value.user_id
+}
+
+function clearUser() {
+  selectedUser.value = null
+  form.value.user_id = ''
 }
 
 function validateForm() {
@@ -309,6 +371,7 @@ function guardar() {
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;
+  z-index: 1050;
 }
 .fade-enter-from,
 .fade-leave-to {

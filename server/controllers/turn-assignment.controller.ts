@@ -14,7 +14,7 @@ export const createAssignment = async (req: Request, res: Response) => {
 export const getAssignments = async (req: Request, res: Response) => {
   try {
     const assignments = await TurnAssignmentModel.find()
-      .populate("user_id", "nombre apellido rut dv servicio")
+      .populate("user_id", "nombre apellido rut dv servicio tipo_cargo")
       .sort({ createdAt: -1 });
     res.json(assignments);
   } catch (error) {

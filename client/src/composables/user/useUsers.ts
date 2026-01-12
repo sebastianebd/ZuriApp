@@ -30,6 +30,7 @@ export function useUsers() {
 
   // Lists
   const listaTipoCargo = ref<string[]>([])
+  const listaTipoContrato = ref<string[]>(['PLANTA', 'REEMPLAZO'])
   const listaHabilitado = ref<string[]>([])
   const listaServicios = ref<string[]>([])
   const listaTiposTurno = ref<string[]>([])
@@ -205,6 +206,7 @@ export function useUsers() {
 
     // Lists
     listaTipoCargo,
+    listaTipoContrato,
     rolesDisponiblesCreacion,
     listaHabilitado,
     listaServicios,

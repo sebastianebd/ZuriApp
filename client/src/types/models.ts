@@ -11,6 +11,7 @@ export interface User {
   habilitado: string
   tipo_cargo: string
   servicio?: string
+  tipo_contrato?: string
 }
 
 export interface State {
@@ -55,6 +56,7 @@ export interface registrarUsuario {
   email: string
   ciudad: string
   tipo_cargo: string
+  tipo_contrato?: string
   habilitado?: string
   servicio?: string
 }

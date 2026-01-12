@@ -8,39 +8,51 @@
         </h4>
         <p class="text-secondary mb-0">Visualiza y gestiona los turnos operativos.</p>
       </div>
-      <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm">
-        <button
-          class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 px-3 fw-bold border-0 bg-primary-subtle text-primary"
-          @click="openModal"
-        >
-          <i class="bi bi-plus-lg"></i> Asignar Planta
-        </button>
-        <div class="vr mx-1 text-secondary opacity-25"></div>
-        <button class="btn btn-sm btn-outline-secondary border-0" @click="prevMonth">
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <span class="fw-bold px-3 text-capitalize">{{ formattedMonth }}</span>
-        <button class="btn btn-sm btn-outline-secondary border-0" @click="nextMonth">
-          <i class="bi bi-chevron-right"></i>
-        </button>
-        <button class="btn btn-sm btn-primary ms-2" @click="loadData">
-          <i class="bi bi-arrow-clockwise"></i>
-        </button>
+
+      <!-- Filters & Controls -->
+      <div class="d-flex gap-3 align-items-center">
+        <!-- Service Filter -->
+        <div style="min-width: 200px">
+          <v-select
+            v-model="selectedService"
+            :options="serviceOptions"
+            placeholder="Filtrar por Servicio"
+            class="bg-white rounded shadow-sm custom-v-select"
+            :clearable="true"
+          />
+        </div>
+
+        <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm">
+          <button
+            class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 px-3 fw-bold border-0 bg-primary-subtle text-primary"
+            @click="openModal"
+          >
+            <i class="bi bi-plus-lg"></i> Asignar Planta
+          </button>
+          <div class="vr mx-1 text-secondary opacity-25"></div>
+          <button class="btn btn-sm btn-outline-secondary border-0" @click="prevMonth">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <span class="fw-bold px-3 text-capitalize">{{ formattedMonth }}</span>
+          <button class="btn btn-sm btn-outline-secondary border-0" @click="nextMonth">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button class="btn btn-sm btn-primary ms-2" @click="loadData">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Grid Container -->
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-      <!-- ... Table ... -->
       <div class="table-responsive">
-        <!-- ... -->
         <table class="table table-bordered mb-0 shift-table">
           <thead class="bg-light">
-            <!-- ... -->
             <tr>
               <th
                 class="sticky-col first-col bg-light border-end"
-                style="width: 250px; min-width: 250px"
+                style="width: 200px; min-width: 200px"
               >
                 Funcionario
               </th>
@@ -52,10 +64,10 @@
                   'bg-warning-subtle text-warning-emphasis': isWeekend(day.date),
                   'today-col': isToday(day.date)
                 }"
-                style="width: 40px; min-width: 40px"
+                style="width: 32px; min-width: 32px"
               >
                 <div class="small fw-bold">{{ day.dayNum }}</div>
-                <div style="font-size: 0.7rem; text-transform: uppercase">{{ day.dayName }}</div>
+                <div style="font-size: 0.65rem; text-transform: uppercase">{{ day.dayName }}</div>
               </th>
             </tr>
           </thead>
@@ -69,11 +81,14 @@
             </tr>
             <tr v-else-if="filteredShifts.length === 0" class="text-center">
               <td :colspan="daysInMonth.length + 1" class="py-5 text-muted">
-                No hay turnos activos para este mes.
+                {{
+                  selectedService
+                    ? `No hay turnos para ${selectedService}`
+                    : 'No hay turnos activos para este mes.'
+                }}
               </td>
             </tr>
             <tr v-for="item in filteredShifts" :key="item._id">
-              <!-- ... Row content ... -->
               <td class="sticky-col first-col bg-white border-end align-middle">
                 <div class="d-flex align-items-center">
                   <div class="avatar-circle bg-primary text-white me-2 small">
@@ -84,7 +99,7 @@
                       {{ item.nombre }} {{ item.apellido }}
                     </div>
                     <small class="text-muted d-block" style="font-size: 0.75rem">
-                      {{ item.servicio }}
+                      {{ item.cargo }}
                       <span
                         v-if="item.tipo_turno"
                         class="badge bg-secondary-subtle text-secondary ms-1"
@@ -135,6 +150,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
+import { useOptionStore } from '@/stores/option.store'
 import { calculateShift, parseAsLocal } from '@/services/turn-pattern.service'
 import type { RegisterDataReemplazo, TurnAssignment, User } from '@/types/models'
 import TurnAssignmentModal from '@/components/shifts/TurnAssignmentModal.vue'
@@ -144,11 +160,17 @@ import AlertMessage from '@/components/common/AlertMessage.vue'
 const currentDate = ref(new Date())
 const loading = ref(false)
 const showModal = ref(false)
+const selectedService = ref<string | null>(null)
+
 const replacementStore = useReplacementStore()
 const turnAssignmentStore = useTurnAssignmentStore()
+const optionStore = useOptionStore()
 const alertComponent = ref()
 
-// ... (Existing Computeds) ...
+// Options computed
+const serviceOptions = computed(() => {
+  return optionStore.opciones?.servicios || []
+})
 
 // Actions
 function openModal() {
@@ -185,8 +207,6 @@ const daysInMonth = computed(() => {
   const month = currentMonth.value
   const days = []
 
-  // Ensure we iterate correctly for the whole month
-  // New Date(year, month + 1, 0).getDate() gives last day of month
   const lastDay = new Date(year, month + 1, 0).getDate()
 
   for (let i = 1; i <= lastDay; i++) {
@@ -206,6 +226,7 @@ interface GridRow {
   _id: string
   nombre: string
   apellido: string
+  cargo: string
   servicio: string
   tipo_turno: string
   fecha_inicio: string | Date
@@ -218,12 +239,16 @@ interface GridRow {
 const filteredShifts = computed(() => {
   const startOfMonth = new Date(currentYear.value, currentMonth.value, 1)
   const endOfMonth = new Date(currentYear.value, currentMonth.value + 1, 0)
+  const filterService = selectedService.value
 
   const rows: GridRow[] = []
 
   // 1. Process Replacements
   replacementStore.reemplazosActivos.forEach((r: RegisterDataReemplazo) => {
     if (!r.fecha_inicio) return
+
+    // Service Filter
+    if (filterService && r.servicio !== filterService) return
 
     const rStart = parseAsLocal(r.fecha_inicio)
     const rEnd = parseAsLocal(r.fecha_termino)
@@ -238,6 +263,7 @@ const filteredShifts = computed(() => {
         _id: r._id,
         nombre: r.nombre_entrante,
         apellido: r.apellido_entrante,
+        cargo: r.tipo_cargo,
         servicio: r.servicio,
         tipo_turno: r.tipo_turno,
         fecha_inicio: rStart,
@@ -249,37 +275,39 @@ const filteredShifts = computed(() => {
   })
 
   // 2. Process Turn Assignments (Permanent Staff)
-  console.log('Assignments loaded:', turnAssignmentStore.assignments)
   turnAssignmentStore.assignments.forEach((a: TurnAssignment) => {
-    // Determine effective end date (if null, it goes forever in the future)
-    // For overlap check, if end_date is null, we assume it overlaps if start_date <= endOfMonth
+    // User info comes populated in user_id, cast it
+    const user = a.user_id as unknown as User
+    if (!user) return
+
+    const effectiveService = a.service || user.servicio || user.tipo_cargo
+
+    // Service Filter
+    if (filterService && effectiveService !== filterService) return
+
     const aStart = parseAsLocal(a.start_date)
     const aEnd = a.end_date ? parseAsLocal(a.end_date) : new Date(9999, 11, 31)
 
     const overlap = aStart <= endOfMonth && aEnd >= startOfMonth
 
     if (overlap) {
-      // User info comes populated in user_id
-      const user = a.user_id as unknown as User
-      if (user) {
-        rows.push({
-          _id: a._id,
-          nombre: user.nombre,
-          apellido: user.apellido,
-          servicio: a.service || user.servicio || user.tipo_cargo, // Prefer assignment service
-          tipo_turno: a.turn_type,
-          fecha_inicio: aStart,
-          fecha_termino: a.end_date ? aEnd : undefined, // Undefined means indefinite
-          source: 'ASSIGNMENT',
-          original: a
-        })
-      } else {
-        console.warn('Assignment without user:', a)
-      }
+      rows.push({
+        _id: a._id,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        cargo: user.tipo_cargo,
+        servicio: effectiveService,
+        tipo_turno: a.turn_type,
+        fecha_inicio: aStart,
+        fecha_termino: a.end_date ? aEnd : undefined, // Undefined means indefinite
+        source: 'ASSIGNMENT',
+        original: a
+      })
     }
   })
 
-  return rows
+  // Sort by name
+  return rows.sort((a, b) => a.nombre.localeCompare(b.nombre))
 })
 
 // Actions
@@ -311,8 +339,6 @@ function getShift(row: GridRow, date: Date) {
   if (!row.fecha_inicio || !row.tipo_turno) return null
 
   const rStart = parseAsLocal(row.fecha_inicio)
-  // For assignments without end date, we treat it as infinite (or handle elsewhere)
-  // But for boundary check we need a date.
   const rEnd = row.fecha_termino ? parseAsLocal(row.fecha_termino) : new Date(9999, 11, 31)
 
   // Normalize date to start of day for comparison
@@ -328,9 +354,9 @@ function getShift(row: GridRow, date: Date) {
 
 function getShiftClass(shift: string | null) {
   if (!shift) return ''
-  if (shift === 'LARGO') return 'bg-warning-subtle text-warning-emphasis fw-bold'
-  if (shift === 'NOCHE') return 'bg-primary-subtle text-primary-emphasis fw-bold'
-  if (shift === 'LIBRE') return ''
+  if (shift === 'LARGO') return 'shift-day' // Yellow pastel
+  if (shift === 'NOCHE') return 'shift-night' // Blue pastel
+  if (shift === 'LIBRE') return 'shift-free' // Green pastel
   return ''
 }
 
@@ -342,7 +368,11 @@ function getInitials(nombre?: string, apellido?: string) {
 async function loadData() {
   loading.value = true
   try {
-    await Promise.all([replacementStore.mostrarReemplazos(), turnAssignmentStore.loadAssignments()])
+    await Promise.all([
+      replacementStore.mostrarReemplazos(),
+      turnAssignmentStore.loadAssignments(),
+      optionStore.mostrarOpciones()
+    ])
   } finally {
     loading.value = false
   }
@@ -354,6 +384,16 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Extra styles for filters */
+.custom-v-select :deep(.vs__dropdown-toggle) {
+  border: none;
+  padding: 4px;
+}
+.custom-v-select :deep(.vs__selected) {
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
 .shifts-view {
   background-color: #f8fafc;
   min-height: 100vh;
@@ -381,8 +421,8 @@ thead .sticky-col {
 }
 
 .first-col {
-  width: 250px;
-  min-width: 250px;
+  width: 200px;
+  min-width: 200px;
 }
 
 /* Cell Styling */
@@ -407,6 +447,25 @@ thead .sticky-col {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 600;
+}
+
+/* Shift Type Colors - Pastel Theme */
+.shift-day {
+  background-color: #fef3c7; /* Yellow pastel */
+  color: #92400e;
+  font-weight: 600;
+}
+
+.shift-night {
+  background-color: #dbeafe; /* Blue pastel */
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+.shift-free {
+  background-color: #d1fae5; /* Green pastel */
+  color: #065f46;
   font-weight: 600;
 }
 </style>

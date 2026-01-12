@@ -152,6 +152,21 @@
                       />
                     </div>
 
+                    <!-- Tipo Contrato -->
+                    <div class="mb-4 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Tipo Contrato</label
+                      >
+                      <v-select
+                        v-model="editableUsuario.tipo_contrato"
+                        :options="listaTipoContrato"
+                        placeholder="Seleccione tipo contrato"
+                        class="custom-v-select"
+                        :clearable="false"
+                        :searchable="false"
+                      />
+                    </div>
+
                     <!-- Habilitado -->
                     <div class="mb-0 position-relative">
                       <label class="form-label x-small fw-bold text-secondary text-uppercase"
@@ -214,6 +229,7 @@ const props = defineProps<{
   visible: boolean
   usuario: registrarUsuario
   listaTipoCargo: string[]
+  listaTipoContrato: string[]
   listaHabilitado: string[]
 }>()
 
