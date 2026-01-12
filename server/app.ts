@@ -81,6 +81,8 @@ app.use("/api/options", optionRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/calendar", calendarRoutes);
+import turnAssignmentRoutes from "./routes/api/turn-assignment.routes";
+app.use("/api/assignments", turnAssignmentRoutes);
 
 // Sentry Tunnel - Debe ir antes del catch-all *
 import sentryRoutes from "./routes/api/sentry.routes";

@@ -24,6 +24,10 @@
       <!-- Turnos Section -->
       <div class="menu-group">
         <h3 v-if="is_expanded">Gestión de Turnos</h3>
+        <router-link :to="{ name: 'turnos' }" class="menu-item" title="Grilla de Turnos">
+          <i class="bi bi-calendar-range"></i>
+          <span class="text">Grilla de Turnos</span>
+        </router-link>
         <router-link :to="{ name: 'reemplazos' }" class="menu-item" title="Reemplazos">
           <i class="bi bi-person-workspace"></i>
           <span class="text">Reemplazos</span>
