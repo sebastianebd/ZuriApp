@@ -38,7 +38,7 @@ describe('AuthService', () => {
     mockApi.post.mockRejectedValue(error)
 
     await expect(AuthService.login({ rut: '1', password: '2' })).rejects.toThrow()
-    expect(errorHandler).toHaveBeenCalledWith(error)
+    expect(errorHandler).toHaveBeenCalledWith(error, true)
   })
 
   it('refresh should call API and return data', async () => {

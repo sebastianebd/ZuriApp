@@ -51,7 +51,7 @@ async function main() {
       rut_entrante: callingUser.rut,
       nombre_entrante: "TestEntrante",
       apellido_entrante: "TestEntranteLast",
-      tipo_turno: "DIA",
+      tipo_turno: "TERCER TURNO",
       fecha_inicio: new Date(),
       fecha_termino: new Date(Date.now() + 3600000), // +1 hour
       servicio: "URGENCIA",

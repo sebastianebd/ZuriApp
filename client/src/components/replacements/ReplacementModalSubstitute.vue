@@ -45,22 +45,35 @@
               <p class="mb-3 d-flex align-items-center">
                 <i class="bi bi-calendar-event me-2 text-primary"></i>
                 <span class="text-secondary me-2">Inicio Original:</span>
-                <span class="fw-bold text-dark">{{ registroActual.fecha_inicio }}</span>
+                <span class="fw-bold text-dark">{{ formattedInicioOriginal }}</span>
               </p>
 
               <hr class="my-3 opacity-10" />
 
-              <div class="form-floating mb-2">
-                <input
-                  type="date"
-                  id="fechaCorteA"
-                  :value="fechaCorteA"
-                  @input="$emit('update:fechaCorteA', ($event.target as HTMLInputElement).value)"
-                  class="form-control bg-white border-danger border-opacity-25 shadow-sm rounded-3"
-                />
-                <label for="fechaCorteA" class="text-danger fw-semibold"
+              <div class="mb-2">
+                <label class="text-danger fw-semibold smaller mb-1"
                   >Último Día Trabajado (Funcionario A) *</label
                 >
+                <DatePicker
+                  :model-value="fechaCorteA"
+                  @update:model-value="onDateUpdate"
+                  :min-date="minDate"
+                  :max-date="maxDate"
+                  timezone="UTC"
+                  :popover="{ visibility: 'click' }"
+                  :model-config="{ type: 'string', mask: 'YYYY-MM-DD' }"
+                  class="w-100"
+                >
+                  <template #default="{ inputValue, inputEvents }">
+                    <input
+                      class="form-control bg-white border-danger border-opacity-25 shadow-sm rounded-3"
+                      :value="inputValue"
+                      v-on="inputEvents"
+                      placeholder="Seleccione la fecha de corte"
+                      readonly
+                    />
+                  </template>
+                </DatePicker>
               </div>
               <div class="form-text text-danger smaller ps-1">
                 <i class="bi bi-info-circle me-1"></i>Esta será la nueva fecha de término del
@@ -91,12 +104,21 @@
                 </button>
               </div>
 
+              <div
+                v-if="isSameUser"
+                class="alert alert-danger border-0 p-2 mb-3 rounded-3 shadow-none d-flex align-items-center smaller"
+              >
+                <i class="bi bi-x-circle-fill me-2"></i>
+                <span>El funcionario entrante no puede ser el mismo que el actual.</span>
+              </div>
+
               <div class="form-floating mb-3">
                 <input
                   type="text"
                   id="rutEntranteB"
                   :value="nuevoFuncionarioB.rut_entrante || 'N/A'"
                   class="form-control bg-white border-0 shadow-sm rounded-3"
+                  :class="{ 'is-invalid': isSameUser }"
                   disabled
                   placeholder="RUT"
                 />
@@ -157,8 +179,10 @@
 
 <script setup lang="ts">
 import type { RegisterDataReemplazo } from '@/types/models'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
+import { DatePicker } from 'v-calendar'
+import 'v-calendar/style.css'
 
 interface ReemplazoModalData extends Partial<RegisterDataReemplazo> {
   fecha_inicio?: string
@@ -179,18 +203,123 @@ const emit = defineEmits<{
   (e: 'confirmar-sustitucion'): void
 }>()
 
+// Formatear Fecha Inicio Original (DD-MM-YYYY)
+const formattedInicioOriginal = computed(() => {
+  if (!props.registroActual.fecha_inicio) return 'N/A'
+  const [year, month, day] = props.registroActual.fecha_inicio.split('-')
+  return `${day}-${month}-${year}`
+})
+
+// Fecha mínima (Hoy)
+// Usamos UTC para alinearnos con el comportamiento del DatePicker en modo UTC
+const now = new Date()
+const minDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+
+// Fecha máxima (Término Original - 1 día)
+// El reemplazante debe trabajar al menos 1 día, por lo tanto el corte A no puede ser el mismo día del término.
+// Máximo puede ser el penúltimo día.
+const maxDate = computed(() => {
+  if (!props.registroActual.fecha_termino) return undefined
+
+  // Parseamos la fecha de término (YYYY-MM-DD) y la tratamos como UTC
+  const [y, m, d] = props.registroActual.fecha_termino.split('-').map(Number)
+  const termino = new Date(Date.UTC(y, m - 1, d))
+
+  // Restamos 1 día en UTC
+  termino.setUTCDate(termino.getUTCDate() - 1)
+
+  return termino
+})
+
+// Configurar fecha por defecto cuando se abre el modal
+watch(
+  () => props.visible,
+  (newVal: boolean) => {
+    if (newVal) {
+      // Generar string YYYY-MM-DD local
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const today = `${year}-${month}-${day}`
+
+      emit('update:fechaCorteA', today)
+    }
+  },
+  { immediate: true }
+)
+
+function onDateUpdate(val: any) {
+  if (!val) {
+    emit('update:fechaCorteA', '')
+    return
+  }
+
+  // Si recibimos un objeto Date, lo convertimos a string YYYY-MM-DD
+  // Asumiendo que v-calendar con timezone="UTC" nos da una fecha UTC correcta para el día seleccionado
+  if (val instanceof Date) {
+    const year = val.getUTCFullYear()
+    const month = String(val.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(val.getUTCDate()).padStart(2, '0')
+    emit('update:fechaCorteA', `${year}-${month}-${day}`)
+  } else if (typeof val === 'string') {
+    // Si ya es string, lo emitimos tal cual (esperando YYYY-MM-DD)
+    // A veces v-calendar emite el string ISO completo si no se ajusta la máscara
+    if (val.includes('T')) {
+      emit('update:fechaCorteA', val.split('T')[0])
+    } else {
+      emit('update:fechaCorteA', val)
+    }
+  }
+}
+
+// Fecha de inicio B (Día siguiente al corte)
 const fechaInicioB = computed(() => {
-  if (!props.fechaCorteA) return ''
+  if (!props.fechaCorteA || typeof props.fechaCorteA !== 'string') return ''
 
-  const corte = new Date(props.fechaCorteA)
-  corte.setDate(corte.getDate() + 1)
+  try {
+    const [y, m, d] = props.fechaCorteA.split('-').map(Number)
+    if (!y || !m || !d) return ''
 
-  return corte.toISOString().split('T')[0]
+    // Validar si la fecha excede el máximo permitido
+    // Esto es visual en el calendario (max-date) pero validamos lógica aquí también
+
+    const corte = new Date(y, m - 1, d)
+    corte.setDate(corte.getDate() + 1)
+
+    const day = String(corte.getDate()).padStart(2, '0')
+    const month = String(corte.getMonth() + 1).padStart(2, '0')
+    const year = corte.getFullYear()
+
+    return `${day}-${month}-${year}`
+  } catch (e) {
+    console.error('Error calculando fechaInicioB:', e)
+    return ''
+  }
+})
+
+// Validar que no sea el mismo usuario
+const isSameUser = computed(() => {
+  if (!props.registroActual.rut_entrante || !props.nuevoFuncionarioB.rut_entrante) return false
+  return props.registroActual.rut_entrante === props.nuevoFuncionarioB.rut_entrante
 })
 
 const isFormValid = computed(() => {
   const hasFechaCorte = !!props.fechaCorteA
   const hasFuncionarioB = !!props.nuevoFuncionarioB.rut_entrante
+
+  // Validar lógica de fechas: Corte debe ser menor que Término
+  // Aunque max-date previene selección visual, es bueno asegurar
+  if (hasFechaCorte && props.registroActual.fecha_termino) {
+    if (props.fechaCorteA >= props.registroActual.fecha_termino) {
+      return false
+    }
+  }
+
+  // Validar usuario duplicado
+  if (isSameUser.value) {
+    return false
+  }
 
   return hasFechaCorte && hasFuncionarioB
 })

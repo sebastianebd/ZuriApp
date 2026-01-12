@@ -9,7 +9,7 @@ export const login = async (payload: LoginData) => {
     const { data } = await Api.post('/auth/login', payload)
     return data
   } catch (error) {
-    throw errorHandler(error)
+    throw errorHandler(error, true)
   }
 }
 
