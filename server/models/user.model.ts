@@ -101,7 +101,7 @@ const userSchema: Schema = new Schema(
     habilitado: {
       type: String,
       required: function (this: any) {
-        return this.tipo_cargo === "TENS";
+        return !["RECURSOS HUMANOS", "ADMIN-TI"].includes(this.tipo_cargo);
       },
       enum: ["HABILITADO", "NO HABILITADO"],
       default: "HABILITADO",

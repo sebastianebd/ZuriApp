@@ -4,7 +4,7 @@
       <!-- Columna izquierda: Formulario -->
       <div class="col-md-5 login-form d-flex flex-column justify-content-center">
         <div class="logo-container">
-          <img src="../../assets/icons/zuri-icon.png" alt="ZuriApp Logo" class="app-logo" />
+          <img src="../../assets/icons/zuri-icon-v2.png" alt="ZuriApp Logo" class="app-logo" />
         </div>
 
         <div class="form-content fade-in-up">
@@ -283,7 +283,7 @@ const {
 }
 
 .app-logo {
-  height: 48px;
+  height: 90px;
 }
 
 /* --- Mobile Responsiveness (Top App Design) --- */

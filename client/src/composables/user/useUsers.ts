@@ -32,6 +32,7 @@ export function useUsers() {
   const listaTipoCargo = ref<string[]>([])
   const listaHabilitado = ref<string[]>([])
   const listaServicios = ref<string[]>([])
+  const listaTiposTurno = ref<string[]>([])
 
   // Modal Visibility
   const updateModalVisible = ref(false)
@@ -170,6 +171,7 @@ export function useUsers() {
       listaTipoCargo.value = opciones.tipoCargo
       listaHabilitado.value = opciones.habilitado
       listaServicios.value = opciones.servicios
+      listaTiposTurno.value = opciones.tiposTurno
     } finally {
       loading.value = false
     }
@@ -206,6 +208,7 @@ export function useUsers() {
     rolesDisponiblesCreacion,
     listaHabilitado,
     listaServicios,
+    listaTiposTurno,
 
     // Pagination
     currentPage,

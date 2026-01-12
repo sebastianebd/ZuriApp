@@ -6,7 +6,7 @@
 ![Badge Vue](https://img.shields.io/badge/Vue.js-3-4FC08D)
 ![Badge Docker](https://img.shields.io/badge/Docker-Ready-blue)
 
-## 🚀 Stack Tecnológico
+## Stack Tecnológico
 
 El proyecto está construido utilizando una arquitectura moderna basada en JavaScript/TypeScript.
 
@@ -30,7 +30,7 @@ El proyecto está construido utilizando una arquitectura moderna basada en JavaS
 
 ---
 
-## 🛠️ Instalación y Configuración
+## Instalación y Configuración
 
 ### Prerrequisitos
 
@@ -39,7 +39,7 @@ Asegúrate de tener instalado:
 - [Node.js](https://nodejs.org/) (v22 o superior)
 - [Docker Desktop](https://www.docker.com/) (Opcional, pero recomendado)
 
-### 🚀 Opción A: Inicio Rápido con Docker (Recomendado)
+### Opción A: Inicio Rápido con Docker (Recomendado)
 
 Docker Compose levantará automáticamente la base de datos, el backend y el frontend.
 
@@ -49,7 +49,7 @@ docker-compose up
 
 _La aplicación estará disponible en `http://localhost:5173`._
 
-### 💻 Opción B: Instalación Manual
+### Opción B: Instalación Manual
 
 Si prefieres ejecutar los servicios individualmente en tu máquina local:
 
@@ -75,7 +75,7 @@ _El cliente correrá en `http://localhost:5173`._
 
 ---
 
-## 🌱 Base de Datos (Seed)
+## Base de Datos (Seed)
 
 El proyecto incluye scripts para poblar la base de datos con un usuario administrador inicial.
 
@@ -97,7 +97,7 @@ npm run seed:prod
 
 ---
 
-## 🤝 Contribución y Despliegue
+## Contribución y Despliegue
 
 Para conocer nuestro flujo de trabajo, estrategia de ramas y proceso de despliegue a **Railway** (Stage/Prod), por favor consulta nuestra guía de contribución:
 

@@ -33,7 +33,7 @@ async function seed() {
       email: "admin@zuriapp.cl",
       ciudad: "Santiago",
       tipo_cargo: "ADMIN-TI",
-      password: plainPassword, // Se encriptará en el hook pre-save del modelo
+      password: plainPassword,
       eliminado: false,
     };
 
@@ -44,12 +44,12 @@ async function seed() {
       console.log("⚠️ El usuario Admin ya existe. No se realizaron cambios.");
     } else {
       const createdUser = await User.create(adminUser);
-      console.log("✨ Seed completado exitosamente!");
-      console.log("👤 Usuario creado:");
-      console.log(`   Email: ${createdUser.email}`);
-      console.log(`   Password: ${plainPassword}`);
-      console.log(`   RUT: ${createdUser.rut}`);
-      console.log(`   Cargo: ${createdUser.tipo_cargo}`);
+      console.log("Seed completado exitosamente!");
+      console.log("Usuario creado:");
+      console.log(`Email: ${createdUser.email}`);
+      console.log(`Password: ${plainPassword}`);
+      console.log(`RUT: ${createdUser.rut}`);
+      console.log(`Cargo: ${createdUser.tipo_cargo}`);
     }
 
     process.exit(0);

@@ -131,6 +131,7 @@
       :visible="historialModalVisible"
       :usuario="usuarioSeleccionado"
       :lista-servicios="listaServicios"
+      :lista-tipos-turno="listaTiposTurno"
       :reemplazos="historialUsuario"
       @cerrar="closeHistorialModal"
     />
@@ -173,6 +174,7 @@ const {
   rolesDisponiblesCreacion,
   listaHabilitado,
   listaServicios,
+  listaTiposTurno,
 
   // Pagination
   currentPage,

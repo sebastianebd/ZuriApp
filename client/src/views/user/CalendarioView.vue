@@ -190,7 +190,7 @@ const {
 /* FullCalendar Customization */
 .calendar-view {
   background-color: #f8fafc;
-  height: calc(100vh - 71px); /* Resta el alto del NavBar (70px) + 1px de ajuste */
+  height: calc(100vh - 71px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -202,83 +202,125 @@ const {
 }
 
 .fc {
-  height: 100% !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* --- HEADER & TOOLBAR (Segmented Control Style) --- */
+.fc-header-toolbar {
+  margin-bottom: 1.5rem !important;
+  padding: 0 0.5rem;
+}
+
+.fc-toolbar-title {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  font-size: 1.25rem !important;
+  letter-spacing: -0.025em;
+  text-transform: capitalize !important;
+}
+
+.fc-button-group {
+  background-color: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  gap: 0;
+  border: 1px solid #e2e8f0;
+}
+
+.fc-button-primary {
+  background-color: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  text-transform: capitalize !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  padding: 6px 16px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  transition: all 0.2s ease;
+}
+
+.fc-button-primary:hover {
+  color: #334155 !important;
+  background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.fc-button-active {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.fc-button-primary:disabled {
+  opacity: 0.5;
+}
+
+/* --- GRID & CELLS --- */
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: #f1f5f9 !important;
 }
 
 .fc-col-header-cell {
-  background-color: #f1f5f9;
-  padding: 8px 0 !important;
+  background-color: #ffffff;
+  padding: 12px 0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
 .fc-col-header-cell-cushion {
   text-transform: uppercase;
-  color: #475569 !important;
-  font-size: 0.75rem;
+  color: #94a3b8 !important;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  text-decoration: none !important;
 }
 
 .fc-daygrid-day-number {
   color: #64748b !important;
-  font-weight: 600;
-  padding: 4px 8px !important;
-  text-decoration: none !important;
-}
-
-.fc-toolbar-title {
-  color: #1e293b !important;
-  font-weight: 800 !important;
-  font-size: 1.5rem !important;
-  text-transform: capitalize;
-}
-
-.fc-button-primary {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  color: #475569 !important;
-  text-transform: capitalize !important;
-  font-weight: 600 !important;
-  padding: 8px 16px !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-}
-
-.fc-button-primary:hover {
-  background-color: #f8fafc !important;
-  color: #1e293b !important;
-}
-
-.fc-button-active {
-  background-color: #3b82f6 !important;
-  border-color: #3b82f6 !important;
-  color: #ffffff !important;
-}
-
-.custom-calendar-event {
-  border-radius: 4px !important;
-  padding: 1px 4px !important;
-  font-size: 0.72rem !important;
-  font-weight: 500 !important;
-  border: none !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-  cursor: pointer;
-  transition: transform 0.1s ease;
-}
-
-.custom-calendar-event:hover {
-  transform: scale(1.02);
-  filter: brightness(0.95);
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 8px 12px !important;
 }
 
 .fc-day-today {
-  background-color: #eff6ff !important;
+  background-color: #f8fafc !important; /* Sutil highlight para hoy */
 }
 
-.fc-day-other {
-  background-color: #fcfcfc;
+/* --- EVENTS (Modern Pill/Card Style) --- */
+.custom-calendar-event {
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 2px !important;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Avatar Initials */
+/* Efecto de borde izquierdo "Accent" */
+.custom-calendar-event::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.custom-calendar-event:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  z-index: 50;
+  filter: brightness(0.98);
+}
+
+/* --- AVATAR & TRANSITIONS --- */
 .avatar-initials {
   width: 42px;
   height: 42px;
@@ -289,25 +331,21 @@ const {
   font-size: 0.7rem;
 }
 
-/* Transitions */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Responsive fixes */
+/* Responsive */
 @media (max-width: 768px) {
   .fc-toolbar {
     flex-direction: column;
     gap: 1rem;
   }
-  .fc-toolbar-title {
-    font-size: 1.25rem !important;
-  }
+}
+
+/* Modal Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
