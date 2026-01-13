@@ -12,47 +12,99 @@
     </div>
 
     <div class="menu-container">
-      <!-- Calendario Section -->
+      <!-- Personal Section -->
       <div class="menu-group">
-        <h3 v-if="is_expanded">Calendario</h3>
-        <router-link :to="{ name: 'calendario' }" class="menu-item" title="Calendario">
+        <h3 v-if="is_expanded">Personal</h3>
+        <router-link :to="{ name: 'personal-funcionarios' }" class="menu-item" title="Funcionarios">
+          <i class="bi bi-person-badge"></i>
+          <span class="text">Funcionarios</span>
+        </router-link>
+        <router-link :to="{ name: 'personal-cargos' }" class="menu-item" title="Gestión de Cargos">
+          <i class="bi bi-briefcase"></i>
+          <span class="text">Gestión de Cargos</span>
+        </router-link>
+      </div>
+
+      <!-- Operaciones Section -->
+      <div class="menu-group">
+        <h3 v-if="is_expanded">Operaciones</h3>
+        <router-link
+          :to="{ name: 'operaciones-reemplazos' }"
+          class="menu-item"
+          title="Reemplazos Activos"
+        >
+          <i class="bi bi-arrow-repeat"></i>
+          <span class="text">Reemplazos Activos</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'operaciones-calendario-reemplazos' }"
+          class="menu-item"
+          title="Calendario de Reemplazos"
+        >
           <i class="bi bi-calendar3"></i>
-          <span class="text">Calendario</span>
+          <span class="text">Calendario Reemplazos</span>
         </router-link>
-      </div>
-
-      <!-- Turnos Section -->
-      <div class="menu-group">
-        <h3 v-if="is_expanded">Gestión de Turnos</h3>
-        <router-link :to="{ name: 'turnos' }" class="menu-item" title="Grilla de Turnos">
+        <router-link :to="{ name: 'operaciones-turnos' }" class="menu-item" title="Turnos Actuales">
           <i class="bi bi-calendar-range"></i>
-          <span class="text">Grilla de Turnos</span>
+          <span class="text">Turnos Actuales</span>
         </router-link>
-        <router-link :to="{ name: 'reemplazos' }" class="menu-item" title="Reemplazos">
-          <i class="bi bi-person-workspace"></i>
-          <span class="text">Reemplazos</span>
-        </router-link>
-        <router-link :to="{ name: 'ver_historial' }" class="menu-item" title="Historial">
-          <i class="bi bi-clock-history"></i>
-          <span class="text">Historial</span>
+        <router-link
+          :to="{ name: 'operaciones-calendario-turnos' }"
+          class="menu-item"
+          title="Calendario Turnos"
+        >
+          <i class="bi bi-calendar4-week"></i>
+          <span class="text">Calendario Turnos</span>
         </router-link>
       </div>
 
-      <!-- Usuarios Section -->
+      <!-- Historial & Reportes Section -->
       <div class="menu-group">
-        <h3 v-if="is_expanded">Administración</h3>
-        <router-link :to="{ name: 'ver_usuarios' }" class="menu-item" title="Usuarios">
-          <i class="bi bi-people"></i>
-          <span class="text">Usuarios</span>
+        <h3 v-if="is_expanded">Historial & Reportes</h3>
+        <router-link
+          :to="{ name: 'historial-reemplazos' }"
+          class="menu-item"
+          title="Reemplazos Finalizados"
+        >
+          <i class="bi bi-archive"></i>
+          <span class="text">Reemplazos Finalizados</span>
+        </router-link>
+        <router-link :to="{ name: 'historial-turnos' }" class="menu-item" title="Turnos Anteriores">
+          <i class="bi bi-calendar-x"></i>
+          <span class="text">Turnos Anteriores</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'historial-excepciones' }"
+          class="menu-item"
+          title="Excepciones de Turno"
+        >
+          <i class="bi bi-exclamation-triangle"></i>
+          <span class="text">Excepciones de Turno</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'historial-auditoria' }"
+          class="menu-item"
+          title="Auditoría de Cambios"
+        >
+          <i class="bi bi-journal-text"></i>
+          <span class="text">Auditoría de Cambios</span>
         </router-link>
       </div>
 
-      <!-- Sistema Section -->
+      <!-- Configuración Section -->
       <div class="menu-group">
         <h3 v-if="is_expanded">Configuración</h3>
-        <router-link :to="{ name: 'auditoria' }" class="menu-item" title="Auditoría">
-          <i class="bi bi-shield-check"></i>
-          <span class="text">Auditoría</span>
+        <router-link :to="{ name: 'configuracion-servicios' }" class="menu-item" title="Servicios">
+          <i class="bi bi-hospital"></i>
+          <span class="text">Servicios</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'configuracion-tipos-turno' }"
+          class="menu-item"
+          title="Tipos de Turno"
+        >
+          <i class="bi bi-clock"></i>
+          <span class="text">Tipos de Turno</span>
         </router-link>
       </div>
     </div>

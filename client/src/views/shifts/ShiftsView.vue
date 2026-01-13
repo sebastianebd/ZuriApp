@@ -122,11 +122,15 @@
                   :class="[
                     getShiftClass(getShift(item, day.date)),
                     {
-                      'replacement-shift': item.source === 'REPLACEMENT' && getShift(item, day.date)
+                      'replacement-shift':
+                        item.source === 'REPLACEMENT' && getShift(item, day.date),
+                      'clickable-shift': getShift(item, day.date),
+                      'recently-modified': isRecentlyModified(item._id, day.date)
                     }
                   ]"
                   @mouseenter="showTooltip($event, item, day.date)"
                   @mouseleave="hideTooltip"
+                  @click="handleCellClick(item, day.date)"
                 >
                   <span v-if="getShift(item, day.date) === 'LARGO'">L</span>
                   <span v-else-if="getShift(item, day.date) === 'NOCHE'">N</span>
@@ -155,6 +159,21 @@
       @cerrar="closeModal"
       @guardar="handleSaveAssignment"
     />
+
+    <!-- Shift Modification Modal -->
+    <ShiftModificationModal
+      v-if="selectedShiftData"
+      :visible="showModifyModal"
+      :assignment-id="selectedShiftData.assignmentId"
+      :assignment-name="selectedShiftData.assignmentName"
+      :date="selectedShiftData.date"
+      :current-shift="selectedShiftData.currentShift"
+      :has-exception="selectedShiftData.hasException"
+      :loading="exceptionStore.loading"
+      @cerrar="showModifyModal = false"
+      @save="handleSaveException"
+      @restore="handleRestorePattern"
+    />
   </div>
 </template>
 
@@ -163,9 +182,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useOptionStore } from '@/stores/option.store'
+import { useShiftExceptionStore } from '@/stores/shift-exception.store'
+import { useAuthStore } from '@/stores/auth.store'
 import { calculateShift, parseAsLocal } from '@/services/turn-pattern.service'
 import type { RegisterDataReemplazo, TurnAssignment, User } from '@/types/models'
 import TurnAssignmentModal from '@/components/shifts/TurnAssignmentModal.vue'
+import ShiftModificationModal from '@/components/shifts/ShiftModificationModal.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
 // State
@@ -183,9 +205,27 @@ const tooltipState = ref({
 
 let tooltipTimer: number | null = null
 
+// Shift modification state
+const showModifyModal = ref(false)
+const selectedShiftData = ref<{
+  assignmentId: string
+  assignmentName: string
+  date: Date
+  currentShift: string | null
+  hasException: boolean
+} | null>(null)
+
+// Track recently modified cell for visual feedback
+const recentlyModifiedCell = ref<{
+  assignmentId: string
+  date: string
+} | null>(null)
+
 const replacementStore = useReplacementStore()
 const turnAssignmentStore = useTurnAssignmentStore()
 const optionStore = useOptionStore()
+const exceptionStore = useShiftExceptionStore()
+const authStore = useAuthStore()
 const alertComponent = ref()
 
 // Options computed
@@ -361,10 +401,17 @@ function isWeekend(date: Date) {
   return day === 0 || day === 6 // Sun or Sat
 }
 
-// Core Logic: Get Shift Value
+// Core Logic: Get Shift Value (with exception support)
 function getShift(row: GridRow, date: Date) {
   if (!row.fecha_inicio || !row.tipo_turno) return null
 
+  // 1. Check for exception first (works for both ASSIGNMENT and REPLACEMENT)
+  const exception = exceptionStore.findException(row._id, date)
+  if (exception) {
+    return exception.override_type
+  }
+
+  // 2. Calculate base shift from pattern
   const rStart = parseAsLocal(row.fecha_inicio)
   const rEnd = row.fecha_termino ? parseAsLocal(row.fecha_termino) : new Date(9999, 11, 31)
 
@@ -375,7 +422,6 @@ function getShift(row: GridRow, date: Date) {
 
   if (checkDate < start || checkDate > end) return null
 
-  // calculateShift handles logic. We pass row.fecha_inicio which might be Date object now
   return calculateShift(date, row.fecha_inicio, row.tipo_turno)
 }
 
@@ -456,13 +502,93 @@ function hideTooltip() {
   tooltipState.value.show = false
 }
 
+function isRecentlyModified(assignmentId: string, date: Date): boolean {
+  if (!recentlyModifiedCell.value) return false
+  const dateStr = date.toISOString().split('T')[0]
+  return (
+    recentlyModifiedCell.value.assignmentId === assignmentId &&
+    recentlyModifiedCell.value.date === dateStr
+  )
+}
+
+function handleCellClick(item: GridRow, date: Date) {
+  const shift = getShift(item, date)
+  if (!shift) return
+
+  const exception = exceptionStore.findException(item._id, date)
+
+  selectedShiftData.value = {
+    assignmentId: item._id,
+    assignmentName: `${item.nombre} ${item.apellido}`,
+    date: date,
+    currentShift: shift,
+    hasException: !!exception
+  }
+
+  showModifyModal.value = true
+}
+
+async function handleSaveException(data: { override_type: 'LARGO' | 'NOCHE' | 'LIBRE' }) {
+  if (!selectedShiftData.value) return
+
+  try {
+    await exceptionStore.createException({
+      assignment_id: selectedShiftData.value.assignmentId,
+      date: selectedShiftData.value.date.toISOString(),
+      override_type: data.override_type,
+      created_by: authStore.user?._id || ''
+    })
+
+    // Set recently modified cell for visual feedback
+    recentlyModifiedCell.value = {
+      assignmentId: selectedShiftData.value.assignmentId,
+      date: selectedShiftData.value.date.toISOString().split('T')[0]
+    }
+
+    // Clear the highlight after 2 seconds
+    setTimeout(() => {
+      recentlyModifiedCell.value = null
+    }, 2000)
+
+    showModifyModal.value = false
+    alertComponent.value.show('Éxito', 'Turno modificado correctamente', 'success')
+  } catch (error) {
+    console.error(error)
+    alertComponent.value.show('Error', 'No se pudo modificar el turno', 'error')
+  }
+}
+
+async function handleRestorePattern() {
+  if (!selectedShiftData.value) return
+
+  try {
+    const exception = exceptionStore.findException(
+      selectedShiftData.value.assignmentId,
+      selectedShiftData.value.date
+    )
+
+    if (exception) {
+      await exceptionStore.deleteException(exception._id)
+      showModifyModal.value = false
+      alertComponent.value.show('Éxito', 'Patrón restaurado correctamente', 'success')
+    }
+  } catch (error) {
+    console.error(error)
+    alertComponent.value.show('Error', 'No se pudo restaurar el patrón', 'error')
+  }
+}
+
 async function loadData() {
   loading.value = true
   try {
+    const startOfMonth = new Date(currentYear.value, currentMonth.value, 1)
+    const endOfMonth = new Date(currentYear.value, currentMonth.value + 1, 0)
+
     await Promise.all([
       replacementStore.mostrarReemplazos(),
       turnAssignmentStore.loadAssignments(),
-      optionStore.mostrarOpciones()
+      optionStore.mostrarOpciones(),
+      exceptionStore.loadExceptions(undefined, startOfMonth.toISOString(), endOfMonth.toISOString())
     ])
   } finally {
     loading.value = false
@@ -564,6 +690,34 @@ thead .sticky-col {
 .replacement-shift {
   border: 2px dashed rgba(0, 0, 0, 0.3) !important;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* Clickable Shift Styling */
+.clickable-shift {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.clickable-shift:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+/* Recently Modified Cell Animation */
+.recently-modified {
+  animation: pulseHighlight 0.5s ease-in-out 4;
+  position: relative;
+}
+
+@keyframes pulseHighlight {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(59, 130, 246, 0.8);
+  }
+  50% {
+    box-shadow: inset 0 0 12px 4px rgba(59, 130, 246, 0.6);
+  }
 }
 
 .replacement-badge {

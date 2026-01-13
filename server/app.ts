@@ -83,6 +83,8 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/calendar", calendarRoutes);
 import turnAssignmentRoutes from "./routes/api/turn-assignment.routes";
 app.use("/api/assignments", turnAssignmentRoutes);
+import shiftExceptionRoutes from "./routes/api/shift-exception.routes";
+app.use("/api/shift-exceptions", shiftExceptionRoutes);
 
 // Sentry Tunnel - Debe ir antes del catch-all *
 import sentryRoutes from "./routes/api/sentry.routes";
