@@ -1,7 +1,7 @@
 <template>
   <div class="shifts-view p-4">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4" v-if="!historyMode">
       <div>
         <h4 class="fw-bold mb-1 text-dark">
           <i class="bi bi-calendar-range text-primary me-2"></i>Grilla de Turnos
@@ -34,13 +34,37 @@
             <i class="bi bi-chevron-left"></i>
           </button>
           <span class="fw-bold px-3 text-capitalize">{{ formattedMonth }}</span>
-          <button class="btn btn-sm btn-outline-secondary border-0" @click="nextMonth">
+          <button
+            class="btn btn-sm btn-outline-secondary border-0"
+            @click="nextMonth"
+            :disabled="!canGoNext"
+          >
             <i class="bi bi-chevron-right"></i>
           </button>
           <button class="btn btn-sm btn-primary ms-2" @click="loadData">
             <i class="bi bi-arrow-clockwise"></i>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- History Mode Controls (Month Nav Only) -->
+    <div class="d-flex justify-content-end mb-3" v-else>
+      <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm">
+        <button class="btn btn-sm btn-outline-secondary border-0" @click="prevMonth">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="fw-bold px-3 text-capitalize">{{ formattedMonth }}</span>
+        <button
+          class="btn btn-sm btn-outline-secondary border-0"
+          @click="nextMonth"
+          :disabled="!canGoNext"
+        >
+          <i class="bi bi-chevron-right"></i>
+        </button>
+        <button class="btn btn-sm btn-primary ms-2" @click="loadData">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
       </div>
     </div>
 
@@ -124,8 +148,11 @@
                     {
                       'replacement-shift':
                         item.source === 'REPLACEMENT' && getShift(item, day.date),
-                      'clickable-shift': !readonly && getShift(item, day.date),
-                      'recently-modified': isRecentlyModified(item._id, day.date)
+                      'clickable-shift':
+                        !readonly && getShift(item, day.date) && isEditableDate(day.date),
+                      'recently-modified': isRecentlyModified(item._id, day.date),
+                      'exception-modified':
+                        historyMode && !!exceptionStore.findException(item._id, day.date)
                     }
                   ]"
                   @mouseenter="showTooltip($event, item, day.date)"
@@ -195,10 +222,16 @@ const props = withDefaults(
   defineProps<{
     readonly?: boolean
     historyMode?: boolean
+    externalFilters?: {
+      service: string
+      cargo: string
+      shiftType?: string
+    }
   }>(),
   {
     readonly: false,
-    historyMode: false
+    historyMode: false,
+    externalFilters: () => ({ service: '', cargo: '' })
   }
 )
 
@@ -312,7 +345,6 @@ interface GridRow {
 const filteredShifts = computed(() => {
   const startOfMonth = new Date(currentYear.value, currentMonth.value, 1)
   const endOfMonth = new Date(currentYear.value, currentMonth.value + 1, 0)
-  const filterService = selectedService.value
 
   const rows: GridRow[] = []
 
@@ -321,7 +353,21 @@ const filteredShifts = computed(() => {
     if (!r.fecha_inicio) return
 
     // Service Filter
-    if (filterService && r.servicio !== filterService) return
+    // Service Filter
+    const activeServiceFilter = props.historyMode
+      ? props.externalFilters.service
+      : selectedService.value
+    if (activeServiceFilter && r.servicio !== activeServiceFilter) return
+
+    // Cargo Filter (History Mode Only)
+    if (props.historyMode && props.externalFilters.cargo) {
+      if (r.tipo_cargo !== props.externalFilters.cargo) return
+    }
+
+    // Shift Type Filter (History Mode Only)
+    if (props.historyMode && props.externalFilters.shiftType) {
+      if (r.tipo_turno !== props.externalFilters.shiftType) return
+    }
 
     const rStart = parseAsLocal(r.fecha_inicio)
     const rEnd = parseAsLocal(r.fecha_termino)
@@ -356,7 +402,21 @@ const filteredShifts = computed(() => {
     const effectiveService = a.service || user.servicio || user.tipo_cargo
 
     // Service Filter
-    if (filterService && effectiveService !== filterService) return
+    // Service Filter
+    const activeServiceFilter = props.historyMode
+      ? props.externalFilters.service
+      : selectedService.value
+    if (activeServiceFilter && effectiveService !== activeServiceFilter) return
+
+    // Cargo Filter (History Mode Only)
+    if (props.historyMode && props.externalFilters.cargo) {
+      if (user.tipo_cargo !== props.externalFilters.cargo) return
+    }
+
+    // Shift Type Filter (History Mode Only)
+    if (props.historyMode && props.externalFilters.shiftType) {
+      if (a.turn_type !== props.externalFilters.shiftType) return
+    }
 
     const aStart = parseAsLocal(a.start_date)
     const aEnd = a.end_date ? parseAsLocal(a.end_date) : new Date(9999, 11, 31)
@@ -394,7 +454,25 @@ function prevMonth() {
   currentDate.value = new Date(currentYear.value, currentMonth.value - 1, 1)
 }
 
+const canGoNext = computed(() => {
+  if (!props.historyMode) return true
+
+  const now = new Date()
+  const nextMonthDate = new Date(currentYear.value, currentMonth.value + 1, 1)
+
+  // In history mode, we can only go next if the next month is strictly BEFORE the current real month.
+  // Example: Real is Jan. History View is Nov. Next is Dec. Dec < Jan -> Allowed.
+  // History View is Dec. Next is Jan. Jan < Jan -> False (> or = is blocked).
+  // Actually, "mes anterior hacia atrás".
+  // So if Real is Jan, max allowed view is Dec.
+  // IF view is Dec, we CANNOT go next.
+
+  const startOfCurrentRealMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  return nextMonthDate < startOfCurrentRealMonth
+})
+
 function nextMonth() {
+  if (!canGoNext.value) return
   currentDate.value = new Date(currentYear.value, currentMonth.value + 1, 1)
 }
 
@@ -523,9 +601,22 @@ function isRecentlyModified(assignmentId: string, date: Date): boolean {
   )
 }
 
+// Helper: Check if a date is editable (Current Month or Future)
+function isEditableDate(date: Date): boolean {
+  const now = new Date()
+  const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const targetDate = new Date(date.getFullYear(), date.getMonth(), 1)
+
+  // Allow edit if target month is >= current month
+  return targetDate >= startOfCurrentMonth
+}
+
 function handleCellClick(item: GridRow, date: Date) {
   // Prevent editing in readonly mode
   if (props.readonly) return
+
+  // Prevent editing past months even in operational mode
+  if (!isEditableDate(date)) return
 
   const shift = getShift(item, date)
   if (!shift) return
@@ -613,6 +704,10 @@ async function loadData() {
 
 onMounted(() => {
   loadData()
+})
+
+defineExpose({
+  prevMonth
 })
 </script>
 
@@ -724,6 +819,23 @@ thead .sticky-col {
 .recently-modified {
   animation: pulseHighlight 0.5s ease-in-out 4;
   position: relative;
+}
+
+/* Exception Modified Highlight (History Mode) */
+.exception-modified {
+  box-shadow: inset 0 0 0 2px #f59e0b; /* Amber border */
+  background-color: rgba(251, 191, 36, 0.1);
+}
+
+.exception-modified:after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  background-color: #f59e0b;
+  border-radius: 50%;
 }
 
 @keyframes pulseHighlight {

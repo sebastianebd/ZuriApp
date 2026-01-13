@@ -2,7 +2,7 @@
   <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
     <div class="row g-3 align-items-end">
       <!-- Fecha Inicio -->
-      <div class="col-md-3">
+      <div class="col-md-3" v-if="!hideDates">
         <label class="form-label fw-semibold text-secondary small">Desde:</label>
         <DatePicker
           :model-value="modelValue.startDate"
@@ -23,7 +23,7 @@
       </div>
 
       <!-- Fecha Fin -->
-      <div class="col-md-3">
+      <div class="col-md-3" v-if="!hideDates">
         <label class="form-label fw-semibold text-secondary small">Hasta:</label>
         <DatePicker
           :model-value="modelValue.endDate"
@@ -88,6 +88,29 @@
           </template>
         </v-select>
       </div>
+
+      <!-- Tipo Turno -->
+      <div class="col-md-3">
+        <label class="form-label fw-semibold text-secondary small">Tipo Turno</label>
+        <v-select
+          :model-value="modelValue.shiftType"
+          @update:model-value="(newValue: any) => updateFilter('shiftType', newValue)"
+          :options="[
+            { label: 'Todos', value: '' },
+            ...listaTiposTurno.map((s) => ({ label: s, value: s }))
+          ]"
+          :reduce="(option: any) => option.value"
+          label="label"
+          :clearable="false"
+          :searchable="true"
+          placeholder="Seleccione..."
+          class="custom-v-select"
+        >
+          <template #selected-option="{ label }">
+            <span class="text-secondary small">{{ label }}</span>
+          </template>
+        </v-select>
+      </div>
     </div>
   </div>
 </template>
@@ -101,13 +124,23 @@ interface Filters {
   endDate: Date | null
   service: string
   cargo: string
+  shiftType?: string
 }
 
-const props = defineProps<{
-  listaServicios: string[]
-  listaCargos: string[]
-  modelValue: Filters
-}>()
+const props = withDefaults(
+  defineProps<{
+    listaServicios: string[]
+    listaCargos?: string[]
+    listaTiposTurno?: string[]
+    modelValue: Filters
+    hideDates?: boolean
+  }>(),
+  {
+    hideDates: false,
+    listaCargos: () => [],
+    listaTiposTurno: () => []
+  }
+)
 
 const emit = defineEmits<{
   (e: 'update:modelValue', newFilters: Filters): void
