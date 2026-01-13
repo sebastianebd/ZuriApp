@@ -113,6 +113,7 @@
       :visible="updateModalVisible"
       :usuario="usuarioActual"
       :lista-tipo-cargo="listaTipoCargo"
+      :lista-tipo-contrato="listaTipoContrato"
       :lista-habilitado="listaHabilitado"
       @cerrar="closeUpdateModal"
       @guardar="handleUpdate"
@@ -171,6 +172,7 @@ const {
 
   // Lists
   listaTipoCargo,
+  listaTipoContrato,
   rolesDisponiblesCreacion,
   listaHabilitado,
   listaServicios,

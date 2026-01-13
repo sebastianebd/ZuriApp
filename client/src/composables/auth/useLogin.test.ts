@@ -70,7 +70,7 @@ describe('useLogin Composable', () => {
         password: 'password123'
       })
     )
-    expect(mockRouterReplace).toHaveBeenCalledWith({ name: 'user' })
+    expect(mockRouterReplace).toHaveBeenCalledWith({ name: 'dashboard' })
   })
 
   it('should handle login errors', async () => {

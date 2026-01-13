@@ -10,6 +10,8 @@ export interface User {
   ciudad: string
   habilitado: string
   tipo_cargo: string
+  servicio?: string
+  tipo_contrato?: string
 }
 
 export interface State {
@@ -54,6 +56,7 @@ export interface registrarUsuario {
   email: string
   ciudad: string
   tipo_cargo: string
+  tipo_contrato?: string
   habilitado?: string
   servicio?: string
 }
@@ -104,4 +107,15 @@ export interface AuditLog {
   user_name?: string
   created_at: string
   updated_at?: string
+}
+
+export interface TurnAssignment {
+  _id: string
+  user_id: string | User
+  service: string
+  turn_type: string
+  start_date: string | Date
+  end_date?: string | Date
+  createdAt?: string
+  updatedAt?: string
 }

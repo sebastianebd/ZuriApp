@@ -102,11 +102,15 @@ describe('UserModalCreate.vue', () => {
 
     // Select Cargo
     let selects = wrapper.findAll('.v-select-stub')
+    // 1. Cargo
     if (selects.length > 0) await selects[0].trigger('click')
 
-    // Habilitado field should appear now. Re-query selects.
+    // Re-query (Habilitado appears)
     selects = wrapper.findAll('.v-select-stub')
+    // 2. Tipo Contrato
     if (selects.length > 1) await selects[1].trigger('click')
+    // 3. Habilitado
+    if (selects.length > 2) await selects[2].trigger('click')
 
     await wrapper.find('button.btn-primary').trigger('click')
 
@@ -138,6 +142,7 @@ describe('UserModalCreate.vue', () => {
 
     selects = wrapper.findAll('.v-select-stub')
     if (selects.length > 1) await selects[1].trigger('click')
+    if (selects.length > 2) await selects[2].trigger('click')
 
     await wrapper.find('button.btn-primary').trigger('click')
 
