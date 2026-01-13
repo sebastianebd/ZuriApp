@@ -27,14 +27,25 @@ export const getExceptions = async (req: Request, res: Response) => {
     const query: any = {};
     if (assignment_id) query.assignment_id = assignment_id;
     if (start_date && end_date) {
+      // Adjust end_date to include the entire day (23:59:59)
+      const endDateTime = new Date(end_date as string);
+      endDateTime.setHours(23, 59, 59, 999);
+
       query.date = {
         $gte: new Date(start_date as string),
-        $lte: new Date(end_date as string),
+        $lte: endDateTime,
       };
     }
 
     const exceptions = await ShiftExceptionModel.find(query)
-      .populate("assignment_id", "user_id turn_type")
+      .populate({
+        path: "assignment_id",
+        select: "user_id turn_type service",
+        populate: {
+          path: "user_id",
+          select: "nombre apellido servicio tipo_cargo",
+        },
+      })
       .populate("created_by", "nombre apellido")
       .sort({ date: 1 });
 

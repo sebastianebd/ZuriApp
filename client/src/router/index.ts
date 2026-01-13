@@ -23,9 +23,16 @@ const router = createRouter({
     {
       path: '/app',
       component: AppLayout,
-      redirect: { name: 'personal-funcionarios' },
+      redirect: { name: 'dashboard' },
       meta: { requiresAuth: true },
       children: [
+        // ==================== INICIO ====================
+        {
+          path: 'dashboard',
+          name: 'dashboard',
+          component: () => import('@/views/user/UserView.vue')
+        },
+
         // ==================== PERSONAL ====================
         {
           path: 'personal/funcionarios',
@@ -95,7 +102,7 @@ const router = createRouter({
         },
 
         // ==================== REDIRECTS (Backward Compatibility) ====================
-        { path: 'user', redirect: { name: 'personal-funcionarios' } },
+        { path: 'user', redirect: { name: 'dashboard' } },
         { path: 'ver_usuarios', redirect: { name: 'personal-funcionarios' } },
         { path: 'reemplazos', redirect: { name: 'operaciones-reemplazos' } },
         { path: 'calendario', redirect: { name: 'operaciones-calendario-reemplazos' } },
@@ -115,7 +122,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    return next({ name: 'user' })
+    return next({ name: 'dashboard' })
   }
 
   next()

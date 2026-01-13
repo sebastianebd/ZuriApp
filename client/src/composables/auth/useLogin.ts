@@ -77,7 +77,7 @@ export function useLogin() {
 
     try {
       await authStore.login(loginData)
-      router.replace({ name: 'user' })
+      router.replace({ name: 'dashboard' })
     } catch (err: any) {
       // Check for 409 status (injected by errorHandler or raw response)
       const status = err.status || (err.response && err.response.status)

@@ -6,6 +6,7 @@ export interface ShiftException {
   _id: string
   assignment_id: string
   date: string
+  original_type: 'LARGO' | 'NOCHE' | 'LIBRE'
   override_type: 'LARGO' | 'NOCHE' | 'LIBRE'
   reason?: string
   created_by: string
@@ -38,6 +39,7 @@ export const useShiftExceptionStore = defineStore('shiftException', () => {
   async function createException(data: {
     assignment_id: string
     date: string
+    original_type: 'LARGO' | 'NOCHE' | 'LIBRE'
     override_type: 'LARGO' | 'NOCHE' | 'LIBRE'
     reason?: string
     created_by: string

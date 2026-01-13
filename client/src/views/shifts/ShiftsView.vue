@@ -124,7 +124,7 @@
                     {
                       'replacement-shift':
                         item.source === 'REPLACEMENT' && getShift(item, day.date),
-                      'clickable-shift': getShift(item, day.date),
+                      'clickable-shift': !readonly && getShift(item, day.date),
                       'recently-modified': isRecentlyModified(item._id, day.date)
                     }
                   ]"
@@ -189,6 +189,18 @@ import type { RegisterDataReemplazo, TurnAssignment, User } from '@/types/models
 import TurnAssignmentModal from '@/components/shifts/TurnAssignmentModal.vue'
 import ShiftModificationModal from '@/components/shifts/ShiftModificationModal.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
+
+// Props
+const props = withDefaults(
+  defineProps<{
+    readonly?: boolean
+    historyMode?: boolean
+  }>(),
+  {
+    readonly: false,
+    historyMode: false
+  }
+)
 
 // State
 const currentDate = ref(new Date())
@@ -512,6 +524,9 @@ function isRecentlyModified(assignmentId: string, date: Date): boolean {
 }
 
 function handleCellClick(item: GridRow, date: Date) {
+  // Prevent editing in readonly mode
+  if (props.readonly) return
+
   const shift = getShift(item, date)
   if (!shift) return
 
@@ -535,6 +550,7 @@ async function handleSaveException(data: { override_type: 'LARGO' | 'NOCHE' | 'L
     await exceptionStore.createException({
       assignment_id: selectedShiftData.value.assignmentId,
       date: selectedShiftData.value.date.toISOString(),
+      original_type: selectedShiftData.value.currentShift as 'LARGO' | 'NOCHE' | 'LIBRE',
       override_type: data.override_type,
       created_by: authStore.user?._id || ''
     })

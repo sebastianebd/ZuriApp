@@ -3,6 +3,7 @@ import { Schema, model, Document } from "mongoose";
 export interface IShiftException extends Document {
   assignment_id: Schema.Types.ObjectId;
   date: Date;
+  original_type: "LARGO" | "NOCHE" | "LIBRE";
   override_type: "LARGO" | "NOCHE" | "LIBRE";
   reason?: string;
   created_by: Schema.Types.ObjectId;
@@ -21,6 +22,11 @@ const shiftExceptionSchema = new Schema<IShiftException>(
       type: Date,
       required: true,
       index: true,
+    },
+    original_type: {
+      type: String,
+      enum: ["LARGO", "NOCHE", "LIBRE"],
+      required: true,
     },
     override_type: {
       type: String,
