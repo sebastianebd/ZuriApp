@@ -3,13 +3,28 @@ import { ShiftExceptionModel } from "../models/shift-exception.model";
 
 export const createException = async (req: Request, res: Response) => {
   try {
-    const { assignment_id, date, override_type, reason, created_by } = req.body;
+    const {
+      assignment_id,
+      date,
+      original_type,
+      override_type,
+      reason,
+      created_by,
+    } = req.body;
 
     // Use findOneAndUpdate with upsert to update existing or create new
+    // We include original_type in the update payload. For new records it's essential.
+    // For existing records, it might update it if the pattern changed underneath (though rare being an exception)
     const exception = await ShiftExceptionModel.findOneAndUpdate(
       { assignment_id, date: new Date(date) },
-      { override_type, reason, created_by, created_at: new Date() },
-      { upsert: true, new: true }
+      {
+        original_type,
+        override_type,
+        reason,
+        created_by,
+        created_at: new Date(),
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     ).populate("assignment_id", "user_id turn_type");
 
     res.json(exception);
