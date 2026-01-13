@@ -2,30 +2,27 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Shifts Management', () => {
   test.beforeEach(async ({ page }) => {
-    // Login flow
-    await page.goto('/')
-    await page.fill('#rut', '12345678-5')
-    await page.fill('input[type="password"]', '2716xD!')
-    await page.click('button[type="submit"]')
-
-    // Wait for navigation (Navbar presence confirms login)
-    await expect(page.locator('nav')).toBeVisible({ timeout: 15000 })
+    // Login flow using helper
+    const { login } = await import('./helpers/auth')
+    await login(page)
   })
 
   test('should navigate to shifts view and check for filters', async ({ page }) => {
-    await page.goto('/turnos')
+    await page.goto('/app/operaciones/turnos')
+    await page.waitForLoadState('networkidle')
 
     // Check Header Text
-    await expect(page.getByText('Grilla de Turnos')).toBeVisible()
+    await expect(page.getByText('Grilla de Turnos')).toBeVisible({ timeout: 10000 })
 
     // Check Service Filter presence
     const serviceFilter = page.locator('.custom-v-select').first()
     await expect(serviceFilter).toBeVisible()
-    await expect(page.getByText('Filtrar por Servicio')).toBeVisible()
+    await expect(page.getByPlaceholder('Filtrar por Servicio')).toBeVisible()
   })
 
   test('should open assignment modal and user selection', async ({ page }) => {
-    await page.goto('/turnos')
+    await page.goto('/app/operaciones/turnos')
+    await page.waitForLoadState('networkidle')
 
     // Open Assignment Modal
     await page.click('button:has-text("Asignar Planta")')

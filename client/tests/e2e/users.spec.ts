@@ -13,8 +13,8 @@ test.describe('User Management', () => {
   })
 
   test('should navigate to Users page', async ({ page }) => {
-    await page.locator('a[title="Usuarios"]').click()
-    await expect(page).toHaveURL(/ver_usuarios/)
+    await page.locator('a[title="Funcionarios"]').click()
+    await expect(page).toHaveURL(/personal\/funcionarios/)
     await expect(page.locator('h4:has-text("Gestión de Usuarios")')).toBeVisible()
   })
 
@@ -83,6 +83,15 @@ test.describe('User Management', () => {
     const optionTens = page.locator('.vs__dropdown-option').filter({ hasText: /^TENS$/ })
     await optionTens.waitFor({ state: 'visible' })
     await optionTens.click()
+
+    const selectContrato = activeModal
+      .getByText(/^Tipo Contrato$/)
+      .locator('..')
+      .getByRole('combobox')
+    await selectContrato.click()
+    const optionPlanta = page.locator('.vs__dropdown-option').filter({ hasText: /^PLANTA$/ })
+    await optionPlanta.waitFor({ state: 'visible' })
+    await optionPlanta.click()
 
     const selectHabilitado = activeModal
       .getByText(/^Estado Inicial$/)
