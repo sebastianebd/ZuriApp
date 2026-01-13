@@ -118,8 +118,15 @@
                 :class="{ 'today-col': isToday(day.date) }"
               >
                 <div
-                  class="shift-cell w-100 h-100 d-flex align-items-center justify-content-center"
-                  :class="getShiftClass(getShift(item, day.date))"
+                  class="shift-cell w-100 h-100 d-flex align-items-center justify-content-center position-relative"
+                  :class="[
+                    getShiftClass(getShift(item, day.date)),
+                    {
+                      'replacement-shift': item.source === 'REPLACEMENT' && getShift(item, day.date)
+                    }
+                  ]"
+                  @mouseenter="showTooltip($event, item, day.date)"
+                  @mouseleave="hideTooltip"
                 >
                   <span v-if="getShift(item, day.date) === 'LARGO'">L</span>
                   <span v-else-if="getShift(item, day.date) === 'NOCHE'">N</span>
@@ -131,6 +138,11 @@
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- Custom Tooltip -->
+    <div v-if="tooltipState.show" class="custom-tooltip" :style="tooltipState.style">
+      {{ tooltipState.content }}
     </div>
 
     <!-- Custom Alert -->
@@ -161,6 +173,15 @@ const currentDate = ref(new Date())
 const loading = ref(false)
 const showModal = ref(false)
 const selectedService = ref<string | null>(null)
+
+// Tooltip state
+const tooltipState = ref({
+  show: false,
+  content: '',
+  style: {}
+})
+
+let tooltipTimer: number | null = null
 
 const replacementStore = useReplacementStore()
 const turnAssignmentStore = useTurnAssignmentStore()
@@ -307,7 +328,13 @@ const filteredShifts = computed(() => {
   })
 
   // Sort by name
-  return rows.sort((a, b) => a.nombre.localeCompare(b.nombre))
+  const sorted = rows.sort((a, b) => a.nombre.localeCompare(b.nombre))
+
+  // Debug: Log replacement count
+  const replacementCount = sorted.filter((r) => r.source === 'REPLACEMENT').length
+  console.log(`Total shifts: ${sorted.length}, Replacements: ${replacementCount}`)
+
+  return sorted
 })
 
 // Actions
@@ -363,6 +390,70 @@ function getShiftClass(shift: string | null) {
 function getInitials(nombre?: string, apellido?: string) {
   if (!nombre || !apellido) return '??'
   return `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase()
+}
+
+function getReplacementCode(item: GridRow): string {
+  if (item.source === 'REPLACEMENT' && item.original) {
+    const replacement = item.original as RegisterDataReemplazo
+    return replacement.id_negocio || 'R-???'
+  }
+  return ''
+}
+
+function toTitleCase(str: string): string {
+  return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function getShiftTooltip(item: GridRow, date: Date): string {
+  const shift = getShift(item, date)
+  if (!shift) return ''
+
+  // Format name in title case
+  const fullName = `${toTitleCase(item.nombre)} ${toTitleCase(item.apellido)}`
+
+  // Build tooltip based on shift type
+  let tooltip = fullName + '\n'
+
+  if (shift === 'LARGO') {
+    tooltip += 'Turno día\n08:00 am - 20:00 pm'
+  } else if (shift === 'NOCHE') {
+    tooltip += 'Turno noche\n20:00 pm - 08:00 am'
+  } else if (shift === 'LIBRE') {
+    tooltip += 'Día libre'
+  }
+
+  // Add replacement code if applicable
+  if (item.source === 'REPLACEMENT') {
+    const code = getReplacementCode(item)
+    tooltip += '\n' + code
+  }
+
+  return tooltip
+}
+
+function showTooltip(event: MouseEvent, item: GridRow, date: Date) {
+  const content = getShiftTooltip(item, date)
+  if (!content) return
+
+  tooltipTimer = window.setTimeout(() => {
+    const rect = (event.target as HTMLElement).getBoundingClientRect()
+    tooltipState.value = {
+      show: true,
+      content: content,
+      style: {
+        top: `${rect.top - 10}px`,
+        left: `${rect.left + rect.width / 2}px`
+      }
+    }
+  }, 200) // 200ms delay
+}
+
+function hideTooltip() {
+  if (tooltipTimer) {
+    clearTimeout(tooltipTimer)
+    tooltipTimer = null
+  }
+  tooltipState.value.show = false
 }
 
 async function loadData() {
@@ -467,5 +558,53 @@ thead .sticky-col {
   background-color: #d1fae5; /* Green pastel */
   color: #065f46;
   font-weight: 600;
+}
+
+/* Replacement Shift Styling */
+.replacement-shift {
+  border: 2px dashed rgba(0, 0, 0, 0.3) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.replacement-badge {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  font-size: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0px 3px;
+  border-radius: 2px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+}
+
+/* Custom Tooltip */
+.custom-tooltip {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: pre-line;
+  transform: translate(-50%, -100%);
+  z-index: 9999;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -95%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
 }
 </style>
