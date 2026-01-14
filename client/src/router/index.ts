@@ -93,12 +93,12 @@ const router = createRouter({
         {
           path: 'configuracion/servicios',
           name: 'configuracion-servicios',
-          component: () => import('@/views/configuracion/ServiciosConfig.vue')
+          component: () => import('@/views/configuracion/ServiceManagement.vue')
         },
         {
           path: 'configuracion/tipos-turno',
           name: 'configuracion-tipos-turno',
-          component: () => import('@/views/configuracion/TiposTurnoConfig.vue')
+          component: () => import('@/views/configuracion/ShiftTypeManagement.vue')
         },
 
         // ==================== REDIRECTS (Backward Compatibility) ====================

@@ -1,13 +1,38 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import axios from '@/config/axios'
+import { useAuthStore } from './auth.store'
+
+export interface ServiceUserStub {
+  _id: string
+  nombre: string
+  apellido: string
+  rut: string
+}
 
 export interface Service {
   _id: string
   nombre: string
+  codigo?: string
+  jefe_medico?: ServiceUserStub | string
+  enfermero_coordinador?: ServiceUserStub | string
+  centro_costo?: string
+  ubicacion?: string
+  anexo?: string
+  email?: string
   activo: boolean
   createdAt: string
   updatedAt: string
+}
+
+export interface ServiceDTO {
+  nombre: string
+  jefe_medico?: string | null
+  enfermero_coordinador?: string | null
+  centro_costo?: string
+  ubicacion?: string
+  anexo?: string
+  email?: string
+  activo?: boolean
 }
 
 export const useServiceStore = defineStore('service', () => {
@@ -20,10 +45,12 @@ export const useServiceStore = defineStore('service', () => {
 
     loading.value = true
     error.value = null
+    const authStore = useAuthStore()
+    const api = authStore.usePrivateApi()
+
     try {
-      // Fetch all services, maybe filter active only?
-      // API defaults to active=true unless ?all=true
-      const { data } = await axios.get('/services')
+      // Fetch all (including inactive if managing) - controller supports ?all=true
+      const { data } = await api.get<Service[]>('/services?all=true')
       services.value = data
     } catch (err: any) {
       console.error('Error fetching services:', err)
@@ -33,27 +60,33 @@ export const useServiceStore = defineStore('service', () => {
     }
   }
 
-  const createService = async (nombre: string) => {
+  const createService = async (serviceData: ServiceDTO) => {
     loading.value = true
     error.value = null
+    const authStore = useAuthStore()
+    const api = authStore.usePrivateApi()
+
     try {
-      const { data } = await axios.post('/services', { nombre })
+      const { data } = await api.post<Service>('/services', serviceData)
       services.value.push(data)
       services.value.sort((a, b) => a.nombre.localeCompare(b.nombre))
       return data
     } catch (err: any) {
       console.error('Error creating service:', err)
-      throw err // Re-throw for component handling
+      throw err
     } finally {
       loading.value = false
     }
   }
 
-  const updateService = async (id: string, nombre: string) => {
+  const updateService = async (id: string, serviceData: ServiceDTO) => {
     loading.value = true
     error.value = null
+    const authStore = useAuthStore()
+    const api = authStore.usePrivateApi()
+
     try {
-      const { data } = await axios.put(`/services/${id}`, { nombre })
+      const { data } = await api.put<Service>(`/services/${id}`, serviceData)
       const index = services.value.findIndex((s) => s._id === id)
       if (index !== -1) {
         services.value[index] = data
@@ -71,9 +104,20 @@ export const useServiceStore = defineStore('service', () => {
   const deleteService = async (id: string) => {
     loading.value = true
     error.value = null
+    const authStore = useAuthStore()
+    const api = authStore.usePrivateApi()
+
     try {
-      await axios.delete(`/services/${id}`)
-      services.value = services.value.filter((s) => s._id !== id)
+      await api.delete(`/services/${id}`)
+      // Retrieve the service to update local state properly (if soft delete)
+      // Since backend returns { message, service } where service is the deactivated doc
+      // We can just set active=false locally or re-fetch.
+      // Easiest is to update the local service active state to false
+      const index = services.value.findIndex((s) => s._id === id)
+      if (index !== -1) {
+        services.value[index].activo = false
+      }
+      // Or filter it out if we only show active? But we fetch ?all=true now.
     } catch (err: any) {
       console.error('Error deleting service:', err)
       throw err

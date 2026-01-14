@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface ITurnType extends Document {
   nombre: string;
+  codigo: string;
   descripcion?: string;
   activo: boolean;
   createdAt: Date;
@@ -14,6 +15,12 @@ const TurnTypeSchema: Schema = new Schema(
       type: String,
       required: true,
       unique: true,
+      trim: true,
+    },
+    codigo: {
+      type: String,
+      unique: true,
+      uppercase: true,
       trim: true,
     },
     descripcion: {
