@@ -19,6 +19,24 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
       req.body,
       nuevoReemplazo._id as string
     );
+
+    // Audit Implicit Shifts
+    await auditService.logAction(
+      "GENERAR_TURNOS",
+      "TURNOS",
+      req.user,
+      `Generación automática de turnos para ${req.body.nombre_entrante} ${req.body.apellido_entrante} (Reemplazo ${nuevoReemplazo.id_negocio})`,
+      {
+        start_date: req.body.fecha_inicio,
+        end_date: req.body.fecha_termino,
+        turn_type: req.body.tipo_turno
+          ? req.body.tipo_turno
+          : "Segun Reemplazo",
+        replacement_id: nuevoReemplazo._id,
+      },
+      nuevoReemplazo._id as string
+    );
+
     await delPattern("replacements:*"); // Invalidate cache
 
     // Send WhatsApp Notification (Enterprise Standard: Async / Non-blocking if performance critical, but safe to await here)

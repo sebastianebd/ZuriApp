@@ -15,7 +15,7 @@ async function register(req: AuthRequest, res: Response) {
       "CREAR",
       "USUARIOS",
       req.user,
-      `Se creó al usuario RUT ${req.body.rut}`,
+      `Se creó al usuario RUT ${req.body.rut} ${req.body.nombre} ${req.body.apellido}`,
       req.body,
       data._id as string
     );
@@ -132,12 +132,17 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
 
 async function eliminarUsuario(req: AuthRequest, res: Response) {
   try {
+    // Audit: Need to fetch first to get name
+    const userToDelete: any = await userService.obtenerPorId(req.params.id);
     const usuarios = await userService.eliminar(req.params.id);
+
     await auditService.logAction(
       "ELIMINAR",
       "USUARIOS",
       req.user,
-      `Se eliminó al usuario ID ${req.params.id}`,
+      userToDelete
+        ? `Se eliminó al usuario RUT ${userToDelete.rut} ${userToDelete.nombre} ${userToDelete.apellido}`
+        : `Se eliminó al usuario ID ${req.params.id}`,
       null,
       req.params.id
     );

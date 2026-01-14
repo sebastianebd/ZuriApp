@@ -7,6 +7,7 @@ export interface ICargo extends Document {
   permisos: string[];
   descripcion?: string;
   activo: boolean;
+  deleted_at?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +45,10 @@ const CargoSchema = new Schema(
     activo: {
       type: Boolean,
       default: true,
+    },
+    deleted_at: {
+      type: Date,
+      default: null,
     },
   },
   {

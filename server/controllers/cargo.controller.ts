@@ -1,12 +1,16 @@
 import { Request, Response } from "express";
 import Cargo from "../models/cargo.model";
 import socketConfig from "../config/socket";
+import auditService from "../services/audit.service";
+import { AuthRequest } from "../middleware/authentication.middleware";
 
 // GET /api/cargos?activo=true
 export const getCargos = async (req: Request, res: Response) => {
   try {
     const { activo } = req.query;
     const filter: any = {};
+    // Default: Exclude deleted
+    filter.deleted_at = null;
     if (activo !== undefined) {
       filter.activo = activo === "true";
     }
@@ -21,7 +25,7 @@ export const getCargos = async (req: Request, res: Response) => {
 // POST /api/cargos
 export const createCargo = async (req: Request, res: Response) => {
   try {
-    const { nombre, descripcion, nivel, permisos } = req.body; // nivel, permisos added
+    const { nombre, descripcion, nivel, permisos } = req.body;
 
     // Check duplicity by name
     const existing = await Cargo.findOne({ nombre: nombre?.toUpperCase() });
@@ -67,6 +71,20 @@ export const createCargo = async (req: Request, res: Response) => {
 
     const cargo = new Cargo(payload);
     await cargo.save();
+
+    // Audit Creation
+    const authReq = req as AuthRequest;
+    if (authReq.user) {
+      await auditService.logAction(
+        "CREAR",
+        "CARGOS",
+        authReq.user,
+        `Se creó el cargo ${cargo.nombre} (Nivel ${cargo.nivel})`,
+        payload,
+        cargo._id.toString()
+      );
+    }
+
     res.status(201).json(cargo);
   } catch (error) {
     res.status(400).json({ message: "Error creando cargo", error });
@@ -79,8 +97,13 @@ export const updateCargo = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { nombre, descripcion, activo, nivel, permisos } = req.body;
 
+    // Fetch original for diff
+    const original: any = await Cargo.findById(id);
+    if (!original)
+      return res.status(404).json({ message: "Cargo no encontrado" });
+
     // Check unique name if changing name
-    if (nombre) {
+    if (nombre && nombre.toUpperCase() !== original.nombre.toUpperCase()) {
       const existing = await Cargo.findOne({
         nombre: nombre.toUpperCase(),
         _id: { $ne: id },
@@ -98,14 +121,114 @@ export const updateCargo = async (req: Request, res: Response) => {
       { new: true, runValidators: true }
     );
 
-    if (!cargo) return res.status(404).json({ message: "Cargo no encontrado" });
+    // Audit Modification
+    // Audit Modification
+    const authReq = req as AuthRequest;
+    if (authReq.user && cargo) {
+      // 1. Check Activation Toggle
+      if (activo !== undefined && activo !== original.activo) {
+        const actionDesc = activo ? "activó" : "desactivó";
+        await auditService.logAction(
+          "MODIFICAR",
+          "CARGOS",
+          authReq.user,
+          `Se ${actionDesc} el cargo ${original.nombre}`,
+          { old_activo: original.activo, new_activo: activo },
+          cargo._id.toString()
+        );
+      } else {
+        // 2. Standard Modification
+        // Prevent generic diff from diffing permissions
+        const originalForDiff = original.toObject();
+        const bodyForDiff = { ...req.body };
+        delete originalForDiff.permisos;
+        delete bodyForDiff.permisos;
+
+        let diff =
+          auditService.generateDiff(originalForDiff, bodyForDiff) || "";
+
+        // Custom diff for permissions
+        if (permisos) {
+          const oldPerms: string[] = original.permisos || [];
+          const newPerms: string[] = permisos;
+
+          const added = newPerms.filter((p) => !oldPerms.includes(p));
+          const removed = oldPerms.filter((p) => !newPerms.includes(p));
+
+          if (added.length > 0 || removed.length > 0) {
+            const readableChanges: string[] = [];
+
+            // Helper to translate tech name to human name
+            const translatePerm = (p: string) => {
+              const [module, action] = p.split(".");
+              const moduleMap: any = {
+                users: "Usuarios",
+                cargos: "Cargos",
+                shifts: "Turnos",
+                replacement: "Reemplazos",
+                audit: "Auditoría",
+              };
+              const modName = moduleMap[module] || module;
+
+              // Special case for visibility
+              if (action === "view" || action === "read") return modName;
+
+              const actionMap: any = {
+                create: "Crear",
+                update: "Editar",
+                delete: "Eliminar",
+              };
+              return `${actionMap[action] || action} ${modName}`;
+            };
+
+            added.forEach((p) => {
+              const name = translatePerm(p);
+              // Check if it's a visibility permission (view/read)
+              if (p.endsWith(".view") || p.endsWith(".read")) {
+                readableChanges.push(`${name} -> Visible`);
+              } else {
+                readableChanges.push(`${name} -> Activado`);
+              }
+            });
+
+            removed.forEach((p) => {
+              const name = translatePerm(p);
+              if (p.endsWith(".view") || p.endsWith(".read")) {
+                readableChanges.push(`${name} -> Oculto`);
+              } else {
+                readableChanges.push(`${name} -> Desactivado`);
+              }
+            });
+
+            const permDiff = `permisos: ${readableChanges.join(", ")}`;
+
+            if (diff) {
+              diff += `, ${permDiff}`;
+            } else {
+              diff = permDiff;
+            }
+          }
+        }
+
+        if (diff) {
+          await auditService.logAction(
+            "MODIFICAR",
+            "CARGOS",
+            authReq.user,
+            `Se modificó el cargo ${original.nombre} (Cambios: ${diff})`,
+            { original: original.toObject(), new: cargo.toObject() },
+            cargo._id.toString()
+          );
+        }
+      }
+    }
 
     // Real-time Permission Update
     try {
       const io = socketConfig.getIO();
       // Emit event with cargo name so frontend can match it
       io.emit("cargo_updated", {
-        cargoNombre: cargo.nombre,
+        cargoNombre: cargo!.nombre,
         action: "update",
         timestamp: new Date().toISOString(),
       });
@@ -124,14 +247,29 @@ export const deleteCargo = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Check if used by users? (Optional later)
+    // Audit requires pre-fetch
+    const original = await Cargo.findById(id);
+    if (!original)
+      return res.status(404).json({ message: "Cargo no encontrado" });
 
     const cargo = await Cargo.findByIdAndUpdate(
       id,
-      { activo: false },
+      { deleted_at: new Date() }, // Set deleted_at instead of active: false
       { new: true }
     );
-    if (!cargo) return res.status(404).json({ message: "Cargo no encontrado" });
+
+    // Audit Deletion (Soft)
+    const authReq = req as AuthRequest;
+    if (authReq.user) {
+      await auditService.logAction(
+        "ELIMINAR",
+        "CARGOS",
+        authReq.user,
+        `Se eliminó el cargo ${original.nombre}`,
+        null,
+        id
+      );
+    }
 
     res.json({ message: "Cargo desactivado correctamente", cargo });
   } catch (error) {
