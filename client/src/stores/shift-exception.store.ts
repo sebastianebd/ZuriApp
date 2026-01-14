@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import axios from 'axios'
+import { useAuthStore } from './auth.store'
 
 export interface ShiftException {
   _id: string
@@ -16,6 +16,7 @@ export interface ShiftException {
 export const useShiftExceptionStore = defineStore('shiftException', () => {
   const exceptions = ref<ShiftException[]>([])
   const loading = ref(false)
+  const authStore = useAuthStore()
 
   async function loadExceptions(assignmentId?: string, startDate?: string, endDate?: string) {
     loading.value = true
@@ -25,7 +26,8 @@ export const useShiftExceptionStore = defineStore('shiftException', () => {
       if (startDate) params.start_date = startDate
       if (endDate) params.end_date = endDate
 
-      const response = await axios.get('/api/shift-exceptions', { params })
+      const privateApi = authStore.usePrivateApi()
+      const response = await privateApi.get('/shift-exceptions', { params })
       exceptions.value = response.data
       return response.data
     } catch (error) {
@@ -46,7 +48,8 @@ export const useShiftExceptionStore = defineStore('shiftException', () => {
   }) {
     loading.value = true
     try {
-      const response = await axios.post('/api/shift-exceptions', data)
+      const privateApi = authStore.usePrivateApi()
+      const response = await privateApi.post('/shift-exceptions', data)
 
       // Handle both populated and non-populated assignment_id for comparison
       const datePrefix = data.date.split('T')[0]
@@ -80,7 +83,8 @@ export const useShiftExceptionStore = defineStore('shiftException', () => {
   async function deleteException(id: string) {
     loading.value = true
     try {
-      await axios.delete(`/api/shift-exceptions/${id}`)
+      const privateApi = authStore.usePrivateApi()
+      await privateApi.delete(`/shift-exceptions/${id}`)
       exceptions.value = exceptions.value.filter((e) => e._id !== id)
     } catch (error) {
       console.error('Error deleting exception:', error)

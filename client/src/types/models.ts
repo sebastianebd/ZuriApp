@@ -12,6 +12,8 @@ export interface User {
   tipo_cargo: string
   servicio?: string
   tipo_contrato?: string
+  nivel?: number
+  permisos?: string[]
 }
 
 export interface State {
@@ -116,6 +118,18 @@ export interface TurnAssignment {
   turn_type: string
   start_date: string | Date
   end_date?: string | Date
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface ICargo {
+  _id?: string
+  nombre: string
+  codigo?: string
+  nivel?: number
+  permisos?: string[]
+  descripcion?: string
+  activo: boolean
   createdAt?: string
   updatedAt?: string
 }

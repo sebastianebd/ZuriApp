@@ -9,8 +9,12 @@ const authStore = useAuthStore()
 onMounted(() => {
   // Reconnect socket on App reload if authenticated
   if (authStore.isAuthenticated && authStore.user && authStore.user._id) {
+    if (socket.connected) socket.disconnect()
     socket.auth = { userId: authStore.user._id }
     socket.connect()
+
+    // Bind Real-time Permission Updates
+    authStore.bindSocketEvents()
   }
 })
 </script>

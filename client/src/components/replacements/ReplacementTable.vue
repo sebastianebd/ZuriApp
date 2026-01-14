@@ -129,6 +129,7 @@
           <td class="pe-4 text-end last-cell">
             <div class="actions-wrapper h-100 d-flex align-items-center justify-content-end gap-2">
               <button
+                v-if="authStore.hasPermission('replacement.update')"
                 @click="$emit('modificar', reemplazo)"
                 class="btn-glass btn-edit"
                 title="Editar"
@@ -146,22 +147,24 @@
 
               <div class="vr mx-1 opacity-25"></div>
 
-              <button
-                v-if="turnoEnCurso(reemplazo)"
-                @click="confirmarFinalizar(reemplazo._id)"
-                class="btn-glass btn-finalize"
-                title="Finalizar Turno"
-              >
-                <i class="bi bi-check-lg"></i>
-              </button>
-              <button
-                v-else
-                @click="confirmarAnular(reemplazo._id)"
-                class="btn-glass btn-delete"
-                title="Anular"
-              >
-                <i class="bi bi-x-lg"></i>
-              </button>
+              <template v-if="authStore.hasPermission('replacement.update')">
+                <button
+                  v-if="turnoEnCurso(reemplazo)"
+                  @click="confirmarFinalizar(reemplazo._id)"
+                  class="btn-glass btn-finalize"
+                  title="Finalizar Turno"
+                >
+                  <i class="bi bi-check-lg"></i>
+                </button>
+                <button
+                  v-else
+                  @click="confirmarAnular(reemplazo._id)"
+                  class="btn-glass btn-delete"
+                  title="Anular"
+                >
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </template>
             </div>
           </td>
         </tr>
@@ -186,6 +189,9 @@
 import { ref } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import type { RegisterDataReemplazo, User } from '@/types/models'
+import { useAuthStore } from '@/stores/auth.store'
+
+const authStore = useAuthStore()
 
 defineProps({
   reemplazos: {

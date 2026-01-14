@@ -8,7 +8,14 @@ import {
 import { validateSchema } from "../../middleware/validate.middleware";
 import { createShiftExceptionSchema } from "../../schemas/shift-exception.schema";
 
+import authMiddleware, {
+  requirePermission,
+} from "../../middleware/authentication.middleware";
+
 const router = Router();
+
+router.use(authMiddleware);
+router.use(requirePermission("shifts.manage"));
 
 router.get("/", getExceptions);
 router.get("/:id", getExceptionById);

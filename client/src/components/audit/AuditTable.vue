@@ -74,7 +74,7 @@
           <td>
             <span
               class="text-secondary x-small d-block text-truncate"
-              style="max-width: 250px"
+              style="max-width: 450px"
               :title="log.description"
             >
               {{ log.description }}

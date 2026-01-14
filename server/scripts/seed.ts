@@ -24,12 +24,12 @@ async function seed() {
 
     // 2. Definir Usuario Admin
     const adminUser = {
-      rut: "12345678-5",
+      rut: "11752331-4",
       nombre: "Admin",
-      apellido: "Principal",
+      apellido: "Secundario",
       fecha_nac: new Date("1990-01-01"),
       direccion: "Calle Falsa 123",
-      telefono: "912345678",
+      telefono: "934768811",
       email: "admin@zuriapp.cl",
       ciudad: "Santiago",
       tipo_cargo: "ADMIN-TI",

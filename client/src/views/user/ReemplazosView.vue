@@ -20,7 +20,11 @@
         >
           <i class="bi bi-eraser me-2"></i>Limpiar Filtros
         </button>
-        <button @click="openCreateModal" class="btn btn-primary fw-bold shadow-sm px-4">
+        <button
+          v-if="authStore.hasPermission('replacement.create')"
+          @click="openCreateModal"
+          class="btn btn-primary fw-bold shadow-sm px-4"
+        >
           <i class="bi bi-plus-lg me-2"></i>Nuevo Reemplazo
         </button>
       </div>
@@ -166,6 +170,9 @@ import {
   ReplacementModalSubstitute
 } from '@/components/replacements'
 import TableLoader from '@/components/common/TableLoader.vue'
+import { useAuthStore } from '@/stores/auth.store'
+
+const authStore = useAuthStore()
 
 const {
   replacementStore,

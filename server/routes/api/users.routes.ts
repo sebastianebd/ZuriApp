@@ -35,86 +35,43 @@ router.use(authMiddleware);
 
 import { validateSchema } from "../../middleware/validate.middleware";
 import { createUserSchema, updateUserSchema } from "../../schemas/user.schema";
+import { requirePermission } from "../../middleware/authentication.middleware";
 
-router.post("/", validateSchema(createUserSchema), userController.register);
+router.post(
+  "/",
+  requirePermission("users.create"),
+  validateSchema(createUserSchema),
+  userController.register
+);
 
 /**
- * @swagger
- * /users/{id}:
- *   put:
- *     summary: Actualizar usuario
- *     tags: [Users]
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/User'
- *     responses:
- *       200:
- *         description: Usuario actualizado
+ * ...
  */
 router.put(
   "/:id",
+  requirePermission("users.update"),
   validateSchema(updateUserSchema),
   userController.actualizarUsuario
 );
 /**
- * @swagger
- * /users:
- *   get:
- *     summary: Listar todos los usuarios
- *     tags: [Users]
- *     security:
- *       - cookieAuth: []
- *     responses:
- *       200:
- *         description: Lista de usuarios
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/User'
+ * ...
  */
-router.get("/", userController.mostrarTodos);
+router.get("/", requirePermission("users.view"), userController.mostrarTodos);
 /**
- * @swagger
- * /users/tens:
- *   get:
- *     summary: Listar usuarios con cargo TENS
- *     tags: [Users]
- *     security:
- *       - cookieAuth: []
- *     responses:
- *       200:
- *         description: Lista de TENS
+ * ...
  */
-router.get("/tens", userController.mostrarUsuarios);
+router.get(
+  "/tens",
+  requirePermission("users.view"),
+  userController.mostrarUsuarios
+);
 /**
- * @swagger
- * /users/{id}:
- *   delete:
- *     summary: Eliminar usuario
- *     tags: [Users]
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *     responses:
- *       200:
- *         description: Usuario eliminado
+ * ...
  */
-router.delete("/:id", userController.eliminarUsuario);
+router.delete(
+  "/:id",
+  requirePermission("users.delete"),
+  userController.eliminarUsuario
+);
 
 export default router;

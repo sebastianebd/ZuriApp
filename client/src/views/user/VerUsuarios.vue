@@ -15,7 +15,11 @@
         <button class="btn btn-light border fw-semibold shadow-sm px-3" @click="openExportModal">
           <i class="bi bi-cloud-download text-primary me-2"></i>Exportar
         </button>
-        <button class="btn btn-primary fw-bold shadow-sm px-4" @click="openCreateModal">
+        <button
+          v-if="authStore.hasPermission('users.create')"
+          class="btn btn-primary fw-bold shadow-sm px-4"
+          @click="openCreateModal"
+        >
           <i class="bi bi-person-plus-fill me-2"></i>Crear Usuario
         </button>
       </div>
@@ -156,6 +160,9 @@ import {
 import ExportFormatModal from '@/components/users/ExportFormatModal.vue'
 import { useExport } from '@/composables/useExport'
 import TableLoader from '@/components/common/TableLoader.vue'
+import { useAuthStore } from '@/stores/auth.store'
+
+const authStore = useAuthStore()
 
 const {
   // State
