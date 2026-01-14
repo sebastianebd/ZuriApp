@@ -10,6 +10,7 @@ vi.mock("../../middleware/authentication.middleware", () => ({
     req.user = { _id: "admin_id", nombre: "TEST", apellido: "ADMIN" };
     next();
   },
+  requirePermission: () => (req: any, res: any, next: any) => next(),
 }));
 
 vi.mock("../../services/replacement.service");

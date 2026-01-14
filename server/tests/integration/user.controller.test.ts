@@ -24,6 +24,7 @@ vi.mock("../../middleware/authentication.middleware", () => ({
     };
     next();
   },
+  requirePermission: () => (req: any, res: any, next: any) => next(),
 }));
 
 describe("User Controller - Integration", () => {

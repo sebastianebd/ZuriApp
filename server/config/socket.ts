@@ -20,6 +20,10 @@ const init = (httpServer: HttpServer, clientUrl: string | string[]): Server => {
 
   ioInstance.on("connection", async (socket: Socket) => {
     logger.info(`🟢 Cliente conectado: ${socket.id}`);
+    logger.info(`🔍 Handshake Auth: ${JSON.stringify(socket.handshake.auth)}`);
+    logger.info(
+      `🔍 Handshake Query: ${JSON.stringify(socket.handshake.query)}`
+    );
 
     // Retrieve User ID from Auth (assuming middleware or handshake query)
     // Note: Standard JWT middlewares usually attach user to socket.

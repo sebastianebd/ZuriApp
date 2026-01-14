@@ -49,6 +49,7 @@ export const useAuthStore = defineStore('auth', {
 
       // Connect Socket with User ID
       if (this.user && this.user._id) {
+        if (socket.connected) socket.disconnect() // Reset connection to apply new auth
         socket.auth = { userId: this.user._id }
         socket.connect()
       }
