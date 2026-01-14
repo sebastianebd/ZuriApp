@@ -25,6 +25,7 @@ import authRoutes from "./routes/api/auth.routes";
 import userRoutes from "./routes/api/users.routes";
 import replacementRoutes from "./routes/api/replacement.routes";
 import optionRoutes from "./routes/api/options.routes";
+import cargoRoutes from "./routes/api/cargo.routes";
 import auditRoutes from "./routes/api/audit.routes";
 import profileRoutes from "./routes/api/profile.routes";
 
@@ -78,6 +79,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reemplazos", replacementRoutes);
 app.use("/api/options", optionRoutes);
+app.use("/api/cargos", cargoRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/calendar", calendarRoutes);

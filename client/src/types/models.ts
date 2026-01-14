@@ -119,3 +119,12 @@ export interface TurnAssignment {
   createdAt?: string
   updatedAt?: string
 }
+
+export interface ICargo {
+  _id?: string
+  nombre: string
+  descripcion?: string
+  activo: boolean
+  createdAt?: string
+  updatedAt?: string
+}

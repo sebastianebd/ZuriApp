@@ -11,7 +11,8 @@
     "test": "vitest",
     "seed": "ts-node scripts/seed.ts",
     "seed:options": "ts-node scripts/seed-options.ts",
-    "seed:prod": "node dist/scripts/seed.js"
+    "seed:prod": "node dist/scripts/seed.js",
+    "migrate:cargos": "ts-node scripts/migrate-cargos.ts"
   },
   "author": "",
   "license": "ISC",

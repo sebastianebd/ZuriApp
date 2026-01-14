@@ -63,4 +63,27 @@ async function authMiddleware(
   }
 }
 
+export function requireAdmin(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Acceso denegado: usuario no autenticado",
+    });
+  }
+
+  // Assuming 'ADMIN-TI' is the super admin role based on user model logic
+  if (req.user.tipo_cargo !== "ADMIN-TI") {
+    return res.status(403).json({
+      success: false,
+      message: "Acceso denegado: se requieren privilegios de administrador",
+    });
+  }
+
+  next();
+}
+
 export default authMiddleware;
