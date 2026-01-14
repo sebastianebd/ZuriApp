@@ -24,12 +24,16 @@
 
         <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm">
           <button
+            v-if="authStore.hasPermission('shifts.create')"
             class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 px-3 fw-bold border-0 bg-primary-subtle text-primary"
             @click="openModal"
           >
             <i class="bi bi-plus-lg"></i> Asignar Planta
           </button>
-          <div class="vr mx-1 text-secondary opacity-25"></div>
+          <div
+            v-if="authStore.hasPermission('shifts.create')"
+            class="vr mx-1 text-secondary opacity-25"
+          ></div>
           <button class="btn btn-sm btn-outline-secondary border-0" @click="prevMonth">
             <i class="bi bi-chevron-left"></i>
           </button>
@@ -149,7 +153,10 @@
                       'replacement-shift':
                         item.source === 'REPLACEMENT' && getShift(item, day.date),
                       'clickable-shift':
-                        !readonly && getShift(item, day.date) && isEditableDate(day.date),
+                        !readonly &&
+                        getShift(item, day.date) &&
+                        isEditableDate(day.date) &&
+                        authStore.hasPermission('shifts.update'),
                       'recently-modified': isRecentlyModified(item._id, day.date),
                       'exception-modified':
                         historyMode && !!exceptionStore.findException(item._id, day.date)
@@ -614,6 +621,9 @@ function isEditableDate(date: Date): boolean {
 function handleCellClick(item: GridRow, date: Date) {
   // Prevent editing in readonly mode
   if (props.readonly) return
+
+  // Prevent editing if no permissions
+  if (!authStore.hasPermission('shifts.update')) return
 
   // Prevent editing past months even in operational mode
   if (!isEditableDate(date)) return

@@ -13,11 +13,11 @@
       </div>
 
       <button
-        class="btn btn-primary btn-sm fw-bold px-4 rounded-pill shadow-sm d-flex align-items-center gap-2"
+        v-if="authStore.hasPermission('cargos.create')"
+        class="btn btn-primary fw-bold shadow-sm px-4"
         @click="openCreateModal"
       >
-        <i class="bi bi-plus-lg"></i>
-        Nuevo Cargo
+        <i class="bi bi-plus-lg me-2"></i>Nuevo Cargo
       </button>
     </div>
 
@@ -55,22 +55,41 @@
       @confirmar="handleDelete"
       @cancelar="closeDeleteModal"
     />
+
+    <ConfirmationModal
+      v-if="showConfirmationModal"
+      :visible="showConfirmationModal"
+      :mensaje="confirmationMessage"
+      @confirmar="confirmSave"
+      @cancelar="closeConfirmationModal"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useCargoStore } from '@/stores/cargo.store'
+import { useAuthStore } from '@/stores/auth.store'
 import type { ICargo } from '@/types/models'
 import CargoTable from '@/components/personal/CargoTable.vue'
 import CargoModal from '@/components/personal/CargoModal.vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 
 const cargoStore = useCargoStore()
+const authStore = useAuthStore()
 const showModal = ref(false)
 const showDeleteModal = ref(false)
+const showConfirmationModal = ref(false)
+
 const selectedCargo = ref<ICargo | null>(null)
 const cargoToDelete = ref<ICargo | null>(null)
+const pendingCargoData = ref<Partial<ICargo> | null>(null)
+
+const confirmationMessage = computed(() => {
+  return pendingCargoData.value?._id
+    ? '¿Estás seguro de que deseas guardar los cambios de este cargo?'
+    : '¿Estás seguro de que deseas crear este nuevo cargo?'
+})
 
 // Refresh list on mount
 onMounted(() => {
@@ -92,16 +111,28 @@ function closeModal() {
   selectedCargo.value = null
 }
 
-async function handleSave(cargoData: Partial<ICargo>) {
+function handleSave(cargoData: Partial<ICargo>) {
+  pendingCargoData.value = cargoData
+  showConfirmationModal.value = true
+}
+
+function closeConfirmationModal() {
+  showConfirmationModal.value = false
+  pendingCargoData.value = null
+}
+
+async function confirmSave() {
+  if (!pendingCargoData.value) return
+
   try {
-    if (cargoData._id) {
-      await cargoStore.updateCargo(cargoData._id, cargoData)
+    if (pendingCargoData.value._id) {
+      await cargoStore.updateCargo(pendingCargoData.value._id, pendingCargoData.value)
     } else {
-      await cargoStore.createCargo(cargoData)
+      await cargoStore.createCargo(pendingCargoData.value)
     }
+    closeConfirmationModal()
     closeModal()
   } catch (error) {
-    // Error handling usually in store or toast
     console.error(error)
   }
 }

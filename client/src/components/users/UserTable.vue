@@ -104,7 +104,12 @@
           <!-- Acciones -->
           <td class="pe-4 text-end last-cell">
             <div class="actions-wrapper h-100 d-flex align-items-center justify-content-end gap-2">
-              <button @click="$emit('editar', usuario)" class="btn-glass btn-edit" title="Editar">
+              <button
+                v-if="canEdit(usuario)"
+                @click="$emit('editar', usuario)"
+                class="btn-glass btn-edit"
+                title="Editar"
+              >
                 <i class="bi bi-pencil-fill"></i>
               </button>
 
@@ -116,10 +121,10 @@
                 <i class="bi bi-clock-history"></i>
               </button>
 
-              <div class="vr mx-1 opacity-25" v-if="loginUser.tipo_cargo === 'ADMIN-TI'"></div>
+              <div class="vr mx-1 opacity-25" v-if="canDelete(usuario)"></div>
 
               <button
-                v-if="loginUser.tipo_cargo === 'ADMIN-TI'"
+                v-if="canDelete(usuario)"
                 @click="confirmarEliminacion(usuario)"
                 class="btn-glass btn-delete"
                 title="Eliminar"
@@ -143,20 +148,64 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
+import { useAuthStore } from '@/stores/auth.store'
+import { useCargoStore } from '@/stores/cargo.store'
 
-defineProps<{
+const props = defineProps<{
   usuarios: any[]
   loginUser: any
 }>()
 
 const emit = defineEmits(['editar', 'eliminar', 'detalle'])
+const cargoStore = useCargoStore()
+const authStore = useAuthStore()
 
+// Refs
 const mostrarModal = ref(false)
+const mensajeModal = ref('')
 const usuarioAEliminar = ref<any>(null)
-const mensajeModal = ref('¿Deseas eliminar este usuario?')
 const copiedId = ref<string | null>(null)
+
+onMounted(() => {
+  if (cargoStore.cargos.length === 0) {
+    cargoStore.fetchCargos()
+  }
+})
+
+function getLevel(cargoName: string): number {
+  if (!cargoName) return 0
+  const cargo = cargoStore.cargos.find((c) => c.nombre === cargoName)
+  return cargo ? cargo.nivel ?? 0 : 0
+}
+
+function canEdit(targetUser: any) {
+  if (!props.loginUser || !targetUser) return false
+
+  // 1. Check Permission Key
+  if (!authStore.hasPermission('users.update')) return false
+
+  // 2. Check Hierarchy
+  const myLevel = getLevel(props.loginUser.tipo_cargo)
+  const targetLevel = getLevel(targetUser.tipo_cargo)
+
+  // STRICTLY GREATER: Cannot edit peers or superiors.
+  return myLevel > targetLevel
+}
+
+function canDelete(targetUser: any) {
+  if (!props.loginUser || !targetUser) return false
+
+  // 1. Check Permission Key
+  if (!authStore.hasPermission('users.delete')) return false
+
+  // 2. Check Hierarchy
+  const myLevel = getLevel(props.loginUser.tipo_cargo)
+  const targetLevel = getLevel(targetUser.tipo_cargo)
+
+  return myLevel > targetLevel
+}
 
 function confirmarEliminacion(usuario: any) {
   usuarioAEliminar.value = usuario

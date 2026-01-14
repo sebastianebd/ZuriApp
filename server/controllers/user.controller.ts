@@ -51,15 +51,41 @@ async function mostrarUsuarios(req: Request, res: Response) {
   }
 }
 
-async function mostrarTodos(req: Request, res: Response) {
+import Cargo from "../models/cargo.model"; // Added Cargo import
+
+// ... (other imports)
+
+// Updated signature to AuthRequest
+async function mostrarTodos(req: AuthRequest, res: Response) {
   try {
-    const cacheKey = "users:all";
+    const userRole = req.user?.tipo_cargo || "UNKNOWN";
+    const cacheKey = `users:all:${userRole}`; // Scope cache by role
+
+    // 1. Try Cache
     const cachedData = await get(cacheKey);
     if (cachedData) {
       return res.json(cachedData);
     }
 
-    const usuarios = await userService.obtenerTodos();
+    // 2. Calculate Visibility
+    let allowedCargos: string[] | undefined = undefined;
+
+    // Fetch requester's cargo level
+    // Optimization: If user is known ADMIN-TI, skip filter (show all)
+    // But better to use DB truth.
+    const myCargo = await Cargo.findOne({ nombre: userRole });
+    const myLevel = myCargo?.nivel || 0;
+
+    // Logic: See only strictly LOWER levels (Invisibility Layer)
+    // Exception: Level 100 (Admin) sees everything (pass undefined)
+    if (myLevel < 100) {
+      const visibleCargos = await Cargo.find({
+        nivel: { $lt: myLevel },
+      }).select("nombre");
+      allowedCargos = visibleCargos.map((c) => c.nombre);
+    }
+
+    const usuarios = await userService.obtenerTodos(allowedCargos);
     await set(cacheKey, usuarios, 300); // Cache for 5 minutes
     res.json(usuarios);
   } catch (error: any) {

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import authService from "../services/auth.service";
 import logger from "../config/logger.config";
 import { AuthRequest } from "../middleware/authentication.middleware";
+import Cargo from "../models/cargo.model";
 
 async function login(req: Request, res: Response) {
   try {
@@ -62,7 +63,25 @@ async function refresh(req: Request, res: Response) {
 }
 
 async function user(req: AuthRequest, res: Response) {
-  res.status(200).json(req.user);
+  if (!req.user) {
+    return res.status(401).json({ mensaje: "Usuario no autenticado" });
+  }
+
+  // Fetch Permissions & Level (Case Insensitive Name OR Code)
+  const cargo = await Cargo.findOne({
+    $or: [
+      { nombre: { $regex: new RegExp(`^${req.user.tipo_cargo}$`, "i") } },
+      { codigo: req.user.tipo_cargo.toUpperCase() },
+    ],
+  }).lean();
+
+  const userPayload = {
+    ...req.user.toObject(),
+    nivel: cargo?.nivel || 10,
+    permisos: cargo?.permisos || [],
+  };
+
+  res.status(200).json(userPayload);
 }
 
 async function changePassword(req: AuthRequest, res: Response) {

@@ -100,6 +100,23 @@ export const useAuthStore = defineStore('auth', {
       const privateApi = this.usePrivateApi()
       const { data } = await privateApi.get('/auth/history')
       return data
+    },
+
+    /**
+     * Verifica si el usuario tiene un permiso específico o es SuperAdmin (Nivel 100)
+     */
+    hasPermission(permission: string): boolean {
+      if (!this.user) return false
+
+      // Super Admin Override
+      if (this.user.nivel === 100) return true
+
+      // Check permissions array
+      if (this.user.permisos && this.user.permisos.includes(permission)) {
+        return true
+      }
+
+      return false
     }
   },
 

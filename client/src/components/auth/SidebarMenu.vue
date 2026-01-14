@@ -15,23 +15,34 @@
       <!-- Personal Section -->
       <div class="menu-group">
         <h3 v-if="is_expanded">Personal</h3>
-        <router-link :to="{ name: 'personal-funcionarios' }" class="menu-item" title="Funcionarios">
+        <router-link
+          :to="{ name: 'personal-funcionarios' }"
+          class="menu-item"
+          title="Funcionarios"
+          v-if="can('users.view')"
+        >
           <i class="bi bi-person-badge"></i>
           <span class="text">Funcionarios</span>
         </router-link>
-        <router-link :to="{ name: 'personal-cargos' }" class="menu-item" title="Gestión de Cargos">
+        <router-link
+          :to="{ name: 'personal-cargos' }"
+          class="menu-item"
+          title="Gestión de Cargos"
+          v-if="can('cargos.view')"
+        >
           <i class="bi bi-briefcase"></i>
           <span class="text">Gestión de Cargos</span>
         </router-link>
       </div>
 
       <!-- Operaciones Section -->
-      <div class="menu-group">
+      <div class="menu-group" v-if="can('shifts.view') || can('replacement.view')">
         <h3 v-if="is_expanded">Operaciones</h3>
         <router-link
           :to="{ name: 'operaciones-reemplazos' }"
           class="menu-item"
           title="Reemplazos Activos"
+          v-if="can('replacement.view')"
         >
           <i class="bi bi-arrow-repeat"></i>
           <span class="text">Reemplazos Activos</span>
@@ -40,11 +51,17 @@
           :to="{ name: 'operaciones-calendario-reemplazos' }"
           class="menu-item"
           title="Calendario de Reemplazos"
+          v-if="can('replacement.view')"
         >
           <i class="bi bi-calendar3"></i>
           <span class="text">Calendario Reemplazos</span>
         </router-link>
-        <router-link :to="{ name: 'operaciones-turnos' }" class="menu-item" title="Turnos Actuales">
+        <router-link
+          :to="{ name: 'operaciones-turnos' }"
+          class="menu-item"
+          title="Turnos Actuales"
+          v-if="can('shifts.view')"
+        >
           <i class="bi bi-calendar-range"></i>
           <span class="text">Turnos Actuales</span>
         </router-link>
@@ -52,6 +69,7 @@
           :to="{ name: 'operaciones-calendario-turnos' }"
           class="menu-item"
           title="Calendario Turnos"
+          v-if="can('shifts.view')"
         >
           <i class="bi bi-calendar4-week"></i>
           <span class="text">Calendario Turnos</span>
@@ -65,11 +83,17 @@
           :to="{ name: 'historial-reemplazos' }"
           class="menu-item"
           title="Reemplazos Finalizados"
+          v-if="can('replacement.view')"
         >
           <i class="bi bi-archive"></i>
           <span class="text">Reemplazos Finalizados</span>
         </router-link>
-        <router-link :to="{ name: 'historial-turnos' }" class="menu-item" title="Turnos Anteriores">
+        <router-link
+          :to="{ name: 'historial-turnos' }"
+          class="menu-item"
+          title="Turnos Anteriores"
+          v-if="can('shifts.view')"
+        >
           <i class="bi bi-calendar-x"></i>
           <span class="text">Turnos Anteriores</span>
         </router-link>
@@ -77,6 +101,7 @@
           :to="{ name: 'historial-excepciones' }"
           class="menu-item"
           title="Excepciones de Turno"
+          v-if="can('shifts.view')"
         >
           <i class="bi bi-exclamation-triangle"></i>
           <span class="text">Excepciones de Turno</span>
@@ -85,6 +110,7 @@
           :to="{ name: 'historial-auditoria' }"
           class="menu-item"
           title="Auditoría de Cambios"
+          v-if="can('audit.view')"
         >
           <i class="bi bi-journal-text"></i>
           <span class="text">Auditoría de Cambios</span>
@@ -92,7 +118,7 @@
       </div>
 
       <!-- Configuración Section -->
-      <div class="menu-group">
+      <div class="menu-group" v-if="can('config.view')">
         <h3 v-if="is_expanded">Configuración</h3>
         <router-link :to="{ name: 'configuracion-servicios' }" class="menu-item" title="Servicios">
           <i class="bi bi-hospital"></i>
@@ -117,6 +143,8 @@ import logoURL from '../../assets/images/logo-zuri.png'
 import { useAuthStore } from '../../stores/auth.store'
 
 const authStore = useAuthStore()
+
+const can = (permission: string) => authStore.hasPermission(permission)
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 

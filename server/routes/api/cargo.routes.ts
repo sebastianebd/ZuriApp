@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as CargoController from "../../controllers/cargo.controller";
 import authMiddleware, {
   requireAdmin,
+  requirePermission,
 } from "../../middleware/authentication.middleware";
 
 const router = Router();
@@ -10,12 +11,23 @@ const router = Router();
 router.get("/", authMiddleware, CargoController.getCargos);
 
 // Admin only operations
-router.post("/", authMiddleware, requireAdmin, CargoController.createCargo);
-router.put("/:id", authMiddleware, requireAdmin, CargoController.updateCargo);
+// Admin only operations
+router.post(
+  "/",
+  authMiddleware,
+  requirePermission("cargos.create"),
+  CargoController.createCargo
+);
+router.put(
+  "/:id",
+  authMiddleware,
+  requirePermission("cargos.update"),
+  CargoController.updateCargo
+);
 router.delete(
   "/:id",
   authMiddleware,
-  requireAdmin,
+  requirePermission("cargos.delete"),
   CargoController.deleteCargo
 );
 

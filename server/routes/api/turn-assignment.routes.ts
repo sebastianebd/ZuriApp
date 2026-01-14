@@ -12,16 +12,29 @@ import {
   updateTurnAssignmentSchema,
 } from "../../schemas/turn-assignment.schema";
 
+import authMiddleware, {
+  requirePermission,
+} from "../../middleware/authentication.middleware";
+
 const router = Router();
 
-router.get("/", getAssignments);
-router.get("/:id", getAssignmentById);
-router.post("/", validateSchema(createTurnAssignmentSchema), createAssignment);
+router.use(authMiddleware);
+// router.use(requirePermission("shifts.manage"));
+
+router.get("/", requirePermission("shifts.view"), getAssignments);
+router.get("/:id", requirePermission("shifts.view"), getAssignmentById);
+router.post(
+  "/",
+  requirePermission("shifts.create"),
+  validateSchema(createTurnAssignmentSchema),
+  createAssignment
+);
 router.put(
   "/:id",
+  requirePermission("shifts.update"),
   validateSchema(updateTurnAssignmentSchema),
   updateAssignment
 );
-router.delete("/:id", deleteAssignment);
+router.delete("/:id", requirePermission("shifts.delete"), deleteAssignment);
 
 export default router;

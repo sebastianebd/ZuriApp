@@ -20,15 +20,51 @@ export const getCargos = async (req: Request, res: Response) => {
 // POST /api/cargos
 export const createCargo = async (req: Request, res: Response) => {
   try {
-    const { nombre, descripcion } = req.body;
+    const { nombre, descripcion, nivel, permisos } = req.body; // nivel, permisos added
 
-    // Check duplicity
+    // Check duplicity by name
     const existing = await Cargo.findOne({ nombre: nombre?.toUpperCase() });
     if (existing) {
       return res.status(400).json({ message: "El cargo ya existe" });
     }
 
-    const cargo = new Cargo({ nombre, descripcion });
+    // Smart SKU Generation (Global Sequence)
+    let codigo = req.body.codigo;
+
+    if (!codigo && nombre) {
+      const prefix = nombre.substring(0, 3).toUpperCase();
+
+      // Fetch all codes to find the highest global sequence number
+      const allCargos = await Cargo.find({
+        codigo: { $exists: true, $ne: null },
+      }).select("codigo");
+
+      let maxSeq = 0;
+      allCargos.forEach((c) => {
+        if (c.codigo && c.codigo.includes("-")) {
+          const parts = c.codigo.split("-");
+          if (parts.length === 2) {
+            const num = parseInt(parts[1], 10);
+            if (!isNaN(num) && num > maxSeq) {
+              maxSeq = num;
+            }
+          }
+        }
+      });
+
+      const sequence = maxSeq + 1;
+      codigo = `${prefix}-${sequence.toString().padStart(3, "0")}`;
+    }
+
+    const payload: any = {
+      nombre,
+      descripcion,
+      codigo,
+      nivel: nivel || 10,
+      permisos: permisos || [],
+    };
+
+    const cargo = new Cargo(payload);
     await cargo.save();
     res.status(201).json(cargo);
   } catch (error) {
@@ -40,7 +76,7 @@ export const createCargo = async (req: Request, res: Response) => {
 export const updateCargo = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, activo } = req.body;
+    const { nombre, descripcion, activo, nivel, permisos } = req.body;
 
     // Check unique name if changing name
     if (nombre) {
@@ -57,7 +93,7 @@ export const updateCargo = async (req: Request, res: Response) => {
 
     const cargo = await Cargo.findByIdAndUpdate(
       id,
-      { nombre, descripcion, activo },
+      { nombre, descripcion, activo, nivel, permisos },
       { new: true, runValidators: true }
     );
 

@@ -134,8 +134,16 @@ async function obtenerPorId(id: string) {
   return await User.findById(id).lean();
 }
 
-async function obtenerTodos() {
-  return await User.find({ eliminado: false });
+async function obtenerTodos(allowedCargos?: string[]) {
+  const query: any = { eliminado: false };
+
+  // If filter is provided, restrict query.
+  // If empty array passed, it means user sees nothing (correct).
+  if (allowedCargos && Array.isArray(allowedCargos)) {
+    query.tipo_cargo = { $in: allowedCargos };
+  }
+
+  return await User.find(query);
 }
 
 async function actualizar(id: string, data: Partial<IUser>) {

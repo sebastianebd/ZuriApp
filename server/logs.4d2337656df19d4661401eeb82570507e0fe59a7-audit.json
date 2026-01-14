@@ -51,14 +51,9 @@
             "hash": "fccb6cd67b776c29c1474585ea9169cf44a00313eaccb2b0f07a16e4e05d1e2f"
         },
         {
-            "date": 1768348576422,
-            "name": "logs/application-2026-01-13.log",
-            "hash": "18a4938debbcf79701556b4fbf6d65b14cd8ce34cbaa3c1b0d89a37bf6b5dd98"
-        },
-        {
-            "date": 1768348821611,
+            "date": 1768364699458,
             "name": "logs/application-2026-01-14.log",
-            "hash": "43ddefd60af733bd063fbaf272a439ebf1874fae25d722d8e2c30234320e7787"
+            "hash": "45f0b4009f03490b7000aa949e28c7f0dab2bdec5935d7a97972a0b3a9758e30"
         }
     ],
     "hashType": "sha256"

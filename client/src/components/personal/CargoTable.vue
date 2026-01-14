@@ -3,15 +3,17 @@
     <table class="table modern-table mb-0">
       <thead>
         <tr>
-          <th scope="col" class="ps-4">Nombre</th>
-          <th scope="col">Descripción</th>
+          <th scope="col" class="ps-4">Código</th>
+          <th scope="col">Nombre</th>
+          <th scope="col" class="text-center">Nivel</th>
+          <th scope="col" class="text-center">Permisos</th>
           <th scope="col" class="text-center">Estado</th>
           <th scope="col" class="text-end pe-4">Acciones</th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="cargos.length === 0">
-          <td colspan="4" class="text-center py-5 text-muted small">No hay cargos registrados</td>
+          <td colspan="6" class="text-center py-5 text-muted small">No hay cargos registrados</td>
         </tr>
         <tr
           v-for="(cargo, index) in cargos"
@@ -20,14 +22,44 @@
           :class="{ 'row-inactive': !cargo.activo }"
           :style="{ animationDelay: `${index * 50}ms` }"
         >
-          <!-- Nombre -->
+          <!-- CÓDIGO -->
           <td class="ps-4 first-cell">
-            <span class="fw-bold text-dark">{{ cargo.nombre }}</span>
+            <span class="badge bg-light text-secondary border font-monospace x-small">
+              {{ cargo.codigo || '---' }}
+            </span>
           </td>
 
-          <!-- Descripcion -->
+          <!-- Nombre -->
           <td>
-            <span class="text-secondary small">{{ cargo.descripcion || '-' }}</span>
+            <div class="d-flex flex-column">
+              <span class="fw-bold text-dark">{{ cargo.nombre }}</span>
+              <span class="text-muted x-small" style="max-width: 200px; line-height: 1.1">{{
+                cargo.descripcion
+              }}</span>
+            </div>
+          </td>
+
+          <!-- Nivel -->
+          <td class="text-center">
+            <span
+              class="badge rounded-pill fw-bold"
+              :class="
+                (cargo.nivel || 0) === 100
+                  ? 'bg-danger bg-opacity-10 text-danger'
+                  : (cargo.nivel || 0) >= 50
+                  ? 'bg-primary bg-opacity-10 text-primary'
+                  : 'bg-secondary bg-opacity-10 text-secondary'
+              "
+            >
+              {{ cargo.nivel || 10 }}
+            </span>
+          </td>
+
+          <!-- Permisos -->
+          <td class="text-center">
+            <span class="badge bg-white border text-dark fw-normal shadow-sm">
+              {{ cargo.permisos?.length || 0 }}
+            </span>
           </td>
 
           <!-- Estado -->
@@ -42,11 +74,21 @@
           <!-- Acciones -->
           <td class="pe-4 text-end last-cell">
             <div class="actions-wrapper h-100 d-flex align-items-center justify-content-end gap-2">
-              <button @click="$emit('edit', cargo)" class="btn-glass btn-edit" title="Editar">
+              <button
+                v-if="authStore.hasPermission('cargos.update')"
+                @click="$emit('edit', cargo)"
+                class="btn-glass btn-edit"
+                title="Editar"
+              >
                 <i class="bi bi-pencil-fill"></i>
               </button>
 
-              <button @click="$emit('delete', cargo)" class="btn-glass btn-delete" title="Eliminar">
+              <button
+                v-if="authStore.hasPermission('cargos.delete')"
+                @click="$emit('delete', cargo)"
+                class="btn-glass btn-delete"
+                title="Eliminar"
+              >
                 <i class="bi bi-trash3-fill"></i>
               </button>
             </div>
@@ -59,12 +101,14 @@
 
 <script setup lang="ts">
 import type { ICargo } from '@/types/models'
+import { useAuthStore } from '@/stores/auth.store'
 
 defineProps<{
   cargos: ICargo[]
 }>()
 
 defineEmits(['edit', 'delete'])
+const authStore = useAuthStore()
 </script>
 
 <style scoped>

@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User, { IUser } from "../models/user.model";
+import Cargo from "../models/cargo.model";
 
 export class AuthError extends Error {
   status: number;
@@ -105,6 +106,7 @@ async function login({
     }
   }
   // -----------------------------
+  // -----------------------------
 
   // Log Success Attempt
   await LoginHistory.create({
@@ -122,7 +124,22 @@ async function login({
   user.refresh_token = hashedRefreshToken;
   await user.save();
 
-  return { accessToken, refreshToken, user };
+  // Fetch Permissions & Level (Case Insensitive Name OR Code)
+  const cargo = await Cargo.findOne({
+    $or: [
+      { nombre: { $regex: new RegExp(`^${user.tipo_cargo}$`, "i") } },
+      { codigo: user.tipo_cargo.toUpperCase() },
+    ],
+  }).lean();
+
+  // Create plain object and attach verified permissions/level
+  const userPayload = {
+    ...user.toObject(),
+    nivel: cargo?.nivel || 10,
+    permisos: cargo?.permisos || [],
+  };
+
+  return { accessToken, refreshToken, user: userPayload };
 }
 
 async function getLoginHistory(userId: string) {
