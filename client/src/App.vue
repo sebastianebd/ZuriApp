@@ -11,6 +11,9 @@ onMounted(() => {
   if (authStore.isAuthenticated && authStore.user && authStore.user._id) {
     socket.auth = { userId: authStore.user._id }
     socket.connect()
+
+    // Bind Real-time Permission Updates
+    authStore.bindSocketEvents()
   }
 })
 </script>

@@ -117,6 +117,21 @@ export const useAuthStore = defineStore('auth', {
       }
 
       return false
+    },
+
+    bindSocketEvents() {
+      // Avoid duplicate binding
+      if (socket.hasListeners('cargo_updated')) return
+
+      socket.on('cargo_updated', async (data: { cargoNombre: string; action: string }) => {
+        // If the updated cargo matches current user's cargo, refresh permissions
+        if (this.user && this.user.tipo_cargo === data.cargoNombre) {
+          console.log(
+            `[AuthStore] Cargo '${data.cargoNombre}' updated. Refreshing user permissions...`
+          )
+          await this.getUser()
+        }
+      })
     }
   },
 

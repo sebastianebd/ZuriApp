@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Cargo from "../models/cargo.model";
+import socketConfig from "../config/socket";
 
 // GET /api/cargos?activo=true
 export const getCargos = async (req: Request, res: Response) => {
@@ -98,6 +99,19 @@ export const updateCargo = async (req: Request, res: Response) => {
     );
 
     if (!cargo) return res.status(404).json({ message: "Cargo no encontrado" });
+
+    // Real-time Permission Update
+    try {
+      const io = socketConfig.getIO();
+      // Emit event with cargo name so frontend can match it
+      io.emit("cargo_updated", {
+        cargoNombre: cargo.nombre,
+        action: "update",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn("Socket emission failed:", err);
+    }
 
     res.json(cargo);
   } catch (error) {
