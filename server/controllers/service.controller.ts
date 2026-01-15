@@ -5,8 +5,10 @@ import { z } from "zod";
 
 const serviceSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido").trim(),
-  jefe_medico: z.string().optional().nullable(),
-  enfermero_coordinador: z.string().optional().nullable(),
+  jefe_servicio: z.string().optional().nullable(),
+  supervisor: z.string().optional().nullable(),
+  coordinadores: z.array(z.string()).optional(),
+  jefes_turno: z.array(z.string()).optional(),
   centro_costo: z.string().optional().nullable(),
   ubicacion: z.string().optional().nullable(),
   anexo: z.string().optional().nullable(),
@@ -24,8 +26,10 @@ export const getServices = async (req: Request, res: Response) => {
     // Only return active services by default unless ?all=true is specified
     const filter = req.query.all === "true" ? {} : { activo: true };
     const services = await Service.find(filter)
-      .populate("jefe_medico", "nombre apellido rut")
-      .populate("enfermero_coordinador", "nombre apellido rut")
+      .populate("jefe_servicio", "nombre apellido rut email")
+      .populate("supervisor", "nombre apellido rut email")
+      .populate("coordinadores", "nombre apellido rut email")
+      .populate("jefes_turno", "nombre apellido rut email")
       .sort({ nombre: 1 });
     res.json(services);
   } catch (error) {

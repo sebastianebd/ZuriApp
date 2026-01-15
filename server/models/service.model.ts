@@ -3,8 +3,10 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IService extends Document {
   nombre: string;
   codigo: string;
-  jefe_medico?: mongoose.Types.ObjectId;
-  enfermero_coordinador?: mongoose.Types.ObjectId;
+  jefe_servicio?: mongoose.Types.ObjectId;
+  supervisor?: mongoose.Types.ObjectId;
+  coordinadores?: mongoose.Types.ObjectId[];
+  jefes_turno?: mongoose.Types.ObjectId[];
   centro_costo?: string;
   ubicacion?: string;
   anexo?: string;
@@ -28,16 +30,28 @@ const ServiceSchema: Schema = new Schema(
       uppercase: true,
       trim: true,
     },
-    jefe_medico: {
+    jefe_servicio: {
       type: Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
-    enfermero_coordinador: {
+    supervisor: {
       type: Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
+    coordinadores: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    jefes_turno: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     centro_costo: {
       type: String,
       trim: true,

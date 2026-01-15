@@ -35,9 +35,10 @@
           <thead>
             <tr>
               <th scope="col" class="ps-4" style="width: 10%">Código</th>
-              <th scope="col" style="width: 25%">Nombre / C.C.</th>
-              <th scope="col" style="width: 25%">Liderazgo</th>
-              <th scope="col" style="width: 25%">Contacto</th>
+              <th scope="col" style="width: 25%">Identificación</th>
+              <th scope="col" style="width: 20%">Dirección</th>
+              <th scope="col" style="width: 15%">Gestión Equipo</th>
+              <th scope="col" style="width: 20%">Contacto</th>
               <th scope="col" class="text-center" style="width: 10%">Estado</th>
               <th scope="col" class="text-end pe-4" style="width: 5%">Acciones</th>
             </tr>
@@ -67,39 +68,83 @@
                 </div>
               </td>
 
-              <!-- Liderazgo -->
+              <!-- Dirección -->
               <td>
                 <div class="d-flex flex-column gap-2">
-                  <!-- Jefe Médico -->
+                  <!-- Jefe Servicio -->
                   <div
-                    v-if="service.jefe_medico && typeof service.jefe_medico === 'object'"
+                    v-if="service.jefe_servicio && typeof service.jefe_servicio === 'object'"
                     class="d-flex align-items-center gap-2"
                   >
-                    <div class="role-dot bg-danger" title="Jefe Médico"></div>
-                    <span class="small text-dark">
-                      {{ (service.jefe_medico as any).nombre }}
-                      {{ (service.jefe_medico as any).apellido }}
-                    </span>
+                    <div class="role-dot bg-primary" title="Jefe Servicio"></div>
+                    <div class="lh-1">
+                      <span class="small fw-bold text-dark d-block">
+                        {{ (service.jefe_servicio as any).nombre }}
+                        {{ (service.jefe_servicio as any).apellido }}
+                      </span>
+                      <span class="x-small text-muted">Jefe Servicio</span>
+                    </div>
                   </div>
-                  <!-- Enfermero Coord -->
+
+                  <!-- Supervisor -->
                   <div
-                    v-if="
-                      service.enfermero_coordinador &&
-                      typeof service.enfermero_coordinador === 'object'
-                    "
+                    v-if="service.supervisor && typeof service.supervisor === 'object'"
                     class="d-flex align-items-center gap-2"
                   >
-                    <div class="role-dot bg-info" title="Enfermero Coordinador"></div>
-                    <span class="small text-dark">
-                      {{ (service.enfermero_coordinador as any).nombre }}
-                      {{ (service.enfermero_coordinador as any).apellido }}
-                    </span>
+                    <div class="role-dot bg-info" title="Supervisor"></div>
+                    <div class="lh-1">
+                      <span class="small fw-bold text-dark d-block">
+                        {{ (service.supervisor as any).nombre }}
+                        {{ (service.supervisor as any).apellido }}
+                      </span>
+                      <span class="x-small text-muted">Supervisor</span>
+                    </div>
                   </div>
+
                   <span
-                    v-if="!service.jefe_medico && !service.enfermero_coordinador"
+                    v-if="!service.jefe_servicio && !service.supervisor"
                     class="text-muted x-small fst-italic"
                   >
-                    Sin asignar
+                    Sin dirección
+                  </span>
+                </div>
+              </td>
+
+              <!-- Gestión Equipo -->
+              <td>
+                <div class="d-flex flex-column gap-2">
+                  <!-- Coordinadores Summary -->
+                  <div v-if="service.coordinadores && service.coordinadores.length > 0">
+                    <div class="d-flex align-items-center gap-1 mb-1">
+                      <span
+                        class="badge bg-light text-dark border fw-bold x-small"
+                        :title="getUsersTooltip(service.coordinadores)"
+                      >
+                        {{ service.coordinadores.length }} Coord.
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Jefes de Turno Summary -->
+                  <div v-if="service.jefes_turno && service.jefes_turno.length > 0">
+                    <div class="d-flex align-items-center gap-1">
+                      <span
+                        class="badge bg-light text-dark border fw-bold x-small"
+                        :title="getUsersTooltip(service.jefes_turno)"
+                      >
+                        {{ service.jefes_turno.length }} J. Turno
+                      </span>
+                    </div>
+                  </div>
+
+                  <span
+                    v-if="
+                      (!service.coordinadores || service.coordinadores.length === 0) &&
+                      (!service.jefes_turno || service.jefes_turno.length === 0)
+                    "
+                    class="text-muted x-small fst-italic"
+                  >
+                    Sin gestión
                   </span>
                 </div>
               </td>
@@ -261,8 +306,10 @@ async function confirmSave() {
   try {
     const dto: ServiceDTO = {
       nombre: pendingData.value.nombre,
-      jefe_medico: pendingData.value.jefe_medico,
-      enfermero_coordinador: pendingData.value.enfermero_coordinador,
+      jefe_servicio: pendingData.value.jefe_servicio,
+      supervisor: pendingData.value.supervisor,
+      coordinadores: pendingData.value.coordinadores,
+      jefes_turno: pendingData.value.jefes_turno,
       centro_costo: pendingData.value.centro_costo,
       ubicacion: pendingData.value.ubicacion,
       anexo: pendingData.value.anexo,
@@ -300,6 +347,22 @@ async function handleDelete() {
   } catch (error) {
     console.error(error)
   }
+}
+
+// Helper to capitalize
+const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
+
+function getUsersTooltip(users: any[]): string {
+  if (!users || !Array.isArray(users)) return ''
+  return users
+    .map((u) => {
+      if (typeof u === 'object' && u.nombre && u.apellido) {
+        return `${capitalize(u.nombre)} ${capitalize(u.apellido)}`
+      }
+      return ''
+    })
+    .filter((name) => name !== '')
+    .join('\n')
 }
 </script>
 

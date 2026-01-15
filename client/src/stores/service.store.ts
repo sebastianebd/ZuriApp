@@ -13,8 +13,10 @@ export interface Service {
   _id: string
   nombre: string
   codigo?: string
-  jefe_medico?: ServiceUserStub | string
-  enfermero_coordinador?: ServiceUserStub | string
+  jefe_servicio?: ServiceUserStub | string
+  supervisor?: ServiceUserStub | string
+  coordinadores?: (ServiceUserStub | string)[]
+  jefes_turno?: (ServiceUserStub | string)[]
   centro_costo?: string
   ubicacion?: string
   anexo?: string
@@ -26,8 +28,10 @@ export interface Service {
 
 export interface ServiceDTO {
   nombre: string
-  jefe_medico?: string | null
-  enfermero_coordinador?: string | null
+  jefe_servicio?: string | null
+  supervisor?: string | null
+  coordinadores?: string[]
+  jefes_turno?: string[]
   centro_costo?: string
   ubicacion?: string
   anexo?: string
