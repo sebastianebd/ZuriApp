@@ -22,6 +22,7 @@ export interface Service {
   anexo?: string
   email?: string
   activo: boolean
+  deleted_at?: string // Date string from API
   createdAt: string
   updatedAt: string
 }
@@ -53,7 +54,8 @@ export const useServiceStore = defineStore('service', () => {
     const api = authStore.usePrivateApi()
 
     try {
-      // Fetch all (including inactive if managing) - controller supports ?all=true
+      // Fetch all (including inactive if managing)
+      // Backend now filters out 'eliminado: true', returns mixed active/inactive
       const { data } = await api.get<Service[]>('/services?all=true')
       services.value = data
     } catch (err: any) {
@@ -113,15 +115,11 @@ export const useServiceStore = defineStore('service', () => {
 
     try {
       await api.delete(`/services/${id}`)
-      // Retrieve the service to update local state properly (if soft delete)
-      // Since backend returns { message, service } where service is the deactivated doc
-      // We can just set active=false locally or re-fetch.
-      // Easiest is to update the local service active state to false
+      // Soft delete: Remove from local list as it is no longer returned by backend
       const index = services.value.findIndex((s) => s._id === id)
       if (index !== -1) {
-        services.value[index].activo = false
+        services.value.splice(index, 1)
       }
-      // Or filter it out if we only show active? But we fetch ?all=true now.
     } catch (err: any) {
       console.error('Error deleting service:', err)
       throw err

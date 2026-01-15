@@ -308,43 +308,40 @@ function onSubmit() {
                   </button>
                 </label>
 
-                <div v-if="formData.jefe_servicio" class="selected-user-card">
-                  <div class="d-flex align-items-center gap-2">
-                    <div class="avatar-sm bg-primary text-white">
-                      {{ formData.jefe_servicio.nombre.charAt(0) }}
-                    </div>
-                    <div class="lh-sm">
-                      <div class="fw-bold x-small">
-                        {{ formData.jefe_servicio.nombre }} {{ formData.jefe_servicio.apellido }}
+                <div v-if="formData.jefe_servicio">
+                  <div class="selected-user-card">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="avatar-sm bg-primary text-white">
+                        {{ formData.jefe_servicio.nombre.charAt(0) }}
                       </div>
-                      <div class="text-muted x-xx-small">{{ formData.jefe_servicio.rut }}</div>
+                      <div class="lh-sm">
+                        <div class="fw-bold x-small">
+                          {{ formData.jefe_servicio.nombre }} {{ formData.jefe_servicio.apellido }}
+                        </div>
+                        <div class="text-muted x-xx-small">{{ formData.jefe_servicio.rut }}</div>
+                      </div>
                     </div>
-                  </div>
-                  <button
-                    type="button"
-                    class="btn-remove"
-                    @click="removeSingleUser('jefe_servicio')"
-                  >
-                    <i class="bi bi-x"></i>
-                  </button>
-                </div>
-                <!-- Conflict Warning -->
-                <div
-                  v-if="
-                    formData.jefe_servicio && getUserConflicts(formData.jefe_servicio).length > 0
-                  "
-                  class="mt-2"
-                >
-                  <div
-                    v-for="conflict in getUserConflicts(formData.jefe_servicio)"
-                    :key="conflict"
-                    class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-2 border-0 rounded-3"
-                  >
-                    <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
-                    <span class="x-xx-small fw-bold text-dark lh-1"
-                      >Este usuario ya tiene el rol: <br />
-                      {{ conflict }}</span
+                    <button
+                      type="button"
+                      class="btn-remove"
+                      @click="removeSingleUser('jefe_servicio')"
                     >
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </div>
+                  <!-- Conflict Warning -->
+                  <div v-if="getUserConflicts(formData.jefe_servicio).length > 0" class="mt-2">
+                    <div
+                      v-for="conflict in getUserConflicts(formData.jefe_servicio)"
+                      :key="conflict"
+                      class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-2 border-0 rounded-3"
+                    >
+                      <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
+                      <span class="x-xx-small fw-bold text-dark lh-1"
+                        >Este usuario ya tiene el rol: <br />
+                        {{ conflict }}</span
+                      >
+                    </div>
                   </div>
                 </div>
                 <div v-else class="empty-selection" @click="openUserSelector('jefe_servicio')">
@@ -368,37 +365,40 @@ function onSubmit() {
                   </button>
                 </label>
 
-                <div v-if="formData.supervisor" class="selected-user-card">
-                  <div class="d-flex align-items-center gap-2">
-                    <div class="avatar-sm bg-info text-dark">
-                      {{ formData.supervisor.nombre.charAt(0) }}
-                    </div>
-                    <div class="lh-sm">
-                      <div class="fw-bold x-small">
-                        {{ formData.supervisor.nombre }} {{ formData.supervisor.apellido }}
+                <div v-if="formData.supervisor">
+                  <div class="selected-user-card">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="avatar-sm bg-info text-dark">
+                        {{ formData.supervisor.nombre.charAt(0) }}
                       </div>
-                      <div class="text-muted x-xx-small">{{ formData.supervisor.rut }}</div>
+                      <div class="lh-sm">
+                        <div class="fw-bold x-small">
+                          {{ formData.supervisor.nombre }} {{ formData.supervisor.apellido }}
+                        </div>
+                        <div class="text-muted x-xx-small">{{ formData.supervisor.rut }}</div>
+                      </div>
                     </div>
-                  </div>
-                  <button type="button" class="btn-remove" @click="removeSingleUser('supervisor')">
-                    <i class="bi bi-x"></i>
-                  </button>
-                </div>
-                <!-- Conflict Warning -->
-                <div
-                  v-if="formData.supervisor && getUserConflicts(formData.supervisor).length > 0"
-                  class="mt-2"
-                >
-                  <div
-                    v-for="conflict in getUserConflicts(formData.supervisor)"
-                    :key="conflict"
-                    class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-2 border-0 rounded-3"
-                  >
-                    <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
-                    <span class="x-xx-small fw-bold text-dark lh-1"
-                      >Este usuario ya tiene el rol: <br />
-                      {{ conflict }}</span
+                    <button
+                      type="button"
+                      class="btn-remove"
+                      @click="removeSingleUser('supervisor')"
                     >
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </div>
+                  <!-- Conflict Warning -->
+                  <div v-if="getUserConflicts(formData.supervisor).length > 0" class="mt-2">
+                    <div
+                      v-for="conflict in getUserConflicts(formData.supervisor)"
+                      :key="conflict"
+                      class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-2 border-0 rounded-3"
+                    >
+                      <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
+                      <span class="x-xx-small fw-bold text-dark lh-1"
+                        >Este usuario ya tiene el rol: <br />
+                        {{ conflict }}</span
+                      >
+                    </div>
                   </div>
                 </div>
                 <div v-else class="empty-selection" @click="openUserSelector('supervisor')">

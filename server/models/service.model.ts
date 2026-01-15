@@ -11,7 +11,8 @@ export interface IService extends Document {
   ubicacion?: string;
   anexo?: string;
   email?: string;
-  activo: boolean; // For soft delete or deactivation
+  activo: boolean; // Status
+  deleted_at?: Date; // Soft Delete
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +74,10 @@ const ServiceSchema: Schema = new Schema(
     activo: {
       type: Boolean,
       default: true,
+    },
+    deleted_at: {
+      type: Date,
+      default: null,
     },
   },
   {
