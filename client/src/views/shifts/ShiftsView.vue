@@ -124,16 +124,16 @@
                   </div>
                   <div class="lh-1">
                     <div class="fw-bold small text-truncate" style="max-width: 180px">
-                      {{ item.nombre }} {{ item.apellido }}
+                      {{ formatTitleCase(`${item.nombre} ${item.apellido}`) }}
                     </div>
                     <small class="text-muted d-block" style="font-size: 0.75rem">
-                      {{ item.cargo }}
+                      {{ formatTitleCase(item.cargo) }}
                       <span
                         v-if="item.tipo_turno"
                         class="badge bg-secondary-subtle text-secondary ms-1"
                         style="font-size: 0.65rem"
                       >
-                        {{ item.tipo_turno }}
+                        {{ formatTitleCase(item.tipo_turno) }}
                       </span>
                     </small>
                   </div>
@@ -162,14 +162,12 @@
                         historyMode && !!exceptionStore.findException(item._id, day.date)
                     }
                   ]"
+                  :style="getShiftStyle(getShift(item, day.date))"
                   @mouseenter="showTooltip($event, item, day.date)"
                   @mouseleave="hideTooltip"
                   @click="handleCellClick(item, day.date)"
                 >
-                  <span v-if="getShift(item, day.date) === 'LARGO'">L</span>
-                  <span v-else-if="getShift(item, day.date) === 'NOCHE'">N</span>
-                  <span v-else-if="getShift(item, day.date) === 'LIBRE'">X</span>
-                  <span v-else class="text-muted opacity-25">-</span>
+                  <span class="fw-bold">{{ getShift(item, day.date)?.sigla }}</span>
                 </div>
               </td>
             </tr>
@@ -201,7 +199,7 @@
       :assignment-id="selectedShiftData.assignmentId"
       :assignment-name="selectedShiftData.assignmentName"
       :date="selectedShiftData.date"
-      :current-shift="selectedShiftData.currentShift"
+      :current-shift="selectedShiftData.currentShift?.sigla || ''"
       :has-exception="selectedShiftData.hasException"
       :loading="exceptionStore.loading"
       @cerrar="showModifyModal = false"
@@ -217,8 +215,11 @@ import { useReplacementStore } from '@/stores/replacement.store'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useShiftExceptionStore } from '@/stores/shift-exception.store'
+import { useTurnTypeStore } from '@/stores/turn-type.store'
+import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { calculateShift, parseAsLocal } from '@/services/turn-pattern.service'
+import { formatTitleCase } from '@/utils/text-formatters'
 import type { RegisterDataReemplazo, TurnAssignment, User } from '@/types/models'
 import TurnAssignmentModal from '@/components/shifts/TurnAssignmentModal.vue'
 import ShiftModificationModal from '@/components/shifts/ShiftModificationModal.vue'
@@ -263,7 +264,7 @@ const selectedShiftData = ref<{
   assignmentId: string
   assignmentName: string
   date: Date
-  currentShift: string | null
+  currentShift: ShiftResult | null
   hasException: boolean
 } | null>(null)
 
@@ -275,6 +276,8 @@ const recentlyModifiedCell = ref<{
 
 const replacementStore = useReplacementStore()
 const turnAssignmentStore = useTurnAssignmentStore()
+const turnTypeStore = useTurnTypeStore()
+const turnSiglaStore = useTurnSiglaStore()
 const optionStore = useOptionStore()
 const exceptionStore = useShiftExceptionStore()
 const authStore = useAuthStore()
@@ -298,7 +301,7 @@ async function handleSaveAssignment(payload: any) {
   try {
     await turnAssignmentStore.addAssignment(payload)
     closeModal()
-    alertComponent.value.show('Éxito', 'Funcionario asignado correctamente', 'success')
+    alertComponent.value.show('Éxito', 'Turno asignado correctamente', 'success')
   } catch (error) {
     console.error(error)
     alertComponent.value.show('Error', 'No se pudo asignar el turno', 'error')
@@ -348,6 +351,27 @@ interface GridRow {
   original: RegisterDataReemplazo | TurnAssignment
 }
 
+interface ShiftResult {
+  sigla: string
+  color?: string
+}
+
+// Helper to get Pattern from Store
+function getPattern(turnName: string): ShiftResult[] {
+  const turn = turnTypeStore.turnTypes.find((t) => t.nombre === turnName)
+  if (turn && turn.secuencia) {
+    return turn.secuencia.map((d) => {
+      // Look up global sigla color, fallback to snapshot color
+      const globalSigla = turnSiglaStore.siglas.find((s) => s.sigla === d.sigla)
+      return {
+        sigla: d.sigla,
+        color: globalSigla ? globalSigla.color : d.color
+      }
+    })
+  }
+  return []
+}
+
 // Data Logic
 const filteredShifts = computed(() => {
   const startOfMonth = new Date(currentYear.value, currentMonth.value, 1)
@@ -359,7 +383,6 @@ const filteredShifts = computed(() => {
   replacementStore.reemplazosActivos.forEach((r: RegisterDataReemplazo) => {
     if (!r.fecha_inicio) return
 
-    // Service Filter
     // Service Filter
     const activeServiceFilter = props.historyMode
       ? props.externalFilters.service
@@ -381,8 +404,9 @@ const filteredShifts = computed(() => {
 
     // Check Overlap
     const overlap = rStart <= endOfMonth && rEnd >= startOfMonth
-    // Also must have a recognized turn pattern
-    const hasPattern = r.tipo_turno === 'TERCER TURNO' || r.tipo_turno === 'CUARTO TURNO'
+
+    // Dynamic Check: Ensure turn exists in store
+    const hasPattern = getPattern(r.tipo_turno).length > 0
 
     if (overlap && hasPattern) {
       rows.push({
@@ -408,7 +432,6 @@ const filteredShifts = computed(() => {
 
     const effectiveService = a.service || user.servicio || user.tipo_cargo
 
-    // Service Filter
     // Service Filter
     const activeServiceFilter = props.historyMode
       ? props.externalFilters.service
@@ -448,11 +471,6 @@ const filteredShifts = computed(() => {
 
   // Sort by name
   const sorted = rows.sort((a, b) => a.nombre.localeCompare(b.nombre))
-
-  // Debug: Log replacement count
-  const replacementCount = sorted.filter((r) => r.source === 'REPLACEMENT').length
-  console.log(`Total shifts: ${sorted.length}, Replacements: ${replacementCount}`)
-
   return sorted
 })
 
@@ -466,14 +484,6 @@ const canGoNext = computed(() => {
 
   const now = new Date()
   const nextMonthDate = new Date(currentYear.value, currentMonth.value + 1, 1)
-
-  // In history mode, we can only go next if the next month is strictly BEFORE the current real month.
-  // Example: Real is Jan. History View is Nov. Next is Dec. Dec < Jan -> Allowed.
-  // History View is Dec. Next is Jan. Jan < Jan -> False (> or = is blocked).
-  // Actually, "mes anterior hacia atrás".
-  // So if Real is Jan, max allowed view is Dec.
-  // IF view is Dec, we CANNOT go next.
-
   const startOfCurrentRealMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   return nextMonthDate < startOfCurrentRealMonth
 })
@@ -483,7 +493,6 @@ function nextMonth() {
   currentDate.value = new Date(currentYear.value, currentMonth.value + 1, 1)
 }
 
-// Helper: Check if date is today (local time)
 function isToday(date: Date) {
   const now = new Date()
   return (
@@ -499,34 +508,54 @@ function isWeekend(date: Date) {
 }
 
 // Core Logic: Get Shift Value (with exception support)
-function getShift(row: GridRow, date: Date) {
+function getShift(row: GridRow, date: Date): ShiftResult | null {
   if (!row.fecha_inicio || !row.tipo_turno) return null
 
-  // 1. Check for exception first (works for both ASSIGNMENT and REPLACEMENT)
+  // 1. Check for exception first
   const exception = exceptionStore.findException(row._id, date)
   if (exception) {
-    return exception.override_type
+    if (exception.override_type === 'LARGO') return { sigla: 'L', color: '#ffeccc' } // Pastel Orange/Yellow
+    if (exception.override_type === 'NOCHE') return { sigla: 'N', color: '#dbeafe' } // Pastel Blue
+    if (exception.override_type === 'LIBRE') return { sigla: 'X', color: '#f0fdf4' } // Pastel Green (or white/slate)
+    return { sigla: exception.override_type }
   }
 
   // 2. Calculate base shift from pattern
   const rStart = parseAsLocal(row.fecha_inicio)
   const rEnd = row.fecha_termino ? parseAsLocal(row.fecha_termino) : new Date(9999, 11, 31)
 
-  // Normalize date to start of day for comparison
   const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
   const start = new Date(rStart.getFullYear(), rStart.getMonth(), rStart.getDate())
   const end = new Date(rEnd.getFullYear(), rEnd.getMonth(), rEnd.getDate())
 
   if (checkDate < start || checkDate > end) return null
 
-  return calculateShift(date, row.fecha_inicio, row.tipo_turno)
+  // DYNAMIC PATTERN FETCH
+  const pattern = getPattern(row.tipo_turno)
+  if (pattern.length === 0) return null
+
+  return calculateShift<ShiftResult>(date, row.fecha_inicio, pattern)
 }
 
-function getShiftClass(shift: string | null) {
+function getShiftStyle(shift: ShiftResult | null) {
+  if (!shift || !shift.color) return {}
+  return {
+    backgroundColor: shift.color,
+    color: '#1e293b' // Dark text for contrast on pastel
+  }
+}
+
+function getShiftClass(shift: ShiftResult | null) {
+  // If we have explicit color, rely on style.
+  // But maybe use classes for borders or other default styling?
+  if (shift?.color) return 'shift-custom-color'
+
+  // Fallback for no color (Exceptions might fail here if not mapped color)
   if (!shift) return ''
-  if (shift === 'LARGO') return 'shift-day' // Yellow pastel
-  if (shift === 'NOCHE') return 'shift-night' // Blue pastel
-  if (shift === 'LIBRE') return 'shift-free' // Green pastel
+  const s = shift.sigla.toUpperCase()
+  if (s === 'LARGO' || s === 'L') return 'shift-day'
+  if (s === 'NOCHE' || s === 'N') return 'shift-night'
+  if (s === 'LIBRE' || s === 'X') return 'shift-free'
   return ''
 }
 
@@ -543,26 +572,38 @@ function getReplacementCode(item: GridRow): string {
   return ''
 }
 
-function toTitleCase(str: string): string {
-  return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
-}
-
 function getShiftTooltip(item: GridRow, date: Date): string {
   const shift = getShift(item, date)
   if (!shift) return ''
 
   // Format name in title case
-  const fullName = `${toTitleCase(item.nombre)} ${toTitleCase(item.apellido)}`
+  const fullName = formatTitleCase(`${item.nombre} ${item.apellido}`)
 
-  // Build tooltip based on shift type
-  let tooltip = fullName + '\n'
+  // Find full sigla info from store to get proper name and times
+  // We need to look it up because 'shift' might only have sigla code if it came from pattern calculation
+  // However, calculateShift now returns partial objects.
+  // Best way: find in turnSiglaStore using shift.sigla
+  const siglaInfo = turnSiglaStore.siglas.find((s) => s.sigla === shift.sigla)
 
-  if (shift === 'LARGO') {
-    tooltip += 'Turno día\n08:00 am - 20:00 pm'
-  } else if (shift === 'NOCHE') {
-    tooltip += 'Turno noche\n20:00 pm - 08:00 am'
-  } else if (shift === 'LIBRE') {
-    tooltip += 'Día libre'
+  let tooltip = `${fullName}\n`
+
+  if (siglaInfo) {
+    tooltip += `Turno: ${siglaInfo.nombre}`
+    if (siglaInfo.turno_entrada && siglaInfo.turno_salida) {
+      tooltip += `\n${siglaInfo.turno_entrada} - ${siglaInfo.turno_salida}`
+    } else {
+      // If no times, maybe it's Libre?
+      if (shift.sigla === 'X' || siglaInfo.nombre.toUpperCase() === 'LIBRE') {
+        tooltip += '\nDía libre'
+      }
+    }
+  } else {
+    // Fallback for hardcoded or not found
+    const s = shift.sigla.toUpperCase()
+    if (s === 'L') tooltip += 'Turno Long\n08:00 - 20:00' // Fallback
+    else if (s === 'N') tooltip += 'Turno Noche\n20:00 - 08:00' // Fallback
+    else if (s === 'X') tooltip += 'Día libre'
+    else tooltip += `Turno: ${shift.sigla}`
   }
 
   // Add replacement code if applicable
@@ -635,7 +676,7 @@ function handleCellClick(item: GridRow, date: Date) {
 
   selectedShiftData.value = {
     assignmentId: item._id,
-    assignmentName: `${item.nombre} ${item.apellido}`,
+    assignmentName: formatTitleCase(`${item.nombre} ${item.apellido}`),
     date: date,
     currentShift: shift,
     hasException: !!exception
@@ -651,7 +692,10 @@ async function handleSaveException(data: { override_type: 'LARGO' | 'NOCHE' | 'L
     await exceptionStore.createException({
       assignment_id: selectedShiftData.value.assignmentId,
       date: selectedShiftData.value.date.toISOString(),
-      original_type: selectedShiftData.value.currentShift as 'LARGO' | 'NOCHE' | 'LIBRE',
+      original_type: (selectedShiftData.value.currentShift?.sigla || 'X') as
+        | 'LARGO'
+        | 'NOCHE'
+        | 'LIBRE',
       override_type: data.override_type,
       created_by: authStore.user?._id || ''
     })
@@ -705,7 +749,13 @@ async function loadData() {
       replacementStore.mostrarReemplazos(),
       turnAssignmentStore.loadAssignments(),
       optionStore.mostrarOpciones(),
-      exceptionStore.loadExceptions(undefined, startOfMonth.toISOString(), endOfMonth.toISOString())
+      exceptionStore.loadExceptions(
+        undefined,
+        startOfMonth.toISOString(),
+        endOfMonth.toISOString()
+      ),
+      turnTypeStore.fetchTurnTypes(true),
+      turnSiglaStore.fetchSiglas()
     ])
   } finally {
     loading.value = false

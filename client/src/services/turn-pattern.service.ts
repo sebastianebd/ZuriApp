@@ -37,19 +37,18 @@ export function parseAsLocal(d: string | Date): Date {
 }
 
 /**
- * Calculates the shift for a specific date based on a start date and turn type.
+ * Calculates the shift for a specific date based on a start date and a pattern array.
  * @param targetDate The date to calculate the shift for.
  * @param startDate The start date of the cycle (pattern seed).
- * @param turnType The type of turn (must match PATTERNS keys).
- * @returns ShiftType ('LARGO', 'NOCHE', 'LIBRE') or null if pattern not found.
+ * @param pattern Array of pattern elements (strings or objects).
+ * @returns The element from the pattern array corresponding to the date, or null.
  */
-export const calculateShift = (
+export const calculateShift = <T>(
   targetDate: string | Date,
   startDate: string | Date,
-  turnType: string
-): ShiftType | null => {
-  const pattern = PATTERNS[turnType]
-  if (!pattern) return null
+  pattern: T[]
+): T | null => {
+  if (!pattern || pattern.length === 0) return null
 
   const target = parseAsLocal(targetDate)
   const start = parseAsLocal(startDate)

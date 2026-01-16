@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex flex-column h-100 w-100 overflow-hidden">
+  <div class="row g-0 px-4 py-4 w-100 h-100 flex-column overflow-hidden">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-shrink-0">
       <div class="d-flex align-items-center gap-3">
@@ -7,132 +7,75 @@
           <i class="bi bi-calendar-range fs-4"></i>
         </div>
         <div>
-          <h4 class="fw-bold mb-0 text-dark">Tipos de Turno</h4>
-          <span class="text-secondary small">Configuración de Horarios y Turnos</span>
+          <h4 class="fw-bold mb-0 text-dark">Configuración de Horarios</h4>
+          <span class="text-secondary small">Gestiona tus turnos y la leyenda global</span>
         </div>
       </div>
 
-      <button class="btn btn-primary fw-bold shadow-sm px-4" @click="openCreateModal">
-        <i class="bi bi-plus-lg me-2"></i>Nuevo Turno
+      <button class="btn btn-primary fw-bold shadow-sm px-4" @click="handleCreateAction">
+        <i class="bi bi-plus-lg me-2"></i>
+        {{ activeTab === 'types' ? 'Nuevo Turno' : 'Nueva Sigla' }}
       </button>
     </div>
 
-    <!-- Content -->
+    <!-- Tabs -->
+    <ul
+      class="nav nav-tabs nav-fill border-bottom-0 gap-2 mb-3 flex-shrink-0"
+      style="max-width: 600px"
+    >
+      <li class="nav-item">
+        <button
+          class="nav-link border-0 rounded-top-3 fw-bold"
+          :class="{ 'active shadow-sm bg-white text-primary': activeTab === 'types' }"
+          @click="activeTab = 'types'"
+          style="background: transparent"
+        >
+          <i class="bi bi-list-task me-2"></i>Tipos de Turno
+        </button>
+      </li>
+      <li class="nav-item">
+        <button
+          class="nav-link border-0 rounded-top-3 fw-bold"
+          :class="{ 'active shadow-sm bg-white text-primary': activeTab === 'siglas' }"
+          @click="activeTab = 'siglas'"
+          style="background: transparent"
+        >
+          <i class="bi bi-palette me-2"></i>Leyenda (Siglas)
+        </button>
+      </li>
+    </ul>
+
+    <!-- Content Card -->
     <div
       class="flex-grow-1 overflow-hidden card border-0 shadow-sm rounded-4 bg-white position-relative"
     >
-      <!-- Loader -->
-      <div
-        v-if="store.loading && store.turnTypes.length === 0"
-        class="position-absolute top-50 start-50 translate-middle"
-      >
-        <div class="spinner-border text-warning" role="status"></div>
+      <!-- TAB 1: TYPES -->
+      <div v-if="activeTab === 'types'" class="h-100 d-flex flex-column">
+        <!-- Loader -->
+        <div
+          v-if="store.loading && store.turnTypes.length === 0"
+          class="position-absolute top-50 start-50 translate-middle"
+        >
+          <div class="spinner-border text-warning" role="status"></div>
+        </div>
+
+        <!-- Table Scroll Container -->
+        <div class="h-100 overflow-auto custom-scrollbar">
+          <TurnTypeTable
+            :turn-types="store.turnTypes"
+            @edit="openEditModal"
+            @delete="confirmDelete"
+          />
+        </div>
       </div>
 
-      <!-- Table Scroll Container -->
-      <div class="h-100 overflow-auto custom-scrollbar p-3">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="bg-light sticky-top">
-            <tr>
-              <th
-                class="border-0 text-secondary small text-uppercase fw-semibold ps-4"
-                style="width: 30%"
-              >
-                Nombre
-              </th>
-              <th
-                class="border-0 text-secondary small text-uppercase fw-semibold"
-                style="width: 40%"
-              >
-                Descripción
-              </th>
-              <th
-                class="border-0 text-secondary small text-uppercase fw-semibold"
-                style="width: 15%"
-              >
-                Estado
-              </th>
-              <th
-                class="border-0 text-secondary small text-uppercase fw-semibold text-end pe-4"
-                style="width: 15%"
-              >
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in store.turnTypes" :key="item._id" class="position-relative">
-              <td class="ps-4 py-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div
-                    class="avatar-initials bg-warning bg-opacity-10 text-warning fw-bold rounded-circle"
-                  >
-                    {{ item.nombre.charAt(0).toUpperCase() }}
-                  </div>
-                  <div>
-                    <span class="fw-medium text-dark d-block">{{ item.nombre }}</span>
-                    <span
-                      v-if="item.codigo"
-                      class="badge bg-light text-secondary border small mt-1"
-                    >
-                      {{ item.codigo }}
-                    </span>
-                  </div>
-                </div>
-              </td>
-              <td class="py-3">
-                <span class="text-muted small">{{ item.descripcion || 'Sin descripción' }}</span>
-              </td>
-              <td class="py-3">
-                <span
-                  class="badge rounded-pill px-3 py-2 fw-medium"
-                  :class="
-                    item.activo
-                      ? 'bg-success bg-opacity-10 text-success'
-                      : 'bg-danger bg-opacity-10 text-danger'
-                  "
-                >
-                  <i
-                    class="bi me-1"
-                    :class="item.activo ? 'bi-check-circle-fill' : 'bi-x-circle-fill'"
-                  ></i>
-                  {{ item.activo ? 'Activo' : 'Inactivo' }}
-                </span>
-              </td>
-              <td class="text-end pe-4 py-3">
-                <div class="d-flex justify-content-end gap-2">
-                  <button
-                    class="btn btn-sm btn-icon btn-light text-primary shadow-sm"
-                    @click="openEditModal(item)"
-                    title="Editar"
-                  >
-                    <i class="bi bi-pencil-fill"></i>
-                  </button>
-                  <button
-                    class="btn btn-sm btn-icon btn-light text-danger shadow-sm"
-                    @click="confirmDelete(item)"
-                    title="Eliminar"
-                  >
-                    <i class="bi bi-trash-fill"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <!-- Empty State -->
-            <tr v-if="!store.loading && store.turnTypes.length === 0">
-              <td colspan="4" class="text-center py-5">
-                <div class="d-flex flex-column align-items-center text-muted">
-                  <i class="bi bi-calendar-x fs-1 mb-2 opacity-50"></i>
-                  <span>No hay tipos de turno registrados</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- TAB 2: SIGLAS -->
+      <div v-if="activeTab === 'siglas'" class="h-100 p-3">
+        <TurnSiglaManagement ref="siglaManagementRef" :hideActionHeader="true" />
       </div>
     </div>
 
-    <!-- Modals -->
+    <!-- Modals (Local to Shift Types) -->
     <TurnTypeModal
       :visible="showModal"
       :turn-type="selectedItem"
@@ -160,15 +103,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useTurnTypeStore, type TurnType } from '@/stores/turn-type.store'
 import TurnTypeModal from '@/components/config/TurnTypeModal.vue'
+import TurnTypeTable from '@/components/config/TurnTypeTable.vue'
+import TurnSiglaManagement from '@/components/config/TurnSiglaManagement.vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 
 const store = useTurnTypeStore()
 const showModal = ref(false)
 const showDeleteModal = ref(false)
 const showConfirmationModal = ref(false)
+
+const activeTab = ref<'types' | 'siglas'>('types')
+const siglaManagementRef = ref() // Component Ref
 
 const selectedItem = ref<TurnType | null>(null)
 const itemToDelete = ref<TurnType | null>(null)
@@ -183,6 +131,18 @@ const confirmationMessage = computed(() => {
 onMounted(() => {
   store.fetchTurnTypes(true)
 })
+
+// Header Action Handler
+function handleCreateAction() {
+  if (activeTab.value === 'types') {
+    openCreateModal()
+  } else {
+    // Call exposed method from child
+    siglaManagementRef.value?.openCreateModal()
+  }
+}
+
+// --- TURN TYPES LOGIC ---
 
 function openCreateModal() {
   selectedItem.value = null
@@ -214,13 +174,9 @@ async function confirmSave() {
 
   try {
     if (pendingData.value._id) {
-      await store.updateTurnType(
-        pendingData.value._id,
-        pendingData.value.nombre!,
-        pendingData.value.descripcion
-      )
+      await store.updateTurnType(pendingData.value._id, pendingData.value)
     } else {
-      await store.createTurnType(pendingData.value.nombre!, pendingData.value.descripcion)
+      await store.createTurnType(pendingData.value)
     }
     closeConfirmationModal()
     closeModal()
@@ -260,15 +216,6 @@ async function handleDelete() {
   justify-content: center;
 }
 
-.avatar-initials {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-}
-
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -278,19 +225,5 @@ async function handleDelete() {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #cbd5e1;
   border-radius: 20px;
-}
-
-.btn-icon {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.btn-icon:hover {
-  transform: translateY(-2px);
 }
 </style>

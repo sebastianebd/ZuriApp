@@ -69,8 +69,11 @@
                     >Funcionario Saliente</label
                   >
                   <h5 class="fw-bold mb-0 text-dark">
-                    {{ eventoSeleccionado.nombre_saliente }}
-                    {{ eventoSeleccionado.apellido_saliente }}
+                    {{
+                      formatTitleCase(
+                        `${eventoSeleccionado.nombre_saliente} ${eventoSeleccionado.apellido_saliente}`
+                      )
+                    }}
                   </h5>
                 </div>
               </div>
@@ -89,8 +92,11 @@
                     >Reemplazante (Entrante)</label
                   >
                   <h5 class="fw-bold mb-0 text-dark">
-                    {{ eventoSeleccionado.nombre_entrante }}
-                    {{ eventoSeleccionado.apellido_entrante }}
+                    {{
+                      formatTitleCase(
+                        `${eventoSeleccionado.nombre_entrante} ${eventoSeleccionado.apellido_entrante}`
+                      )
+                    }}
                   </h5>
                 </div>
               </div>
@@ -125,7 +131,7 @@
                       <i class="bi bi-building me-1"></i>Servicio
                     </label>
                     <span class="badge bg-info text-dark w-100 py-2">{{
-                      eventoSeleccionado.servicio
+                      formatTitleCase(eventoSeleccionado.servicio)
                     }}</span>
                   </div>
                 </div>
@@ -134,7 +140,9 @@
                     <label class="text-secondary smaller fw-bold text-uppercase mb-1 d-block">
                       <i class="bi bi-clock me-1"></i>Turno
                     </label>
-                    <span class="fw-semibold text-dark">{{ eventoSeleccionado.tipo_turno }}</span>
+                    <span class="fw-semibold text-dark">{{
+                      formatTitleCase(eventoSeleccionado.tipo_turno)
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -144,12 +152,13 @@
                   class="badge px-3 py-2 rounded-pill"
                   :style="{ backgroundColor: getColorByStatus(eventoSeleccionado.status) }"
                 >
-                  <i class="bi bi-circle-fill me-1 small"></i>{{ eventoSeleccionado.status }}
+                  <i class="bi bi-circle-fill me-1 small"></i
+                  >{{ formatTitleCase(eventoSeleccionado.status) }}
                 </span>
                 <div class="text-end">
                   <p class="text-muted smaller mb-0">Creado por</p>
                   <p class="fw-medium text-dark small mb-0">
-                    {{ eventoSeleccionado.creado_por?.full_name || 'Sistema' }}
+                    {{ formatTitleCase(eventoSeleccionado.creado_por?.full_name) || 'Sistema' }}
                   </p>
                 </div>
               </div>
@@ -184,6 +193,8 @@ const {
   formatDateDDMMYYYY,
   getColorByStatus
 } = useCalendar()
+
+import { formatTitleCase } from '@/utils/text-formatters'
 </script>
 
 <style>

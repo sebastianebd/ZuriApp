@@ -3,70 +3,75 @@
     <table class="table modern-table mb-0">
       <thead>
         <tr>
-          <th scope="col" class="ps-4">Código</th>
-          <th scope="col">Nombre</th>
-          <th scope="col" class="text-center">Nivel</th>
-          <th scope="col" class="text-center">Permisos</th>
-          <th scope="col" class="text-center">Estado</th>
-          <th scope="col" class="text-end pe-4">Acciones</th>
+          <th scope="col" class="ps-4" style="width: 10%">Código</th>
+          <th scope="col" style="width: 25%">Turno</th>
+          <th scope="col" style="width: 25%">Detalles</th>
+          <th scope="col" style="width: 15%">Ciclo</th>
+          <th scope="col" style="width: 10%">Estado</th>
+          <th scope="col" class="text-end pe-4" style="width: 15%">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-if="cargos.length === 0">
-          <td colspan="6" class="text-center py-5 text-muted small">No hay cargos registrados</td>
+        <!-- Empty State -->
+        <tr v-if="turnTypes.length === 0">
+          <td colspan="6" class="text-center py-5 text-muted small">
+            No hay tipos de turno registrados
+          </td>
         </tr>
+
         <tr
-          v-for="(cargo, index) in cargos"
-          :key="cargo._id"
+          v-for="(item, index) in turnTypes"
+          :key="item._id"
           class="data-row"
-          :class="{ 'row-inactive': !cargo.activo }"
+          :class="{ 'row-inactive': !item.activo }"
           :style="{ animationDelay: `${index * 50}ms` }"
         >
-          <!-- CÓDIGO -->
+          <!-- Código (New First Column) -->
           <td class="ps-4 first-cell">
-            <span class="badge bg-light text-secondary border font-monospace x-small">
-              {{ cargo.codigo || '---' }}
+            <span class="badge bg-light text-secondary border small font-monospace">
+              {{ item.codigo || '---' }}
             </span>
           </td>
 
-          <!-- Nombre -->
+          <!-- Turno (Info Only) -->
           <td>
             <div class="d-flex flex-column">
-              <span class="fw-bold text-dark">{{ formatTitleCase(cargo.nombre) }}</span>
-              <span class="text-muted x-small" style="max-width: 200px; line-height: 1.1">{{
-                cargo.descripcion
-              }}</span>
+              <span class="fw-bold text-dark">{{ formatTitleCase(item.nombre) }}</span>
+              <div class="d-flex gap-2 align-items-center mt-1">
+                <span
+                  v-if="item.alias"
+                  class="badge bg-info bg-opacity-10 text-info border border-info small"
+                >
+                  {{ item.alias }}
+                </span>
+              </div>
             </div>
           </td>
 
-          <!-- Nivel -->
-          <td class="text-center">
-            <span
-              class="badge rounded-pill fw-bold"
-              :class="
-                (cargo.nivel || 0) === 100
-                  ? 'bg-danger bg-opacity-10 text-danger'
-                  : (cargo.nivel || 0) >= 50
-                  ? 'bg-primary bg-opacity-10 text-primary'
-                  : 'bg-secondary bg-opacity-10 text-secondary'
-              "
-            >
-              {{ cargo.nivel || 10 }}
-            </span>
+          <!-- Detalles -->
+          <td>
+            <div class="d-flex flex-column gap-1">
+              <span class="text-dark small fw-medium" v-if="item.jornada">
+                {{ item.jornada }}
+              </span>
+              <span class="text-muted x-small text-truncate" style="max-width: 200px">
+                {{ item.descripcion || 'Sin descripción' }}
+              </span>
+            </div>
           </td>
 
-          <!-- Permisos -->
-          <td class="text-center">
-            <span class="badge bg-white border text-dark fw-normal shadow-sm">
-              {{ cargo.permisos?.length || 0 }}
+          <!-- Ciclo -->
+          <td>
+            <span class="badge bg-light text-dark border fw-normal px-3 py-1">
+              {{ item.cantidad_dias }} Días
             </span>
           </td>
 
           <!-- Estado -->
-          <td class="text-center">
+          <td>
             <div class="h-100 d-flex align-items-center justify-content-center">
-              <span class="status-glass" :class="cargo.activo ? 'glass-success' : 'glass-inactive'">
-                {{ cargo.activo ? 'ACTIVO' : 'INACTIVO' }}
+              <span class="status-glass" :class="item.activo ? 'glass-success' : 'glass-inactive'">
+                {{ item.activo ? 'ACTIVO' : 'INACTIVO' }}
               </span>
             </div>
           </td>
@@ -74,21 +79,10 @@
           <!-- Acciones -->
           <td class="pe-4 text-end last-cell">
             <div class="actions-wrapper h-100 d-flex align-items-center justify-content-end gap-2">
-              <button
-                v-if="authStore.hasPermission('cargos.update')"
-                @click="$emit('edit', cargo)"
-                class="btn-glass btn-edit"
-                title="Editar"
-              >
+              <button class="btn-glass btn-edit" @click="$emit('edit', item)" title="Editar">
                 <i class="bi bi-pencil-fill"></i>
               </button>
-
-              <button
-                v-if="authStore.hasPermission('cargos.delete')"
-                @click="$emit('delete', cargo)"
-                class="btn-glass btn-delete"
-                title="Eliminar"
-              >
+              <button class="btn-glass btn-delete" @click="$emit('delete', item)" title="Eliminar">
                 <i class="bi bi-trash3-fill"></i>
               </button>
             </div>
@@ -100,21 +94,17 @@
 </template>
 
 <script setup lang="ts">
-import type { ICargo } from '@/types/models'
-import { useAuthStore } from '@/stores/auth.store'
+import type { TurnType } from '@/stores/turn-type.store'
 import { formatTitleCase } from '@/utils/text-formatters'
 
 defineProps<{
-  cargos: ICargo[]
+  turnTypes: TurnType[]
 }>()
 
 defineEmits(['edit', 'delete'])
-const authStore = useAuthStore()
 </script>
 
 <style scoped>
-/* Copied and adapted from UserTable.vue for consistency */
-
 /* --- Animation Keyframes --- */
 @keyframes slideUpFade {
   from {
@@ -187,6 +177,10 @@ const authStore = useAuthStore()
 .row-inactive td {
   opacity: 0.6;
   background-color: #f8fafc;
+}
+
+.x-small {
+  font-size: 0.75rem;
 }
 
 /* Glass Status */

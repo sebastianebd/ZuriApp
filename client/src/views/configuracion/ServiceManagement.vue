@@ -61,7 +61,7 @@
               <!-- Identificación -->
               <td>
                 <div class="d-flex flex-column">
-                  <span class="fw-bold text-dark">{{ service.nombre }}</span>
+                  <span class="fw-bold text-dark">{{ formatTitleCase(service.nombre) }}</span>
                   <span v-if="service.centro_costo" class="text-muted x-small mt-1">
                     CC: {{ service.centro_costo }}
                   </span>
@@ -255,6 +255,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useServiceStore, type Service, type ServiceDTO } from '@/stores/service.store'
 import ServiceModal from '@/components/config/ServiceModal.vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
+import { formatTitleCase } from '@/utils/text-formatters'
 
 const serviceStore = useServiceStore()
 const showModal = ref(false)

@@ -2,11 +2,24 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './auth.store'
 
+export interface TurnDaySequence {
+  dia: number
+  turno_entrada?: string | null
+  turno_salida?: string | null
+  es_libre: boolean
+  sigla: string
+  color?: string
+}
+
 export interface TurnType {
   _id: string
   nombre: string
   codigo?: string
+  alias?: string
+  jornada?: string
   descripcion?: string
+  cantidad_dias: number
+  secuencia: TurnDaySequence[]
   activo: boolean
   createdAt: string
   updatedAt: string
@@ -26,7 +39,7 @@ export const useTurnTypeStore = defineStore('turn-type', () => {
     const api = authStore.usePrivateApi()
 
     try {
-      const { data } = await api.get<TurnType[]>('/turn-types')
+      const { data } = await api.get<TurnType[]>('/turn-types?all=true')
       turnTypes.value = data
     } catch (err: any) {
       console.error('Error fetching turn types:', err)
@@ -36,14 +49,14 @@ export const useTurnTypeStore = defineStore('turn-type', () => {
     }
   }
 
-  const createTurnType = async (nombre: string, descripcion?: string) => {
+  const createTurnType = async (payload: Partial<TurnType>) => {
     loading.value = true
     error.value = null
     const authStore = useAuthStore()
     const api = authStore.usePrivateApi()
 
     try {
-      const { data } = await api.post<TurnType>('/turn-types', { nombre, descripcion })
+      const { data } = await api.post<TurnType>('/turn-types', payload)
       turnTypes.value.push(data)
       turnTypes.value.sort((a, b) => a.nombre.localeCompare(b.nombre))
       return data
@@ -55,14 +68,14 @@ export const useTurnTypeStore = defineStore('turn-type', () => {
     }
   }
 
-  const updateTurnType = async (id: string, nombre: string, descripcion?: string) => {
+  const updateTurnType = async (id: string, payload: Partial<TurnType>) => {
     loading.value = true
     error.value = null
     const authStore = useAuthStore()
     const api = authStore.usePrivateApi()
 
     try {
-      const { data } = await api.put<TurnType>(`/turn-types/${id}`, { nombre, descripcion })
+      const { data } = await api.put<TurnType>(`/turn-types/${id}`, payload)
       const index = turnTypes.value.findIndex((t) => t._id === id)
       if (index !== -1) {
         turnTypes.value[index] = data

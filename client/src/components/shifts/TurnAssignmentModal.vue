@@ -233,7 +233,7 @@ import { DatePicker } from 'v-calendar'
 import 'v-calendar/dist/style.css'
 import { useUserStore } from '@/stores/user.store'
 import { useOptionStore } from '@/stores/option.store'
-import { PATTERNS } from '@/services/turn-pattern.service'
+import { useTurnTypeStore } from '@/stores/turn-type.store'
 import type { User } from '@/types/models'
 import TurnAssignmentUserModal from './TurnAssignmentUserModal.vue'
 
@@ -249,6 +249,7 @@ const emit = defineEmits<{
 
 const usersStore = useUserStore()
 const optionStore = useOptionStore()
+const turnTypeStore = useTurnTypeStore()
 const localUsers = ref<any[]>([])
 
 // Logic State
@@ -256,7 +257,9 @@ const showUserModal = ref(false)
 const selectedUser = ref<User | null>(null)
 
 // Options
-const turnTypeOptions = Object.keys(PATTERNS)
+const turnTypeOptions = computed(() => {
+  return turnTypeStore.turnTypes.map((t) => t.nombre)
+})
 
 const serviceOptions = computed(() => {
   return optionStore.opciones?.servicios || []
@@ -286,7 +289,8 @@ watch(
       try {
         const [users] = await Promise.all([
           usersStore.mostrarTodos(),
-          optionStore.mostrarOpciones()
+          optionStore.mostrarOpciones(),
+          turnTypeStore.fetchTurnTypes(true)
         ])
         localUsers.value = users
       } catch (e) {

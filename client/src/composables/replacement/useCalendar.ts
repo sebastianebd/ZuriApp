@@ -2,6 +2,7 @@ import { ref, onMounted } from 'vue'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { useReplacementStore } from '@/stores/replacement.store'
+import { formatTitleCase } from '@/utils/text-formatters'
 
 export function useCalendar() {
   const replacementStore = useReplacementStore()
@@ -112,8 +113,11 @@ export function useCalendar() {
         const start = r.fecha_inicio ? r.fecha_inicio.slice(0, 10) : ''
         const end = r.fecha_termino ? sumarUnDia(r.fecha_termino) : ''
 
+        const titleName = formatTitleCase(`${r.nombre_entrante} ${r.apellido_entrante}`)
+        const titleService = formatTitleCase(r.servicio)
+
         return {
-          title: `${r.nombre_entrante} ${r.apellido_entrante} - ${r.servicio}`,
+          title: `${titleName} - ${titleService}`,
           start: start,
           end: end,
           backgroundColor: getColorByStatus(r.status),

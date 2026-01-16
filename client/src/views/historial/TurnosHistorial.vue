@@ -51,13 +51,15 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import ShiftsView from '@/views/shifts/ShiftsView.vue'
 import ShiftExceptionFilter from '@/components/historial/ShiftExceptionFilter.vue'
 import { useOptionStore } from '@/stores/option.store'
+import { useTurnTypeStore } from '@/stores/turn-type.store'
 
 const optionStore = useOptionStore()
+const turnTypeStore = useTurnTypeStore()
 const shiftsViewRef = ref<InstanceType<typeof ShiftsView> | null>(null)
 
 const filters = ref({
-  startDate: null, // Not used by grid but required by component interface
-  endDate: null, // Not used by grid but required by component interface
+  startDate: null,
+  endDate: null,
   service: '',
   cargo: '',
   shiftType: ''
@@ -68,10 +70,12 @@ const cargos = computed(() => {
   const all = optionStore.opciones?.tipoCargo || []
   return all.filter((c) => !['RECURSOS HUMANOS', 'ADMIN-TI'].includes(c))
 })
-const shiftTypes = computed(() => optionStore.opciones?.tiposTurno || [])
+const shiftTypes = computed(() => {
+  return turnTypeStore.turnTypes.map((t) => t.nombre)
+})
 
 onMounted(async () => {
-  await optionStore.mostrarOpciones()
+  await Promise.all([optionStore.mostrarOpciones(), turnTypeStore.fetchTurnTypes(true)])
 
   // Default to previous month
   await nextTick()

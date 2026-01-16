@@ -91,8 +91,11 @@ app.use("/api/shift-exceptions", shiftExceptionRoutes);
 
 import serviceRoutes from "./routes/api/service.routes";
 import turnTypeRoutes from "./routes/api/turn-type.routes";
+import turnSiglaRoutes from "./routes/api/turn-sigla.routes";
+
 app.use("/api/services", serviceRoutes);
 app.use("/api/turn-types", turnTypeRoutes);
+app.use("/api/turn-siglas", turnSiglaRoutes);
 
 // Sentry Tunnel - Debe ir antes del catch-all *
 import sentryRoutes from "./routes/api/sentry.routes";

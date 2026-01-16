@@ -2,6 +2,7 @@ import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
+import { useTurnTypeStore } from '@/stores/turn-type.store'
 import { mostrarTodosUsuarios } from '@/services/user.service'
 import { usePagination } from '@/composables/usePagination'
 import { useReplacementModals } from '@/composables/useReplacementModals'
@@ -169,9 +170,11 @@ export function useReplacements() {
     }
     const [opciones, usuariosCargados] = await Promise.all([
       optionStore.mostrarOpciones(),
-      mostrarTodosUsuarios(apiPrivate)
+      mostrarTodosUsuarios(apiPrivate),
+      useTurnTypeStore().fetchTurnTypes(true)
     ])
-    listaDeTurnos.value = opciones.tiposTurno
+    const turnTypes = useTurnTypeStore().turnTypes
+    listaDeTurnos.value = turnTypes.map((t) => t.nombre)
     listaDeServicios.value = opciones.servicios
     listaDeCargos.value = opciones.tipoCargo
     usuarios.value = usuariosCargados as User[]
