@@ -54,6 +54,37 @@
                   <i class="bi bi-arrow-counterclockwise me-2"></i>Restaurar Patrón
                 </button>
               </div>
+
+              <!-- Manage Assignment Section -->
+              <div class="mt-4 pt-3 border-top">
+                <div v-if="!showDeleteConfirm">
+                  <button
+                    class="btn btn-sm btn-link text-danger text-decoration-none w-100 d-flex align-items-center justify-content-center"
+                    @click="showDeleteConfirm = true"
+                  >
+                    <i class="bi bi-trash me-2"></i>Eliminar Asignación Base
+                  </button>
+                </div>
+                <div v-else class="bg-danger-subtle p-3 rounded-3 mt-2">
+                  <p class="text-danger small fw-bold mb-2 text-center">
+                    ¿Eliminar esta asignación completa?
+                  </p>
+                  <div class="d-flex gap-2">
+                    <button
+                      class="btn btn-sm btn-light w-50 fw-bold"
+                      @click="showDeleteConfirm = false"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      class="btn btn-sm btn-danger w-50 fw-bold"
+                      @click="emit('delete-assignment')"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- FOOTER -->
@@ -99,7 +130,10 @@ const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'save', data: { override_type: 'LARGO' | 'NOCHE' | 'LIBRE' }): void
   (e: 'restore'): void
+  (e: 'delete-assignment'): void
 }>()
+
+const showDeleteConfirm = ref(false)
 
 const selectedShift = ref<'LARGO' | 'NOCHE' | 'LIBRE' | null>(null)
 

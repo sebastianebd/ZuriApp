@@ -264,40 +264,41 @@ export const updateService = async (req: Request, res: Response) => {
           }
         }
 
-        const detailsStr =
-          changes.length > 0 ? ` (Cambios: ${changes.join(", ")})` : "";
+        if (changes.length > 0) {
+          const detailsStr = ` (Cambios: ${changes.join(", ")})`;
 
-        // Ultra-safe sanitized old object
-        // We can rely on toObject() usually if we are not crashing on it.
-        // If previous crash was here, wrapping in try/catch saves us.
-        // But let's use manual just in case toObject is indeed the culprit.
-        const manualOld = {
-          _id: currentService._id,
-          nombre: currentService.nombre,
-          // store raw IDs or simple strings to be safe
-          jefe_servicio: (currentService.jefe_servicio as any)?._id,
-          supervisor: (currentService.supervisor as any)?._id,
-          coordinadores: (currentService.coordinadores || []).map((u: any) =>
-            u && u._id ? u._id : u
-          ),
-          jefes_turno: (currentService.jefes_turno || []).map((u: any) =>
-            u && u._id ? u._id : u
-          ),
-          centro_costo: currentService.centro_costo,
-          ubicacion: currentService.ubicacion,
-          anexo: currentService.anexo,
-          email: currentService.email,
-          activo: currentService.activo,
-        };
+          // Ultra-safe sanitized old object
+          // We can rely on toObject() usually if we are not crashing on it.
+          // If previous crash was here, wrapping in try/catch saves us.
+          // But let's use manual just in case toObject is indeed the culprit.
+          const manualOld = {
+            _id: currentService._id,
+            nombre: currentService.nombre,
+            // store raw IDs or simple strings to be safe
+            jefe_servicio: (currentService.jefe_servicio as any)?._id,
+            supervisor: (currentService.supervisor as any)?._id,
+            coordinadores: (currentService.coordinadores || []).map((u: any) =>
+              u && u._id ? u._id : u
+            ),
+            jefes_turno: (currentService.jefes_turno || []).map((u: any) =>
+              u && u._id ? u._id : u
+            ),
+            centro_costo: currentService.centro_costo,
+            ubicacion: currentService.ubicacion,
+            anexo: currentService.anexo,
+            email: currentService.email,
+            activo: currentService.activo,
+          };
 
-        await AuditService.logAction(
-          "MODIFICAR",
-          "SERVICIOS",
-          (req as any).user,
-          `Modificó el servicio: ${service.nombre}${detailsStr}`,
-          { old: manualOld, new: validatedData },
-          service._id.toString()
-        );
+          await AuditService.logAction(
+            "MODIFICAR",
+            "SERVICIOS",
+            (req as any).user,
+            `Modificó el servicio: ${service.nombre}${detailsStr}`,
+            { old: manualOld, new: validatedData },
+            service._id.toString()
+          );
+        }
       }
     } catch (auditError) {
       console.error("FATAL AUDIT ERROR (Swallowed):", auditError);

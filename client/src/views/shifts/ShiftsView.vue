@@ -205,6 +205,7 @@
       @cerrar="showModifyModal = false"
       @save="handleSaveException"
       @restore="handleRestorePattern"
+      @delete-assignment="handleDeleteAssignment"
     />
   </div>
 </template>
@@ -347,21 +348,41 @@ interface GridRow {
   tipo_turno: string
   fecha_inicio: string | Date
   fecha_termino?: string | Date
-  source: 'REPLACEMENT' | 'ASSIGNMENT'
-  original: RegisterDataReemplazo | TurnAssignment
+  source: 'REPLACEMENT' | 'ASSIGNMENT' | 'MIXED'
+  original: RegisterDataReemplazo | TurnAssignment | any
+  userId: string
 }
 
 interface ShiftResult {
   sigla: string
   color?: string
+  assignmentId?: string // New: To identify which assignment
+  assignmentName?: string // New: To display which assignment
 }
 
 // Helper to get Pattern from Store
-function getPattern(turnName: string): ShiftResult[] {
-  const turn = turnTypeStore.turnTypes.find((t) => t.nombre === turnName)
+// Helper to get Pattern from Store or Snapshot
+function getPattern(assignment: TurnAssignment | null, turnName?: string): ShiftResult[] {
+  // 1. Try Snapshot (Immutable History)
+  if (assignment && assignment.snapshot_secuencia && assignment.snapshot_secuencia.length > 0) {
+    return assignment.snapshot_secuencia.map((d: any) => {
+      // Type 'any' for now as mapped from different shapes
+      // Look up global sigla color if not in snapshot, or use snapshot color
+      const globalSigla = turnSiglaStore.siglas.find((s) => s.sigla === d.sigla)
+      return {
+        sigla: d.sigla,
+        color: d.color || (globalSigla ? globalSigla.color : undefined)
+      }
+    })
+  }
+
+  // 2. Fallback to Store (Legacy or New Assignment without snapshot)
+  const name = turnName || (assignment ? assignment.turn_type : '')
+  if (!name) return []
+
+  const turn = turnTypeStore.turnTypes.find((t) => t.nombre === name)
   if (turn && turn.secuencia) {
     return turn.secuencia.map((d) => {
-      // Look up global sigla color, fallback to snapshot color
       const globalSigla = turnSiglaStore.siglas.find((s) => s.sigla === d.sigla)
       return {
         sigla: d.sigla,
@@ -379,6 +400,15 @@ const filteredShifts = computed(() => {
 
   const rows: GridRow[] = []
 
+  // Pre-calculate user assignments map for O(1) access
+  const userAssignmentsMap = new Map<string, TurnAssignment[]>()
+
+  turnAssignmentStore.assignments.forEach((a) => {
+    const uid = (a.user_id as unknown as User)._id
+    if (!userAssignmentsMap.has(uid)) userAssignmentsMap.set(uid, [])
+    userAssignmentsMap.get(uid)?.push(a)
+  })
+
   // 1. Process Replacements
   replacementStore.reemplazosActivos.forEach((r: RegisterDataReemplazo) => {
     if (!r.fecha_inicio) return
@@ -389,28 +419,33 @@ const filteredShifts = computed(() => {
       : selectedService.value
     if (activeServiceFilter && r.servicio !== activeServiceFilter) return
 
-    // Cargo Filter (History Mode Only)
-    if (props.historyMode && props.externalFilters.cargo) {
-      if (r.tipo_cargo !== props.externalFilters.cargo) return
-    }
+    // Cargo Filter
+    if (
+      props.historyMode &&
+      props.externalFilters.cargo &&
+      r.tipo_cargo !== props.externalFilters.cargo
+    )
+      return
 
-    // Shift Type Filter (History Mode Only)
-    if (props.historyMode && props.externalFilters.shiftType) {
-      if (r.tipo_turno !== props.externalFilters.shiftType) return
-    }
+    // Shift Type Filter
+    if (
+      props.historyMode &&
+      props.externalFilters.shiftType &&
+      r.tipo_turno !== props.externalFilters.shiftType
+    )
+      return
 
     const rStart = parseAsLocal(r.fecha_inicio)
     const rEnd = parseAsLocal(r.fecha_termino)
-
-    // Check Overlap
     const overlap = rStart <= endOfMonth && rEnd >= startOfMonth
 
-    // Dynamic Check: Ensure turn exists in store
-    const hasPattern = getPattern(r.tipo_turno).length > 0
+    // Use null for assignment arg since replacements don't have snapshots yet (or handle differently)
+    const hasPattern = getPattern(null, r.tipo_turno).length > 0
 
     if (overlap && hasPattern) {
       rows.push({
-        _id: r._id,
+        _id: r._id, // This is replacement ID
+        userId: 'R-' + r._id, // Distinct user ID for replacement (unless we merge, but user context implies separation often)
         nombre: r.nombre_entrante,
         apellido: r.apellido_entrante,
         cargo: r.tipo_cargo,
@@ -424,45 +459,52 @@ const filteredShifts = computed(() => {
     }
   })
 
-  // 2. Process Turn Assignments (Permanent Staff)
+  // 2. Process Turn Assignments (Grouped by User)
+  const processedUsers = new Set<string>()
+
   turnAssignmentStore.assignments.forEach((a: TurnAssignment) => {
-    // User info comes populated in user_id, cast it
     const user = a.user_id as unknown as User
-    if (!user) return
+    if (!user || processedUsers.has(user._id)) return
 
     const effectiveService = a.service || user.servicio || user.tipo_cargo
 
-    // Service Filter
+    // Filters
     const activeServiceFilter = props.historyMode
       ? props.externalFilters.service
       : selectedService.value
     if (activeServiceFilter && effectiveService !== activeServiceFilter) return
 
-    // Cargo Filter (History Mode Only)
-    if (props.historyMode && props.externalFilters.cargo) {
-      if (user.tipo_cargo !== props.externalFilters.cargo) return
-    }
+    if (
+      props.historyMode &&
+      props.externalFilters.cargo &&
+      user.tipo_cargo !== props.externalFilters.cargo
+    )
+      return
+    // Note: Shift Type Filter is tricky for multiple assignments.
+    // If ANY of user's assignments match, should we show user? Or only show if CURRENT assignment matches?
+    // For simplicity, let's skip strict shift type filtering on the ROW level if we want to show full history,
+    // OR filter if *any* assignment overlaps.
 
-    // Shift Type Filter (History Mode Only)
-    if (props.historyMode && props.externalFilters.shiftType) {
-      if (a.turn_type !== props.externalFilters.shiftType) return
-    }
+    // Check if ANY assignment for this user overlaps current view
+    const userAssignments = userAssignmentsMap.get(user._id) || []
+    const hasOverlap = userAssignments.some((assign) => {
+      const start = parseAsLocal(assign.start_date)
+      const end = assign.end_date ? parseAsLocal(assign.end_date) : new Date(9999, 11, 31)
+      return start <= endOfMonth && end >= startOfMonth
+    })
 
-    const aStart = parseAsLocal(a.start_date)
-    const aEnd = a.end_date ? parseAsLocal(a.end_date) : new Date(9999, 11, 31)
+    if (hasOverlap) {
+      processedUsers.add(user._id)
 
-    const overlap = aStart <= endOfMonth && aEnd >= startOfMonth
-
-    if (overlap) {
       rows.push({
-        _id: a._id,
+        _id: a._id, // Use ID of the first found assignment (or arbitrary)
+        userId: user._id, // REAL User ID
         nombre: user.nombre,
         apellido: user.apellido,
         cargo: user.tipo_cargo,
         servicio: effectiveService,
-        tipo_turno: a.turn_type,
-        fecha_inicio: aStart,
-        fecha_termino: a.end_date ? aEnd : undefined, // Undefined means indefinite
+        tipo_turno: a.turn_type, // Representative turn type (will vary by date in cell)
+        fecha_inicio: a.start_date, // Representative
         source: 'ASSIGNMENT',
         original: a
       })
@@ -512,29 +554,76 @@ function getShift(row: GridRow, date: Date): ShiftResult | null {
   if (!row.fecha_inicio || !row.tipo_turno) return null
 
   // 1. Check for exception first
-  const exception = exceptionStore.findException(row._id, date)
-  if (exception) {
-    if (exception.override_type === 'LARGO') return { sigla: 'L', color: '#ffeccc' } // Pastel Orange/Yellow
-    if (exception.override_type === 'NOCHE') return { sigla: 'N', color: '#dbeafe' } // Pastel Blue
-    if (exception.override_type === 'LIBRE') return { sigla: 'X', color: '#f0fdf4' } // Pastel Green (or white/slate)
-    return { sigla: exception.override_type }
+  // Need to find exception for THIS user, regardless of assignment ID?
+  // Current Exception logic link exception to assignment_id.
+  // We need to know WHICH assignment is active today to check exceptions for IT.
+
+  if (row.source === 'REPLACEMENT') {
+    // Legacy/Simple logic for replacements
+    const rStart = parseAsLocal(row.fecha_inicio)
+    const rEnd = row.fecha_termino ? parseAsLocal(row.fecha_termino) : new Date(9999, 11, 31)
+    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const start = new Date(rStart.getFullYear(), rStart.getMonth(), rStart.getDate())
+    const end = new Date(rEnd.getFullYear(), rEnd.getMonth(), rEnd.getDate())
+
+    if (checkDate < start || checkDate > end) return null
+    const pattern = getPattern(null, row.tipo_turno)
+    if (pattern.length === 0) return null
+    return calculateShift<ShiftResult>(date, row.fecha_inicio, pattern)
   }
 
-  // 2. Calculate base shift from pattern
-  const rStart = parseAsLocal(row.fecha_inicio)
-  const rEnd = row.fecha_termino ? parseAsLocal(row.fecha_termino) : new Date(9999, 11, 31)
-
+  // 2. Assignments (Unified Row)
+  // Find the active assignment for this specific assignment
   const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  const start = new Date(rStart.getFullYear(), rStart.getMonth(), rStart.getDate())
-  const end = new Date(rEnd.getFullYear(), rEnd.getMonth(), rEnd.getDate())
 
-  if (checkDate < start || checkDate > end) return null
+  const activeAssignment = turnAssignmentStore.assignments.find((a: TurnAssignment) => {
+    const u = a.user_id as unknown as User
+    if (u._id !== row.userId) return false
 
-  // DYNAMIC PATTERN FETCH
-  const pattern = getPattern(row.tipo_turno)
+    const start = parseAsLocal(a.start_date)
+    const end = a.end_date ? parseAsLocal(a.end_date) : new Date(9999, 11, 31)
+
+    const sDate = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+    const eDate = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+
+    return checkDate >= sDate && checkDate <= eDate
+  })
+
+  if (!activeAssignment) return null
+
+  // Base metadata
+  const meta = {
+    assignmentId: activeAssignment._id,
+    assignmentName: activeAssignment.turn_type
+  }
+
+  // Check Exception
+  const exception = exceptionStore.findException(activeAssignment._id, date)
+  if (exception) {
+    let sigla: string = exception.override_type
+    if (sigla === 'LARGO') sigla = 'L'
+    if (sigla === 'NOCHE') sigla = 'N'
+    if (sigla === 'LIBRE') sigla = 'X'
+
+    const globalSigla = turnSiglaStore.siglas.find((s) => s.sigla === sigla)
+    return {
+      sigla: sigla,
+      color: globalSigla ? globalSigla.color : undefined,
+      ...meta
+    }
+  }
+
+  // Calculate pattern
+  const pattern = getPattern(activeAssignment)
   if (pattern.length === 0) return null
 
-  return calculateShift<ShiftResult>(date, row.fecha_inicio, pattern)
+  const aStart = parseAsLocal(activeAssignment.start_date)
+  const result = calculateShift<ShiftResult>(date, aStart, pattern)
+
+  if (result) {
+    return { ...result, ...meta }
+  }
+  return null
 }
 
 function getShiftStyle(shift: ShiftResult | null) {
@@ -592,18 +681,24 @@ function getShiftTooltip(item: GridRow, date: Date): string {
     if (siglaInfo.turno_entrada && siglaInfo.turno_salida) {
       tooltip += `\n${siglaInfo.turno_entrada} - ${siglaInfo.turno_salida}`
     } else {
-      // If no times, maybe it's Libre?
       if (shift.sigla === 'X' || siglaInfo.nombre.toUpperCase() === 'LIBRE') {
         tooltip += '\nDía libre'
       }
     }
   } else {
-    // Fallback for hardcoded or not found
+    // Fallback
     const s = shift.sigla.toUpperCase()
-    if (s === 'L') tooltip += 'Turno Long\n08:00 - 20:00' // Fallback
-    else if (s === 'N') tooltip += 'Turno Noche\n20:00 - 08:00' // Fallback
+    if (s === 'L') tooltip += 'Turno Long\n08:00 - 20:00'
+    else if (s === 'N') tooltip += 'Turno Noche\n20:00 - 08:00'
     else if (s === 'X') tooltip += 'Día libre'
     else tooltip += `Turno: ${shift.sigla}`
+  }
+
+  // Add Assignment Name if distinct from global row type
+  if (shift.assignmentName) {
+    const formattedName = formatTitleCase(shift.assignmentName)
+    // Only add if it adds value (simple check)
+    tooltip += `\n(Patrón: ${formattedName})`
   }
 
   // Add replacement code if applicable
@@ -672,17 +767,38 @@ function handleCellClick(item: GridRow, date: Date) {
   const shift = getShift(item, date)
   if (!shift) return
 
-  const exception = exceptionStore.findException(item._id, date)
+  const exception = exceptionStore.findException(shift.assignmentId || item._id, date)
 
   selectedShiftData.value = {
-    assignmentId: item._id,
-    assignmentName: formatTitleCase(`${item.nombre} ${item.apellido}`),
+    // Use the specific assignment ID if available (from multi-assignment logic), else fallback to row ID
+    assignmentId: shift.assignmentId || item._id,
+    // Use the specific assignment name if available
+    assignmentName: shift.assignmentName
+      ? formatTitleCase(shift.assignmentName)
+      : formatTitleCase(`${item.nombre} ${item.apellido}`),
     date: date,
     currentShift: shift,
     hasException: !!exception
   }
 
   showModifyModal.value = true
+}
+
+async function handleDeleteAssignment() {
+  if (!selectedShiftData.value) return
+
+  try {
+    const idToDelete = selectedShiftData.value.assignmentId
+    // If it's a replacement mixed in, logic might vary, but for TurnAssignment:
+    await turnAssignmentStore.removeAssignment(idToDelete)
+
+    showModifyModal.value = false
+    alertComponent.value.show('Éxito', 'Asignación eliminada correctamente', 'success')
+    loadData() // Reload to refresh grid
+  } catch (error) {
+    console.error(error)
+    alertComponent.value.show('Error', 'No se pudo eliminar la asignación', 'error')
+  }
 }
 
 async function handleSaveException(data: { override_type: 'LARGO' | 'NOCHE' | 'LIBRE' }) {

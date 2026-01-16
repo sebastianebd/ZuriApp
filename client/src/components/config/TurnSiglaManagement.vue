@@ -8,7 +8,7 @@
     </div>
 
     <!-- Table Container -->
-    <div class="flex-grow-1 overflow-auto custom-scrollbar p-1">
+    <div class="flex-grow-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-1">
       <div v-if="store.loading && store.siglas.length === 0" class="text-center py-5">
         <div class="spinner-border text-primary" role="status"></div>
       </div>
@@ -18,8 +18,11 @@
         <p>No hay siglas definidas. Crea una leyenda global.</p>
       </div>
 
-      <div v-else class="row g-3">
-        <div v-for="item in store.siglas" :key="item._id" class="col-md-6 col-lg-4 col-xl-3">
+      <div
+        v-else
+        class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3"
+      >
+        <div v-for="item in store.siglas" :key="item._id" class="col">
           <div class="card h-100 border-0 shadow-sm rounded-4 hover-card">
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-start mb-2">

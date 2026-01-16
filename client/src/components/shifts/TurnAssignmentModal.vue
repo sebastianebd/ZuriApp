@@ -129,6 +129,7 @@
                     v-model="form.start_date"
                     :popover="{ visibility: 'click', placement: 'bottom' }"
                     :masks="{ input: 'DD/MM/YYYY' }"
+                    :disabled-dates="vCalendarDisabledDates"
                   >
                     <template #default="{ inputValue, inputEvents }">
                       <div class="input-group">
@@ -164,6 +165,7 @@
                     :popover="{ visibility: 'click', placement: 'bottom' }"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :min-date="form.start_date"
+                    :disabled-dates="vCalendarDisabledDates"
                   >
                     <template #default="{ inputValue, inputEvents }">
                       <div class="input-group">
@@ -232,6 +234,7 @@ import { ref, computed, watch } from 'vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/dist/style.css'
 import { useUserStore } from '@/stores/user.store'
+import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import type { User } from '@/types/models'
@@ -248,6 +251,7 @@ const emit = defineEmits<{
 }>()
 
 const usersStore = useUserStore()
+const turnAssignmentStore = useTurnAssignmentStore()
 const optionStore = useOptionStore()
 const turnTypeStore = useTurnTypeStore()
 const localUsers = ref<any[]>([])
@@ -312,6 +316,37 @@ function resetForm() {
   errors.value = {}
 }
 
+const blockedDates = ref<any[]>([])
+
+function getBlockedDates(assignments: any[]) {
+  return assignments.map((a) => {
+    return {
+      start: new Date(a.start_date),
+      end: a.end_date ? new Date(a.end_date) : null // Null end means indefinite. v-calendar handles null end? limit to 100 years maybe.
+    }
+  })
+}
+
+// Convert logic for v-calendar
+// v-calendar expects ranges: { start: Date, end: Date }
+// For indefinite end, we can pick a far future date.
+const vCalendarDisabledDates = computed(() => {
+  return blockedDates.value.map((range) => ({
+    start: range.start,
+    end: range.end || new Date(2100, 0, 1)
+  }))
+})
+
+// Watch selectedUser instead of handling in method for clearer reactivity
+watch(selectedUser, async (newUser) => {
+  if (newUser) {
+    const assignments = await turnAssignmentStore.fetchAssignmentsByUser(newUser._id)
+    blockedDates.value = getBlockedDates(assignments)
+  } else {
+    blockedDates.value = []
+  }
+})
+
 function handleUserSelected(user: User) {
   selectedUser.value = user
   form.value.user_id = user._id
@@ -322,6 +357,7 @@ function handleUserSelected(user: User) {
 function clearUser() {
   selectedUser.value = null
   form.value.user_id = ''
+  blockedDates.value = []
 }
 
 function validateForm() {
@@ -352,6 +388,23 @@ function validateForm() {
   if (form.value.start_date && form.value.end_date) {
     if (form.value.end_date < form.value.start_date) {
       errors.value.end_date = 'La fecha de término no puede ser anterior a la de inicio'
+      isValid = false
+    }
+  }
+
+  // Overlap Check (Frontend)
+  if (form.value.start_date) {
+    const newStart = form.value.start_date
+    const newEnd = form.value.end_date || new Date(2100, 0, 1)
+
+    const hasOverlap = blockedDates.value.some((range) => {
+      const blockedStart = range.start
+      const blockedEnd = range.end || new Date(2100, 0, 1)
+      return newStart <= blockedEnd && newEnd >= blockedStart
+    })
+
+    if (hasOverlap) {
+      errors.value.start_date = 'La fecha seleccionada se traslapa con un turno existente.'
       isValid = false
     }
   }

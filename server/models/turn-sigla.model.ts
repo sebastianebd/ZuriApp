@@ -8,6 +8,7 @@ export interface ITurnSigla extends Document {
   turno_entrada?: string; // HH:mm
   turno_salida?: string; // HH:mm
   activo: boolean;
+  deleted_at?: Date;
 }
 
 const TurnSiglaSchema = new Schema<ITurnSigla>(
@@ -15,7 +16,6 @@ const TurnSiglaSchema = new Schema<ITurnSigla>(
     sigla: {
       type: String,
       required: true,
-      unique: true,
       uppercase: true,
       trim: true,
       maxlength: 5,
@@ -31,11 +31,18 @@ const TurnSiglaSchema = new Schema<ITurnSigla>(
     turno_entrada: { type: String, match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/ },
     turno_salida: { type: String, match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/ },
     activo: { type: Boolean, default: true },
+    deleted_at: { type: Date, default: null },
   },
   {
     timestamps: true,
     versionKey: false,
   }
+);
+
+// Enterprise Soft Delete: Unique ONLY when active (deleted_at is null)
+TurnSiglaSchema.index(
+  { sigla: 1 },
+  { unique: true, partialFilterExpression: { deleted_at: null } }
 );
 
 export const TurnSigla = model<ITurnSigla>("TurnSigla", TurnSiglaSchema);

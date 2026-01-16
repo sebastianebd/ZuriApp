@@ -29,7 +29,8 @@ const turnTypeSchema = z.object({
 
 export const getTurnTypes = async (req: Request, res: Response) => {
   try {
-    const filter = req.query.all === "true" ? {} : { activo: true };
+    const filter: any = req.query.all === "true" ? {} : { activo: true };
+    filter.deleted_at = null;
     const turnTypes = await TurnType.find(filter).sort({ nombre: 1 });
     res.json(turnTypes);
   } catch (error) {
@@ -42,6 +43,7 @@ export const createTurnType = async (req: Request, res: Response) => {
     const validatedData = turnTypeSchema.parse(req.body);
     const existing = await TurnType.findOne({
       nombre: { $regex: new RegExp(`^${validatedData.nombre}$`, "i") },
+      deleted_at: null,
     });
 
     if (existing) {
@@ -86,7 +88,7 @@ export const createTurnType = async (req: Request, res: Response) => {
     if ((req as any).user) {
       await AuditService.logAction(
         "CREAR",
-        "TIPOS_TURNO",
+        "Tipos Turno",
         (req as any).user,
         `Creó el tipo de turno: ${turnType.nombre} (${turnType.codigo})`,
         turnType,
@@ -112,6 +114,7 @@ export const updateTurnType = async (req: Request, res: Response) => {
 
     const existing = await TurnType.findOne({
       nombre: { $regex: new RegExp(`^${validatedData.nombre}$`, "i") },
+      deleted_at: null,
       _id: { $ne: id },
     });
 
@@ -121,19 +124,30 @@ export const updateTurnType = async (req: Request, res: Response) => {
         .json({ message: "Ya existe un tipo de turno con este nombre" });
     }
 
+    const oldTurnType = await TurnType.findById(id);
+
     const turnType = await TurnType.findByIdAndUpdate(id, validatedData, {
       new: true,
     });
 
     if (turnType && (req as any).user) {
-      await AuditService.logAction(
-        "ACTUALIZAR",
-        "TIPOS_TURNO",
-        (req as any).user,
-        `Actualizó el tipo de turno: ${turnType.nombre}`,
-        { old: existing, new: validatedData },
-        turnType._id.toString()
+      const diff = AuditService.generateDiff(
+        oldTurnType?.toObject(),
+        turnType.toObject()
       );
+
+      if (diff) {
+        const description = `Modificó el tipo de turno: ${turnType.nombre} (${turnType.codigo}). Cambios: [${diff}]`;
+
+        await AuditService.logAction(
+          "MODIFICAR",
+          "Tipos Turno",
+          (req as any).user,
+          description,
+          { old: oldTurnType, new: validatedData, diff },
+          turnType._id.toString()
+        );
+      }
     }
 
     if (!turnType) {
@@ -158,16 +172,16 @@ export const deleteTurnType = async (req: Request, res: Response) => {
     const { id } = req.params;
     const turnType = await TurnType.findByIdAndUpdate(
       id,
-      { activo: false },
+      { activo: false, deleted_at: new Date() },
       { new: true }
     );
 
     if (turnType && (req as any).user) {
       await AuditService.logAction(
         "ELIMINAR",
-        "TIPOS_TURNO",
+        "Tipos Turno",
         (req as any).user,
-        `Desactivó el tipo de turno: ${turnType.nombre}`,
+        `Se eliminó el turno: ${turnType.nombre} (${turnType.codigo})`,
         null,
         turnType._id.toString()
       );

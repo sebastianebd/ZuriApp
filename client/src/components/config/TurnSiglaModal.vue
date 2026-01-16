@@ -20,7 +20,8 @@ const formData = reactive({
   descripcion: '',
   color: '#e2e8f0',
   turno_entrada: '',
-  turno_salida: ''
+  turno_salida: '',
+  activo: true
 })
 
 const errors = reactive({
@@ -53,6 +54,7 @@ watch(
         formData.color = props.sigla.color
         formData.turno_entrada = props.sigla.turno_entrada || ''
         formData.turno_salida = props.sigla.turno_salida || ''
+        formData.activo = props.sigla.activo !== false
       } else {
         resetForm()
       }
@@ -69,6 +71,7 @@ function resetForm() {
   formData.color = '#e2e8f0'
   formData.turno_entrada = ''
   formData.turno_salida = ''
+  formData.activo = true
 }
 
 function getContrastColor() {
@@ -101,7 +104,8 @@ function handleSubmit() {
     descripcion: formData.descripcion.trim(),
     color: formData.color,
     turno_entrada: formData.turno_entrada || null,
-    turno_salida: formData.turno_salida || null
+    turno_salida: formData.turno_salida || null,
+    activo: formData.activo
   })
 }
 </script>
@@ -131,37 +135,79 @@ function handleSubmit() {
         <form @submit.prevent="handleSubmit">
           <!-- Row 1: Sigla & Color -->
           <div class="row g-3 mb-4">
-            <div class="col-md-3">
-              <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                >Sigla</label
-              >
-              <input
-                type="text"
-                class="form-control custom-input text-center fw-bold text-uppercase"
-                v-model="formData.sigla"
-                maxlength="4"
-                placeholder="L"
-                :class="{ 'is-invalid': errors.sigla }"
-              />
-              <div v-if="errors.sigla" class="text-danger x-small fw-bold mt-1">
-                {{ errors.sigla }}
+            <!-- Col 1: Sigla & Estado -->
+            <div class="col-5">
+              <!-- Sigla -->
+              <div class="mb-3">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Sigla</label
+                >
+                <input
+                  type="text"
+                  class="form-control custom-input text-center fw-bold text-uppercase"
+                  v-model="formData.sigla"
+                  maxlength="4"
+                  placeholder="L"
+                  :class="{ 'is-invalid': errors.sigla }"
+                />
+                <div v-if="errors.sigla" class="text-danger x-small fw-bold mt-1">
+                  {{ errors.sigla }}
+                </div>
+              </div>
+
+              <!-- Estado -->
+              <div>
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-1"
+                  >Estado</label
+                >
+                <div class="form-check form-switch">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    id="siglaActiveSwitch"
+                    v-model="formData.activo"
+                  />
+                  <label class="form-check-label x-small fw-bold ms-2" for="siglaActiveSwitch">{{
+                    formData.activo ? 'Activa' : 'Inactiva'
+                  }}</label>
+                </div>
               </div>
             </div>
 
-            <div class="col-md-9">
+            <!-- Col 2: Color -->
+            <div class="col-7">
               <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
                 >Color Distintivo</label
               >
-              <div class="d-flex gap-2 align-items-center">
-                <input
-                  type="color"
-                  class="form-control form-control-color border-0 p-0 rounded-circle shadow-sm"
-                  style="width: 38px; height: 38px"
-                  v-model="formData.color"
-                  title="Elegir color"
-                />
+              <div class="d-flex gap-2 align-items-start">
+                <!-- Color Input Wrapper -->
+                <div
+                  class="rounded-circle shadow-sm flex-shrink-0"
+                  style="
+                    width: 48px;
+                    height: 48px;
+                    overflow: hidden;
+                    cursor: pointer;
+                    border: 1px solid rgba(0, 0, 0, 0.1);
+                  "
+                >
+                  <input
+                    type="color"
+                    class="border-0 p-0 m-0"
+                    style="
+                      width: 150%;
+                      height: 150%;
+                      transform: translate(-15%, -15%);
+                      cursor: pointer;
+                    "
+                    v-model="formData.color"
+                    title="Elegir color"
+                  />
+                </div>
+
                 <!-- Pastel Presets -->
-                <div class="d-flex gap-1 flex-wrap">
+                <div class="d-flex gap-1 flex-wrap align-content-start pt-1">
                   <button
                     v-for="c in presets"
                     :key="c"

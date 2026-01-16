@@ -17,6 +17,7 @@ export interface ITurnType extends Document {
   activo: boolean;
   createdAt: Date;
   updatedAt: Date;
+  deleted_at?: Date;
 }
 
 const TurnTypeSchema: Schema = new Schema(
@@ -24,12 +25,10 @@ const TurnTypeSchema: Schema = new Schema(
     nombre: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     codigo: {
       type: String,
-      unique: true,
       uppercase: true,
       trim: true,
     },
@@ -67,11 +66,25 @@ const TurnTypeSchema: Schema = new Schema(
       type: Boolean,
       default: true,
     },
+    deleted_at: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
     versionKey: false,
   }
+);
+
+// Enterprise Soft Delete: Unique ONLY when active (deleted_at is null)
+TurnTypeSchema.index(
+  { nombre: 1 },
+  { unique: true, partialFilterExpression: { deleted_at: null } }
+);
+TurnTypeSchema.index(
+  { codigo: 1 },
+  { unique: true, partialFilterExpression: { deleted_at: null } }
 );
 
 export default mongoose.model<ITurnType>("TurnType", TurnTypeSchema);

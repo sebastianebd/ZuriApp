@@ -1,9 +1,9 @@
 import { errorHandler } from '../utils/errorHandler'
 import type { AxiosInstance } from 'axios'
 
-export const fetchAssignments = async (apiPrivate: AxiosInstance) => {
+export const fetchAssignments = async (apiPrivate: AxiosInstance, filters: any = {}) => {
   try {
-    const { data } = await apiPrivate.get('/assignments')
+    const { data } = await apiPrivate.get('/assignments', { params: filters })
     return data
   } catch (error) {
     throw errorHandler(error)

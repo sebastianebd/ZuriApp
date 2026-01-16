@@ -22,7 +22,8 @@ const formData = reactive({
   jornada: 'MIXTO',
   descripcion: '',
   cantidad_dias: 7,
-  secuencia: [] as TurnDaySequence[]
+  secuencia: [] as TurnDaySequence[],
+  activo: true
 })
 
 const errors = reactive({
@@ -47,6 +48,7 @@ watch(
         formData.jornada = props.turnType.jornada || 'MIXTO'
         formData.descripcion = props.turnType.descripcion || ''
         formData.cantidad_dias = props.turnType.cantidad_dias || 7
+        formData.activo = props.turnType.activo !== false // Default true unless explicitly false
         // Clone sequence properly
         formData.secuencia = props.turnType.secuencia
           ? JSON.parse(JSON.stringify(props.turnType.secuencia))
@@ -69,6 +71,7 @@ function resetForm() {
   formData.descripcion = ''
   formData.cantidad_dias = 7
   formData.secuencia = []
+  formData.activo = true
   updateSequenceLength() // Init grid
 }
 
@@ -156,7 +159,8 @@ function handleSubmit() {
     jornada: formData.jornada,
     descripcion: formData.descripcion.trim(),
     cantidad_dias: formData.cantidad_dias,
-    secuencia: formData.secuencia
+    secuencia: formData.secuencia,
+    activo: formData.activo
   })
 }
 </script>
@@ -178,7 +182,7 @@ function handleSubmit() {
           <!-- Row 1: Basic Info -->
           <div class="row g-3 mb-4">
             <!-- Nombre -->
-            <div class="col-md-5">
+            <div class="col-md-4">
               <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
                 >Nombre</label
               >
@@ -208,7 +212,7 @@ function handleSubmit() {
             </div>
 
             <!-- Jornada -->
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
                 >Jornada</label
               >
@@ -217,6 +221,25 @@ function handleSubmit() {
                 <option value="DIURNO">Diurno</option>
                 <option value="NOCTURNO">Nocturno</option>
               </select>
+            </div>
+
+            <!-- Estado -->
+            <div class="col-md-2">
+              <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                >Estado</label
+              >
+              <div class="form-check form-switch pt-2">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  id="flexSwitchCheckChecked"
+                  v-model="formData.activo"
+                />
+                <label class="form-check-label x-small fw-bold" for="flexSwitchCheckChecked">{{
+                  formData.activo ? 'Activo' : 'Inactivo'
+                }}</label>
+              </div>
             </div>
           </div>
 
