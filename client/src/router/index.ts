@@ -88,6 +88,11 @@ const router = createRouter({
           name: 'historial-auditoria',
           component: () => import('@/views/audit/AuditoriaView.vue')
         },
+        {
+          path: 'reportes',
+          name: 'reportes',
+          component: () => import('@/views/reports/ReportsView.vue')
+        },
 
         // ==================== CONFIGURACIÓN ====================
         {

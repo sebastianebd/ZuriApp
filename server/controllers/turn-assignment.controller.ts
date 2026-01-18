@@ -60,6 +60,7 @@ export const createAssignment = async (req: Request, res: Response) => {
     // 3. Create with Snapshot
     const assignmentPayload = {
       ...req.body,
+      turn_type: turnTypeDoc._id, // Save Reference ID
       snapshot_secuencia: turnTypeDoc.secuencia, // IMMUTABLE HISTORY
     };
 
@@ -81,7 +82,7 @@ export const createAssignment = async (req: Request, res: Response) => {
           start_date: assignment.start_date,
           end_date: assignment.end_date,
         },
-        assignment._id.toString()
+        assignment._id.toString(),
       );
     }
 
@@ -116,7 +117,7 @@ export const getAssignments = async (req: Request, res: Response) => {
 export const getAssignmentById = async (req: Request, res: Response) => {
   try {
     const assignment = await TurnAssignmentModel.findById(
-      req.params.id
+      req.params.id,
     ).populate("user_id");
     if (!assignment)
       return res.status(404).json({ message: "Assignment not found" });
@@ -133,7 +134,7 @@ export const updateAssignment = async (req: Request, res: Response) => {
       req.body,
       {
         new: true,
-      }
+      },
     ).populate("user_id");
     if (!assignment)
       return res.status(404).json({ message: "Assignment not found" });
@@ -146,7 +147,7 @@ export const updateAssignment = async (req: Request, res: Response) => {
 export const deleteAssignment = async (req: Request, res: Response) => {
   try {
     const assignment = await TurnAssignmentModel.findByIdAndDelete(
-      req.params.id
+      req.params.id,
     );
     if (!assignment)
       return res.status(404).json({ message: "Assignment not found" });

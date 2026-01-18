@@ -8,7 +8,29 @@
         </h4>
         <p class="text-secondary mb-0">Visualiza y gestiona la programación de turnos</p>
       </div>
-      <div class="d-none d-md-flex gap-2">
+      <div class="d-none d-md-flex gap-2 align-items-center">
+        <!-- Service Filter -->
+        <div style="min-width: 250px">
+          <v-select
+            v-model="selectedService"
+            :options="serviceOptions"
+            placeholder="Seleccione Servicio"
+            class="bg-white rounded shadow-sm custom-v-select"
+            :clearable="false"
+            :searchable="true"
+          >
+            <template #no-options="{ search, searching }">
+              <template v-if="searching">
+                No se encontraron resultados para <em>{{ search }}</em
+                >.
+              </template>
+              <em v-else>Escriba para buscar un servicio...</em>
+            </template>
+          </v-select>
+        </div>
+
+        <div class="vr mx-2 opacity-25"></div>
+
         <div
           class="badge bg-success bg-opacity-10 text-success p-2 px-3 border border-success border-opacity-25 rounded-pill"
         >
@@ -179,6 +201,8 @@
 <script setup lang="ts">
 import FullCalendar from '@fullcalendar/vue3'
 import { useCalendar } from '@/composables/replacement/useCalendar'
+import vSelect from 'vue-select'
+import 'vue-select/dist/vue-select.css'
 
 const {
   // Calendar Config
@@ -189,6 +213,10 @@ const {
   eventoSeleccionado,
   closeModal,
 
+  // Filters
+  selectedService,
+  serviceOptions,
+
   // Helpers
   formatDateDDMMYYYY,
   getColorByStatus
@@ -196,6 +224,53 @@ const {
 
 import { formatTitleCase } from '@/utils/text-formatters'
 </script>
+
+<style scoped>
+/* Custom v-select */
+.custom-v-select :deep(.vs__dropdown-toggle) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 3px;
+  background: white;
+  box-shadow: none;
+}
+
+.custom-v-select :deep(.vs__selected) {
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+}
+
+.custom-v-select :deep(.vs__actions svg) {
+  fill: #64748b;
+  transform: scale(0.8);
+}
+
+.custom-v-select :deep(.vs__dropdown-menu) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  font-size: 0.875rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.custom-v-select :deep(.vs__dropdown-option) {
+  border-radius: 0.25rem;
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  color: #475569;
+}
+
+.custom-v-select :deep(.vs__dropdown-option--highlight) {
+  background: #3b82f6;
+  color: white;
+}
+</style>
 
 <style>
 /* FullCalendar Customization */

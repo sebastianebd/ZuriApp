@@ -115,6 +115,15 @@
           <i class="bi bi-journal-text"></i>
           <span class="text">Auditoría de Cambios</span>
         </router-link>
+        <router-link
+          :to="{ name: 'reportes' }"
+          class="menu-item"
+          title="Centro de Reportes"
+          v-if="can('shifts.view')"
+        >
+          <i class="bi bi-file-earmark-bar-graph"></i>
+          <span class="text">Centro de Reportes</span>
+        </router-link>
       </div>
 
       <!-- Configuración Section -->

@@ -28,9 +28,9 @@ const turnAssignmentSchema = new Schema(
       required: true, // Making it required as per user implication
     },
     turn_type: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "TurnType",
       required: true,
-      trim: true,
     },
     start_date: {
       type: Date,
@@ -53,10 +53,10 @@ const turnAssignmentSchema = new Schema(
   {
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 
 export const TurnAssignmentModel = mongoose.model<ITurnAssignment>(
   "TurnAssignment",
-  turnAssignmentSchema
+  turnAssignmentSchema,
 );

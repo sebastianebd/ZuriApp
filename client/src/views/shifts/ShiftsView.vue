@@ -25,7 +25,7 @@
         <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm">
           <button
             v-if="authStore.hasPermission('shifts.create')"
-            class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2 px-3 fw-bold border-0 bg-primary-subtle text-primary"
+            class="btn btn-sm btn-primary d-flex align-items-center gap-2 px-3 fw-bold border-0 text-white"
             @click="openModal"
           >
             <i class="bi bi-plus-lg"></i> Asignar Planta
@@ -52,30 +52,40 @@
       </div>
     </div>
 
-    <!-- History Mode Controls (Month Nav Only) -->
-    <div class="d-flex justify-content-end mb-3" v-else>
-      <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm">
-        <button class="btn btn-sm btn-outline-secondary border-0" @click="prevMonth">
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <span class="fw-bold px-3 text-capitalize">{{ formattedMonth }}</span>
-        <button
-          class="btn btn-sm btn-outline-secondary border-0"
-          @click="nextMonth"
-          :disabled="!canGoNext"
-        >
-          <i class="bi bi-chevron-right"></i>
-        </button>
-        <button class="btn btn-sm btn-primary ms-2" @click="loadData">
-          <i class="bi bi-arrow-clockwise"></i>
-        </button>
+    <!-- History Mode Controls -->
+    <div class="d-flex justify-content-between align-items-center mb-4" v-else>
+      <!-- Title Slot -->
+      <div>
+        <slot name="header-title"></slot>
+      </div>
+
+      <!-- Right Side: Filters & Nav -->
+      <div class="d-flex align-items-center gap-3">
+        <slot name="history-filters"></slot>
+
+        <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm">
+          <button class="btn btn-sm btn-outline-secondary border-0" @click="prevMonth">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <span class="fw-bold px-3 text-capitalize">{{ formattedMonth }}</span>
+          <button
+            class="btn btn-sm btn-outline-secondary border-0"
+            @click="nextMonth"
+            :disabled="!canGoNext"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button class="btn btn-sm btn-primary ms-2" @click="loadData">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Grid Container -->
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
       <div class="table-responsive">
-        <table class="table table-bordered mb-0 shift-table">
+        <table class="table mb-0 shift-table">
           <thead class="bg-light">
             <tr>
               <th
@@ -116,7 +126,12 @@
                 }}
               </td>
             </tr>
-            <tr v-for="item in filteredShifts" :key="item._id">
+            <tr
+              v-for="(item, index) in filteredShifts"
+              :key="item._id"
+              class="fade-in-row"
+              :style="{ animationDelay: `${index * 20}ms` }"
+            >
               <td class="sticky-col first-col bg-white border-end align-middle">
                 <div class="d-flex align-items-center">
                   <div class="avatar-circle bg-primary text-white me-2 small">
@@ -128,13 +143,6 @@
                     </div>
                     <small class="text-muted d-block" style="font-size: 0.75rem">
                       {{ formatTitleCase(item.cargo) }}
-                      <span
-                        v-if="item.tipo_turno"
-                        class="badge bg-secondary-subtle text-secondary ms-1"
-                        style="font-size: 0.65rem"
-                      >
-                        {{ formatTitleCase(item.tipo_turno) }}
-                      </span>
                     </small>
                   </div>
                 </div>
@@ -167,7 +175,11 @@
                   @mouseleave="hideTooltip"
                   @click="handleCellClick(item, day.date)"
                 >
-                  <span class="fw-bold">{{ getShift(item, day.date)?.sigla }}</span>
+                  <span
+                    class="fw-bold"
+                    :class="{ 'text-muted fw-normal opacity-50': !getShift(item, day.date)?.sigla }"
+                    >{{ getShift(item, day.date)?.sigla || '–' }}</span
+                  >
                 </div>
               </td>
             </tr>
@@ -219,6 +231,7 @@ import { useShiftExceptionStore } from '@/stores/shift-exception.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
 import { useAuthStore } from '@/stores/auth.store'
+import { useUserStore } from '@/stores/user.store'
 import { calculateShift, parseAsLocal } from '@/services/turn-pattern.service'
 import { formatTitleCase } from '@/utils/text-formatters'
 import type { RegisterDataReemplazo, TurnAssignment, User } from '@/types/models'
@@ -282,7 +295,11 @@ const turnSiglaStore = useTurnSiglaStore()
 const optionStore = useOptionStore()
 const exceptionStore = useShiftExceptionStore()
 const authStore = useAuthStore()
+const userStore = useUserStore()
 const alertComponent = ref()
+
+// Local cache of all users for fallback info
+const allUsers = ref<User[]>([])
 
 // Options computed
 const serviceOptions = computed(() => {
@@ -358,6 +375,7 @@ interface ShiftResult {
   color?: string
   assignmentId?: string // New: To identify which assignment
   assignmentName?: string // New: To display which assignment
+  replacementCode?: string // New: For replacements
 }
 
 // Helper to get Pattern from Store
@@ -399,6 +417,7 @@ const filteredShifts = computed(() => {
   const endOfMonth = new Date(currentYear.value, currentMonth.value + 1, 0)
 
   const rows: GridRow[] = []
+  const processedUsers = new Set<string>()
 
   // Pre-calculate user assignments map for O(1) access
   const userAssignmentsMap = new Map<string, TurnAssignment[]>()
@@ -409,58 +428,91 @@ const filteredShifts = computed(() => {
     userAssignmentsMap.get(uid)?.push(a)
   })
 
-  // 1. Process Replacements
-  replacementStore.reemplazosActivos.forEach((r: RegisterDataReemplazo) => {
+  // 1. Process Replacements (Grouped by Entrante)
+  const userReplacementsMap = new Map<string, RegisterDataReemplazo[]>()
+
+  replacementStore.reemplazosActivos.forEach((r) => {
     if (!r.fecha_inicio) return
+    // Use id_entrante (Real User ID) for grouping
+    if (!r.id_entrante) return
 
-    // Service Filter
-    const activeServiceFilter = props.historyMode
-      ? props.externalFilters.service
-      : selectedService.value
-    if (activeServiceFilter && r.servicio !== activeServiceFilter) return
+    const uid = r.id_entrante
+    if (!userReplacementsMap.has(uid)) userReplacementsMap.set(uid, [])
+    userReplacementsMap.get(uid)?.push(r)
+  })
 
-    // Cargo Filter
-    if (
-      props.historyMode &&
-      props.externalFilters.cargo &&
-      r.tipo_cargo !== props.externalFilters.cargo
-    )
-      return
+  userReplacementsMap.forEach((replacements, userId) => {
+    // Check validity/overlap for ANY replacement
+    const validReplacements = replacements.filter((r) => {
+      // Filters
+      const activeServiceFilter = props.historyMode
+        ? props.externalFilters.service
+        : selectedService.value
+      if (activeServiceFilter && r.servicio !== activeServiceFilter) return false
 
-    // Shift Type Filter
-    if (
-      props.historyMode &&
-      props.externalFilters.shiftType &&
-      r.tipo_turno !== props.externalFilters.shiftType
-    )
-      return
+      if (
+        props.historyMode &&
+        props.externalFilters.cargo &&
+        r.tipo_cargo !== props.externalFilters.cargo
+      )
+        return false
+      if (
+        props.historyMode &&
+        props.externalFilters.shiftType &&
+        r.tipo_turno !== props.externalFilters.shiftType
+      )
+        return false
 
-    const rStart = parseAsLocal(r.fecha_inicio)
-    const rEnd = parseAsLocal(r.fecha_termino)
-    const overlap = rStart <= endOfMonth && rEnd >= startOfMonth
+      const rStart = parseAsLocal(r.fecha_inicio)
+      const rEnd = parseAsLocal(r.fecha_termino)
+      // Check overlap
+      const overlap = rStart <= endOfMonth && rEnd >= startOfMonth
+      return overlap
+    })
 
-    // Use null for assignment arg since replacements don't have snapshots yet (or handle differently)
-    const hasPattern = getPattern(null, r.tipo_turno).length > 0
+    if (validReplacements.length > 0) {
+      // Use first valid as representative for name/cargo (assuming consistency)
+      const rep = validReplacements[0]
 
-    if (overlap && hasPattern) {
+      let cargo = rep.tipo_cargo
+      if (!cargo) {
+        // 1. Try to find user in assignments store (fastest if view has them)
+        const foundUserAssignment = turnAssignmentStore.assignments.find(
+          (a) => (a.user_id as unknown as User)._id === userId
+        )
+        if (foundUserAssignment) {
+          const u = foundUserAssignment.user_id as unknown as User
+          cargo = u.tipo_cargo
+        }
+
+        // 2. Fallback: Check full user list
+        if (!cargo) {
+          const foundUser = allUsers.value.find((u) => u._id === userId)
+          if (foundUser) cargo = foundUser.tipo_cargo
+        }
+      }
+
+      // Also add to processedUsers so we don't duplicate if they also have assignments?
+      // User asked to unify replacements. Unifying with Assignments is implied if we use real UserID.
+      // Let's TRY adding to processedUsers to fully unify mixed rows.
+      processedUsers.add(userId)
+
       rows.push({
-        _id: r._id, // This is replacement ID
-        userId: 'R-' + r._id, // Distinct user ID for replacement (unless we merge, but user context implies separation often)
-        nombre: r.nombre_entrante,
-        apellido: r.apellido_entrante,
-        cargo: r.tipo_cargo,
-        servicio: r.servicio,
-        tipo_turno: r.tipo_turno,
-        fecha_inicio: rStart,
-        fecha_termino: rEnd,
+        _id: rep._id,
+        userId: userId, // REAL User ID
+        nombre: rep.nombre_entrante,
+        apellido: rep.apellido_entrante,
+        cargo: cargo || 'Sin Cargo',
+        servicio: rep.servicio,
+        tipo_turno: rep.tipo_turno, // Representative
+        fecha_inicio: rep.fecha_inicio, // Representative
         source: 'REPLACEMENT',
-        original: r
+        original: rep // Representative
       })
     }
   })
 
   // 2. Process Turn Assignments (Grouped by User)
-  const processedUsers = new Set<string>()
 
   turnAssignmentStore.assignments.forEach((a: TurnAssignment) => {
     const user = a.user_id as unknown as User
@@ -559,17 +611,38 @@ function getShift(row: GridRow, date: Date): ShiftResult | null {
   // We need to know WHICH assignment is active today to check exceptions for IT.
 
   if (row.source === 'REPLACEMENT') {
-    // Legacy/Simple logic for replacements
-    const rStart = parseAsLocal(row.fecha_inicio)
-    const rEnd = row.fecha_termino ? parseAsLocal(row.fecha_termino) : new Date(9999, 11, 31)
+    // Dynamic lookup for Replacement
     const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    const start = new Date(rStart.getFullYear(), rStart.getMonth(), rStart.getDate())
-    const end = new Date(rEnd.getFullYear(), rEnd.getMonth(), rEnd.getDate())
 
-    if (checkDate < start || checkDate > end) return null
-    const pattern = getPattern(null, row.tipo_turno)
+    const activeReplacement = replacementStore.reemplazosActivos.find((r) => {
+      if (r.id_entrante !== row.userId) return false
+
+      const start = parseAsLocal(r.fecha_inicio)
+      const end = parseAsLocal(r.fecha_termino)
+
+      // Normalize
+      const sDate = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+      const eDate = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+
+      return checkDate >= sDate && checkDate <= eDate
+    })
+
+    if (!activeReplacement) return null
+
+    const pattern = getPattern(null, activeReplacement.tipo_turno)
     if (pattern.length === 0) return null
-    return calculateShift<ShiftResult>(date, row.fecha_inicio, pattern)
+
+    const result = calculateShift<ShiftResult>(date, activeReplacement.fecha_inicio, pattern)
+    if (result) {
+      return {
+        ...result,
+        assignmentId: activeReplacement._id,
+        // Use replacement ID as name for debugging or type name?
+        assignmentName: activeReplacement.tipo_turno,
+        replacementCode: activeReplacement.id_negocio
+      }
+    }
+    return null
   }
 
   // 2. Assignments (Unified Row)
@@ -653,14 +726,6 @@ function getInitials(nombre?: string, apellido?: string) {
   return `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase()
 }
 
-function getReplacementCode(item: GridRow): string {
-  if (item.source === 'REPLACEMENT' && item.original) {
-    const replacement = item.original as RegisterDataReemplazo
-    return replacement.id_negocio || 'R-???'
-  }
-  return ''
-}
-
 function getShiftTooltip(item: GridRow, date: Date): string {
   const shift = getShift(item, date)
   if (!shift) return ''
@@ -702,9 +767,8 @@ function getShiftTooltip(item: GridRow, date: Date): string {
   }
 
   // Add replacement code if applicable
-  if (item.source === 'REPLACEMENT') {
-    const code = getReplacementCode(item)
-    tooltip += '\n' + code
+  if (shift.replacementCode) {
+    tooltip += '\n' + shift.replacementCode
   }
 
   return tooltip
@@ -742,6 +806,18 @@ function isRecentlyModified(assignmentId: string, date: Date): boolean {
     recentlyModifiedCell.value.assignmentId === assignmentId &&
     recentlyModifiedCell.value.date === dateStr
   )
+}
+
+function mapSiglaToEnum(sigla: string): 'LARGO' | 'NOCHE' | 'LIBRE' {
+  const s = sigla.toUpperCase()
+  if (s === 'L') return 'LARGO'
+  if (s === 'N') return 'NOCHE'
+  if (s === 'X') return 'LIBRE'
+  // Fallback for full names or unknown
+  if (s === 'LARGO') return 'LARGO'
+  if (s === 'NOCHE') return 'NOCHE'
+  if (s === 'LIBRE') return 'LIBRE'
+  return 'LIBRE' // Safe default
 }
 
 // Helper: Check if a date is editable (Current Month or Future)
@@ -808,10 +884,7 @@ async function handleSaveException(data: { override_type: 'LARGO' | 'NOCHE' | 'L
     await exceptionStore.createException({
       assignment_id: selectedShiftData.value.assignmentId,
       date: selectedShiftData.value.date.toISOString(),
-      original_type: (selectedShiftData.value.currentShift?.sigla || 'X') as
-        | 'LARGO'
-        | 'NOCHE'
-        | 'LIBRE',
+      original_type: mapSiglaToEnum(selectedShiftData.value.currentShift?.sigla || 'X'),
       override_type: data.override_type,
       created_by: authStore.user?._id || ''
     })
@@ -871,7 +944,13 @@ async function loadData() {
         endOfMonth.toISOString()
       ),
       turnTypeStore.fetchTurnTypes(true),
-      turnSiglaStore.fetchSiglas()
+      turnSiglaStore.fetchSiglas(),
+      userStore
+        .mostrarTodos()
+        .then((users) => {
+          allUsers.value = users as User[]
+        })
+        .catch((err) => console.error('Failed to load users for cargo info', err))
     ])
   } finally {
     loading.value = false
@@ -888,14 +967,64 @@ defineExpose({
 </script>
 
 <style scoped>
+/* --- Animation Keyframes --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in-row {
+  animation: fadeIn 0.4s ease-out forwards;
+  opacity: 0; /* Init hidden for animation */
+}
+
 /* Extra styles for filters */
 .custom-v-select :deep(.vs__dropdown-toggle) {
-  border: none;
-  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 3px;
+  background: white;
+  box-shadow: none;
 }
+
 .custom-v-select :deep(.vs__selected) {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #1e293b;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+}
+
+.custom-v-select :deep(.vs__actions svg) {
+  fill: #64748b;
+  transform: scale(0.8);
+}
+
+.custom-v-select :deep(.vs__dropdown-menu) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  font-size: 0.875rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.custom-v-select :deep(.vs__dropdown-option) {
+  border-radius: 0.25rem;
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  color: #475569;
+}
+
+.custom-v-select :deep(.vs__dropdown-option--highlight) {
+  background: #3b82f6;
+  color: white;
 }
 
 .shifts-view {
@@ -930,6 +1059,121 @@ thead .sticky-col {
 }
 
 /* Cell Styling */
+/* --- Modern Table Architecture --- */
+.shifts-view {
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+/* Card Container */
+.card {
+  border: none;
+  background: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border-radius: 16px;
+}
+
+/* Grid Table Reset */
+.table-responsive {
+  overflow-x: auto;
+  border-radius: 16px;
+}
+
+.shift-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.shift-table th,
+.shift-table td {
+  border: none;
+  vertical-align: middle;
+}
+
+/* --- Headers --- */
+.shift-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+}
+
+.shift-table thead th {
+  padding: 12px 4px;
+  border-bottom: 2px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background-color: inherit;
+  transition: background-color 0.2s;
+}
+
+/* Today Column Highlight Header */
+.shift-table thead th.today-col {
+  background-color: #f0f9ff; /* light sky blue */
+  color: #0ea5e9;
+  border-bottom-color: #0ea5e9;
+}
+
+/* Sticky First Column (User Node) */
+.sticky-col.first-col {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background-color: white;
+  border-right: 1px solid #f1f5f9 !important;
+  box-shadow: 4px 0 12px -2px rgba(0, 0, 0, 0.02); /* Subtle depth */
+}
+
+/* Ensure header corner covers content */
+.shift-table thead th.sticky-col {
+  z-index: 40; /* Above regular headers */
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* --- Row Styles --- */
+.shift-table tbody tr {
+  transition: all 0.2s;
+}
+
+.shift-table tbody tr:hover td {
+  background-color: #f8fafc;
+}
+
+/* Keep sticky column white on hover or match? */
+.shift-table tbody tr:hover td.sticky-col {
+  background-color: #f8fafc;
+}
+
+/* Row separator */
+.shift-table td {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 6px 4px; /* Tighter padding for cells */
+}
+
+/* --- User Cell Styling --- */
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px; /* Squircle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.shift-table td.sticky-col {
+  padding: 12px 16px; /* More breathing room for user */
+}
+/* Cell Styling */
 .shift-cell {
   font-size: 0.9rem;
   transition: all 0.1s ease;
@@ -942,16 +1186,6 @@ thead .sticky-col {
 
 .today-col {
   background-color: #e8f0fe !important; /* Light blue tint */
-}
-
-.avatar-circle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
 }
 
 /* Shift Type Colors - Pastel Theme */

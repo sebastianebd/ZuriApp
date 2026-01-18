@@ -109,6 +109,9 @@ app.use(
   sentryRoutes
 );
 
+import reportRoutes from "./routes/api/report.routes";
+app.use("/api/reports", reportRoutes);
+
 // --- Bull Board Setup ---
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath("/admin/queues");

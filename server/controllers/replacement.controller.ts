@@ -10,6 +10,7 @@ import socketIO from "../config/socket";
 async function registerReemplazo(req: AuthRequest, res: Response) {
   try {
     const nuevoReemplazo = await replacementService.registrar(req.body);
+
     // Log Auditoría
     await auditService.logAction(
       "CREAR",
@@ -17,7 +18,7 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
       req.user,
       `Se creó un nuevo reemplazo ${nuevoReemplazo.id_negocio} para ${req.body.nombre_saliente} ${req.body.apellido_saliente}`,
       req.body,
-      nuevoReemplazo._id as string
+      nuevoReemplazo._id as string,
     );
 
     // Audit Implicit Shifts
@@ -34,7 +35,7 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
           : "Segun Reemplazo",
         replacement_id: nuevoReemplazo._id,
       },
-      nuevoReemplazo._id as string
+      nuevoReemplazo._id as string,
     );
 
     await delPattern("replacements:*"); // Invalidate cache
@@ -104,7 +105,7 @@ async function actualizarReemplazo(req: AuthRequest, res: Response) {
       req.user,
       descripcion,
       req.body,
-      req.params.id
+      req.params.id,
     );
     await delPattern("replacements:*"); // Invalidate cache
     res.json(data);
@@ -128,7 +129,7 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
       req.user,
       `Se finalizó el reemplazo ${nombreReemplazo}`,
       null,
-      req.params.id
+      req.params.id,
     );
     await delPattern("replacements:*"); // Invalidate cache
 
@@ -161,7 +162,7 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
       req.user,
       `Se anuló el reemplazo ${nombreReemplazo}`,
       null,
-      req.params.id
+      req.params.id,
     );
     await delPattern("replacements:*"); // Invalidate cache
 
@@ -187,7 +188,7 @@ async function obtenerHistorialUsuario(req: Request, res: Response) {
     if (cachedData) return res.json(cachedData);
 
     const data = await replacementService.obtenerHistorialUsuario(
-      req.params.id
+      req.params.id,
     );
     await set(cacheKey, data, 300);
     res.json(data);
@@ -224,7 +225,7 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
       req.user,
       `Se sustituyó el reemplazo: ${registroA_cortado.id_negocio} (Cambios: funcionario reemplazante: ${registroA_cortado.nombre_entrante} ${registroA_cortado.apellido_entrante} -> ${nuevoRegistroB.nombre_entrante} ${nuevoRegistroB.apellido_entrante})`,
       req.body,
-      req.body.id_registro_a
+      req.body.id_registro_a,
     );
     await delPattern("replacements:*");
 
@@ -262,7 +263,7 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
       }, {});
 
     const cacheKey = `replacements:history:paginated:${JSON.stringify(
-      sortedQuery
+      sortedQuery,
     )}`;
     const paginaNum = parseInt(pagina as string) || 1;
     const limiteNum = parseInt(limite as string) || 10;
@@ -276,7 +277,7 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
     const data = await replacementService.obtenerInactivosPaginados(
       filtros,
       paginaNum,
-      limiteNum
+      limiteNum,
     );
 
     await set(cacheKey, data, 300);
