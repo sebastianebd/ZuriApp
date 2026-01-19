@@ -34,6 +34,19 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    // New Action for Remote Search (Does not mutate global state unless needed)
+    async buscarUsuarios(search: string) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      try {
+        const data = await UserService.mostrarTodosUsuarios(apiPrivate, search)
+        return data
+      } catch (error) {
+        console.error('Error al buscar usuarios:', error)
+        return []
+      }
+    },
+
     async eliminarUsuario(id: string) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()

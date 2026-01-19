@@ -9,8 +9,31 @@ const reportStore = useReportStore()
 const userStore = useUserStore()
 
 const selectedUser = ref<any>(null)
+const userOptions = ref<any[]>([]) // Local options for autocomplete
 const month = ref(1)
 const year = ref(2026)
+
+// Debounce helper
+let debounceTimeout: any = null
+
+const onSearch = (search: string, loading: (l: boolean) => void) => {
+  if (search.length < 1) return
+
+  loading(true)
+
+  if (debounceTimeout) clearTimeout(debounceTimeout)
+
+  debounceTimeout = setTimeout(async () => {
+    try {
+      const results = await userStore.buscarUsuarios(search)
+      userOptions.value = results
+    } catch (e) {
+      console.error(e)
+    } finally {
+      loading(false)
+    }
+  }, 350) // 350ms wait
+}
 
 const months = [
   'Enero',
@@ -26,30 +49,33 @@ const months = [
   'Noviembre',
   'Diciembre'
 ]
+const monthOptions = months.map((m, i) => ({ label: m, value: i + 1 }))
+
 const years = [2024, 2025, 2026]
 
-// Fetch users for the dropdown
+// Fetch users for the dropdown (Load default top 20)
 onMounted(async () => {
-  await userStore.mostrarTodos()
+  const defaults = await userStore.buscarUsuarios('')
+  userOptions.value = defaults
 })
 
-// Watch for selection of user to fetch report
-watch(selectedUser, async (newUser: any) => {
-  if (newUser) {
-    reportStore.currentFilters.userId = newUser._id
-    // Trigger fetch
-    await reportStore.fetchReportSummary(month.value, year.value)
-  } else {
-    reportStore.reportData = null // Clear if deselected
-  }
+// Explicit Report Generation Handler
+// Watchers to clear report when filters change
+watch([month, year, selectedUser], () => {
+  reportStore.reportData = null
+  reportStore.error = null // Also clear errors
 })
 
-// Watch Date changes
-watch([month, year], async () => {
-  if (selectedUser.value) {
-    await reportStore.fetchReportSummary(month.value, year.value)
-  }
-})
+const handleGenerateReport = async () => {
+  if (!selectedUser.value) return
+
+  // Update store filters explicitely
+  reportStore.currentFilters.userId = selectedUser.value._id
+  reportStore.currentFilters.month = month.value
+  reportStore.currentFilters.year = year.value
+
+  await reportStore.fetchReportSummary()
+}
 
 const getServiceBadgeClass = (serviceName: string) => {
   const lower = serviceName.toLowerCase()
@@ -87,27 +113,63 @@ const downloadPDF = () => {
     <div class="controls hide-print">
       <v-select
         v-model="selectedUser"
-        :options="userStore.users"
+        :options="userOptions"
+        :filterable="false"
+        @search="onSearch"
         label="full_name"
         placeholder="Buscar Funcionario (Nombre o RUT)..."
-        class="user-search"
+        class="user-search premium-select"
       >
-        <template #option="{ nombre, apellido, rut, cargo }">
+        <template #option="{ nombre, apellido, rut, tipo_cargo }">
           <div class="user-option">
             <strong>{{ nombre }} {{ apellido }}</strong>
-            <small>{{ rut }} - {{ cargo }}</small>
+            <small>{{ rut }} - {{ tipo_cargo }}</small>
           </div>
         </template>
       </v-select>
 
       <!-- Date Filters -->
       <div class="date-filters">
-        <select v-model="month" class="form-select">
-          <option v-for="(m, i) in months" :key="i" :value="i + 1">{{ m }}</option>
-        </select>
-        <select v-model="year" class="form-select">
-          <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-        </select>
+        <div class="premium-select" style="min-width: 140px">
+          <v-select
+            v-model="month"
+            :options="monthOptions"
+            :reduce="(opt: any) => opt.value"
+            label="label"
+            :clearable="false"
+            :searchable="false"
+          ></v-select>
+        </div>
+
+        <div class="premium-select" style="min-width: 100px">
+          <v-select
+            v-model="year"
+            :options="years"
+            :clearable="false"
+            :searchable="false"
+          ></v-select>
+        </div>
+
+        <button
+          v-if="!reportStore.reportData"
+          class="btn-generate"
+          @click="handleGenerateReport"
+          :disabled="!selectedUser"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="btn-icon"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          GENERAR REPORTE
+        </button>
       </div>
 
       <button @click="downloadPDF" class="btn-print" v-if="reportStore.reportData">
@@ -115,12 +177,15 @@ const downloadPDF = () => {
       </button>
     </div>
 
+    <!-- Error/Warning Alert -->
+    <div v-if="reportStore.error" class="alert-box warning">⚠️ {{ reportStore.error }}</div>
+
     <div v-if="reportStore.reportData" class="page">
       <!-- Header -->
       <div class="header">
         <div class="header-top">
           <div class="hospital-info">
-            <h1>🏥 Hospital Regional de Osorno</h1>
+            <h1>🏥 Hospital Base San Jose de Osorno</h1>
             <p>Sistema de Gestión de Turnos y Reemplazos</p>
             <p>Departamento de Recursos Humanos</p>
           </div>
@@ -153,9 +218,7 @@ const downloadPDF = () => {
             </div>
             <div class="employee-item">
               <label>RUT</label>
-              <value
-                >{{ reportStore.reportData.user.rut }}-{{ reportStore.reportData.user.dv }}</value
-              >
+              <value>{{ reportStore.reportData.user.rut }}</value>
             </div>
             <div class="employee-item">
               <label>Cargo</label>
@@ -186,22 +249,99 @@ const downloadPDF = () => {
           <div class="section-title">📊 Resumen General del Período</div>
           <div class="summary-grid">
             <div class="summary-card">
-              <div class="icon">📅</div>
+              <div class="icon">
+                <!-- Calendar Check (Work Days) -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="feather feather-calendar"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                  <path d="M9 16l2 2 4-4"></path>
+                </svg>
+              </div>
               <div class="value">{{ reportStore.reportData.totals.daysWorked }}</div>
               <div class="label">Días Trabajados</div>
             </div>
             <div class="summary-card">
-              <div class="icon">⏰</div>
+              <div class="icon">
+                <!-- Clock (Total Hours) -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="feather feather-clock"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
               <div class="value">{{ reportStore.reportData.totals.hours }}</div>
               <div class="label">Horas Totales</div>
             </div>
             <div class="summary-card">
-              <div class="icon">☀️</div>
+              <div class="icon">
+                <!-- Sun (Day Hours) -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="feather feather-sun"
+                >
+                  <circle cx="12" cy="12" r="5"></circle>
+                  <line x1="12" y1="1" x2="12" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="23"></line>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                  <line x1="1" y1="12" x2="3" y2="12"></line>
+                  <line x1="21" y1="12" x2="23" y2="12"></line>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+              </div>
               <div class="value">{{ reportStore.reportData.totals.dayHours }}</div>
               <div class="label">Horas Diurnas</div>
             </div>
             <div class="summary-card">
-              <div class="icon">🌙</div>
+              <div class="icon">
+                <!-- Moon (Night Hours) -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="feather feather-moon"
+                >
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+              </div>
               <div class="value">{{ reportStore.reportData.totals.nightHours }}</div>
               <div class="label">Horas Nocturnas</div>
             </div>
@@ -209,22 +349,94 @@ const downloadPDF = () => {
 
           <div class="summary-grid">
             <div class="summary-card">
-              <div class="icon">🏖️</div>
+              <div class="icon">
+                <!-- Coffee (Free Days) -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="feather feather-coffee"
+                >
+                  <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+                  <line x1="6" y1="1" x2="6" y2="4"></line>
+                  <line x1="10" y1="1" x2="10" y2="4"></line>
+                  <line x1="14" y1="1" x2="14" y2="4"></line>
+                </svg>
+              </div>
               <div class="value">{{ reportStore.reportData.totals.freeDays }}</div>
               <div class="label">Días Libres</div>
             </div>
             <div class="summary-card">
-              <div class="icon">🔄</div>
+              <div class="icon">
+                <!-- Repeat/Refresh (Replacements) -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="feather feather-users"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
               <div class="value">{{ reportStore.reportData.totals.replacementsCount }}</div>
               <div class="label">Reemplazos</div>
             </div>
             <div class="summary-card">
-              <div class="icon">🏥</div>
+              <div class="icon">
+                <!-- Activity/Briefcase (Services) -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="feather feather-activity"
+                >
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+              </div>
               <div class="value">{{ reportStore.reportData.serviceStats.length }}</div>
               <div class="label">Servicios</div>
             </div>
             <div class="summary-card">
-              <div class="icon">💼</div>
+              <div class="icon">
+                <!-- Percent/Chart (Attendance) -->
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="feather feather-pie-chart"
+                >
+                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                  <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                </svg>
+              </div>
               <div class="value">
                 {{
                   Math.round(
@@ -358,46 +570,28 @@ const downloadPDF = () => {
           </tbody>
         </table>
 
-        <!-- Signature Section -->
-        <div class="signature-section">
-          <div class="section-title">✍️ Validación y Firmas</div>
-          <div class="signatures">
-            <div class="signature-box">
-              <div class="signature-line"></div>
-              <div class="signature-label">JEFE DE SERVICIO</div>
-              <div class="signature-label">Nombre y Firma</div>
-            </div>
-            <div class="signature-box">
-              <div class="signature-line"></div>
-              <div class="signature-label">RECURSOS HUMANOS</div>
-              <div class="signature-label">Nombre y Firma</div>
-            </div>
-          </div>
-        </div>
+        <div class="signature-section"></div>
       </div>
 
       <!-- Footer -->
       <div class="footer">
         <div>
-          <strong>Hospital Regional de Osorno</strong><br />
+          <strong>Hospital Base San Jose de Osorno</strong><br />
           ZuriApp Sistema de Turnos y Reemplazos | Generado automáticamente
         </div>
-        <div style="text-align: right">
-          Página 1 de 1<br />
-          Documento confidencial
-        </div>
+        <div style="text-align: right">Página 1 de 1<br /></div>
       </div>
     </div>
 
     <div v-else class="empty-state">
-      <p>Seleccione un funcionario para generar su cartola.</p>
+      <p class="text-secondary">Seleccione un funcionario para generar su cartola.</p>
     </div>
   </div>
 </template>
 
 <style scoped>
 .page-container {
-  background: #f5f5f5;
+  background: #f8fafc;
   padding: 20px;
   min-height: 100vh;
   display: flex;
@@ -413,22 +607,85 @@ const downloadPDF = () => {
   justify-content: space-between;
 }
 
+/* Premium Input Container (v-select) */
+/* Premium Input Container (v-select) - Matched to UserModalCreate */
+/* Premium Input Container (v-select) - Matched to UserModalCreate */
 .user-search {
   flex: 1;
+  min-width: 300px;
+}
+
+/* Base Styles for Premium Selects (User Search + Dates) */
+.premium-select ::v-deep .vs__dropdown-toggle {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 3px;
   background: white;
-  border-radius: 4px;
+  box-shadow: none;
+  transition: all 0.2s ease;
+  min-height: 42px;
+}
+
+/* Search Input */
+.premium-select ::v-deep .vs__search {
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.premium-select ::v-deep .vs__search::placeholder {
+  color: #94a3b8;
+}
+
+/* Selected Text */
+.premium-select ::v-deep .vs__selected {
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+/* Arrow/Actions */
+.premium-select ::v-deep .vs__actions svg {
+  fill: #64748b;
+  transform: scale(0.8);
+}
+
+/* Dropdown Menu */
+.premium-select ::v-deep .vs__dropdown-menu {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  font-size: 0.875rem;
+  margin-top: 4px;
+  z-index: 1000; /* Ensure on top */
+}
+
+/* Options */
+.premium-select ::v-deep .vs__dropdown-option {
+  border-radius: 0.25rem;
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  color: #475569;
+}
+
+.premium-select ::v-deep .vs__dropdown-option--highlight {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Hover & Focus */
+.premium-select:hover ::v-deep .vs__dropdown-toggle {
+  border-color: #cbd5e1;
+}
+
+.premium-select ::v-deep .vs--open .vs__dropdown-toggle,
+.premium-select:focus-within ::v-deep .vs__dropdown-toggle {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .date-filters {
   display: flex;
   gap: 10px;
-}
-
-.form-select {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: white;
 }
 
 .btn-print {
@@ -454,7 +711,7 @@ const downloadPDF = () => {
 
 /* Header */
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #4b5ea2 100%);
   padding: 30px 40px;
   color: white;
 }
@@ -515,7 +772,7 @@ const downloadPDF = () => {
 
 /* Employee Info Card */
 .employee-card {
-  background: linear-gradient(135deg, #e0e7ff 0%, #f0e7ff 100%);
+  background: linear-gradient(135deg, #e0e7ff 0%, #a9baf9 100%);
   border-left: 4px solid #667eea;
   padding: 20px;
   border-radius: 8px;
@@ -580,6 +837,7 @@ const downloadPDF = () => {
 .summary-card .icon {
   font-size: 24px;
   margin-bottom: 8px;
+  color: #667eea;
 }
 
 .summary-card .value {
@@ -605,7 +863,7 @@ table {
 }
 
 thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #8194ea 0%, #4b5ea2 100%);
   color: white;
 }
 
@@ -636,27 +894,7 @@ td {
   border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
-}
-
-.badge-urgencias {
-  background: #fee;
-  color: #c00;
-}
-.badge-uci {
-  background: #ffe;
-  color: #c90;
-}
-.badge-pediatria {
-  background: #efe;
-  color: #0a0;
-}
-.badge-cirugia {
-  background: #eef;
-  color: #00a;
-}
-.badge-default {
-  background: #eee;
-  color: #666;
+  background: #eaeaea;
 }
 
 .shift-type {
@@ -724,7 +962,7 @@ td {
 
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, #6c83eb 0%, #384fa2 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -818,6 +1056,77 @@ td {
   .page {
     box-shadow: none;
     margin: 0;
+  }
+}
+
+/* Premium Generate Button */
+.btn-generate {
+  background: linear-gradient(135deg, hsl(222, 47%, 55%) 0%, hsl(222, 47%, 50%) 100%);
+  color: white;
+  border: none;
+  padding: 0.65rem 1.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.25), 0 2px 4px -1px rgba(102, 126, 234, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.btn-generate:hover:not(:disabled) {
+  background: linear-gradient(135deg, hsl(222, 47%, 60%) 0%, hsl(222, 47%, 52%) 100%);
+  box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.35), 0 4px 6px -2px rgba(102, 126, 234, 0.2);
+  transform: translateY(-2px);
+}
+
+.btn-generate:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px -1px rgba(102, 126, 234, 0.2);
+}
+
+.btn-generate:disabled {
+  background: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.alert-box {
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.alert-box.warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

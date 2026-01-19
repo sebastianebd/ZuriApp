@@ -5,6 +5,7 @@ import { axiosPrivateInstance as axios } from '@/config/axios'
 export const useReportStore = defineStore('report', () => {
   const isLoading = ref(false)
   const reportData = ref<any>(null)
+  const error = ref<string | null>(null) // State for error messages
 
   const currentFilters = ref({
     month: new Date().getMonth() + 1,
@@ -18,13 +19,21 @@ export const useReportStore = defineStore('report', () => {
 
     try {
       isLoading.value = true
+      error.value = null // Reset error
+      reportData.value = null // Reset previous data
+
       const { data } = await axios.get('/reports/summary', {
         params: currentFilters.value
       })
       reportData.value = data
-    } catch (error) {
-      console.error('Error fetching report:', error)
+    } catch (err: any) {
+      // Only log unexpected errors (non-404)
+      if (err.response?.status !== 404) {
+        console.error('Error fetching report:', err)
+      }
+
       reportData.value = null
+      error.value = err.response?.data?.message || 'Error al obtener el reporte.'
     } finally {
       isLoading.value = false
     }
@@ -57,6 +66,7 @@ export const useReportStore = defineStore('report', () => {
   return {
     isLoading,
     reportData,
+    error,
     currentFilters,
     fetchReportSummary,
     downloadExcel

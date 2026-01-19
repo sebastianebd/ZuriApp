@@ -91,6 +91,15 @@ export const getMonthlyReport = async ({
   assignments.forEach((a) => serviceSet.add(a.service));
   replacements.forEach((r) => serviceSet.add(r.servicio));
 
+  // Validation: Any shifts?
+  if (serviceSet.size === 0) {
+    throw {
+      status: 404, // Not Found
+      message:
+        "No se encontraron turnos o reemplazos para este usuario en el periodo seleccionado.",
+    };
+  }
+
   // 6. Calculate Stats Per Service AND Merged Grid
   const servicesData: any[] = [];
   const grandTotal = { hours: 0, L: 0, N: 0, X: 0, dayHours: 0, nightHours: 0 };
