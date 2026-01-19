@@ -338,7 +338,6 @@ export const getMonthlyReport = async ({
   grandTotal.nightHours = 0;
 
   let totalFreeDays = 0;
-  let totalReplacements = 0;
 
   timeline.forEach((dayEntry) => {
     // Skip Out of Contract days for stats
@@ -366,13 +365,15 @@ export const getMonthlyReport = async ({
         } else if (upperSigla === "X" || upperSigla === "LIBRE") {
           grandTotal.X++;
           isFreeShiftDay = true;
-        } else if (item.hours > 0) {
+        }
+
+        if (item.hours > 0) {
           hasRealShift = true;
         } else if (item.sigla === "-") {
           // Active but empty sigla -> Potentially free day?
         }
 
-        if (item.isReplacement) totalReplacements++;
+        // Removed per-day replacement count. Replaced by unique people count.
       });
 
       // If the only item is an explicit "X" (or dash with 0 hours), count as free day
@@ -415,7 +416,7 @@ export const getMonthlyReport = async ({
       ...grandTotal,
       daysWorked,
       freeDays: totalFreeDays,
-      replacementsCount: totalReplacements,
+      replacementsCount: new Set(replacements.map((r) => r.rut_saliente)).size,
     },
   };
 };

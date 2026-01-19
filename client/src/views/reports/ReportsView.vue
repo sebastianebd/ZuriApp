@@ -102,8 +102,29 @@ const formatDate = (dateStr: string | Date) => {
   return `${day}/${mn}/${yr}`
 }
 
+// Helper specifically for backend dates (UTC) to avoid timezone shift
+const formatReportDate = (dateStr: string | Date) => {
+  const d = new Date(dateStr)
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  const mn = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const yr = d.getUTCFullYear()
+  return `${day}/${mn}/${yr}`
+}
+
 const downloadPDF = () => {
+  const originalTitle = document.title
+
+  if (selectedUser.value && reportStore.reportData) {
+    const monthName = months[month.value - 1]
+    const fullName = `${selectedUser.value.nombre}_${selectedUser.value.apellido}`.replace(
+      /\s+/g,
+      '_'
+    )
+    document.title = `Reporte_${monthName}_${year.value}_${fullName}`
+  }
+
   window.print()
+  document.title = originalTitle
 }
 </script>
 
@@ -520,7 +541,7 @@ const downloadPDF = () => {
                   (day.items.length === 1 && ['X', 'LIBRE'].includes(day.items[0].sigla))
                 "
               >
-                <td>{{ formatDate(day.date) }}</td>
+                <td>{{ formatReportDate(day.date) }}</td>
                 <td colspan="8" style="text-align: center; color: #10b981; font-weight: 600">
                   <span class="shift-type shift-libre">DÍA LIBRE</span>
                 </td>
@@ -529,7 +550,7 @@ const downloadPDF = () => {
               <!-- Case 2: Regular Shifts -->
               <template v-else>
                 <tr v-for="(item, idx) in day.items" :key="idx">
-                  <td>{{ formatDate(day.date) }}</td>
+                  <td>{{ formatReportDate(day.date) }}</td>
                   <td>
                     <span class="service-badge" :class="getServiceBadgeClass(item.service)">{{
                       item.service
@@ -579,7 +600,6 @@ const downloadPDF = () => {
           <strong>Hospital Base San Jose de Osorno</strong><br />
           ZuriApp Sistema de Turnos y Reemplazos | Generado automáticamente
         </div>
-        <div style="text-align: right">Página 1 de 1<br /></div>
       </div>
     </div>
 
@@ -1127,6 +1147,78 @@ td {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+@media print {
+  @page {
+    margin: 5mm; /* Small margin for content */
+    size: auto;
+  }
+
+  .page-container {
+    padding: 0 !important;
+    background: white !important;
+    display: block !important;
+    min-height: auto !important;
+  }
+
+  .controls,
+  .btn-print,
+  .btn-generate,
+  .premium-select,
+  .user-search,
+  .date-filters {
+    display: none !important;
+  }
+
+  .report-paper {
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    border: none !important;
+  }
+
+  /* Ensure header logos and text are visible and clear */
+  .header {
+    display: flex !important;
+    flex-direction: column !important;
+    padding-bottom: 20px !important;
+  }
+
+  .footer {
+    display: flex !important;
+    justify-content: space-between !important;
+  }
+
+  .header-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+  }
+
+  .header-title {
+    display: block !important;
+    width: 100% !important;
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .hospital-info {
+    text-align: left !important;
+  }
+
+  .report-id {
+    text-align: right !important;
+  }
+
+  /* Force background graphics for badges */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 </style>
