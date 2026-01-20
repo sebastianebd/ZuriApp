@@ -39,12 +39,12 @@
 
                   <div
                     v-if="!selectedUser"
-                    class="p-4 border rounded-3 bg-light text-center cursor-pointer hover-bg-light"
+                    class="p-2 border rounded-3 bg-light text-center cursor-pointer hover-bg-light"
                     @click="showUserModal = true"
                     :class="{ 'border-danger': errors.user_id }"
                   >
-                    <div class="text-primary mb-2">
-                      <i class="bi bi-person-plus-fill fs-3"></i>
+                    <div class="text-primary mb-1">
+                      <i class="bi bi-person-plus-fill fs-4"></i>
                     </div>
                     <div class="fw-bold text-secondary small">
                       Click para seleccionar funcionario
@@ -111,7 +111,7 @@
                   <v-select
                     v-model="form.turn_type"
                     :options="turnTypeOptions"
-                    placeholder="Seleccione patrón"
+                    placeholder="Seleccione tipo de turno"
                     class="custom-v-select"
                     :class="{ 'is-invalid': errors.turn_type }"
                   />
@@ -123,12 +123,14 @@
                 <!-- Start Date -->
                 <div class="mb-4 position-relative">
                   <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                    >Fecha Inicio (Semilla)</label
+                    >Fecha Inicio</label
                   >
                   <DatePicker
+                    ref="startDatePicker"
                     v-model="form.start_date"
                     :popover="{ visibility: 'click', placement: 'bottom' }"
                     :masks="{ input: 'DD/MM/YYYY' }"
+                    :disabled-dates="vCalendarDisabledDates"
                   >
                     <template #default="{ inputValue, inputEvents }">
                       <div class="input-group">
@@ -140,6 +142,7 @@
                           :class="{ 'is-invalid': errors.start_date }"
                           :value="inputValue"
                           v-on="inputEvents"
+                          @click="closeOtherPicker('end')"
                           placeholder="Seleccione fecha"
                           readonly
                         />
@@ -150,20 +153,22 @@
                     {{ errors.start_date }}
                   </div>
                   <small class="form-text text-muted x-small mt-1 d-block">
-                    Esta fecha determina el inicio del ciclo del patrón.
+                    Esta fecha determina el inicio del ciclo del turno seleccionado.
                   </small>
                 </div>
 
-                <!-- End Date (Optional) -->
+                <!-- End Date (Required) -->
                 <div class="mb-2 position-relative">
                   <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                    >Fecha Término (Opcional)</label
+                    >Fecha Término</label
                   >
                   <DatePicker
+                    ref="endDatePicker"
                     v-model="form.end_date"
                     :popover="{ visibility: 'click', placement: 'bottom' }"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :min-date="form.start_date"
+                    :disabled-dates="vCalendarDisabledDates"
                   >
                     <template #default="{ inputValue, inputEvents }">
                       <div class="input-group">
@@ -172,17 +177,22 @@
                         </span>
                         <input
                           class="form-control border-start-0 ps-0"
+                          :class="{ 'is-invalid': errors.end_date }"
                           :value="inputValue"
                           v-on="inputEvents"
-                          placeholder="Indefinido"
+                          @click="closeOtherPicker('start')"
+                          placeholder="Seleccione fecha"
                           readonly
                         />
                       </div>
                     </template>
                   </DatePicker>
-                  <small class="form-text text-muted x-small mt-1 d-block">
-                    Dejar vacío para asignación indefinida.
-                  </small>
+                  <div
+                    v-if="errors.end_date"
+                    class="valid-feedback text-danger d-block x-small fw-bold floating-error"
+                  >
+                    {{ errors.end_date }}
+                  </div>
                 </div>
               </div>
             </form>
@@ -231,9 +241,12 @@
 import { ref, computed, watch } from 'vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/dist/style.css'
+import vSelect from 'vue-select'
+import 'vue-select/dist/vue-select.css'
 import { useUserStore } from '@/stores/user.store'
+import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useOptionStore } from '@/stores/option.store'
-import { PATTERNS } from '@/services/turn-pattern.service'
+import { useTurnTypeStore } from '@/stores/turn-type.store'
 import type { User } from '@/types/models'
 import TurnAssignmentUserModal from './TurnAssignmentUserModal.vue'
 
@@ -248,7 +261,9 @@ const emit = defineEmits<{
 }>()
 
 const usersStore = useUserStore()
+const turnAssignmentStore = useTurnAssignmentStore()
 const optionStore = useOptionStore()
+const turnTypeStore = useTurnTypeStore()
 const localUsers = ref<any[]>([])
 
 // Logic State
@@ -256,7 +271,9 @@ const showUserModal = ref(false)
 const selectedUser = ref<User | null>(null)
 
 // Options
-const turnTypeOptions = Object.keys(PATTERNS)
+const turnTypeOptions = computed(() => {
+  return turnTypeStore.turnTypes.map((t) => t.nombre)
+})
 
 const serviceOptions = computed(() => {
   return optionStore.opciones?.servicios || []
@@ -286,7 +303,8 @@ watch(
       try {
         const [users] = await Promise.all([
           usersStore.mostrarTodos(),
-          optionStore.mostrarOpciones()
+          optionStore.mostrarOpciones(),
+          turnTypeStore.fetchTurnTypes(true)
         ])
         localUsers.value = users
       } catch (e) {
@@ -301,12 +319,55 @@ function resetForm() {
     user_id: '',
     service: '',
     turn_type: '',
-    start_date: null,
-    end_date: null
+    start_date: new Date(),
+    end_date: new Date()
   }
   selectedUser.value = null
   errors.value = {}
 }
+
+// DatePicker refs for manual control
+const startDatePicker = ref()
+const endDatePicker = ref()
+
+function closeOtherPicker(current: 'start' | 'end') {
+  if (current === 'start' && endDatePicker.value) {
+    endDatePicker.value.hidePopover()
+  } else if (current === 'end' && startDatePicker.value) {
+    startDatePicker.value.hidePopover()
+  }
+}
+
+const blockedDates = ref<any[]>([])
+
+function getBlockedDates(assignments: any[]) {
+  return assignments.map((a) => {
+    return {
+      start: new Date(a.start_date),
+      end: a.end_date ? new Date(a.end_date) : null // Null end means indefinite. v-calendar handles null end? limit to 100 years maybe.
+    }
+  })
+}
+
+// Convert logic for v-calendar
+// v-calendar expects ranges: { start: Date, end: Date }
+// For indefinite end, we can pick a far future date.
+const vCalendarDisabledDates = computed(() => {
+  return blockedDates.value.map((range) => ({
+    start: range.start,
+    end: range.end || new Date(2100, 0, 1)
+  }))
+})
+
+// Watch selectedUser instead of handling in method for clearer reactivity
+watch(selectedUser, async (newUser) => {
+  if (newUser) {
+    const assignments = await turnAssignmentStore.fetchAssignmentsByUser(newUser._id)
+    blockedDates.value = getBlockedDates(assignments)
+  } else {
+    blockedDates.value = []
+  }
+})
 
 function handleUserSelected(user: User) {
   selectedUser.value = user
@@ -318,6 +379,7 @@ function handleUserSelected(user: User) {
 function clearUser() {
   selectedUser.value = null
   form.value.user_id = ''
+  blockedDates.value = []
 }
 
 function validateForm() {
@@ -344,10 +406,32 @@ function validateForm() {
     isValid = false
   }
 
+  if (!form.value.end_date) {
+    errors.value.end_date = 'La fecha de término es requerida'
+    isValid = false
+  }
+
   // End date logic
   if (form.value.start_date && form.value.end_date) {
     if (form.value.end_date < form.value.start_date) {
       errors.value.end_date = 'La fecha de término no puede ser anterior a la de inicio'
+      isValid = false
+    }
+  }
+
+  // Overlap Check (Frontend)
+  if (form.value.start_date) {
+    const newStart = form.value.start_date
+    const newEnd = form.value.end_date || new Date(2100, 0, 1)
+
+    const hasOverlap = blockedDates.value.some((range) => {
+      const blockedStart = range.start
+      const blockedEnd = range.end || new Date(2100, 0, 1)
+      return newStart <= blockedEnd && newEnd >= blockedStart
+    })
+
+    if (hasOverlap) {
+      errors.value.start_date = 'La fecha seleccionada se traslapa con un turno existente.'
       isValid = false
     }
   }
@@ -407,6 +491,7 @@ function guardar() {
   font-size: 0.7rem;
   white-space: nowrap;
 }
+/* Custom v-select */
 .custom-v-select :deep(.vs__dropdown-toggle) {
   border: 1px solid #e2e8f0;
   border-radius: 0.375rem;
@@ -414,9 +499,41 @@ function guardar() {
   background: white;
   box-shadow: none;
 }
+
 .custom-v-select :deep(.vs__selected) {
   font-size: 0.875rem;
   color: #1e293b;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+}
+
+.custom-v-select :deep(.vs__actions svg) {
+  fill: #64748b;
+  transform: scale(0.8);
+}
+
+.custom-v-select :deep(.vs__dropdown-menu) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  font-size: 0.875rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.custom-v-select :deep(.vs__dropdown-option) {
+  border-radius: 0.25rem;
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  color: #475569;
+}
+
+.custom-v-select :deep(.vs__dropdown-option--highlight) {
+  background: #3b82f6;
+  color: white;
 }
 .is-invalid {
   border-color: #ef4444 !important;

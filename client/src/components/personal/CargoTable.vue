@@ -32,7 +32,7 @@
           <!-- Nombre -->
           <td>
             <div class="d-flex flex-column">
-              <span class="fw-bold text-dark">{{ cargo.nombre }}</span>
+              <span class="fw-bold text-dark">{{ formatTitleCase(cargo.nombre) }}</span>
               <span class="text-muted x-small" style="max-width: 200px; line-height: 1.1">{{
                 cargo.descripcion
               }}</span>
@@ -102,6 +102,7 @@
 <script setup lang="ts">
 import type { ICargo } from '@/types/models'
 import { useAuthStore } from '@/stores/auth.store'
+import { formatTitleCase } from '@/utils/text-formatters'
 
 defineProps<{
   cargos: ICargo[]

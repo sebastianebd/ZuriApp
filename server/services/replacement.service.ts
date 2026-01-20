@@ -3,7 +3,7 @@ import Reemplazo, { IReplacement } from "../models/replacement.model";
 const determineStatus = (fecha_inicio: Date | string): string => {
   const now = new Date();
   const fechaActualUTC = new Date(
-    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()),
   );
 
   const inicio = new Date(fecha_inicio);
@@ -18,7 +18,7 @@ const determineStatus = (fecha_inicio: Date | string): string => {
 const determineStatusCorte = (fecha_corte: Date | string): string => {
   const now = new Date();
   const fechaActualUTC = new Date(
-    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()),
   );
 
   const fechaCorte = new Date(fecha_corte);
@@ -35,8 +35,23 @@ fechaLocal.setMinutes(fechaLocal.getMinutes() - fechaLocal.getTimezoneOffset());
 async function registrar(data: any) {
   const initialStatus = determineStatus(data.fecha_inicio);
 
+  /* 
+   Lookup TurnType ID 
+   We import basic mongoose model to avoid large circular deps if possible, 
+   or just use mongoose.model if registered.
+   But let's use dynamic import or assume TurnType is registered.
+  */
+  const { default: TurnTypeModel } = await import("../models/turn-type.model");
+  const turnTypeDoc = await TurnTypeModel.findOne({
+    // match by name (case insensitive) or code?
+    // Usually frontend sends name.
+    nombre: { $regex: new RegExp(`^${data.tipo_turno}$`, "i") },
+    deleted_at: null,
+  });
+
   const nuevoReemplazo = new Reemplazo({
     ...data,
+    turn_type_id: turnTypeDoc ? turnTypeDoc._id : undefined, // Save ID if found
     fecha_inicio: new Date(data.fecha_inicio),
     fecha_termino: new Date(data.fecha_termino),
     status: initialStatus,
@@ -54,7 +69,7 @@ async function obtenerActivos() {
 async function obtenerInactivosPaginados(
   filtros: any = {},
   pagina: number = 1,
-  limite: number = 10
+  limite: number = 10,
 ) {
   const query: any = {
     status: { $in: ["FINALIZADO", "ANULADO", "INTERRUMPIDO"] },
@@ -135,7 +150,7 @@ async function finalizarReemplazo(id: string) {
   await Reemplazo.findByIdAndUpdate(
     id,
     { status: "FINALIZADO", fecha_termino: fechaLocal },
-    { new: true }
+    { new: true },
   );
   return await Reemplazo.findById(id);
 }
@@ -191,11 +206,11 @@ async function sustituir(payload: SustitucionPayload) {
       corte_anticipado: true,
       updated_at: new Date(),
     },
-    { new: true }
+    { new: true },
   );
   if (!registroA_actualizado) {
     throw new Error(
-      `Registro de reemplazo con ID ${id_registro_a} no encontrado.`
+      `Registro de reemplazo con ID ${id_registro_a} no encontrado.`,
     );
   }
 

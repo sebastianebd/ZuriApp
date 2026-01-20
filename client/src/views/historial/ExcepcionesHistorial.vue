@@ -107,9 +107,7 @@
                   <div class="d-flex align-items-center h-100">
                     <!-- Original -->
                     <div class="text-center" style="min-width: 80px">
-                      <span class="d-block x-small text-secondary fw-bold text-uppercase mb-1"
-                        >Original</span
-                      >
+                      <span class="d-block x-small text-secondary fw-bold mb-1">Original</span>
                       <span
                         class="status-glass"
                         :class="
@@ -131,9 +129,7 @@
 
                     <!-- Modificado -->
                     <div class="text-center" style="min-width: 80px">
-                      <span class="d-block x-small text-primary fw-bold text-uppercase mb-1"
-                        >Nuevo</span
-                      >
+                      <span class="d-block x-small text-primary fw-bold mb-1">Nuevo</span>
                       <span
                         class="status-glass"
                         :class="getShiftBadgeClass(exception.override_type)"
@@ -218,6 +214,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useShiftExceptionStore } from '@/stores/shift-exception.store'
 import { useOptionStore } from '@/stores/option.store'
 import ShiftExceptionFilter from '@/components/historial/ShiftExceptionFilter.vue'
+import { formatTitleCase } from '@/utils/text-formatters'
 
 const exceptionStore = useShiftExceptionStore()
 const optionStore = useOptionStore()
@@ -359,7 +356,7 @@ function getShiftLabel(type: string) {
     NOCHE: 'Noche',
     LIBRE: 'Libre'
   }
-  return labels[type] || type
+  return labels[type] || formatTitleCase(type)
 }
 
 function getShiftBadgeClass(type: string) {
@@ -376,7 +373,7 @@ function getAssignmentName(exception: any) {
   if (assignment && typeof assignment === 'object' && assignment.user_id) {
     const user = assignment.user_id
     if (user && typeof user === 'object' && user.nombre) {
-      return `${user.nombre} ${user.apellido}`
+      return formatTitleCase(`${user.nombre} ${user.apellido}`)
     }
   }
   return 'N/A'
@@ -387,7 +384,7 @@ function getAssignmentCargo(exception: any) {
   if (assignment && typeof assignment === 'object' && assignment.user_id) {
     const user = assignment.user_id
     if (user && typeof user === 'object' && user.tipo_cargo) {
-      return user.tipo_cargo
+      return formatTitleCase(user.tipo_cargo)
     }
   }
   return ''
@@ -396,13 +393,13 @@ function getAssignmentCargo(exception: any) {
 function getAssignmentService(exception: any) {
   const assignment = exception.assignment_id
   if (assignment && typeof assignment === 'object') {
-    if (assignment.service) return assignment.service
+    if (assignment.service) return formatTitleCase(assignment.service)
     if (
       assignment.user_id &&
       typeof assignment.user_id === 'object' &&
       assignment.user_id.servicio
     ) {
-      return assignment.user_id.servicio
+      return formatTitleCase(assignment.user_id.servicio)
     }
   }
   return 'N/A'
@@ -411,7 +408,7 @@ function getAssignmentService(exception: any) {
 function getCreatedByName(exception: any) {
   const creator = exception.created_by
   if (creator && typeof creator === 'object' && creator.nombre) {
-    return `${creator.nombre} ${creator.apellido}`
+    return formatTitleCase(`${creator.nombre} ${creator.apellido}`)
   }
   return 'Sistema'
 }

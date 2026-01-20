@@ -9,7 +9,7 @@ export async function login(page: Page) {
   await page.waitForLoadState('networkidle')
 
   // Fill credentials
-  await page.fill('#rut', '11752331-4')
+  await page.fill('#rut', '12345678-5')
   await page.fill('input[type="password"]', '2716xD!')
 
   // Click login button
@@ -22,7 +22,14 @@ export async function login(page: Page) {
   const response = await loginResponsePromise
 
   if (response.status() !== 200) {
-    console.error(`Login failed with status ${response.status()}`)
+    let errorMsg = `Login failed with status ${response.status()}`
+    try {
+      const body = await response.text()
+      errorMsg += ` Body: ${body}`
+    } catch (e) {
+      errorMsg += ' (Could not read body)'
+    }
+    console.error(errorMsg)
   }
   expect(response.status()).toBe(200)
 

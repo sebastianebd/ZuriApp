@@ -32,6 +32,11 @@ const router = createRouter({
           name: 'dashboard',
           component: () => import('@/views/user/UserView.vue')
         },
+        {
+          path: 'user',
+          name: 'user',
+          component: () => import('@/views/user/UserView.vue')
+        },
 
         // ==================== PERSONAL ====================
         {
@@ -88,17 +93,22 @@ const router = createRouter({
           name: 'historial-auditoria',
           component: () => import('@/views/audit/AuditoriaView.vue')
         },
+        {
+          path: 'reportes',
+          name: 'reportes',
+          component: () => import('@/views/reports/ReportsView.vue')
+        },
 
         // ==================== CONFIGURACIÓN ====================
         {
           path: 'configuracion/servicios',
           name: 'configuracion-servicios',
-          component: () => import('@/views/configuracion/ServiciosConfig.vue')
+          component: () => import('@/views/configuracion/ServiceManagement.vue')
         },
         {
           path: 'configuracion/tipos-turno',
           name: 'configuracion-tipos-turno',
-          component: () => import('@/views/configuracion/TiposTurnoConfig.vue')
+          component: () => import('@/views/configuracion/ShiftTypeManagement.vue')
         },
 
         // ==================== REDIRECTS (Backward Compatibility) ====================

@@ -6,6 +6,14 @@ export interface ITurnAssignment extends Document {
   turn_type: string;
   start_date: Date;
   end_date?: Date;
+  snapshot_secuencia?: Array<{
+    dia: number;
+    turno_entrada?: string;
+    turno_salida?: string;
+    es_libre: boolean;
+    sigla: string;
+    color?: string;
+  }>;
 }
 
 const turnAssignmentSchema = new Schema(
@@ -20,9 +28,9 @@ const turnAssignmentSchema = new Schema(
       required: true, // Making it required as per user implication
     },
     turn_type: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "TurnType",
       required: true,
-      trim: true,
     },
     start_date: {
       type: Date,
@@ -31,14 +39,24 @@ const turnAssignmentSchema = new Schema(
     end_date: {
       type: Date,
     },
+    snapshot_secuencia: [
+      {
+        dia: { type: Number, required: true },
+        turno_entrada: { type: String, default: null },
+        turno_salida: { type: String, default: null },
+        es_libre: { type: Boolean, default: false },
+        sigla: { type: String, required: true },
+        color: { type: String },
+      },
+    ],
   },
   {
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 
 export const TurnAssignmentModel = mongoose.model<ITurnAssignment>(
   "TurnAssignment",
-  turnAssignmentSchema
+  turnAssignmentSchema,
 );

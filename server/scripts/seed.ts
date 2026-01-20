@@ -24,9 +24,9 @@ async function seed() {
 
     // 2. Definir Usuario Admin
     const adminUser = {
-      rut: "11752331-4",
+      rut: "12345678-5",
       nombre: "Admin",
-      apellido: "Secundario",
+      apellido: "Principal",
       fecha_nac: new Date("1990-01-01"),
       direccion: "Calle Falsa 123",
       telefono: "934768811",

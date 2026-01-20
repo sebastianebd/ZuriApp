@@ -74,10 +74,10 @@
           <td>
             <div class="d-flex flex-column justify-content-center h-100">
               <span class="fw-medium text-dark x-small mb-1">{{
-                usuario.ciudad || 'Sin ciudad'
+                formatTitleCase(usuario.ciudad) || 'Sin ciudad'
               }}</span>
               <span class="text-muted x-small text-truncate" style="max-width: 150px">{{
-                usuario.direccion || 'Sin dirección'
+                formatTitleCase(usuario.direccion) || 'Sin dirección'
               }}</span>
             </div>
           </td>
@@ -85,7 +85,7 @@
           <!-- Rol -->
           <td>
             <span class="badge-modern-role">
-              {{ usuario.tipo_cargo }}
+              {{ formatTitleCase(usuario.tipo_cargo) }}
             </span>
           </td>
 
@@ -152,6 +152,7 @@ import { ref, onMounted } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useCargoStore } from '@/stores/cargo.store'
+import { formatTitleCase } from '@/utils/text-formatters'
 
 const props = defineProps<{
   usuarios: any[]
@@ -238,7 +239,7 @@ function formatShortName(nombre: string, apellido: string) {
   if (!nombre) return ''
   const n = nombre.split(' ')[0]
   const a = apellido ? apellido.split(' ')[0].charAt(0) + '.' : ''
-  return `${n} ${a}`.toUpperCase()
+  return formatTitleCase(`${n} ${a}`)
 }
 
 async function copyCode(code: string) {

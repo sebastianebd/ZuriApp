@@ -69,7 +69,7 @@ describe('UserService', () => {
 
     const result = await UserService.mostrarTodosUsuarios(mockApi as any)
 
-    expect(mockApi.get).toHaveBeenCalledWith('/users/')
+    expect(mockApi.get).toHaveBeenCalledWith('/users/', { params: { search: undefined } })
     expect(result).toEqual(mockResponse.data)
   })
 

@@ -103,6 +103,7 @@ function generateDiff(oldData: any, newData: any): string {
     "id",
     "full_name",
     "creado_por",
+    "updatedAt",
   ];
 
   Object.keys(newData).forEach((key) => {
@@ -113,21 +114,67 @@ function generateDiff(oldData: any, newData: any): string {
 
     // date handling
     if (
-      newVal instanceof Date ||
-      (typeof newVal === "string" &&
-        !isNaN(Date.parse(newVal)) &&
-        oldVal instanceof Date) // simplification from JS check
-      // Actually checking if oldVal has .getTime is safer
+      (newVal instanceof Date ||
+        (typeof newVal === "string" && !isNaN(Date.parse(newVal)))) &&
+      oldVal
     ) {
-      // ... date logic
       const t1 = new Date(oldVal).getTime();
       const t2 = new Date(newVal).getTime();
-      if (t1 !== t2) {
+      if (!isNaN(t1) && !isNaN(t2) && t1 !== t2) {
         changes.push(
-          `${key}: ${new Date(oldVal).toLocaleString()} -> ${new Date(
-            newVal
+          `${key}: ${new Date(t1).toLocaleString()} -> ${new Date(
+            t2
           ).toLocaleString()}`
         );
+      }
+      return;
+    }
+
+    // SPECIAL HANDLING: Turn Type Sequence
+    if (key === "secuencia" && Array.isArray(oldVal) && Array.isArray(newVal)) {
+      const seqChanges: string[] = [];
+      newVal.forEach((newDay: any) => {
+        const oldDay = oldVal.find((d: any) => d.dia === newDay.dia);
+        if (!oldDay) {
+          seqChanges.push(`Día ${newDay.dia}: Nuevo`);
+        } else {
+          // Compare fields within the day
+          const dayUpdates: string[] = [];
+
+          // Sigla
+          if (oldDay.sigla !== newDay.sigla)
+            dayUpdates.push(`Sigla: ${oldDay.sigla} -> ${newDay.sigla}`);
+
+          // Horarios
+          const oldTime = `${oldDay.turno_entrada || "vacío"} - ${
+            oldDay.turno_salida || "vacío"
+          }`;
+          const newTime = `${newDay.turno_entrada || "vacío"} - ${
+            newDay.turno_salida || "vacío"
+          }`;
+          if (oldTime !== newTime)
+            dayUpdates.push(`Horario: ${oldTime} -> ${newTime}`);
+
+          if (oldDay.es_libre !== newDay.es_libre)
+            dayUpdates.push(`Libre: ${oldDay.es_libre} -> ${newDay.es_libre}`);
+
+          if (dayUpdates.length > 0) {
+            seqChanges.push(`Día ${newDay.dia}: [ ${dayUpdates.join(", ")} ]`);
+          }
+        }
+      });
+      if (seqChanges.length > 0) {
+        changes.push(`${key}: ${seqChanges.join("; ")}`);
+      }
+      return;
+    }
+
+    // Generic deep equality check for other objects/arrays
+    if (typeof newVal === "object" && newVal !== null && oldVal !== undefined) {
+      if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+        const oldStr = JSON.stringify(oldVal, null, 1).replace(/\n/g, "");
+        const newStr = JSON.stringify(newVal, null, 1).replace(/\n/g, "");
+        changes.push(`${key}: ${oldStr} -> ${newStr}`);
       }
       return;
     }

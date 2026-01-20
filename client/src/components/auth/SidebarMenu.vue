@@ -115,6 +115,15 @@
           <i class="bi bi-journal-text"></i>
           <span class="text">Auditoría de Cambios</span>
         </router-link>
+        <router-link
+          :to="{ name: 'reportes' }"
+          class="menu-item"
+          title="Centro de Reportes"
+          v-if="can('shifts.view')"
+        >
+          <i class="bi bi-file-earmark-bar-graph"></i>
+          <span class="text">Centro de Reportes</span>
+        </router-link>
       </div>
 
       <!-- Configuración Section -->
@@ -236,7 +245,7 @@ aside {
   }
 
   .menu-container {
-    padding-top: 2.5rem;
+    padding-top: 1.5rem; /* Reduced from 2.5rem */
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
@@ -251,17 +260,17 @@ aside {
   }
 
   .menu-group {
-    margin-bottom: 1.5rem;
-    padding: 0 0.75rem;
-    padding-bottom: 0.7rem;
+    margin-bottom: 0.75rem; /* Reduced from 1.5rem */
+    padding: 0 0.5rem;
+    padding-bottom: 0.5rem;
 
     h3 {
       color: #64748b;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
       padding-left: 0.5rem;
       white-space: nowrap;
     }
@@ -271,22 +280,23 @@ aside {
     display: flex;
     align-items: center;
     text-decoration: none;
-    padding: 0.75rem 0.85rem;
+    padding: 0.6rem 0.75rem; /* Increased padding slightly */
     border-radius: 0.5rem;
-    margin-bottom: 0.25rem;
+    margin-bottom: 4px; /* Slightly more space */
     color: #94a3b8;
     transition: all 0.2s ease;
     white-space: nowrap;
+    font-size: 0.85rem; /* Reduced font size */
 
     i {
-      font-size: 1.25rem;
+      font-size: 1.1rem; /* Reduced icon size */
       min-width: 1.5rem;
       display: flex;
       justify-content: center;
     }
 
     .text {
-      margin-left: 1rem;
+      margin-left: 0.85rem; /* Adjusted opacity/margin */
       font-weight: 500;
       opacity: 0;
       transition: opacity 0.3s ease;

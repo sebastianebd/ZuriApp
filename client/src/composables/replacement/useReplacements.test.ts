@@ -59,6 +59,27 @@ vi.mock('vue', async (importOriginal) => {
   }
 })
 
+const mockTurnTypeStore = {
+  fetchTurnTypes: vi.fn(),
+  turnTypes: {
+    // Make sure this is a ref-like object or array as expected by the component
+    value: [{ nombre: 'MAÑANA' }]
+  }
+  // If useReplacements accesses .value directly from the store (unlikely if it uses storeToRefs),
+  // but if it iterates store.turnTypes, it needs to be an array.
+  // Let's assume storeToRefs usage or direct access.
+  // Safest is to mock the hook return value
+}
+
+// Ensure turnTypes is treated as a reactive array in the store
+// But for the mock factor, we just return the object
+vi.mock('@/stores/turn-type.store', () => ({
+  useTurnTypeStore: () => ({
+    fetchTurnTypes: vi.fn(),
+    turnTypes: [{ nombre: 'MAÑANA' }]
+  })
+}))
+
 // Mock Modal Logic
 const mockModalLogic = {
   createModalVisible: ref(false),

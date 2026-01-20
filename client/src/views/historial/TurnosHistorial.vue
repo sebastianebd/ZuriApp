@@ -1,66 +1,66 @@
 <template>
-  <div class="turnos-historial p-4">
-    <!-- Header -->
-    <!-- Header & Alert -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
+  <div class="turnos-historial">
+    <!-- Shifts Grid Component -->
+    <ShiftsView ref="shiftsViewRef" :readonly="true" :historyMode="true" :externalFilters="filters">
+      <template #header-title>
         <h4 class="fw-bold mb-1 text-dark">
           <i class="bi bi-clock-history text-secondary me-2"></i>Historial de Turnos
         </h4>
         <p class="text-secondary mb-0">Consulta registros de meses anteriores.</p>
-      </div>
+      </template>
 
-      <!-- Readonly Alert -->
-      <div
-        class="alert alert-light border shadow-sm d-inline-flex align-items-center mb-0 py-2 px-3 text-secondary"
-        style="max-width: fit-content"
-      >
-        <i class="bi bi-info-circle-fill fs-5 me-3 text-primary opacity-75"></i>
-        <div>
-          <strong>Modo Archivo</strong>
-          <span class="ms-2 small border-start ps-2 border-secondary-subtle text-nowrap">
-            Estás visualizando turnos pasados. Información de solo lectura.
-          </span>
+      <template #history-filters>
+        <div class="d-flex gap-3 align-items-center">
+          <div style="width: 200px">
+            <v-select
+              v-model="filters.service"
+              :options="services"
+              placeholder="Filtrar Servicio"
+              class="bg-white rounded shadow-sm custom-v-select"
+              :clearable="true"
+              :searchable="true"
+            >
+              <template #no-options>
+                <span class="small p-2">No encontrado</span>
+              </template>
+            </v-select>
+          </div>
+
+          <div style="width: 200px">
+            <v-select
+              v-model="filters.cargo"
+              :options="cargos"
+              placeholder="Filtrar Cargo"
+              class="bg-white rounded shadow-sm custom-v-select"
+              :clearable="true"
+              :searchable="true"
+            >
+              <template #no-options>
+                <span class="small p-2">No encontrado</span>
+              </template>
+            </v-select>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="mb-4">
-      <ShiftExceptionFilter
-        v-model="filters"
-        :lista-servicios="services"
-        :lista-cargos="cargos"
-        :lista-tipos-turno="shiftTypes"
-        :hide-dates="true"
-      />
-    </div>
-
-    <!-- Shifts Grid Component -->
-    <ShiftsView
-      ref="shiftsViewRef"
-      :readonly="true"
-      :historyMode="true"
-      :externalFilters="filters"
-    />
+      </template>
+    </ShiftsView>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import ShiftsView from '@/views/shifts/ShiftsView.vue'
-import ShiftExceptionFilter from '@/components/historial/ShiftExceptionFilter.vue'
 import { useOptionStore } from '@/stores/option.store'
+import { useTurnTypeStore } from '@/stores/turn-type.store'
+import vSelect from 'vue-select'
+import 'vue-select/dist/vue-select.css'
 
 const optionStore = useOptionStore()
+const turnTypeStore = useTurnTypeStore()
 const shiftsViewRef = ref<InstanceType<typeof ShiftsView> | null>(null)
 
 const filters = ref({
-  startDate: null, // Not used by grid but required by component interface
-  endDate: null, // Not used by grid but required by component interface
   service: '',
-  cargo: '',
-  shiftType: ''
+  cargo: ''
 })
 
 const services = computed(() => optionStore.opciones?.servicios || [])
@@ -68,10 +68,9 @@ const cargos = computed(() => {
   const all = optionStore.opciones?.tipoCargo || []
   return all.filter((c) => !['RECURSOS HUMANOS', 'ADMIN-TI'].includes(c))
 })
-const shiftTypes = computed(() => optionStore.opciones?.tiposTurno || [])
 
 onMounted(async () => {
-  await optionStore.mostrarOpciones()
+  await Promise.all([optionStore.mostrarOpciones(), turnTypeStore.fetchTurnTypes(true)])
 
   // Default to previous month
   await nextTick()
@@ -107,5 +106,50 @@ onMounted(async () => {
 .turnos-historial {
   background-color: #f8fafc;
   min-height: 100vh;
+}
+
+/* Custom v-select */
+.custom-v-select :deep(.vs__dropdown-toggle) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 3px;
+  background: white;
+  box-shadow: none;
+}
+
+.custom-v-select :deep(.vs__selected) {
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+}
+
+.custom-v-select :deep(.vs__actions svg) {
+  fill: #64748b;
+  transform: scale(0.8);
+}
+
+.custom-v-select :deep(.vs__dropdown-menu) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  font-size: 0.875rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.custom-v-select :deep(.vs__dropdown-option) {
+  border-radius: 0.25rem;
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  color: #475569;
+}
+
+.custom-v-select :deep(.vs__dropdown-option--highlight) {
+  background: #3b82f6;
+  color: white;
 }
 </style>

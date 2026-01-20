@@ -9,7 +9,7 @@ async function register(req: AuthRequest, res: Response) {
   try {
     const data = await userService.register(
       req.body,
-      req.user?.tipo_cargo || ""
+      req.user?.tipo_cargo || "",
     );
     await auditService.logAction(
       "CREAR",
@@ -17,7 +17,7 @@ async function register(req: AuthRequest, res: Response) {
       req.user,
       `Se creó al usuario RUT ${req.body.rut} ${req.body.nombre} ${req.body.apellido}`,
       req.body,
-      data._id as string
+      data._id as string,
     );
     await delPattern("users:*"); // Invalidate cache
 
@@ -59,7 +59,9 @@ import Cargo from "../models/cargo.model"; // Added Cargo import
 async function mostrarTodos(req: AuthRequest, res: Response) {
   try {
     const userRole = req.user?.tipo_cargo || "UNKNOWN";
-    const cacheKey = `users:all:${userRole}`; // Scope cache by role
+    // 2. Search Query
+    const search = (req.query.search as string) || "";
+    const cacheKey = `users:all:${userRole}:${search || "default"}`; // Scope cache by role and search
 
     // 1. Try Cache
     const cachedData = await get(cacheKey);
@@ -85,8 +87,8 @@ async function mostrarTodos(req: AuthRequest, res: Response) {
       allowedCargos = visibleCargos.map((c) => c.nombre);
     }
 
-    const usuarios = await userService.obtenerTodos(allowedCargos);
-    await set(cacheKey, usuarios, 300); // Cache for 5 minutes
+    const usuarios = await userService.obtenerTodos(allowedCargos, search);
+    await set(cacheKey, usuarios, 60); // Cache for 1 minute (searches change fast)
     res.json(usuarios);
   } catch (error: any) {
     res.status(error.status || 500).json({ mensaje: error.message });
@@ -112,7 +114,7 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
       req.user,
       descripcion,
       req.body,
-      req.params.id
+      req.params.id,
     );
     await delPattern("users:*"); // Invalidate cache
 
@@ -144,7 +146,7 @@ async function eliminarUsuario(req: AuthRequest, res: Response) {
         ? `Se eliminó al usuario RUT ${userToDelete.rut} ${userToDelete.nombre} ${userToDelete.apellido}`
         : `Se eliminó al usuario ID ${req.params.id}`,
       null,
-      req.params.id
+      req.params.id,
     );
     await delPattern("users:*"); // Invalidate cache
 

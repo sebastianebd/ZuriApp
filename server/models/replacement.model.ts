@@ -12,6 +12,7 @@ export interface IReplacement extends Document {
   nombre_entrante: string;
   apellido_entrante: string;
   tipo_turno: string;
+  turn_type_id?: mongoose.Types.ObjectId;
   fecha_inicio: Date;
   fecha_termino: Date;
   servicio: string;
@@ -73,6 +74,10 @@ const replacementSchema: Schema = new Schema(
       required: true,
       uppercase: true,
     },
+    turn_type_id: {
+      type: Schema.Types.ObjectId,
+      ref: "TurnType",
+    },
     fecha_inicio: {
       type: Date,
       required: true,
@@ -105,7 +110,7 @@ const replacementSchema: Schema = new Schema(
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // Indexes for performance optimization
@@ -131,7 +136,7 @@ replacementSchema.pre("save", async function (next) {
     let counter = await Counter.findOneAndUpdate(
       { _id: counterId },
       { $inc: { seq: 1 } },
-      { new: true }
+      { new: true },
     );
 
     if (!counter) {
@@ -139,7 +144,7 @@ replacementSchema.pre("save", async function (next) {
       counter = await Counter.findOneAndUpdate(
         { _id: counterId },
         { $inc: { seq: 1 } },
-        { new: true }
+        { new: true },
       );
     }
 

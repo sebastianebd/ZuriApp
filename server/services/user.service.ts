@@ -134,16 +134,43 @@ async function obtenerPorId(id: string) {
   return await User.findById(id).lean();
 }
 
-async function obtenerTodos(allowedCargos?: string[]) {
+async function obtenerTodos(allowedCargos?: string[], search?: string) {
   const query: any = { eliminado: false };
 
   // If filter is provided, restrict query.
-  // If empty array passed, it means user sees nothing (correct).
   if (allowedCargos && Array.isArray(allowedCargos)) {
     query.tipo_cargo = { $in: allowedCargos };
   }
 
-  return await User.find(query);
+  // Search Logic
+  let limit = 20;
+  if (search && search.trim().length > 0) {
+    const terms = search.trim().split(/\s+/); // Split by whitespace
+
+    // Each term must match at least one field ($and of $ors)
+    const andConditions = terms.map((term) => {
+      const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(safeTerm, "i");
+
+      return {
+        $or: [
+          { rut: regex },
+          { nombre: regex },
+          { apellido: regex },
+          { cargo: regex },
+        ],
+      };
+    });
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
+  } else {
+    // If no search, limit to 20 to prevent overload
+    limit = 20;
+  }
+
+  return await User.find(query).limit(limit);
 }
 
 async function actualizar(id: string, data: Partial<IUser>) {

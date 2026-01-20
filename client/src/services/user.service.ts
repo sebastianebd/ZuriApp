@@ -45,9 +45,14 @@ export const mostrarUsersCargoTens = async (apiPrivate: ReturnType<typeof useApi
   }
 }
 
-export const mostrarTodosUsuarios = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
+export const mostrarTodosUsuarios = async (
+  apiPrivate: ReturnType<typeof useApiPrivate>,
+  search?: string
+) => {
   try {
-    const { data } = await apiPrivate.get(`/users/`)
+    const { data } = await apiPrivate.get(`/users/`, {
+      params: { search }
+    })
     return data
   } catch (error) {
     throw errorHandler(error)
