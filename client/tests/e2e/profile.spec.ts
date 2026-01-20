@@ -19,7 +19,8 @@ test.describe('Profile View', () => {
     await expect(page.locator('h4', { hasText: /Admin/i })).toBeVisible({ timeout: 15000 })
 
     // Check for Role
-    await expect(page.locator('p.text-muted', { hasText: 'ADMIN-TI' })).toBeVisible({
+    // Check for Role
+    await expect(page.locator('main').getByText('ADMIN-TI')).toBeVisible({
       timeout: 15000
     })
 

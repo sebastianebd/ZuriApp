@@ -153,6 +153,20 @@ jobs:
         env:
           DATABASE_URI: mongodb://localhost:27017/zuriapp_test
 
+      - name: Seed Services
+        run: |
+          cd server
+          npm run seed:services
+        env:
+          DATABASE_URI: mongodb://localhost:27017/zuriapp_test
+
+      - name: Seed Turn Types
+        run: |
+          cd server
+          npm run seed:turntypes
+        env:
+          DATABASE_URI: mongodb://localhost:27017/zuriapp_test
+
       - name: Run E2E Tests
         run: |
           cd client

@@ -15,7 +15,7 @@ test.describe('Login Flow', () => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
 
-    await page.fill('#rut', '11752331-4')
+    await page.fill('#rut', '12345678-5')
     await page.fill('input[type="password"]', '2716xD!')
 
     const loginResponsePromise = page.waitForResponse((resp) =>
@@ -33,7 +33,7 @@ test.describe('Login Flow', () => {
     await expect(page).not.toHaveURL(/\/$/, { timeout: 15000 })
 
     // Verify user name appears in navbar (indicates successful login and layout change)
-    await expect(page.locator('nav')).toContainText('ADMIN SECUNDARIO', {
+    await expect(page.locator('nav')).toContainText('ADMIN PRINCIPAL', {
       timeout: 10000
     })
   })

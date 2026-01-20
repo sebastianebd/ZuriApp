@@ -12,6 +12,8 @@
     "seed": "ts-node scripts/seed.ts",
     "seed:options": "ts-node scripts/seed-options.ts",
     "seed:cargos": "ts-node scripts/seed-cargos.ts",
+    "seed:services": "ts-node scripts/seed-services.ts",
+    "seed:turntypes": "ts-node scripts/seed-turntypes.ts",
     "seed:prod": "node dist/scripts/seed.js",
     "migrate:cargos": "ts-node scripts/migrate-cargos.ts",
     "migrate:options": "ts-node scripts/migrate-options.ts"
