@@ -63,47 +63,11 @@
             />
 
             <!-- Pagination -->
-            <div
-              class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top"
-              v-if="totalPages > 1"
-            >
-              <span class="text-muted small"
-                >Mostrando página {{ currentPage }} de {{ totalPages }}</span
-              >
-              <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm mb-0 gap-1">
-                  <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                    <button
-                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
-                      @click="changePage(currentPage - 1)"
-                    >
-                      <i class="bi bi-chevron-left small"></i>
-                    </button>
-                  </li>
-                  <li
-                    class="page-item"
-                    v-for="page in totalPages"
-                    :key="page"
-                    :class="{ active: currentPage === page }"
-                  >
-                    <button
-                      class="page-link rounded-2 border-0 mx-1 shadow-xs"
-                      @click="changePage(page)"
-                    >
-                      {{ page }}
-                    </button>
-                  </li>
-                  <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                    <button
-                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
-                      @click="changePage(currentPage + 1)"
-                    >
-                      <i class="bi bi-chevron-right small"></i>
-                    </button>
-                  </li>
-                </ul>
-              </nav>
-            </div>
+            <AppPagination
+              :currentPage="currentPage"
+              :totalPages="totalPages"
+              @changePage="changePage"
+            />
           </template>
         </div>
       </div>
@@ -170,6 +134,7 @@ import {
   ReplacementModalSubstitute
 } from '@/components/replacements'
 import TableLoader from '@/components/common/TableLoader.vue'
+import AppPagination from '@/components/common/AppPagination.vue'
 import { useAuthStore } from '@/stores/auth.store'
 
 const authStore = useAuthStore()
