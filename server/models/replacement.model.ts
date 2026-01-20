@@ -16,6 +16,13 @@ export interface IReplacement extends Document {
   fecha_inicio: Date;
   fecha_termino: Date;
   servicio: string;
+  snapshot_secuencia?: Array<{
+    dia: number;
+    turno_entrada?: string;
+    turno_salida?: string;
+    es_libre: boolean;
+    sigla: string;
+  }>;
   status: string;
   creado_por: mongoose.Types.ObjectId;
   corte_anticipado: boolean;
@@ -77,6 +84,7 @@ const replacementSchema: Schema = new Schema(
     turn_type_id: {
       type: Schema.Types.ObjectId,
       ref: "TurnType",
+      required: false, // Optional temporarily/refactor
     },
     fecha_inicio: {
       type: Date,
@@ -89,12 +97,29 @@ const replacementSchema: Schema = new Schema(
     servicio: {
       type: String,
       required: true,
-      uppercase: true,
+      default: "ARO",
     },
+    snapshot_secuencia: [
+      {
+        dia: { type: Number, required: true },
+        turno_entrada: { type: String, default: null },
+        turno_salida: { type: String, default: null },
+        es_libre: { type: Boolean, default: false },
+        sigla: { type: String, required: true },
+      },
+    ],
     status: {
       type: String,
+      enum: [
+        "PENDIENTE",
+        "CONFIRMADO",
+        "RECHAZADO",
+        "CANCELADO",
+        "FINALIZADO",
+        "EN CURSO",
+        "INTERRUMPIDO",
+      ],
       default: "PENDIENTE",
-      uppercase: true,
     },
     creado_por: {
       type: Schema.Types.ObjectId,
@@ -108,54 +133,33 @@ const replacementSchema: Schema = new Schema(
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    versionKey: false,
   },
 );
 
-// Indexes for performance optimization
-replacementSchema.index({ status: 1, fecha_inicio: -1 }); // Critical for History view: Filter by status + Sort by date
-replacementSchema.index({ servicio: 1 });
-replacementSchema.index({ rut_saliente: 1 });
-replacementSchema.index({ rut_entrante: 1 });
-replacementSchema.index({ id_negocio: 1 }); // Optimize lookups by replacement ID
-
-replacementSchema.virtual("id").get(function (this: any) {
-  return this._id.toHexString();
-});
-
-replacementSchema.pre("save", async function (next) {
-  const doc = this as any; // Cast to access custom properties including id_negocio which might not be on strict Document type in pre hooks easily
-  if (doc.id_negocio) return next();
-
-  try {
-    const currentYear = new Date().getFullYear().toString().slice(-2);
-    const prefix = "RP";
-    const counterId = `replacementId_${currentYear}`;
-
-    let counter = await Counter.findOneAndUpdate(
-      { _id: counterId },
-      { $inc: { seq: 1 } },
-      { new: true },
-    );
-
-    if (!counter) {
-      await Counter.create({ _id: counterId });
-      counter = await Counter.findOneAndUpdate(
-        { _id: counterId },
+// Pre-save hook for Counter
+replacementSchema.pre<IReplacement>("save", async function (next) {
+  if (!this.id_negocio) {
+    try {
+      const counter = await Counter.findByIdAndUpdate(
+        { _id: "replacementId" },
         { $inc: { seq: 1 } },
-        { new: true },
+        { new: true, upsert: true },
       );
+      this.id_negocio = `RPL-${counter.seq}`;
+      console.log(`Generated ID for replacement: ${this.id_negocio}`);
+      next();
+    } catch (error: any) {
+      console.error("Error generating counter:", error);
+      next(error);
     }
-
-    if (!counter) throw new Error("Could not create/update counter");
-
-    const nuevoNumero = counter.seq;
-    doc.id_negocio = `${prefix}${currentYear}${nuevoNumero}`;
+  } else {
     next();
-  } catch (error) {
-    next(error as any);
   }
 });
 
-export default mongoose.model<IReplacement>("Replacement", replacementSchema);
+export default mongoose.model<IReplacement>(
+  "Replacement",
+  replacementSchema,
+  "replacements",
+);

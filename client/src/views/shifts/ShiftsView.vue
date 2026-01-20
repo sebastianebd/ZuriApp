@@ -629,7 +629,8 @@ function getShift(row: GridRow, date: Date): ShiftResult | null {
 
     if (!activeReplacement) return null
 
-    const pattern = getPattern(null, activeReplacement.tipo_turno)
+    // Pass replacement as assignment to use snapshot if available
+    const pattern = getPattern(activeReplacement as any, activeReplacement.tipo_turno)
     if (pattern.length === 0) return null
 
     const result = calculateShift<ShiftResult>(date, activeReplacement.fecha_inicio, pattern)

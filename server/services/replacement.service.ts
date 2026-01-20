@@ -52,6 +52,12 @@ async function registrar(data: any) {
   const nuevoReemplazo = new Reemplazo({
     ...data,
     turn_type_id: turnTypeDoc ? turnTypeDoc._id : undefined, // Save ID if found
+    snapshot_secuencia: turnTypeDoc
+      ? turnTypeDoc.toObject().secuencia.map((item: any) => {
+          const { color, ...rest } = item;
+          return rest;
+        })
+      : [],
     fecha_inicio: new Date(data.fecha_inicio),
     fecha_termino: new Date(data.fecha_termino),
     status: initialStatus,
