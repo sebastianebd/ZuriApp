@@ -59,9 +59,14 @@ import Cargo from "../models/cargo.model"; // Added Cargo import
 async function mostrarTodos(req: AuthRequest, res: Response) {
   try {
     const userRole = req.user?.tipo_cargo || "UNKNOWN";
-    // 2. Search Query
+
+    // Pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
     const search = (req.query.search as string) || "";
-    const cacheKey = `users:all:${userRole}:${search || "default"}`; // Scope cache by role and search
+
+    // Generate unique cache key including pagination params
+    const cacheKey = `users:p${page}:l${limit}:s${search || "none"}:r${userRole}`;
 
     // 1. Try Cache
     const cachedData = await get(cacheKey);
@@ -69,12 +74,10 @@ async function mostrarTodos(req: AuthRequest, res: Response) {
       return res.json(cachedData);
     }
 
-    // 2. Calculate Visibility
+    // 2. Calculate Visibility based on role
     let allowedCargos: string[] | undefined = undefined;
 
     // Fetch requester's cargo level
-    // Optimization: If user is known ADMIN-TI, skip filter (show all)
-    // But better to use DB truth.
     const myCargo = await Cargo.findOne({ nombre: userRole });
     const myLevel = myCargo?.nivel || 0;
 
@@ -87,9 +90,18 @@ async function mostrarTodos(req: AuthRequest, res: Response) {
       allowedCargos = visibleCargos.map((c) => c.nombre);
     }
 
-    const usuarios = await userService.obtenerTodos(allowedCargos, search);
-    await set(cacheKey, usuarios, 60); // Cache for 1 minute (searches change fast)
-    res.json(usuarios);
+    // 3. Fetch paginated data
+    const result = await userService.obtenerTodosPaginado({
+      allowedCargos,
+      search,
+      page,
+      limit,
+    });
+
+    // 4. Cache result for 60 seconds
+    await set(cacheKey, result, 60);
+
+    res.json(result);
   } catch (error: any) {
     res.status(error.status || 500).json({ mensaje: error.message });
   }

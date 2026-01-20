@@ -6,7 +6,14 @@ import type { AxiosInstance } from 'axios'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    users: [] as any[] // Define strict type if possible, using any for now to match file style
+    users: [] as any[], // Legacy: for backward compatibility
+    currentPageUsers: [] as any[], // New: only current page
+    pagination: {
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+      itemsPerPage: 10
+    }
   }),
   actions: {
     async mostrarUsersCargoTens() {
@@ -26,10 +33,28 @@ export const useUserStore = defineStore('user', {
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       try {
         const data = await UserService.mostrarTodosUsuarios(apiPrivate)
-        this.users = data // Store in state
+        this.users = data // Store in state (legacy)
         return data
       } catch (error) {
         console.error('Error al cargar usuarios:', error)
+        throw error
+      }
+    },
+
+    // New: Server-Side Pagination
+    async fetchPaginated(params: { page: number; limit: number; search?: string; cargo?: string }) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      try {
+        const { data } = await apiPrivate.get('/users/', { params })
+
+        // Update state with paginated data
+        this.currentPageUsers = data.usuarios
+        this.pagination = data.pagination
+
+        return data
+      } catch (error) {
+        console.error('Error al cargar usuarios paginados:', error)
         throw error
       }
     },

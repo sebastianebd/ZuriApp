@@ -73,7 +73,7 @@ const visiblePages = computed(() => {
   const range: (number | string)[] = []
 
   // If total pages is small, show all
-  if (total <= 7) {
+  if (total <= 5) {
     for (let i = 1; i <= total; i++) {
       range.push(i)
     }

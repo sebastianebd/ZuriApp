@@ -143,7 +143,6 @@ async function obtenerTodos(allowedCargos?: string[], search?: string) {
   }
 
   // Search Logic
-  let limit = 20;
   if (search && search.trim().length > 0) {
     const terms = search.trim().split(/\s+/); // Split by whitespace
 
@@ -165,12 +164,57 @@ async function obtenerTodos(allowedCargos?: string[], search?: string) {
     if (andConditions.length > 0) {
       query.$and = andConditions;
     }
-  } else {
-    // If no search, limit to 20 to prevent overload
-    limit = 20;
   }
 
-  return await User.find(query).limit(limit);
+  // Return all matching users (frontend handles pagination)
+  return await User.find(query);
+}
+
+// Server-Side Pagination (Enterprise)
+async function obtenerTodosPaginado(options: {
+  allowedCargos?: string[];
+  search?: string;
+  page: number;
+  limit: number;
+}) {
+  const { allowedCargos, search, page, limit } = options;
+  const query: any = { eliminado: false };
+
+  // Role-based visibility filter
+  if (allowedCargos && Array.isArray(allowedCargos)) {
+    query.tipo_cargo = { $in: allowedCargos };
+  }
+
+  // Search Logic (optimized with indexes)
+  if (search && search.trim().length > 0) {
+    const safeTerm = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(safeTerm, "i");
+
+    query.$or = [{ rut: regex }, { nombre: regex }, { apellido: regex }];
+  }
+
+  // Calculate skip for pagination
+  const skip = (page - 1) * limit;
+
+  // Execute query and count in parallel for performance
+  const [usuarios, total] = await Promise.all([
+    User.find(query)
+      .select("-password") // Exclude sensitive fields
+      .skip(skip)
+      .limit(limit)
+      .lean(), // Convert to plain objects (faster)
+    User.countDocuments(query),
+  ]);
+
+  return {
+    usuarios,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      itemsPerPage: limit,
+    },
+  };
 }
 
 async function actualizar(id: string, data: Partial<IUser>) {
@@ -187,6 +231,7 @@ export default {
   register,
   obtenerUsuariosTENS,
   obtenerTodos,
+  obtenerTodosPaginado,
   actualizar,
   eliminar,
   obtenerPorId,
