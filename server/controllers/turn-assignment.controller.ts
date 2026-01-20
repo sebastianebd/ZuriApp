@@ -61,7 +61,11 @@ export const createAssignment = async (req: Request, res: Response) => {
     const assignmentPayload = {
       ...req.body,
       turn_type: turnTypeDoc._id, // Save Reference ID
-      snapshot_secuencia: turnTypeDoc.secuencia, // IMMUTABLE HISTORY
+      // IMMUTABLE HISTORY (Exclude color to allow dynamic updates)
+      snapshot_secuencia: turnTypeDoc.toObject().secuencia.map((item: any) => {
+        const { color, ...rest } = item;
+        return rest;
+      }),
     };
 
     const assignment = await TurnAssignmentModel.create(assignmentPayload);
