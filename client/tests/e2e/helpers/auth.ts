@@ -9,7 +9,7 @@ export async function login(page: Page) {
   await page.waitForLoadState('networkidle')
 
   // Fill credentials
-  await page.fill('#rut', '11752331-4')
+  await page.fill('#rut', '12345678-5')
   await page.fill('input[type="password"]', '2716xD!')
 
   // Click login button
