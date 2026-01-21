@@ -25,60 +25,32 @@
 
             <!-- Body -->
             <div class="modal-body p-4 bg-white">
-              <div class="mb-4 d-flex justify-content-start gap-4">
-                <!-- Filtro por RUT -->
-                <div class="filtro-group">
-                  <label class="form-label text-secondary fw-semibold small mb-1">RUT</label>
-                  <div
-                    class="input-group input-group-sm rounded-3 overflow-hidden shadow-xs border"
-                  >
-                    <span class="input-group-text bg-light border-0"
-                      ><i class="bi bi-search smaller text-primary"></i
-                    ></span>
-                    <input
-                      type="text"
-                      v-model="filtroRutLocal"
-                      placeholder="Ingrese RUT"
-                      class="form-control border-0 bg-white"
-                    />
-                  </div>
+              <!-- 🏢 ENTERPRISE: Unified search field -->
+              <div class="mb-4">
+                <label class="form-label text-secondary fw-semibold mb-2">
+                  <i class="bi bi-search me-2"></i>Buscar Funcionario (PLANTA)
+                </label>
+                <div class="input-group input-group-lg rounded-3 overflow-hidden shadow-sm border">
+                  <span class="input-group-text bg-light border-0">
+                    <i class="bi bi-search text-primary"></i>
+                  </span>
+                  <input
+                    type="text"
+                    v-model="searchQuery"
+                    placeholder="Busca por RUT o Nombre (mínimo 2 caracteres)..."
+                    class="form-control border-0 bg-white"
+                    autofocus
+                  />
+                  <span v-if="isLoading" class="input-group-text bg-light border-0">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                      <span class="visually-hidden">Buscando...</span>
+                    </div>
+                  </span>
                 </div>
-
-                <!-- Filtro por Nombre -->
-                <div class="filtro-group">
-                  <label class="form-label text-secondary fw-semibold small mb-1">Nombre</label>
-                  <div
-                    class="input-group input-group-sm rounded-3 overflow-hidden shadow-xs border"
-                  >
-                    <span class="input-group-text bg-light border-0"
-                      ><i class="bi bi-person smaller text-primary"></i
-                    ></span>
-                    <input
-                      type="text"
-                      v-model="filtroNombreLocal"
-                      placeholder="Buscar por Nombre"
-                      class="form-control border-0 bg-white"
-                    />
-                  </div>
-                </div>
-
-                <!-- Filtro por Cargo -->
-                <div class="filtro-group">
-                  <label class="form-label text-secondary fw-semibold small mb-1">Cargo</label>
-                  <div class="input-group input-group-sm rounded-3 shadow-xs border bg-white">
-                    <span class="input-group-text bg-light border-0"
-                      ><i class="bi bi-briefcase smaller text-primary"></i
-                    ></span>
-                    <v-select
-                      v-model="filtroCargoLocal"
-                      :options="filteredCargoOptions"
-                      placeholder="Todos los cargos"
-                      class="custom-v-select flex-grow-1"
-                      :clearable="false"
-                      :searchable="false"
-                    />
-                  </div>
-                </div>
+                <small class="text-muted d-block mt-2">
+                  <i class="bi bi-info-circle me-1"></i>
+                  {{ totalItems }} resultado(s) encontrado(s)
+                </small>
               </div>
 
               <div class="table-responsive rounded-3 border shadow-xs">
@@ -126,7 +98,7 @@
 
                   <tbody>
                     <tr
-                      v-for="(usuario, index) in paginatedUsuarios"
+                      v-for="(usuario, index) in usuariosFiltrados"
                       :key="index"
                       @click="handleClick(usuario)"
                       class="cursor-pointer border-bottom hover-row"
@@ -171,10 +143,18 @@
                       </td>
                     </tr>
 
-                    <tr v-if="paginatedUsuarios.length === 0">
-                      <td colspan="6" class="text-center text-muted py-5">
-                        <i class="bi bi-search me-2"></i>No se encontraron funcionarios de PLANTA
-                        que coincidan.
+                    <tr v-if="usuariosFiltrados.length === 0">
+                      <td colspan="7" class="text-center text-muted py-5">
+                        <i class="bi bi-search me-2"></i>
+                        <span v-if="!searchQuery"
+                          >Ingresa un término de búsqueda para ver resultados</span
+                        >
+                        <span v-else-if="isLoading">Buscando...</span>
+                        <span v-else
+                          >No se encontraron funcionarios PLANTA que coincidan con "{{
+                            searchQuery
+                          }}"</span
+                        >
                       </td>
                     </tr>
                   </tbody>
@@ -232,11 +212,12 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useUserStore } from '@/stores/user.store'
 import type { User } from '@/types/models'
 
+// 🏢 ENTERPRISE: Self-contained modal with server-side search
 const props = defineProps<{
   visible: boolean
-  usuarios: User[]
   listaDeCargos: string[]
 }>()
 
@@ -245,73 +226,87 @@ const emit = defineEmits<{
   (e: 'usuario-seleccionado', usuario: User): void
 }>()
 
-// --- Estado local de filtros
-const filtroRutLocal = ref('')
-const filtroNombreLocal = ref('')
-const filtroCargoLocal = ref<string | null>(null)
+const userStore = useUserStore()
 
+// --- Estado local
+const searchQuery = ref('')
+const filtroCargoLocal = ref<string | null>(null)
 const usuarioSeleccionado = ref<User | null>(null)
 let lastClickTime = 0
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-// --- Paginación
-const currentPage = ref(1)
-const itemsPerPage = 20
+// --- Computed from store
+const usuarios = computed(() => userStore.searchResults)
+const isLoading = computed(() => userStore.isSearching)
+const currentPage = computed(() => userStore.searchPagination.currentPage)
+const totalPages = computed(() => userStore.searchPagination.totalPages)
+const totalItems = computed(() => userStore.searchPagination.totalItems)
 
-// Reiniciar página cuando cambia algún filtro o visibilidad
-watch([filtroRutLocal, filtroNombreLocal, filtroCargoLocal, () => props.visible], () => {
-  currentPage.value = 1
+// 🏢 ENTERPRISE: Debounced server-side search (300ms)
+const performSearch = async (query: string, page: number = 1) => {
+  if (!query || query.trim().length < 2) {
+    userStore.searchResults = []
+    return
+  }
+
+  try {
+    await userStore.searchUsers({
+      search: query.trim(),
+      page,
+      limit: 20
+    })
+  } catch (error) {
+    console.error('[TurnAssignmentUserModal] Search error:', error)
+  }
+}
+
+// Watch search query with debounce
+watch(searchQuery, (newQuery) => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+
+  if (!newQuery || newQuery.trim().length < 2) {
+    userStore.searchResults = []
+    return
+  }
+
+  searchTimeout = setTimeout(() => {
+    performSearch(newQuery, 1)
+  }, 300)
 })
 
-// --- Computed for Options
-const filteredCargoOptions = computed(() => {
-  const filtered = props.listaDeCargos.filter(
-    (cargo) => !['ADMIN-TI', 'RECURSOS HUMANOS'].includes(cargo)
-  )
-  return ['Todos', ...filtered]
-})
+// Reset search when modal closes
+watch(
+  () => props.visible,
+  (visible) => {
+    if (!visible) {
+      searchQuery.value = ''
+      userStore.searchResults = []
+      usuarioSeleccionado.value = null
+    }
+  }
+)
 
-// --- Filtrar usuarios (PLANTA ONLY)
+// --- Filtrar usuarios (PLANTA ONLY + client-side filters on search results)
 const usuariosFiltrados = computed(() => {
-  // 1. Filtrar Roles Admin
-  let lista = props.usuarios.filter((u) => !['ADMIN-TI', 'RECURSOS HUMANOS'].includes(u.tipo_cargo))
+  let lista = usuarios.value.filter((u) => !['ADMIN-TI', 'RECURSOS HUMANOS'].includes(u.tipo_cargo))
 
-  // 2. Filtrar SOLO PLANTA
+  // 🏭 CRITICAL: Filter PLANTA only
   lista = lista.filter((u) => u.tipo_contrato === 'PLANTA')
 
-  // Filtro RUT
-  if (filtroRutLocal.value) {
-    lista = lista.filter((u) => u.rut.toLowerCase().includes(filtroRutLocal.value.toLowerCase()))
-  }
-
-  // Filtro Nombre
-  if (filtroNombreLocal.value) {
-    const term = filtroNombreLocal.value.toLowerCase()
-    lista = lista.filter((u) => {
-      const fullName = `${u.nombre} ${u.apellido}`.toLowerCase()
-      return fullName.includes(term)
-    })
-  }
-
-  // Filtro Cargo
+  // Apply local cargo filter
   if (filtroCargoLocal.value && filtroCargoLocal.value !== 'Todos') {
     const cargoBusqueda = String(filtroCargoLocal.value).toLowerCase()
     lista = lista.filter((u) => u.tipo_cargo?.toLowerCase().includes(cargoBusqueda))
   }
 
-  // Ordenar alfabéticamente
-  return lista.sort((a, b) => a.nombre.localeCompare(b.nombre))
+  return lista
 })
 
-// --- Paginación
-const totalPages = computed(() => Math.ceil(usuariosFiltrados.value.length / itemsPerPage))
-const paginatedUsuarios = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return usuariosFiltrados.value.slice(start, end)
-})
-
+// Pagination is server-side now
 function changePage(page: number) {
-  if (page >= 1 && page <= totalPages.value) currentPage.value = page
+  if (page >= 1 && page <= totalPages.value && searchQuery.value) {
+    performSearch(searchQuery.value, page)
+  }
 }
 
 // --- Click

@@ -47,11 +47,38 @@ export const mostrarUsersCargoTens = async (apiPrivate: ReturnType<typeof useApi
 
 export const mostrarTodosUsuarios = async (
   apiPrivate: ReturnType<typeof useApiPrivate>,
-  search?: string
+  search?: string,
+  limit?: number
 ) => {
   try {
     const { data } = await apiPrivate.get(`/users/`, {
-      params: { search }
+      params: {
+        search,
+        limit // Optional: for modals, pass large limit to get all users
+      }
+    })
+    return data
+  } catch (error) {
+    throw errorHandler(error)
+  }
+}
+
+// 🏢 ENTERPRISE: Server-side search for scalable user selection
+export const searchUsers = async (
+  apiPrivate: ReturnType<typeof useApiPrivate>,
+  params: {
+    search: string
+    page?: number
+    limit?: number
+  }
+) => {
+  try {
+    const { data } = await apiPrivate.get(`/users/`, {
+      params: {
+        search: params.search,
+        page: params.page || 1,
+        limit: params.limit || 20
+      }
     })
     return data
   } catch (error) {

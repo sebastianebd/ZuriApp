@@ -69,7 +69,9 @@ async function registrar(data: any) {
 async function obtenerActivos() {
   return await Reemplazo.find({
     status: { $in: ["EN CURSO", "PENDIENTE"] },
-  }).populate("creado_por", "nombre apellido");
+  })
+    .populate("creado_por", "nombre apellido")
+    .populate("id_entrante", "tipo_cargo"); // Populate to get cargo
 }
 
 async function obtenerActivosPaginado(options: {
@@ -110,11 +112,23 @@ async function obtenerActivosPaginado(options: {
   const [reemplazos, total] = await Promise.all([
     Reemplazo.find(query)
       .populate("creado_por", "nombre apellido")
+      .populate("id_entrante", "_id tipo_cargo") // Explicitly get _id and cargo
       .skip(skip)
       .limit(limit)
       .lean(), // Convert to plain objects (faster)
     Reemplazo.countDocuments(query),
   ]);
+
+  // 🔧 Debug: Verify populate worked
+  if (reemplazos.length > 0) {
+    console.log(
+      `[Replacement Service] Query returned ${reemplazos.length} replacements`,
+    );
+    console.log(
+      `[Replacement Service] First replacement id_entrante:`,
+      reemplazos[0].id_entrante,
+    );
+  }
 
   return {
     reemplazos,

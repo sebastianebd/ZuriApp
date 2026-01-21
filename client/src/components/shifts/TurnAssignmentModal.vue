@@ -31,57 +31,65 @@
           <div class="modal-body p-4 bg-light bg-opacity-50">
             <form @submit.prevent="guardar">
               <div class="bg-white p-4 rounded-4 shadow-sm border">
-                <!-- User Selection -->
+                <!-- 🏢 ENTERPRISE: User Selection with v-select -->
                 <div class="mb-4 position-relative">
                   <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                    >Funcionario</label
+                    >Funcionario (PLANTA)</label
                   >
-
-                  <div
-                    v-if="!selectedUser"
-                    class="p-2 border rounded-3 bg-light text-center cursor-pointer hover-bg-light"
-                    @click="showUserModal = true"
-                    :class="{ 'border-danger': errors.user_id }"
+                  <v-select
+                    v-model="selectedUser"
+                    :options="userOptions"
+                    :filterable="false"
+                    :loading="isSearchingUser"
+                    @search="searchUser"
+                    label="displayName"
+                    placeholder="Buscar funcionario PLANTA..."
+                    class="user-select-planta"
+                    :class="{ 'is-invalid': errors.user_id }"
                   >
-                    <div class="text-primary mb-1">
-                      <i class="bi bi-person-plus-fill fs-4"></i>
-                    </div>
-                    <div class="fw-bold text-secondary small">
-                      Click para seleccionar funcionario
-                    </div>
-                    <div v-if="errors.user_id" class="text-danger x-small fw-bold mt-2">
-                      {{ errors.user_id }}
-                    </div>
-                  </div>
-
-                  <div
-                    v-else
-                    class="p-3 border rounded-3 bg-white d-flex align-items-center justify-content-between shadow-sm"
-                  >
-                    <div class="d-flex align-items-center gap-3">
-                      <div
-                        class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center"
-                        style="width: 40px; height: 40px"
-                      >
-                        <span class="fw-bold"
-                          >{{ selectedUser.nombre.charAt(0)
-                          }}{{ selectedUser.apellido.charAt(0) }}</span
-                        >
-                      </div>
-                      <div>
-                        <div class="fw-bold text-dark small">
-                          {{ selectedUser.nombre }} {{ selectedUser.apellido }}
+                    <template #option="option">
+                      <div class="user-option">
+                        <div class="d-flex justify-content-between align-items-center">
+                          <div>
+                            <span class="fw-bold text-dark">{{ option.rut }}</span>
+                            <span class="text-secondary ms-2"
+                              >{{ option.nombre }} {{ option.apellido }}</span
+                            >
+                          </div>
+                          <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
                         </div>
-                        <div class="text-secondary x-small">{{ selectedUser.rut }}</div>
                       </div>
-                    </div>
-                    <button
-                      type="button"
-                      class="btn btn-link text-secondary p-0"
-                      @click="clearUser"
-                    >
-                      <i class="bi bi-x-lg"></i>
-                    </button>
+                    </template>
+                    <template #selected-option="option">
+                      <div class="d-flex align-items-center">
+                        <div
+                          class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2"
+                          style="width: 32px; height: 32px; font-size: 0.75rem"
+                        >
+                          <span class="fw-bold"
+                            >{{ option.nombre.charAt(0) }}{{ option.apellido.charAt(0) }}</span
+                          >
+                        </div>
+                        <div>
+                          <div class="fw-bold text-dark" style="font-size: 0.875rem">
+                            {{ option.nombre }} {{ option.apellido }}
+                          </div>
+                          <div class="text-secondary" style="font-size: 0.7rem">
+                            {{ option.rut }}
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                    <template #no-options="{ search }">
+                      <div class="text-center text-muted py-2">
+                        <i class="bi bi-search me-1"></i>
+                        <span v-if="!search">Escribe para buscar...</span>
+                        <span v-else>No se encontraron funcionarios PLANTA</span>
+                      </div>
+                    </template>
+                  </v-select>
+                  <div v-if="errors.user_id" class="text-danger x-small fw-bold floating-error">
+                    {{ errors.user_id }}
                   </div>
                 </div>
 
@@ -226,15 +234,6 @@
       </div>
     </div>
   </Transition>
-
-  <!-- User Selection Modal -->
-  <TurnAssignmentUserModal
-    :visible="showUserModal"
-    :usuarios="localUsers"
-    :listaDeCargos="cargoOptions"
-    @cerrar="showUserModal = false"
-    @usuario-seleccionado="handleUserSelected"
-  />
 </template>
 
 <script setup lang="ts">
@@ -248,7 +247,6 @@ import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import type { User } from '@/types/models'
-import TurnAssignmentUserModal from './TurnAssignmentUserModal.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -264,11 +262,65 @@ const usersStore = useUserStore()
 const turnAssignmentStore = useTurnAssignmentStore()
 const optionStore = useOptionStore()
 const turnTypeStore = useTurnTypeStore()
-const localUsers = ref<any[]>([])
 
-// Logic State
-const showUserModal = ref(false)
+// 🏢 ENTERPRISE: User search with server-side filtering (PLANTA only)
 const selectedUser = ref<User | null>(null)
+const userOptions = ref<User[]>([])
+const isSearchingUser = ref(false)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Debounced search for PLANTA users (300ms)
+const searchUser = (query: string, loading: (isLoading: boolean) => void) => {
+  if (!query || query.length < 2) {
+    userOptions.value = []
+    return
+  }
+
+  loading(true)
+  isSearchingUser.value = true
+
+  if (searchTimeout) clearTimeout(searchTimeout)
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      await usersStore.searchUsers({
+        search: query.trim(),
+        page: 1,
+        limit: 20
+      })
+
+      // 🏭 CRITICAL: Filter PLANTA only
+      const plantaUsers = usersStore.searchResults.filter((u) => u.tipo_contrato === 'PLANTA')
+
+      // Transform results for v-select
+      userOptions.value = plantaUsers.map((u) => ({
+        ...u,
+        displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+      }))
+    } catch (error) {
+      console.error('[TurnAssignmentModal] Search user error:', error)
+      userOptions.value = []
+    } finally {
+      loading(false)
+      isSearchingUser.value = false
+    }
+  }, 300)
+}
+
+// Watch selectedUser and update form
+watch(selectedUser, async (newUser) => {
+  if (newUser) {
+    form.value.user_id = newUser._id
+    if (errors.value.user_id) delete errors.value.user_id
+
+    // Fetch assignments for date blocking
+    const assignments = await turnAssignmentStore.fetchAssignmentsByUser(newUser._id)
+    blockedDates.value = getBlockedDates(assignments)
+  } else {
+    form.value.user_id = ''
+    blockedDates.value = []
+  }
+})
 
 // Options
 const turnTypeOptions = computed(() => {
@@ -277,10 +329,6 @@ const turnTypeOptions = computed(() => {
 
 const serviceOptions = computed(() => {
   return optionStore.opciones?.servicios || []
-})
-
-const cargoOptions = computed(() => {
-  return optionStore.opciones?.tipoCargo || []
 })
 
 // Form State
@@ -299,14 +347,9 @@ watch(
   async (newVal) => {
     if (newVal) {
       resetForm()
-      // Fetch users and options
+      // Fetch options only (users loaded via search)
       try {
-        const [users] = await Promise.all([
-          usersStore.mostrarTodos(),
-          optionStore.mostrarOpciones(),
-          turnTypeStore.fetchTurnTypes(true)
-        ])
-        localUsers.value = users
+        await Promise.all([optionStore.mostrarOpciones(), turnTypeStore.fetchTurnTypes(true)])
       } catch (e) {
         console.error('Error fetching data', e)
       }
@@ -323,6 +366,7 @@ function resetForm() {
     end_date: new Date()
   }
   selectedUser.value = null
+  userOptions.value = []
   errors.value = {}
 }
 
@@ -368,19 +412,6 @@ watch(selectedUser, async (newUser) => {
     blockedDates.value = []
   }
 })
-
-function handleUserSelected(user: User) {
-  selectedUser.value = user
-  form.value.user_id = user._id
-  showUserModal.value = false
-  if (errors.value.user_id) delete errors.value.user_id
-}
-
-function clearUser() {
-  selectedUser.value = null
-  form.value.user_id = ''
-  blockedDates.value = []
-}
 
 function validateForm() {
   errors.value = {}
@@ -542,5 +573,58 @@ function guardar() {
 .text-danger {
   font-size: 0.7rem;
   color: #ef4444;
+}
+
+/* \ud83c\udfe2 ENTERPRISE: Custom v-select for PLANTA user selection */
+.user-select-planta :deep(.vs__dropdown-toggle) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 6px;
+  background: white;
+  min-height: 60px;
+  max-height: 60px;
+  overflow: hidden;
+}
+
+.user-select-planta :deep(.vs__selected-options) {
+  min-height: 48px;
+  max-height: 48px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.user-select-planta :deep(.vs__selected) {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.user-select-planta :deep(.vs__dropdown-menu) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  min-width: 320px;
+  z-index: 9999;
+}
+
+.user-select-planta :deep(.vs__dropdown-option) {
+  border-radius: 0.375rem;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  font-size: 0.875rem;
+}
+
+.user-select-planta :deep(.vs__dropdown-option--highlight) {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.user-option {
+  width: 100%;
 }
 </style>

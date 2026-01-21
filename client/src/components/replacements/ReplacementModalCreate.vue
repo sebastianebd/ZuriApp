@@ -55,44 +55,60 @@
                       SALIENTE
                     </div>
 
-                    <div class="text-center py-2" v-if="!registroLocal.rut_saliente">
-                      <div
-                        class="avatar-empty mx-auto mb-2 text-danger bg-white border border-danger border-opacity-25"
+                    <!-- 🏢 ENTERPRISE: v-select with server-side search -->
+                    <div class="mt-4">
+                      <label class="form-label small fw-semibold text-danger mb-2">
+                        <i class="bi bi-search me-1"></i>Buscar Funcionario
+                      </label>
+                      <v-select
+                        v-model="selectedSaliente"
+                        :options="salienteOptions"
+                        :filterable="false"
+                        :loading="isSearchingSaliente"
+                        @search="searchSaliente"
+                        label="displayName"
+                        placeholder="Escribe RUT o nombre..."
+                        class="user-select-danger"
                       >
-                        <i class="bi bi-person"></i>
-                      </div>
-                      <p class="text-muted small mb-2">No seleccionado</p>
-                      <button
-                        class="btn btn-sm btn-light border text-danger fw-bold shadow-xs"
-                        @click="$emit('buscar-usuario', 1)"
-                      >
-                        <i class="bi bi-search me-1"></i> Buscar
-                      </button>
-                    </div>
-
-                    <div v-else class="d-flex align-items-center">
-                      <div class="avatar-filled bg-gradient-danger text-white shadow-sm me-3">
-                        {{
-                          getInitials(
-                            registroLocal.nombre_saliente + ' ' + registroLocal.apellido_saliente
-                          )
-                        }}
-                      </div>
-                      <div class="flex-grow-1 overflow-hidden">
-                        <div class="fw-bold text-dark text-truncate">
-                          {{ registroLocal.nombre_saliente }} {{ registroLocal.apellido_saliente }}
-                        </div>
-                        <div class="text-secondary x-small font-monospace">
-                          {{ registroLocal.rut_saliente }}
-                        </div>
-                      </div>
-                      <button
-                        class="btn btn-icon btn-light text-secondary ms-2"
-                        @click="$emit('buscar-usuario', 1)"
-                        title="Cambiar"
-                      >
-                        <i class="bi bi-arrow-repeat"></i>
-                      </button>
+                        <template #option="option">
+                          <div class="user-option">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <div>
+                                <span class="fw-bold text-dark">{{ option.rut }}</span>
+                                <span class="text-secondary ms-2"
+                                  >{{ option.nombre }} {{ option.apellido }}</span
+                                >
+                              </div>
+                              <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                            </div>
+                          </div>
+                        </template>
+                        <template #selected-option="option">
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="avatar-filled bg-gradient-danger text-white shadow-sm me-2"
+                              style="width: 32px; height: 32px; font-size: 0.75rem"
+                            >
+                              {{ getInitials(option.nombre + ' ' + option.apellido) }}
+                            </div>
+                            <div>
+                              <div class="fw-bold text-dark" style="font-size: 0.875rem">
+                                {{ option.nombre }} {{ option.apellido }}
+                              </div>
+                              <div class="text-secondary" style="font-size: 0.7rem">
+                                {{ option.rut }}
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                        <template #no-options="{ search }">
+                          <div class="text-center text-muted py-2">
+                            <i class="bi bi-search me-1"></i>
+                            <span v-if="!search">Escribe para buscar...</span>
+                            <span v-else>No se encontraron resultados</span>
+                          </div>
+                        </template>
+                      </v-select>
                     </div>
                   </div>
                 </div>
@@ -118,44 +134,60 @@
                       ENTRANTE
                     </div>
 
-                    <div class="text-center py-2" v-if="!registroLocal.rut_entrante">
-                      <div
-                        class="avatar-empty mx-auto mb-2 text-success bg-white border border-success border-opacity-25"
+                    <!-- 🏢 ENTERPRISE: v-select with server-side search -->
+                    <div class="mt-4">
+                      <label class="form-label small fw-semibold text-success mb-2">
+                        <i class="bi bi-search me-1"></i>Buscar Funcionario
+                      </label>
+                      <v-select
+                        v-model="selectedEntrante"
+                        :options="entranteOptions"
+                        :filterable="false"
+                        :loading="isSearchingEntrante"
+                        @search="searchEntrante"
+                        label="displayName"
+                        placeholder="Escribe RUT o nombre..."
+                        class="user-select-success"
                       >
-                        <i class="bi bi-person-plus"></i>
-                      </div>
-                      <p class="text-muted small mb-2">No seleccionado</p>
-                      <button
-                        class="btn btn-sm btn-light border text-success fw-bold shadow-xs"
-                        @click="$emit('buscar-usuario', 2)"
-                      >
-                        <i class="bi bi-search me-1"></i> Buscar
-                      </button>
-                    </div>
-
-                    <div v-else class="d-flex align-items-center">
-                      <div class="avatar-filled bg-gradient-success text-white shadow-sm me-3">
-                        {{
-                          getInitials(
-                            registroLocal.nombre_entrante + ' ' + registroLocal.apellido_entrante
-                          )
-                        }}
-                      </div>
-                      <div class="flex-grow-1 overflow-hidden">
-                        <div class="fw-bold text-dark text-truncate">
-                          {{ registroLocal.nombre_entrante }} {{ registroLocal.apellido_entrante }}
-                        </div>
-                        <div class="text-secondary x-small font-monospace">
-                          {{ registroLocal.rut_entrante }}
-                        </div>
-                      </div>
-                      <button
-                        class="btn btn-icon btn-light text-secondary ms-2"
-                        @click="$emit('buscar-usuario', 2)"
-                        title="Cambiar"
-                      >
-                        <i class="bi bi-arrow-repeat"></i>
-                      </button>
+                        <template #option="option">
+                          <div class="user-option">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <div>
+                                <span class="fw-bold text-dark">{{ option.rut }}</span>
+                                <span class="text-secondary ms-2"
+                                  >{{ option.nombre }} {{ option.apellido }}</span
+                                >
+                              </div>
+                              <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                            </div>
+                          </div>
+                        </template>
+                        <template #selected-option="option">
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="avatar-filled bg-gradient-success text-white shadow-sm me-2"
+                              style="width: 32px; height: 32px; font-size: 0.75rem"
+                            >
+                              {{ getInitials(option.nombre + ' ' + option.apellido) }}
+                            </div>
+                            <div>
+                              <div class="fw-bold text-dark" style="font-size: 0.875rem">
+                                {{ option.nombre }} {{ option.apellido }}
+                              </div>
+                              <div class="text-secondary" style="font-size: 0.7rem">
+                                {{ option.rut }}
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                        <template #no-options="{ search }">
+                          <div class="text-center text-muted py-2">
+                            <i class="bi bi-search me-1"></i>
+                            <span v-if="!search">Escribe para buscar...</span>
+                            <span v-else>No se encontraron resultados</span>
+                          </div>
+                        </template>
+                      </v-select>
                     </div>
                   </div>
                 </div>
@@ -179,7 +211,7 @@
                     v-model="registroLocal.servicio"
                     :options="listaDeServicios"
                     :clearable="false"
-                    :searchable="true"
+                    :filterable="true"
                     placeholder="Seleccione servicio..."
                     class="custom-v-select"
                   />
@@ -193,7 +225,7 @@
                     v-model="registroLocal.tipo_turno"
                     :options="listaDeTurnos"
                     :clearable="false"
-                    :searchable="true"
+                    :filterable="true"
                     placeholder="Tipo de turno..."
                     class="custom-v-select"
                   />
@@ -299,11 +331,14 @@
 
 <script setup lang="ts">
 import { ref, watch, reactive, computed } from 'vue'
-import type { RegisterDataReemplazo } from '@/types/models'
+import type { RegisterDataReemplazo, User } from '@/types/models'
+import { useUserStore } from '@/stores/user.store'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
 import { useDatePicker } from '@/composables/useDatePicker'
+import vSelect from 'vue-select'
+import 'vue-select/dist/vue-select.css'
 
 const props = defineProps<{
   visible: boolean
@@ -316,11 +351,126 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardar', registro: RegisterDataReemplazo): void
-  (e: 'buscar-usuario', grupo: 1 | 2): void
 }>()
+
+const userStore = useUserStore()
 
 const registroLocal = reactive({ ...props.registro })
 const showConfirmacion = ref(false)
+
+// 🏢 ENTERPRISE: User selection with server-side search
+const selectedSaliente = ref<User | null>(null)
+const selectedEntrante = ref<User | null>(null)
+const salienteOptions = ref<User[]>([])
+const entranteOptions = ref<User[]>([])
+const isSearchingSaliente = ref(false)
+const isSearchingEntrante = ref(false)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Debounced search for Saliente (300ms)
+const searchSaliente = (query: string, loading: (isLoading: boolean) => void) => {
+  if (!query || query.length < 2) {
+    salienteOptions.value = []
+    return
+  }
+
+  loading(true)
+  isSearchingSaliente.value = true
+
+  if (searchTimeout) clearTimeout(searchTimeout)
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      await userStore.searchUsers({
+        search: query.trim(),
+        page: 1,
+        limit: 20
+      })
+
+      // Transform results for v-select
+      salienteOptions.value = userStore.searchResults.map((u) => ({
+        ...u,
+        displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+      }))
+    } catch (error) {
+      console.error('[ReplacementModalCreate] Search saliente error:', error)
+      salienteOptions.value = []
+    } finally {
+      loading(false)
+      isSearchingSaliente.value = false
+    }
+  }, 300)
+}
+
+// Debounced search for Entrante (300ms)
+const searchEntrante = (query: string, loading: (isLoading: boolean) => void) => {
+  if (!query || query.length < 2) {
+    entranteOptions.value = []
+    return
+  }
+
+  loading(true)
+  isSearchingEntrante.value = true
+
+  if (searchTimeout) clearTimeout(searchTimeout)
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      await userStore.searchUsers({
+        search: query.trim(),
+        page: 1,
+        limit: 20
+      })
+
+      // Transform results for v-select
+      entranteOptions.value = userStore.searchResults.map((u) => ({
+        ...u,
+        displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+      }))
+    } catch (error) {
+      console.error('[ReplacementModalCreate] Search entrante error:', error)
+      entranteOptions.value = []
+    } finally {
+      loading(false)
+      isSearchingEntrante.value = false
+    }
+  }, 300)
+}
+
+// Watch selections and update registroLocal
+watch(selectedSaliente, (user) => {
+  if (user) {
+    Object.assign(registroLocal, {
+      id_saliente: user._id,
+      rut_saliente: user.rut,
+      nombre_saliente: user.nombre,
+      apellido_saliente: user.apellido
+    })
+  } else {
+    // Clear saliente data
+    registroLocal.id_saliente = undefined
+    registroLocal.rut_saliente = undefined
+    registroLocal.nombre_saliente = undefined
+    registroLocal.apellido_saliente = undefined
+  }
+})
+
+watch(selectedEntrante, (user) => {
+  if (user) {
+    Object.assign(registroLocal, {
+      id_entrante: user._id,
+      rut_entrante: user.rut,
+      nombre_entrante: user.nombre,
+      apellido_entrante: user.apellido
+    })
+  } else {
+    // Clear entrante data
+    registroLocal.id_entrante = undefined
+    registroLocal.rut_entrante = undefined
+    registroLocal.nombre_entrante = undefined
+    registroLocal.apellido_entrante = undefined
+  }
+})
 
 // --- Validation Logic ---
 const validationError = computed(() => {
@@ -369,6 +519,20 @@ watch(
     Object.assign(registroLocal, nuevo)
   },
   { deep: true }
+)
+
+// 🔍 DEBUG: Log props to investigate "no matching options"
+watch(
+  () => [props.listaDeTurnos, props.listaDeServicios],
+  ([turnos, servicios]) => {
+    console.log('[ReplacementModalCreate] Props received:', {
+      turnos,
+      servicios,
+      turnosLength: turnos?.length,
+      serviciosLength: servicios?.length
+    })
+  },
+  { immediate: true }
 )
 
 watch(
@@ -643,5 +807,92 @@ function cancelarConfirmacion() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* 🏢 ENTERPRISE: Custom v-select styles for user selection */
+.user-select-danger :deep(.vs__dropdown-toggle),
+.user-select-success :deep(.vs__dropdown-toggle) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 6px;
+  background: white;
+  min-height: 60px; /* Fixed height to prevent expansion */
+  max-height: 60px;
+  overflow: hidden;
+}
+
+.user-select-danger :deep(.vs__selected-options),
+.user-select-success :deep(.vs__selected-options) {
+  min-height: 48px;
+  max-height: 48px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.user-select-danger :deep(.vs__selected),
+.user-select-success :deep(.vs__selected) {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.user-select-danger :deep(.vs__dropdown-toggle) {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.user-select-success :deep(.vs__dropdown-toggle) {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.user-select-danger :deep(.vs__dropdown-toggle):hover,
+.user-select-success :deep(.vs__dropdown-toggle):hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-select-danger :deep(.vs__search::placeholder),
+.user-select-success :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.user-select-danger :deep(.vs__dropdown-menu),
+.user-select-success :deep(.vs__dropdown-menu) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  min-width: 320px; /* Balanced width for info display */
+  z-index: 9999; /* Above everything */
+}
+
+.user-select-danger :deep(.vs__dropdown-option),
+.user-select-success :deep(.vs__dropdown-option) {
+  border-radius: 0.375rem;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  font-size: 0.875rem;
+}
+
+.user-select-danger :deep(.vs__dropdown-option--highlight) {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.user-select-success :deep(.vs__dropdown-option--highlight) {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.user-select-danger :deep(.vs__spinner),
+.user-select-success :deep(.vs__spinner) {
+  border-left-color: #3b82f6;
+}
+
+.user-option {
+  width: 100%;
 }
 </style>

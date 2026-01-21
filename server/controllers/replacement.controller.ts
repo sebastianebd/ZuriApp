@@ -62,13 +62,17 @@ async function mostrarReemplazos(req: Request, res: Response) {
     const servicio = (req.query.servicio as string) || "";
 
     // Generate unique cache key including pagination params
-    const cacheKey = `replacements:active:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}`;
+    // 🔧 v2: Added id_entrante populate
+    const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}`;
 
     // 1. Try Cache
     const cachedData = await get(cacheKey);
     if (cachedData) {
+      console.log(`[Replacement Controller] Cache HIT for key: ${cacheKey}`);
       return res.json(cachedData);
     }
+
+    console.log(`[Replacement Controller] Cache MISS for key: ${cacheKey}`);
 
     // 2. Fetch paginated data
     const result = await replacementService.obtenerActivosPaginado({
@@ -77,6 +81,14 @@ async function mostrarReemplazos(req: Request, res: Response) {
       page,
       limit,
     });
+
+    // 🔧 Debug: Check if id_entrante is populated
+    if (result.reemplazos && result.reemplazos.length > 0) {
+      console.log(
+        `[Replacement Controller] First replacement id_entrante:`,
+        result.reemplazos[0].id_entrante,
+      );
+    }
 
     // 3. Cache result for 60 seconds
     await set(cacheKey, result, 60);

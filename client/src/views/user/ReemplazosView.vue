@@ -82,7 +82,6 @@
       :fechas-bloqueadas="fechasOcupadas"
       @cerrar="closeCreateModal"
       @guardar="guardarNuevoReemplazo"
-      @buscar-usuario="seleccionarGrupo"
     />
 
     <!-- MODAL EDITAR -->
@@ -113,9 +112,9 @@
     <!-- MODAL USUARIOS -->
     <ReplacementModalUsers
       :visible="userModalVisible"
-      :usuarios="usuariosFiltradosPorCargo"
       :grupo="grupo"
       :lista-de-cargos="listaDeCargos"
+      :cargo-filtro="grupo === 2 ? cargoDeFiltrado : undefined"
       @cerrar="closeUserModal"
       @usuario-seleccionado="seleccionarUsuario"
     />
@@ -150,7 +149,6 @@ const {
   listaDeTurnos,
   listaDeServicios,
   listaDeCargos,
-  usuariosFiltradosPorCargo,
   fechasOcupadas,
 
   // Modals Visibility & Data
@@ -159,6 +157,7 @@ const {
   userModalVisible,
   substituteModalVisible,
   grupo,
+  cargoDeFiltrado,
   registroActual,
   registroNuevo,
   nuevoEntranteSustitucion,
