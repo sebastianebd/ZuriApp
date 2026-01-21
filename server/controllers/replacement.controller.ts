@@ -50,15 +50,38 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
 }
 
 async function mostrarReemplazos(req: Request, res: Response) {
-  // Note: obtenerActivos doesn't really need params currently
   try {
-    const cacheKey = "replacements:active";
-    const cachedData = await get(cacheKey);
-    if (cachedData) return res.json(cachedData);
+    // Check if pagination parameters are provided
+    const hasPaginationParams = req.query.page || req.query.limit;
 
-    const data = await replacementService.obtenerActivos();
-    await set(cacheKey, data, 300);
-    res.json(data);
+    // Pagination parameters (use high limit for legacy calls)
+    const page = parseInt(req.query.page as string) || 1;
+    const limit =
+      parseInt(req.query.limit as string) || (hasPaginationParams ? 10 : 1000);
+    const search = (req.query.search as string) || "";
+    const servicio = (req.query.servicio as string) || "";
+
+    // Generate unique cache key including pagination params
+    const cacheKey = `replacements:active:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}`;
+
+    // 1. Try Cache
+    const cachedData = await get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
+    // 2. Fetch paginated data
+    const result = await replacementService.obtenerActivosPaginado({
+      search,
+      servicio,
+      page,
+      limit,
+    });
+
+    // 3. Cache result for 60 seconds
+    await set(cacheKey, result, 60);
+
+    res.json(result);
   } catch (error: any) {
     res.status(500).json({ mensaje: error.message });
   }

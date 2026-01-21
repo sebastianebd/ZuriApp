@@ -7,7 +7,18 @@ import { getDatesInRange } from '@/utils/date-utils'
 
 export const useReplacementStore = defineStore('replacement', {
   state: () => ({
+    // Server-side pagination: only store current page
+    currentPageReplacements: [] as RegisterDataReemplazo[],
+
+    // Pagination metadata
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+
+    // Legacy: Keep for backward compatibility
     reemplazosActivos: [] as RegisterDataReemplazo[],
+
     cargando: false as boolean,
     error: null as string | null,
 
@@ -20,15 +31,27 @@ export const useReplacementStore = defineStore('replacement', {
 
   // 🔎 GETTERS
   getters: {
-    totalReemplazos: (state) => state.reemplazosActivos.length,
-    hayReemplazos: (state) => state.reemplazosActivos.length > 0,
+    // Use current page replacements for display
+    activeReplacements: (state) => state.currentPageReplacements,
+
+    totalReemplazos: (state) => state.totalItems,
+    hayReemplazos: (state) => state.currentPageReplacements.length > 0,
+
+    // Pagination info
+    paginationInfo: (state) => ({
+      currentPage: state.currentPage,
+      totalPages: state.totalPages,
+      totalItems: state.totalItems,
+      itemsPerPage: state.itemsPerPage
+    }),
+
     getFechasOcupadas:
       (state) =>
       (funcionarioId: string): string[] => {
         const fechasOcupadasSet = new Set<string>()
 
         // 1. Filtrar los reemplazos donde este funcionario es el SALIENTE
-        const reemplazosDelFuncionario = state.reemplazosActivos.filter(
+        const reemplazosDelFuncionario = state.currentPageReplacements.filter(
           (r) => r.id_entrante === funcionarioId
         )
 
@@ -43,7 +66,7 @@ export const useReplacementStore = defineStore('replacement', {
       },
 
     reemplazosFiltrados(state) {
-      let filtrados = state.reemplazosActivos
+      let filtrados = state.currentPageReplacements
 
       if (state.fechaInicio) {
         filtrados = filtrados.filter((r) => String(r.fecha_inicio) === state.fechaInicio)
@@ -69,6 +92,55 @@ export const useReplacementStore = defineStore('replacement', {
   },
 
   actions: {
+    // New: Fetch paginated active replacements
+    async fetchActiveReplacementsPaginated(params: {
+      page?: number
+      limit?: number
+      search?: string
+      servicio?: string
+    }) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      this.cargando = true
+      this.error = null
+
+      try {
+        const response = await ReplacementService.mostrarReemplazos(apiPrivate, params)
+
+        // Check if response has pagination structure
+        if (response.reemplazos && response.pagination) {
+          // Server-side pagination response
+          this.currentPageReplacements = response.reemplazos.map((r: RegisterDataReemplazo) => ({
+            ...r,
+            fecha_inicio: String(r.fecha_inicio).slice(0, 10),
+            fecha_termino: String(r.fecha_termino).slice(0, 10)
+          }))
+
+          // Update pagination metadata
+          this.currentPage = response.pagination.currentPage
+          this.totalPages = response.pagination.totalPages
+          this.totalItems = response.pagination.totalItems
+          this.itemsPerPage = response.pagination.itemsPerPage
+        } else {
+          // Legacy response (array)
+          this.currentPageReplacements = response.map((r: RegisterDataReemplazo) => ({
+            ...r,
+            fecha_inicio: String(r.fecha_inicio).slice(0, 10),
+            fecha_termino: String(r.fecha_termino).slice(0, 10)
+          }))
+        }
+
+        return response
+      } catch (error: any) {
+        console.error('Error al mostrar reemplazos:', error)
+        this.error = 'No se pudieron cargar los reemplazos.'
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    // Legacy: Keep for backward compatibility
     async mostrarReemplazos() {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
@@ -78,7 +150,23 @@ export const useReplacementStore = defineStore('replacement', {
       try {
         const data = await ReplacementService.mostrarReemplazos(apiPrivate)
 
-        this.reemplazosActivos = data.map((r: RegisterDataReemplazo) => ({
+        // Handle both response formats:
+        // 1. New paginated format: { reemplazos: [...], pagination: {...} }
+        // 2. Old array format: [...]
+        let reemplazosArray: RegisterDataReemplazo[]
+
+        if (data && typeof data === 'object' && 'reemplazos' in data) {
+          // New paginated response
+          reemplazosArray = data.reemplazos
+        } else if (Array.isArray(data)) {
+          // Old array response
+          reemplazosArray = data
+        } else {
+          // Fallback to empty array
+          reemplazosArray = []
+        }
+
+        this.reemplazosActivos = reemplazosArray.map((r: RegisterDataReemplazo) => ({
           ...r,
           fecha_inicio: String(r.fecha_inicio).slice(0, 10),
           fecha_termino: String(r.fecha_termino).slice(0, 10)
@@ -98,111 +186,129 @@ export const useReplacementStore = defineStore('replacement', {
     async finalizarReemplazo(reemplazoId: string) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      this.cargando = true
+      this.error = null
 
       try {
-        await ReplacementService.finalizarReemplazo(apiPrivate, reemplazoId)
-        await this.mostrarReemplazos()
-
-        this.reemplazosActivos = this.reemplazosActivos.filter((r) => r._id !== reemplazoId)
-      } catch (error) {
+        const data = await ReplacementService.finalizarReemplazo(apiPrivate, reemplazoId)
+        // Refresh current page after finalization
+        await this.fetchActiveReplacementsPaginated({ page: this.currentPage })
+        return data
+      } catch (error: any) {
         console.error('Error al finalizar reemplazo:', error)
         this.error = 'No se pudo finalizar el reemplazo.'
         throw error
+      } finally {
+        this.cargando = false
       }
     },
 
-    //ESTA FUNCION ES PARA ANULAR REEMPLAZO (FUTURO, TODAVIA NO ENTRA EN CURSO) NO ELIMINAR
     async anularReemplazo(reemplazoId: string) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      this.cargando = true
+      this.error = null
 
       try {
-        await ReplacementService.anularReemplazo(apiPrivate, reemplazoId)
-        await this.mostrarReemplazos()
-
-        this.reemplazosActivos = this.reemplazosActivos.filter((r) => r._id !== reemplazoId)
-      } catch (error) {
+        const data = await ReplacementService.anularReemplazo(apiPrivate, reemplazoId)
+        // Refresh current page after annulment
+        await this.fetchActiveReplacementsPaginated({ page: this.currentPage })
+        return data
+      } catch (error: any) {
         console.error('Error al anular reemplazo:', error)
         this.error = 'No se pudo anular el reemplazo.'
         throw error
+      } finally {
+        this.cargando = false
       }
     },
 
-    async mostrarHistorialUsuario(id: string) {
+    async crearReemplazo(payload: RegisterDataReemplazo) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      this.cargando = true
+      this.error = null
 
       try {
-        const data = await ReplacementService.mostrarHistorialUsuario(apiPrivate, id)
+        const data = await ReplacementService.crearReemplazo(payload, apiPrivate)
+        // Refresh current page after creation
+        await this.fetchActiveReplacementsPaginated({ page: this.currentPage })
         return data
       } catch (error: any) {
-        console.error('Error al mostrar reemplazos:', error)
-        this.error = 'No se pudieron cargar los reemplazos.'
-        throw error
-      }
-    },
-
-    async crearReemplazo(reemplazo: RegisterDataReemplazo) {
-      const authStore = useAuthStore()
-      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
-
-      try {
-        await ReplacementService.crearReemplazo(reemplazo, apiPrivate)
-        await this.mostrarReemplazos()
-      } catch (error) {
         console.error('Error al crear reemplazo:', error)
         this.error = 'No se pudo crear el reemplazo.'
         throw error
+      } finally {
+        this.cargando = false
       }
     },
 
-    async actualizarReemplazo(reemplazoId: string, datosActualizados: any) {
+    async actualizarReemplazo(reemplazoId: string, payload: RegisterDataReemplazo) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      this.cargando = true
+      this.error = null
 
       try {
-        await ReplacementService.actualizarReemplazo(apiPrivate, reemplazoId, datosActualizados)
-        await this.mostrarReemplazos()
-      } catch (error) {
+        const data = await ReplacementService.actualizarReemplazo(apiPrivate, reemplazoId, payload)
+        // Refresh current page after update
+        await this.fetchActiveReplacementsPaginated({ page: this.currentPage })
+        return data
+      } catch (error: any) {
         console.error('Error al actualizar reemplazo:', error)
         this.error = 'No se pudo actualizar el reemplazo.'
         throw error
+      } finally {
+        this.cargando = false
       }
     },
 
     async procesarSustitucion(payload: SustitucionPayload) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      this.cargando = true
+      this.error = null
 
       try {
-        await ReplacementService.procesarSustitucion(apiPrivate, payload)
-
-        // CRUCIAL: Refrescar los datos para ver el registro A modificado y el nuevo registro B
-        await this.mostrarReemplazos()
-      } catch (error) {
-        console.error('Error al procesar la sustitución:', error)
-        this.error = 'No se pudo completar la sustitución.'
+        const data = await ReplacementService.procesarSustitucion(apiPrivate, payload)
+        // Refresh current page after substitution
+        await this.fetchActiveReplacementsPaginated({ page: this.currentPage })
+        return data
+      } catch (error: any) {
+        console.error('Error al procesar sustitución:', error)
+        this.error = 'No se pudo procesar la sustitución.'
         throw error
+      } finally {
+        this.cargando = false
       }
     },
 
-    limpiarFiltros() {
-      this.filtroRutSaliente = ''
-      this.filtroRutEntrante = ''
-      this.filtroServicio = ''
-      this.fechaInicio = ''
-      this.fechaFin = ''
+    setFiltroServicio(servicio: string) {
+      this.filtroServicio = servicio
     },
 
-    limpiarReemplazos() {
-      this.reemplazosActivos = []
-      this.error = null
-      this.limpiarFiltros()
-    }
-  },
+    setFiltroRutSaliente(rut: string) {
+      this.filtroRutSaliente = rut
+    },
 
-  persist: {
-    key: 'replacement',
-    storage: sessionStorage
+    setFiltroRutEntrante(rut: string) {
+      this.filtroRutEntrante = rut
+    },
+
+    setFechaInicio(fecha: string) {
+      this.fechaInicio = fecha
+    },
+
+    setFechaFin(fecha: string) {
+      this.fechaFin = fecha
+    },
+
+    limpiarFiltros() {
+      this.filtroServicio = ''
+      this.filtroRutSaliente = ''
+      this.filtroRutEntrante = ''
+      this.fechaInicio = ''
+      this.fechaFin = ''
+    }
   }
 })

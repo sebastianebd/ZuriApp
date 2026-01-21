@@ -72,6 +72,61 @@ async function obtenerActivos() {
   }).populate("creado_por", "nombre apellido");
 }
 
+async function obtenerActivosPaginado(options: {
+  search?: string;
+  servicio?: string;
+  page: number;
+  limit: number;
+}) {
+  const { search, servicio, page, limit } = options;
+  const query: any = {
+    status: { $in: ["EN CURSO", "PENDIENTE"] },
+  };
+
+  // Service filter
+  if (servicio && servicio.trim().length > 0) {
+    query.servicio = servicio;
+  }
+
+  // Search Logic (optimized with indexes)
+  if (search && search.trim().length > 0) {
+    const safeTerm = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(safeTerm, "i");
+
+    query.$or = [
+      { rut_saliente: regex },
+      { nombre_saliente: regex },
+      { apellido_saliente: regex },
+      { rut_entrante: regex },
+      { nombre_entrante: regex },
+      { apellido_entrante: regex },
+    ];
+  }
+
+  // Calculate skip for pagination
+  const skip = (page - 1) * limit;
+
+  // Execute query and count in parallel for performance
+  const [reemplazos, total] = await Promise.all([
+    Reemplazo.find(query)
+      .populate("creado_por", "nombre apellido")
+      .skip(skip)
+      .limit(limit)
+      .lean(), // Convert to plain objects (faster)
+    Reemplazo.countDocuments(query),
+  ]);
+
+  return {
+    reemplazos,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      itemsPerPage: limit,
+    },
+  };
+}
+
 async function obtenerInactivosPaginados(
   filtros: any = {},
   pagina: number = 1,
@@ -252,6 +307,7 @@ async function sustituir(payload: SustitucionPayload) {
 export default {
   registrar,
   obtenerActivos,
+  obtenerActivosPaginado,
   actualizar,
   finalizarReemplazo,
   anularReemplazo,

@@ -423,7 +423,11 @@ const filteredShifts = computed(() => {
   const userAssignmentsMap = new Map<string, TurnAssignment[]>()
 
   turnAssignmentStore.assignments.forEach((a) => {
-    const uid = (a.user_id as unknown as User)._id
+    // Handle both populated User object and string ID
+    const uid = typeof a.user_id === 'string' ? a.user_id : (a.user_id as unknown as User)?._id
+
+    if (!uid) return // Skip if no valid user ID
+
     if (!userAssignmentsMap.has(uid)) userAssignmentsMap.set(uid, [])
     userAssignmentsMap.get(uid)?.push(a)
   })
@@ -431,7 +435,8 @@ const filteredShifts = computed(() => {
   // 1. Process Replacements (Grouped by Entrante)
   const userReplacementsMap = new Map<string, RegisterDataReemplazo[]>()
 
-  replacementStore.reemplazosActivos.forEach((r) => {
+  // 🚀 ENTERPRISE: Use currentPageReplacements (server-side filtered)
+  replacementStore.currentPageReplacements.forEach((r) => {
     if (!r.fecha_inicio) return
     // Use id_entrante (Real User ID) for grouping
     if (!r.id_entrante) return
@@ -477,16 +482,20 @@ const filteredShifts = computed(() => {
       let cargo = rep.tipo_cargo
       if (!cargo) {
         // 1. Try to find user in assignments store (fastest if view has them)
-        const foundUserAssignment = turnAssignmentStore.assignments.find(
-          (a) => (a.user_id as unknown as User)._id === userId
-        )
+        const foundUserAssignment = turnAssignmentStore.assignments.find((a) => {
+          // Handle both populated User object and string ID
+          const uid =
+            typeof a.user_id === 'string' ? a.user_id : (a.user_id as unknown as User)?._id
+          return uid === userId
+        })
+
         if (foundUserAssignment) {
           const u = foundUserAssignment.user_id as unknown as User
-          cargo = u.tipo_cargo
+          cargo = u?.tipo_cargo
         }
 
         // 2. Fallback: Check full user list
-        if (!cargo) {
+        if (!cargo && Array.isArray(allUsers.value)) {
           const foundUser = allUsers.value.find((u) => u._id === userId)
           if (foundUser) cargo = foundUser.tipo_cargo
         }

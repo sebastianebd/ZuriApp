@@ -10,8 +10,8 @@ export function useCalendar() {
   const optionStore = useOptionStore()
 
   const calendarEvents = ref<any[]>([])
-  const rawReplacements = ref<any[]>([])
   const selectedService = ref<string | null>(null)
+  const loading = ref(false)
 
   // Service Options
   const serviceOptions = computed(() => optionStore.opciones?.servicios || [])
@@ -105,70 +105,75 @@ export function useCalendar() {
     return `${day}-${month}-${year}`
   }
 
-  // Update Events based on Filter
-  const updateCalendarEvents = () => {
+  // 🚀 ENTERPRISE: Server-Side Filtering
+  const loadReplacementsByService = async () => {
     if (!selectedService.value) {
       calendarEvents.value = []
       return
     }
 
-    const filtered = rawReplacements.value.filter((r) => r.servicio === selectedService.value)
+    loading.value = true
+    try {
+      // Fetch only replacements for selected service (server-side filtering)
+      await replacementStore.fetchActiveReplacementsPaginated({
+        servicio: selectedService.value,
+        limit: 500 // High limit for calendar view (sufficient for single service)
+      })
 
-    calendarEvents.value = filtered.map((r: any) => {
-      const start = r.fecha_inicio ? r.fecha_inicio.slice(0, 10) : ''
-      const end = r.fecha_termino ? sumarUnDia(r.fecha_termino) : ''
+      // Get filtered replacements from store
+      const replacements = replacementStore.currentPageReplacements
 
-      const titleName = formatTitleCase(`${r.nombre_entrante} ${r.apellido_entrante}`)
-      // const titleService = formatTitleCase(r.servicio) // Redundant in title if filtered by service
+      // Transform to calendar events
+      calendarEvents.value = replacements.map((r: any) => {
+        const start = r.fecha_inicio ? r.fecha_inicio.slice(0, 10) : ''
+        const end = r.fecha_termino ? sumarUnDia(r.fecha_termino) : ''
 
-      return {
-        title: `${titleName} - ${r.tipo_turno}`, // Changed to Show Turn Type instead of Service
-        start: start,
-        end: end,
-        backgroundColor: getColorByStatus(r.status),
-        borderColor: 'transparent',
-        extendedProps: { ...r },
-        classNames: ['custom-calendar-event']
-      }
-    })
+        const titleName = formatTitleCase(`${r.nombre_entrante} ${r.apellido_entrante}`)
+
+        return {
+          title: `${titleName} - ${r.tipo_turno}`,
+          start: start,
+          end: end,
+          backgroundColor: getColorByStatus(r.status),
+          borderColor: 'transparent',
+          extendedProps: { ...r },
+          classNames: ['custom-calendar-event']
+        }
+      })
+    } catch (error) {
+      console.error('Error cargando eventos al calendario:', error)
+      calendarEvents.value = []
+    } finally {
+      loading.value = false
+    }
   }
 
-  // Watch for filter changes
+  // Watch for service changes (server-side filtering)
   watch(selectedService, () => {
-    updateCalendarEvents()
+    loadReplacementsByService()
   })
 
   onMounted(async () => {
     try {
-      // Ensure options are loaded
-      if (optionStore.opciones?.servicios?.length === 0) {
-        // Trigger fetch if needed, assuming logic exists elsewhere or data persists.
-        // If not, we might need to fetch options here too.
-        // For now assume options might be available or we wait/retry?
-        // Actually best to rely on store being populated or user interaction.
-      }
-
-      const reemplazos = await replacementStore.mostrarReemplazos()
-      rawReplacements.value = reemplazos
-
       // Set default service if available
       if (serviceOptions.value.length > 0) {
         selectedService.value = serviceOptions.value[0]
-      } else {
-        // Fallback or wait for options?
-        // If options are async, we might need a watcher on serviceOptions
       }
 
-      updateCalendarEvents()
+      // Load replacements for default service
+      if (selectedService.value) {
+        await loadReplacementsByService()
+      }
     } catch (error) {
       console.error('Error cargando eventos al calendario:', error)
     }
   })
 
   // Watch options to set default if initial load was empty
-  watch(serviceOptions, (newVal) => {
+  watch(serviceOptions, async (newVal) => {
     if (!selectedService.value && newVal.length > 0) {
       selectedService.value = newVal[0]
+      await loadReplacementsByService()
     }
   })
 
@@ -180,6 +185,7 @@ export function useCalendar() {
     formatDateDDMMYYYY,
     getColorByStatus,
     selectedService,
-    serviceOptions
+    serviceOptions,
+    loading
   }
 }

@@ -1,10 +1,9 @@
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import { mostrarTodosUsuarios } from '@/services/user.service'
-import { usePagination } from '@/composables/usePagination'
 import { useReplacementModals } from '@/composables/useReplacementModals'
 import type { User, RegisterDataReemplazo } from '@/types/models'
 import socket from '@/plugins/socket'
@@ -23,16 +22,30 @@ export function useReplacements() {
   const listaDeCargos = ref<string[]>([])
   const usuarios = ref<User[]>([])
 
-  // A. Paginación
-  const {
-    currentPage,
-    totalPages,
-    paginatedItems: paginatedReplacements,
-    changePage
-  } = usePagination(
-    computed(() => replacementStore.reemplazosFiltrados),
-    10
-  )
+  // Server-side pagination state
+  const currentPage = ref(1)
+  const itemsPerPage = ref(10)
+
+  // Computed: Total pages from store
+  const totalPages = computed(() => replacementStore.paginationInfo.totalPages)
+
+  // Computed: Current page replacements (server-side paginated)
+  const paginatedReplacements = computed(() => replacementStore.reemplazosFiltrados)
+
+  // Page change handler
+  const changePage = (page: number) => {
+    if (page >= 1 && page <= totalPages.value) {
+      currentPage.value = page
+    }
+  }
+
+  // Watch for page changes and fetch data
+  watch(currentPage, async () => {
+    await replacementStore.fetchActiveReplacementsPaginated({
+      page: currentPage.value,
+      limit: itemsPerPage.value
+    })
+  })
 
   // B. Modales y Datos
   const modalLogic = useReplacementModals()
@@ -165,9 +178,12 @@ export function useReplacements() {
   // --- LIFECYCLE ---
 
   async function loadData() {
-    if (!replacementStore.hayReemplazos) {
-      await replacementStore.mostrarReemplazos()
-    }
+    // Fetch first page of replacements with server-side pagination
+    await replacementStore.fetchActiveReplacementsPaginated({
+      page: currentPage.value,
+      limit: itemsPerPage.value
+    })
+
     const [opciones, usuariosCargados] = await Promise.all([
       optionStore.mostrarOpciones(),
       mostrarTodosUsuarios(apiPrivate),
@@ -184,7 +200,11 @@ export function useReplacements() {
     await loadData()
 
     socket.on('replacements:update', async () => {
-      await replacementStore.mostrarReemplazos()
+      // Refresh current page on socket update
+      await replacementStore.fetchActiveReplacementsPaginated({
+        page: currentPage.value,
+        limit: itemsPerPage.value
+      })
     })
   })
 
