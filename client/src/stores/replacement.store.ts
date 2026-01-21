@@ -16,6 +16,15 @@ export const useReplacementStore = defineStore('replacement', {
     totalItems: 0,
     itemsPerPage: 10,
 
+    // NEW: Finalized Replacements (Server-side Pagination)
+    finalizedReplacements: [] as RegisterDataReemplazo[],
+    finalizedPagination: {
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: 0,
+      itemsPerPage: 10
+    },
+
     // Legacy: Keep for backward compatibility
     reemplazosActivos: [] as RegisterDataReemplazo[],
 
@@ -44,6 +53,8 @@ export const useReplacementStore = defineStore('replacement', {
       totalItems: state.totalItems,
       itemsPerPage: state.itemsPerPage
     }),
+
+    finalizedPaginationInfo: (state) => state.finalizedPagination,
 
     getFechasOcupadas:
       (state) =>
@@ -134,6 +145,49 @@ export const useReplacementStore = defineStore('replacement', {
       } catch (error: any) {
         console.error('Error al mostrar reemplazos:', error)
         this.error = 'No se pudieron cargar los reemplazos.'
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    // New: Fetch paginated FINALIZED replacements (History)
+    async fetchFinalizedPaginated(
+      filtros: {
+        rutSaliente?: string
+        rutEntrante?: string
+        fechaInicio?: string
+        fechaFin?: string
+        servicio?: string
+      },
+      page: number = 1
+    ) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      this.cargando = true
+      this.error = null
+
+      try {
+        const response = await ReplacementService.obtenerInactivosPaginados(
+          apiPrivate,
+          filtros,
+          page,
+          this.finalizedPagination.itemsPerPage
+        )
+
+        // Update State
+        this.finalizedReplacements = response.registros || []
+        this.finalizedPagination = {
+          currentPage: response.paginaActual,
+          totalPages: response.totalPages,
+          totalItems: response.totalRegistros,
+          itemsPerPage: response.limite
+        }
+
+        return response
+      } catch (error: any) {
+        console.error('Error fetching finalized replacements:', error)
+        this.error = 'No se pudo cargar el historial de reemplazos.'
         throw error
       } finally {
         this.cargando = false

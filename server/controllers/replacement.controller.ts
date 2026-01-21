@@ -315,7 +315,7 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
       limiteNum,
     );
 
-    await set(cacheKey, data, 300);
+    await set(cacheKey, data, 60);
 
     res.json(data);
   } catch (error: any) {
