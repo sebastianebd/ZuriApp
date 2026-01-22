@@ -103,6 +103,12 @@ export const useTurnSiglaStore = defineStore('turnSigla', () => {
     }
   }
 
+  function mapSiglaToNombre(sigla: string): string {
+    const s = sigla.toUpperCase()
+    const found = siglas.value.find((t) => t.sigla === s)
+    return found ? found.nombre : 'LIBRE' // Safe default if not found
+  }
+
   return {
     siglas,
     loading,
@@ -110,6 +116,7 @@ export const useTurnSiglaStore = defineStore('turnSigla', () => {
     fetchSiglas,
     createSigla,
     updateSigla,
-    deleteSigla
+    deleteSigla,
+    mapSiglaToNombre
   }
 })

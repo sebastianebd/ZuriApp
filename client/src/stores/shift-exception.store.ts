@@ -6,8 +6,8 @@ export interface ShiftException {
   _id: string
   assignment_id: string
   date: string
-  original_type: 'LARGO' | 'NOCHE' | 'LIBRE'
-  override_type: 'LARGO' | 'NOCHE' | 'LIBRE'
+  original_type: string
+  override_type: string
   reason?: string
   created_by: string
   created_at: string
@@ -42,8 +42,8 @@ export const useShiftExceptionStore = defineStore('shiftException', () => {
     assignment_id: string
     assignment_model?: 'TurnAssignment' | 'Replacement' // 🏢
     date: string
-    original_type: 'LARGO' | 'NOCHE' | 'LIBRE'
-    override_type: 'LARGO' | 'NOCHE' | 'LIBRE'
+    original_type: string
+    override_type: string
     reason?: string
     created_by: string
   }) {

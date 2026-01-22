@@ -875,18 +875,6 @@ function isRecentlyModified(assignmentId: string, date: Date): boolean {
   )
 }
 
-function mapSiglaToEnum(sigla: string): 'LARGO' | 'NOCHE' | 'LIBRE' {
-  const s = sigla.toUpperCase()
-  if (s === 'L') return 'LARGO'
-  if (s === 'N') return 'NOCHE'
-  if (s === 'X') return 'LIBRE'
-  // Fallback for full names or unknown
-  if (s === 'LARGO') return 'LARGO'
-  if (s === 'NOCHE') return 'NOCHE'
-  if (s === 'LIBRE') return 'LIBRE'
-  return 'LIBRE' // Safe default
-}
-
 // Helper: Check if a date is editable (Current Month or Future)
 function isEditableDate(date: Date): boolean {
   const now = new Date()
@@ -945,7 +933,7 @@ async function handleDeleteAssignment() {
   }
 }
 
-async function handleSaveException(data: { override_type: 'LARGO' | 'NOCHE' | 'LIBRE' }) {
+async function handleSaveException(data: { override_type: string }) {
   if (!selectedShiftData.value) return
 
   try {
@@ -953,7 +941,9 @@ async function handleSaveException(data: { override_type: 'LARGO' | 'NOCHE' | 'L
       assignment_id: selectedShiftData.value.assignmentId,
       assignment_model: selectedShiftData.value.assignmentModel, // 🏢
       date: selectedShiftData.value.date.toISOString(),
-      original_type: mapSiglaToEnum(selectedShiftData.value.currentShift?.sigla || 'X'),
+      original_type: turnSiglaStore.mapSiglaToNombre(
+        selectedShiftData.value.currentShift?.sigla || 'X'
+      ),
       override_type: data.override_type,
       created_by: authStore.user?._id || ''
     })
