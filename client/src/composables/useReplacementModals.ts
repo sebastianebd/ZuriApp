@@ -1,14 +1,12 @@
 import { ref, computed } from 'vue'
-import type { User, RegisterDataReemplazo, SustitucionPayload } from '@/types/models'
+import type { RegisterDataReemplazo, SustitucionPayload } from '@/types/models'
 
 type ReplacementRecord = Partial<RegisterDataReemplazo>
 
 // --- ESTADOS REACTIVOS ---
 const updateModalVisible = ref(false)
 const createModalVisible = ref(false)
-const userModalVisible = ref(false)
 const substituteModalVisible = ref(false)
-const grupo = ref<1 | 2>(1)
 
 const registroActual = ref<ReplacementRecord>({})
 const registroNuevo = ref<ReplacementRecord>({
@@ -21,24 +19,12 @@ const fechaCorteSustitucion = ref('')
 const nuevoEntranteSustitucion = ref<ReplacementRecord>({})
 
 const cargoDeFiltrado = computed(() => {
-  if (grupo.value === 1) {
-    return undefined
-  }
-
-  if (registroActual.value.tipo_cargo) {
-    return registroActual.value.tipo_cargo
-  }
-
-  if (registroNuevo.value.tipo_cargo) {
-    return registroNuevo.value.tipo_cargo
-  }
-
   return undefined
 })
 
 const openUpdateModal = (reemplazo: RegisterDataReemplazo) => {
   updateModalVisible.value = true
-  
+
   const { fecha_inicio, fecha_termino, ...resto } = reemplazo
 
   registroActual.value = {
@@ -52,11 +38,10 @@ const closeUpdateModal = () => {
   registroActual.value = {}
 }
 
-
 const openCreateModal = (userLogedId: string) => {
   registroNuevo.value = {
     ...registroNuevo.value,
-    creado_por: userLogedId,
+    creado_por: userLogedId
   }
   createModalVisible.value = true
 }
@@ -72,7 +57,7 @@ const closeCreateModal = () => {
     apellido_saliente: '',
     tipo_cargo: '',
     servicio: '',
-    tipo_turno: '',
+    tipo_turno: ''
   }
 }
 
@@ -86,31 +71,6 @@ const closeSubstituteModal = () => {
   closeUpdateModal()
   fechaCorteSustitucion.value = ''
   nuevoEntranteSustitucion.value = {}
-}
-
-const openUserModal = (numeroGrupo: 1 | 2) => {
-  grupo.value = numeroGrupo
-  userModalVisible.value = true
-}
-
-const closeUserModal = () => {
-  userModalVisible.value = false
-}
-
-const assignUserData = (registro: ReplacementRecord, usuario: User, isSaliente: boolean) => {
-  const prefijo = isSaliente ? 'saliente' : 'entrante'
-
-  // 2. Asignar datos básicos
-  Object.assign(registro, {
-    [`id_${prefijo}`]: usuario._id,
-    [`rut_${prefijo}`]: usuario.rut,
-    [`nombre_${prefijo}`]: usuario.nombre,
-    [`apellido_${prefijo}`]: usuario.apellido
-  })
-
-  if (isSaliente) {
-    registro.tipo_cargo = usuario.tipo_cargo
-  }
 }
 
 const createSustitucionPayload = (): SustitucionPayload => {
@@ -140,9 +100,7 @@ export function useReplacementModals() {
   return {
     updateModalVisible,
     createModalVisible,
-    userModalVisible,
     substituteModalVisible,
-    grupo,
     registroActual,
     registroNuevo,
     fechaCorteSustitucion,
@@ -154,9 +112,6 @@ export function useReplacementModals() {
     closeCreateModal,
     handleSustitucion,
     closeSubstituteModal,
-    openUserModal,
-    closeUserModal,
-    assignUserData,
     createSustitucionPayload
   }
 }

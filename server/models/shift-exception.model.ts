@@ -4,8 +4,8 @@ export interface IShiftException extends Document {
   assignment_id: Schema.Types.ObjectId;
   assignment_model: "TurnAssignment" | "Replacement";
   date: Date;
-  original_type: "LARGO" | "NOCHE" | "LIBRE";
-  override_type: "LARGO" | "NOCHE" | "LIBRE";
+  original_type: string;
+  override_type: string;
   reason?: string;
   created_by: Schema.Types.ObjectId;
   created_at: Date;
@@ -32,12 +32,10 @@ const shiftExceptionSchema = new Schema<IShiftException>(
     },
     original_type: {
       type: String,
-      enum: ["LARGO", "NOCHE", "LIBRE"],
       required: true,
     },
     override_type: {
       type: String,
-      enum: ["LARGO", "NOCHE", "LIBRE"],
       required: true,
     },
     reason: {

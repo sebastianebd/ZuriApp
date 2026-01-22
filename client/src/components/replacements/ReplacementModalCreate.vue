@@ -521,20 +521,6 @@ watch(
   { deep: true }
 )
 
-// 🔍 DEBUG: Log props to investigate "no matching options"
-watch(
-  () => [props.listaDeTurnos, props.listaDeServicios],
-  ([turnos, servicios]) => {
-    console.log('[ReplacementModalCreate] Props received:', {
-      turnos,
-      servicios,
-      turnosLength: turnos?.length,
-      serviciosLength: servicios?.length
-    })
-  },
-  { immediate: true }
-)
-
 watch(
   () => props.visible,
   (nuevoValor) => {

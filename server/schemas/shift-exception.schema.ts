@@ -4,8 +4,8 @@ export const createShiftExceptionSchema = z.object({
   body: z.object({
     assignment_id: z.string().min(1, "Assignment ID is required"),
     date: z.string().datetime().or(z.date()),
-    original_type: z.enum(["LARGO", "NOCHE", "LIBRE"]),
-    override_type: z.enum(["LARGO", "NOCHE", "LIBRE"]),
+    original_type: z.string().min(1),
+    override_type: z.string().min(1),
     reason: z.string().optional(),
     created_by: z.string().min(1, "Created by is required"),
   }),

@@ -690,7 +690,9 @@ function getShift(row: GridRow, date: Date): ShiftResult | null {
         color,
         assignmentId: replacement._id,
         assignmentModel: 'Replacement',
-        assignmentName: replacement.tipo_turno,
+        assignmentName:
+          turnTypeStore.turnTypes.find((t) => t._id === replacement.tipo_turno)?.nombre ||
+          replacement.tipo_turno,
         replacementCode: replacement.id_negocio
       }
     }
@@ -709,7 +711,9 @@ function getShift(row: GridRow, date: Date): ShiftResult | null {
         ...result,
         assignmentId: replacement._id,
         assignmentModel: 'Replacement', // 🏢
-        assignmentName: replacement.tipo_turno,
+        assignmentName:
+          turnTypeStore.turnTypes.find((t) => t._id === replacement.tipo_turno)?.nombre ||
+          replacement.tipo_turno,
         replacementCode: replacement.id_negocio
       }
     }
@@ -739,7 +743,9 @@ function getShift(row: GridRow, date: Date): ShiftResult | null {
   const meta = {
     assignmentId: activeAssignment._id,
     assignmentModel: 'TurnAssignment' as const, // 🏢
-    assignmentName: activeAssignment.turn_type
+    assignmentName:
+      turnTypeStore.turnTypes.find((t) => t._id === activeAssignment.turn_type)?.nombre ||
+      activeAssignment.turn_type
   }
 
   // Check Exception
@@ -936,6 +942,11 @@ async function handleDeleteAssignment() {
 async function handleSaveException(data: { override_type: string }) {
   if (!selectedShiftData.value) return
 
+  if (!authStore.user || !authStore.user._id) {
+    alertComponent.value.show('Error', 'Debe iniciar sesión para realizar cambios', 'error')
+    return
+  }
+
   try {
     await exceptionStore.createException({
       assignment_id: selectedShiftData.value.assignmentId,
@@ -945,7 +956,7 @@ async function handleSaveException(data: { override_type: string }) {
         selectedShiftData.value.currentShift?.sigla || 'X'
       ),
       override_type: data.override_type,
-      created_by: authStore.user?._id || ''
+      created_by: authStore.user._id
     })
 
     // Set recently modified cell for visual feedback

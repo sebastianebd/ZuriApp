@@ -47,7 +47,14 @@
                   @click="selectedShift = option.value"
                 >
                   <span> <i :class="option.icon" class="me-2"></i>{{ option.label }} </span>
-                  <span class="badge" :class="option.badgeClass">{{ option.value }}</span>
+                  <span
+                    class="badge"
+                    :style="{
+                      backgroundColor: option.color,
+                      color: getContrastColor(option.color)
+                    }"
+                    >{{ option.value }}</span
+                  >
                 </button>
 
                 <button v-if="hasException" class="btn btn-outline-danger" @click="handleRestore">
@@ -115,6 +122,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
+
+const turnSiglaStore = useTurnSiglaStore()
 
 const props = defineProps<{
   visible: boolean
@@ -128,39 +138,54 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'cerrar'): void
-  (e: 'save', data: { override_type: 'LARGO' | 'NOCHE' | 'LIBRE' }): void
+  (e: 'cerrar'): void
+  (e: 'save', data: { override_type: string }): void
   (e: 'restore'): void
   (e: 'delete-assignment'): void
 }>()
 
 const showDeleteConfirm = ref(false)
 
-const selectedShift = ref<'LARGO' | 'NOCHE' | 'LIBRE' | null>(null)
+const selectedShift = ref<string | null>(null)
 
-const shiftOptions = [
-  {
-    value: 'LARGO' as const,
-    label: 'Turno Día',
-    icon: 'bi bi-sun-fill',
-    badgeClass: 'bg-warning text-dark'
-  },
-  {
-    value: 'NOCHE' as const,
-    label: 'Turno Noche',
-    icon: 'bi bi-moon-fill',
-    badgeClass: 'bg-primary'
-  },
-  {
-    value: 'LIBRE' as const,
-    label: 'Día Libre',
-    icon: 'bi bi-calendar-x',
-    badgeClass: 'bg-success'
-  }
-]
+// Helper to determine text color based on background
+const getContrastColor = (hexColor: string) => {
+  if (!hexColor) return '#fff'
+  // Remove # if present
+  const hex = hexColor.replace('#', '')
+  const r = parseInt(hex.substr(0, 2), 16)
+  const g = parseInt(hex.substr(2, 2), 16)
+  const b = parseInt(hex.substr(4, 2), 16)
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000
+  return yiq >= 128 ? '#000' : '#fff'
+}
+
+const shiftOptions = computed(() => {
+  // Always include LIBRE if not present in store (though it should be)
+  // or just map from store.
+  // We can add a "LIBRE" explicitly if it's special, or assume it's in the DB.
+  // For now, let's map what's in the store.
+  return turnSiglaStore.siglas
+    .filter((s) => s.activo)
+    .map((s) => ({
+      value: s.sigla,
+      label: s.nombre,
+      icon: getIconForSigla(s.sigla),
+      color: s.color || '#6c757d'
+    }))
+})
+
+const getIconForSigla = (sigla: string) => {
+  const s = sigla.toUpperCase()
+  if (s === 'L') return 'bi bi-sun-fill'
+  if (s === 'N') return 'bi bi-moon-fill'
+  if (s === 'X') return 'bi bi-calendar-x'
+  return 'bi bi-clock' // Default
+}
 
 const currentShiftLabel = computed(() => {
   if (!props.currentShift) return 'Sin turno'
-  const option = shiftOptions.find((o) => o.value === props.currentShift)
+  const option = shiftOptions.value.find((o) => o.value === props.currentShift)
   return option ? option.label : props.currentShift
 })
 

@@ -135,6 +135,19 @@ export const getExceptions = async (req: Request, res: Response) => {
       });
     }
 
+    // Populate id_entrante for Replacements to get tipo_cargo
+    const replacementExceptions = exceptions.filter(
+      (e) => e.assignment_model === "Replacement",
+    );
+
+    if (replacementExceptions.length > 0) {
+      await ShiftExceptionModel.populate(replacementExceptions, {
+        path: "assignment_id.id_entrante",
+        select: "nombre apellido tipo_cargo servicio",
+        model: "User",
+      });
+    }
+
     res.json(exceptions);
   } catch (error) {
     res.status(500).json({ message: "Error fetching exceptions", error });

@@ -108,14 +108,7 @@
                     <!-- Original -->
                     <div class="text-center" style="min-width: 80px">
                       <span class="d-block x-small text-secondary fw-bold mb-1">Original</span>
-                      <span
-                        class="status-glass"
-                        :class="
-                          exception.original_type
-                            ? getShiftBadgeClass(exception.original_type)
-                            : 'glass-secondary'
-                        "
-                      >
+                      <span class="status-glass" :style="getShiftStyle(exception.original_type)">
                         {{
                           exception.original_type ? getShiftLabel(exception.original_type) : 'Desc.'
                         }}
@@ -130,10 +123,7 @@
                     <!-- Modificado -->
                     <div class="text-center" style="min-width: 80px">
                       <span class="d-block x-small text-primary fw-bold mb-1">Nuevo</span>
-                      <span
-                        class="status-glass"
-                        :class="getShiftBadgeClass(exception.override_type)"
-                      >
+                      <span class="status-glass" :style="getShiftStyle(exception.override_type)">
                         {{ getShiftLabel(exception.override_type) }}
                       </span>
                     </div>
@@ -212,11 +202,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useShiftExceptionStore } from '@/stores/shift-exception.store'
+import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
 import { useOptionStore } from '@/stores/option.store'
 import ShiftExceptionFilter from '@/components/historial/ShiftExceptionFilter.vue'
 import { formatTitleCase } from '@/utils/text-formatters'
 
 const exceptionStore = useShiftExceptionStore()
+const turnSiglaStore = useTurnSiglaStore()
 const optionStore = useOptionStore()
 
 const loading = ref(false)
@@ -351,29 +343,56 @@ function formatDateTime(dateStr: string) {
 }
 
 function getShiftLabel(type: string) {
-  const labels: Record<string, string> = {
-    LARGO: 'Largo',
-    NOCHE: 'Noche',
-    LIBRE: 'Libre'
-  }
-  return labels[type] || formatTitleCase(type)
+  return formatTitleCase(turnSiglaStore.mapSiglaToNombre(type))
 }
 
-function getShiftBadgeClass(type: string) {
-  const classes: Record<string, string> = {
-    LARGO: 'glass-warning',
-    NOCHE: 'glass-primary',
-    LIBRE: 'glass-success'
+function getShiftStyle(type: string) {
+  const match = turnSiglaStore.siglas.find(
+    (s) => s.sigla === type || s.nombre.toUpperCase() === type.toUpperCase()
+  )
+
+  if (match) {
+    // Dynamic color from DB
+    // Convert hex to rgba for glass effect
+    const hex = match.color || '#64748b'
+    // Simple hex to rgba conversion
+    let c: any
+    if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+      c = hex.substring(1).split('')
+      if (c.length === 3) {
+        c = [c[0], c[0], c[1], c[1], c[2], c[2]]
+      }
+      c = '0x' + c.join('')
+      const r = (c >> 16) & 255
+      const g = (c >> 8) & 255
+      const b = c & 255
+      // Return glass style
+      return {
+        background: `rgba(${r}, ${g}, ${b}, 0.1)`,
+        color: `rgb(${Math.max(0, r - 50)}, ${Math.max(0, g - 50)}, ${Math.max(0, b - 50)})`, // Darker text
+        border: `1px solid rgba(${r}, ${g}, ${b}, 0.2)`
+      }
+    }
   }
-  return classes[type] || 'glass-secondary'
+
+  // Fallback
+  return {
+    background: '#f1f5f9',
+    color: '#64748b',
+    border: '1px solid #e2e8f0'
+  }
 }
 
 function getAssignmentName(exception: any) {
   const assignment = exception.assignment_id
-  if (assignment && typeof assignment === 'object' && assignment.user_id) {
-    const user = assignment.user_id
-    if (user && typeof user === 'object' && user.nombre) {
-      return formatTitleCase(`${user.nombre} ${user.apellido}`)
+  if (assignment && typeof assignment === 'object') {
+    // Case 1: TurnAssignment (User nested)
+    if (assignment.user_id && assignment.user_id.nombre) {
+      return formatTitleCase(`${assignment.user_id.nombre} ${assignment.user_id.apellido}`)
+    }
+    // Case 2: Replacement (Fields at root)
+    if (assignment.nombre_entrante) {
+      return formatTitleCase(`${assignment.nombre_entrante} ${assignment.apellido_entrante}`)
     }
   }
   return 'N/A'
@@ -381,11 +400,21 @@ function getAssignmentName(exception: any) {
 
 function getAssignmentCargo(exception: any) {
   const assignment = exception.assignment_id
-  if (assignment && typeof assignment === 'object' && assignment.user_id) {
-    const user = assignment.user_id
-    if (user && typeof user === 'object' && user.tipo_cargo) {
-      return formatTitleCase(user.tipo_cargo)
+  if (assignment && typeof assignment === 'object') {
+    // Case 1: TurnAssignment
+    if (assignment.user_id && assignment.user_id.tipo_cargo) {
+      return formatTitleCase(assignment.user_id.tipo_cargo)
     }
+    // Case 2: Replacement - try to get from populated user, or fallback
+    if (
+      assignment.id_entrante &&
+      typeof assignment.id_entrante === 'object' &&
+      assignment.id_entrante.tipo_cargo
+    ) {
+      return formatTitleCase(assignment.id_entrante.tipo_cargo)
+    }
+    // Fallback context
+    if (assignment.rut_entrante) return 'Reemplazo'
   }
   return ''
 }
@@ -393,7 +422,11 @@ function getAssignmentCargo(exception: any) {
 function getAssignmentService(exception: any) {
   const assignment = exception.assignment_id
   if (assignment && typeof assignment === 'object') {
+    // Case 1: Explicit service field (Replacement has 'servicio')
+    if (assignment.servicio) return formatTitleCase(assignment.servicio)
     if (assignment.service) return formatTitleCase(assignment.service)
+
+    // Case 2: Nested user service
     if (
       assignment.user_id &&
       typeof assignment.user_id === 'object' &&
@@ -418,8 +451,8 @@ onMounted(async () => {
   // filters.value.startDate = null
   // filters.value.endDate = null
 
-  await optionStore.mostrarOpciones()
-  loadExceptions() // Trigger initial load (likely returns all or recent depending on backend)
+  await Promise.all([optionStore.mostrarOpciones(), turnSiglaStore.fetchSiglas()])
+  loadExceptions() // Trigger initial load
 })
 </script>
 

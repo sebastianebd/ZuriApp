@@ -73,8 +73,11 @@ export const useShiftExceptionStore = defineStore('shiftException', () => {
       }
 
       return response.data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating exception:', error)
+      if (error.response?.data) {
+        console.error('Server Validation Details:', error.response.data)
+      }
       throw error
     } finally {
       loading.value = false
