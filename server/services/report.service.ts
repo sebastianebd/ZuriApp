@@ -356,8 +356,15 @@ export const getMonthlyReport = async ({
       const entry = mergedGrid.get(day);
       entry.isOutOfContract = false;
       timeline.push(entry);
+    } else {
+      // Day is out of contract or has no shifts, but we include it for the calendar view
+      timeline.push({
+        date: startDate.date(day).toDate(),
+        dayNum: day,
+        items: [],
+        isOutOfContract: true, // Marked as out of contract/empty
+      });
     }
-    // Else: Day is out of contract (not in mergedGrid), so exclude from timeline completely.
   }
 
   // Recalculate Grand Totals based on actual content

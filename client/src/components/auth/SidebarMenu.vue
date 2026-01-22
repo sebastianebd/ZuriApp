@@ -33,6 +33,15 @@
           <i class="bi bi-briefcase"></i>
           <span class="text">Gestión de Cargos</span>
         </router-link>
+        <router-link
+          :to="{ name: 'personal-ficha-turnos' }"
+          class="menu-item"
+          title="Ficha de Turnos"
+          v-if="can('shifts.view')"
+        >
+          <i class="bi bi-person-lines-fill"></i>
+          <span class="text">Ficha de Turnos</span>
+        </router-link>
       </div>
 
       <!-- Operaciones Section -->
@@ -64,15 +73,6 @@
         >
           <i class="bi bi-calendar-range"></i>
           <span class="text">Turnos Actuales</span>
-        </router-link>
-        <router-link
-          :to="{ name: 'operaciones-calendario-turnos' }"
-          class="menu-item"
-          title="Calendario Turnos"
-          v-if="can('shifts.view')"
-        >
-          <i class="bi bi-calendar4-week"></i>
-          <span class="text">Calendario Turnos</span>
         </router-link>
       </div>
 

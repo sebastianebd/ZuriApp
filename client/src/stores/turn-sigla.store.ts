@@ -109,6 +109,12 @@ export const useTurnSiglaStore = defineStore('turnSigla', () => {
     return found ? found.nombre : 'LIBRE' // Safe default if not found
   }
 
+  function mapSiglaToColor(sigla: string): string | undefined {
+    const s = sigla.toUpperCase()
+    const found = siglas.value.find((t) => t.sigla === s)
+    return found ? found.color : undefined
+  }
+
   return {
     siglas,
     loading,
@@ -117,6 +123,7 @@ export const useTurnSiglaStore = defineStore('turnSigla', () => {
     createSigla,
     updateSigla,
     deleteSigla,
-    mapSiglaToNombre
+    mapSiglaToNombre,
+    mapSiglaToColor
   }
 })
