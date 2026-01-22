@@ -142,21 +142,22 @@ async function obtenerTodos(allowedCargos?: string[], search?: string) {
     query.tipo_cargo = { $in: allowedCargos };
   }
 
-  // Search Logic
+  // Search Logic (Optimized: Prefix Match for Index Usage)
   if (search && search.trim().length > 0) {
-    const terms = search.trim().split(/\s+/); // Split by whitespace
+    const terms = search.trim().toUpperCase().split(/\s+/); // Normalize to Uppercase
 
     // Each term must match at least one field ($and of $ors)
     const andConditions = terms.map((term) => {
       const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const regex = new RegExp(safeTerm, "i");
+      // Anchor to start (^), Case sensitive (since data is Uppercase)
+      const regex = new RegExp("^" + safeTerm);
 
       return {
         $or: [
           { rut: regex },
           { nombre: regex },
           { apellido: regex },
-          { cargo: regex },
+          { tipo_cargo: regex }, // Also checking cargo if users search "TENS"
         ],
       };
     });
@@ -185,12 +186,30 @@ async function obtenerTodosPaginado(options: {
     query.tipo_cargo = { $in: allowedCargos };
   }
 
-  // Search Logic (optimized with indexes)
+  // Search Logic (Optimized: Prefix Match for Index Usage)
   if (search && search.trim().length > 0) {
-    const safeTerm = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(safeTerm, "i");
+    const terms = search.trim().toUpperCase().split(/\s+/); // Normalize to Uppercase
 
-    query.$or = [{ rut: regex }, { nombre: regex }, { apellido: regex }];
+    // Each term must match at least one field ($and of $ors)
+    const andConditions = terms.map((term) => {
+      const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // Anchor to start (^) matches Index Prefixes.
+      // Data is Uppercase, so we removed 'i' flag and uppercased input.
+      const regex = new RegExp("^" + safeTerm);
+
+      return {
+        $or: [
+          { rut: regex },
+          { nombre: regex },
+          { apellido: regex },
+          // { tipo_cargo: regex } // Optional
+        ],
+      };
+    });
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
   }
 
   // Calculate skip for pagination

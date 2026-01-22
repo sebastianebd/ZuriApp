@@ -82,7 +82,15 @@ export const useUserStore = defineStore('user', {
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       try {
         const data = await UserService.mostrarTodosUsuarios(apiPrivate, search)
-        return data
+
+        // Normalize response: return array
+        if (Array.isArray(data)) {
+          return data
+        } else if (data && typeof data === 'object' && 'usuarios' in data) {
+          return (data as any).usuarios || []
+        }
+
+        return []
       } catch (error) {
         console.error('Error al buscar usuarios:', error)
         return []

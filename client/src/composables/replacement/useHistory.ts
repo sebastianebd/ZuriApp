@@ -4,7 +4,6 @@ import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import type { RegisterDataReemplazo, User } from '@/types/models'
 import socket from '@/plugins/socket'
-// @ts-ignore
 import { debounce } from 'lodash-es'
 
 export function useHistory() {

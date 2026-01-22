@@ -4,6 +4,7 @@ import { useReportStore } from '../../stores/report.store'
 import { useUserStore } from '../../stores/user.store'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
+import { debounce } from 'lodash-es'
 
 const reportStore = useReportStore()
 const userStore = useUserStore()
@@ -13,26 +14,26 @@ const userOptions = ref<any[]>([]) // Local options for autocomplete
 const month = ref(1)
 const year = ref(2026)
 
-// Debounce helper
-let debounceTimeout: any = null
+// 🚀 Debounced Search with Lodash (300ms)
+const performSearch = debounce(async (search: string, loading: (l: boolean) => void) => {
+  try {
+    const results = await userStore.buscarUsuarios(search)
+    userOptions.value = results
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading(false)
+  }
+}, 300)
 
 const onSearch = (search: string, loading: (l: boolean) => void) => {
   if (search.length < 1) return
 
+  // 1. Immediate UI Feedback
   loading(true)
 
-  if (debounceTimeout) clearTimeout(debounceTimeout)
-
-  debounceTimeout = setTimeout(async () => {
-    try {
-      const results = await userStore.buscarUsuarios(search)
-      userOptions.value = results
-    } catch (e) {
-      console.error(e)
-    } finally {
-      loading(false)
-    }
-  }, 350) // 350ms wait
+  // 2. Debounced API Call
+  performSearch(search, loading)
 }
 
 const months = [
@@ -126,6 +127,10 @@ const downloadPDF = () => {
   window.print()
   document.title = originalTitle
 }
+
+const getUserLabel = (option: any) => {
+  return `${option.nombre} ${option.apellido}`
+}
 </script>
 
 <template>
@@ -137,7 +142,7 @@ const downloadPDF = () => {
         :options="userOptions"
         :filterable="false"
         @search="onSearch"
-        label="full_name"
+        :get-option-label="getUserLabel"
         placeholder="Buscar Funcionario (Nombre o RUT)..."
         class="user-search premium-select"
       >
@@ -232,34 +237,37 @@ const downloadPDF = () => {
           <div class="employee-grid">
             <div class="employee-item">
               <label>Funcionario</label>
-              <value
+              <span class="value-text"
                 >{{ reportStore.reportData.user.nombre }}
-                {{ reportStore.reportData.user.apellido }}</value
+                {{ reportStore.reportData.user.apellido }}</span
               >
             </div>
             <div class="employee-item">
               <label>RUT</label>
-              <value>{{ reportStore.reportData.user.rut }}</value>
+              <span class="value-text">{{ reportStore.reportData.user.rut }}</span>
             </div>
             <div class="employee-item">
               <label>Cargo</label>
-              <value>{{ reportStore.reportData.user.cargo }}</value>
+              <span class="value-text">{{ reportStore.reportData.user.cargo }}</span>
             </div>
             <div class="employee-item">
               <label>Servicio Principal</label>
-              <value>{{ reportStore.reportData.serviceStats[0]?.serviceName || 'N/A' }}</value>
+              <span class="value-text">{{
+                reportStore.reportData.serviceStats[0]?.serviceName || 'N/A'
+              }}</span>
             </div>
             <div class="employee-item">
               <label>Antigüedad</label>
-              <value>{{ reportStore.reportData.user.antiguedad }}</value>
+              <span class="value-text">{{ reportStore.reportData.user.antiguedad }}</span>
             </div>
             <div class="employee-item">
               <label>Período Analizado</label>
-              <value
+              <label>Período Analizado</label>
+              <span class="value-text"
                 >01/{{ String(month).padStart(2, '0') }}/{{ year }} -
                 {{ new Date(year, month, 0).getDate() }}/{{ String(month).padStart(2, '0') }}/{{
                   year
-                }}</value
+                }}</span
               >
             </div>
           </div>
@@ -534,7 +542,6 @@ const downloadPDF = () => {
           </thead>
           <tbody>
             <template v-for="day in reportStore.reportData.timeline" :key="day.dayNum">
-              <!-- Case 1: Free Day (Empty OR Explicit 'X') -->
               <tr
                 v-if="
                   day.items.length === 0 ||
@@ -547,7 +554,6 @@ const downloadPDF = () => {
                 </td>
               </tr>
 
-              <!-- Case 2: Regular Shifts -->
               <template v-else>
                 <tr v-for="(item, idx) in day.items" :key="idx">
                   <td>{{ formatReportDate(day.date) }}</td>
@@ -814,7 +820,7 @@ const downloadPDF = () => {
   text-transform: uppercase;
 }
 
-.employee-item value {
+.employee-item .value-text {
   display: block;
   font-size: 14px;
   color: #333;
