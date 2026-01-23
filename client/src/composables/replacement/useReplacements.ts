@@ -20,12 +20,19 @@ export function useReplacements() {
   // 🏢 ENTERPRISE: Load options data on mount
   onMounted(async () => {
     try {
+      // Load Options
       const opciones = await optionStore.mostrarOpciones()
       listaDeTurnos.value = opciones.tiposTurno || []
       listaDeServicios.value = opciones.servicios || []
       listaDeCargos.value = opciones.tipoCargo || []
+
+      // Load Initial Data
+      await replacementStore.fetchActiveReplacementsPaginated({
+        page: currentPage.value,
+        limit: itemsPerPage.value
+      })
     } catch (error) {
-      console.error('[useReplacements] Error loading options:', error)
+      console.error('[useReplacements] Error loading data:', error)
     }
   })
 

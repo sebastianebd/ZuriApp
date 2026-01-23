@@ -99,15 +99,26 @@ const startOffset = computed(() => {
   return firstDay === 0 ? 6 : firstDay - 1
 })
 
+import { formatTitleCase } from '../../utils/text-formatters'
+
+// ... existing imports ...
+
+// ... inside script ...
+
 const getShiftName = (sigla: string) => {
-  return turnSiglaStore.mapSiglaToNombre(sigla) // e.g. "Largo", "Noche"
+  const rawName = turnSiglaStore.mapSiglaToNombre(sigla) // e.g. "LARGO", "NOCHE"
+  return formatTitleCase(rawName)
 }
 
-// Dynamic Style for Shift Pill
-const getShiftStyle = (sigla: string) => {
+// Dynamic Style for Calendar Day
+const getDayStyle = (day: any) => {
+  if (!day.items || day.items.length === 0) return {}
+
+  // Take the first breakdown item to color the cell
+  // In this domain, usually 1 shift per day or replacement overrides it.
+  const sigla = day.items[0].sigla
   const hex = turnSiglaStore.mapSiglaToColor(sigla) || '#64748b'
 
-  // Convert Hex to RGBA for glass effect
   let r = 0,
     g = 0,
     b = 0
@@ -122,9 +133,9 @@ const getShiftStyle = (sigla: string) => {
   }
 
   return {
-    backgroundColor: `rgba(${r}, ${g}, ${b}, 0.1)`,
-    color: `rgba(${r}, ${g}, ${b}, 1)`,
-    border: `1px solid rgba(${r}, ${g}, ${b}, 0.2)`
+    backgroundColor: `rgba(${r}, ${g}, ${b}, 1)`,
+    color: '#ffffff',
+    borderColor: `rgba(${r}, ${g}, ${b}, 1)`
   }
 }
 
@@ -151,7 +162,7 @@ const isToday = (dayNum: number) => {
           :filterable="false"
           @search="onSearch"
           :get-option-label="getUserLabel"
-          placeholder="Buscar..."
+          placeholder="Buscar Funcionario (Nombre o RUT)..."
           class="user-select premium-select"
         >
           <template #option="{ nombre, apellido, rut, tipo_cargo }">
@@ -182,34 +193,86 @@ const isToday = (dayNum: number) => {
             <span>Servicio</span>
             <strong>{{ reportStore.reportData.serviceStats[0]?.serviceName || 'N/A' }}</strong>
           </div>
-          <div class="detail-row">
-            <span>Antigüedad</span>
-            <strong>{{ reportStore.reportData.user.antiguedad || 'N/A' }}</strong>
-          </div>
         </div>
       </div>
 
-      <!-- KPI Cards -->
       <div v-if="reportStore.reportData" class="kpi-grid fade-in">
         <div class="kpi-card total">
-          <div class="kpi-icon">⏱️</div>
+          <div class="kpi-icon">
+            <!-- Clock (Total Hours) -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="feather feather-clock"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
           <div class="kpi-content">
             <span class="kpi-value">{{ reportStore.reportData.totals.hours }}</span>
             <span class="kpi-label">Horas Totales</span>
           </div>
         </div>
         <div class="kpi-card day">
-          <div class="kpi-icon">☀️</div>
+          <div class="kpi-icon">
+            <!-- Sun (Day Hours) -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="feather feather-sun"
+            >
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </div>
           <div class="kpi-content">
             <span class="kpi-value">{{ reportStore.reportData.totals.dayHours }}</span>
-            <span class="kpi-label">Diurnas</span>
+            <span class="kpi-label">Horas Diurnas</span>
           </div>
         </div>
         <div class="kpi-card night">
-          <div class="kpi-icon">🌙</div>
+          <div class="kpi-icon">
+            <!-- Moon (Night Hours) -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="feather feather-moon"
+            >
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </div>
           <div class="kpi-content">
             <span class="kpi-value">{{ reportStore.reportData.totals.nightHours }}</span>
-            <span class="kpi-label">Nocturnas</span>
+            <span class="kpi-label">Horas Nocturnas</span>
           </div>
         </div>
       </div>
@@ -271,22 +334,18 @@ const isToday = (dayNum: number) => {
             :key="day.dayNum"
             class="calendar-day"
             :class="{ 'is-today': isToday(day.dayNum) }"
+            :style="getDayStyle(day)"
           >
             <div class="day-number">{{ day.dayNum }}</div>
 
             <!-- Shifts -->
             <div class="shifts-stack">
-              <div
-                v-for="(item, idx) in day.items"
-                :key="idx"
-                class="shift-pill"
-                :style="getShiftStyle(item.sigla)"
-              >
+              <div v-for="(item, idx) in day.items" :key="idx" class="shift-info">
                 <span class="shift-name">{{ getShiftName(item.sigla) }}</span>
                 <span class="shift-time">{{ item.startTime }}-{{ item.endTime }}</span>
               </div>
-              <div v-if="day.items.length === 0" class="shift-empty">-</div>
             </div>
+            <!-- Empty state handling via CSS or just empty div -->
           </div>
         </div>
       </div>
@@ -306,7 +365,7 @@ const isToday = (dayNum: number) => {
   grid-template-columns: 320px 1fr;
   gap: 24px;
   padding: 24px;
-  background: #f1f5f9;
+  background: #f8fafc;
   min-height: calc(100vh - 70px); /* Adjust based on navbar */
   font-family: 'Inter', sans-serif;
 }
@@ -327,11 +386,82 @@ const isToday = (dayNum: number) => {
   display: block;
 }
 
+/* User Option Dropdown Item */
+.user-option {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.user-option strong {
+  font-size: 0.9rem;
+  color: #1e293b;
+  text-transform: uppercase;
+}
+.user-option small {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
 /* Premium Select Overrides */
-.premium-select {
+.premium-select ::v-deep .vs__dropdown-toggle {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 3px;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
+  transition: all 0.2s ease;
+  min-height: 42px;
+}
+
+.premium-select ::v-deep .vs__search {
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.premium-select ::v-deep .vs__search::placeholder {
+  color: #94a3b8;
+}
+
+.premium-select ::v-deep .vs__selected {
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.premium-select ::v-deep .vs__actions svg {
+  fill: #64748b;
+  transform: scale(0.8);
+}
+
+.premium-select ::v-deep .vs__dropdown-menu {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  font-size: 0.875rem;
+  margin-top: 4px;
+  z-index: 1000;
+}
+
+.premium-select ::v-deep .vs__dropdown-option {
+  border-radius: 0.25rem;
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  color: #475569;
+}
+
+.premium-select ::v-deep .vs__dropdown-option--highlight {
+  background: #3b82f6;
+  color: white;
+}
+
+.premium-select:hover ::v-deep .vs__dropdown-toggle {
+  border-color: #cbd5e1;
+}
+
+.premium-select ::v-deep .vs--open .vs__dropdown-toggle,
+.premium-select:focus-within ::v-deep .vs__dropdown-toggle {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 /* Profile Card */
@@ -418,7 +548,6 @@ const isToday = (dayNum: number) => {
 }
 
 .kpi-icon {
-  font-size: 1.5rem;
   width: 40px;
   height: 40px;
   display: flex;
@@ -426,6 +555,12 @@ const isToday = (dayNum: number) => {
   justify-content: center;
   background: #f8fafc;
   border-radius: 8px;
+  color: #64748b; /* Ensure SVG takes this color */
+}
+.kpi-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2;
 }
 
 .kpi-content {
@@ -544,20 +679,21 @@ const isToday = (dayNum: number) => {
 .calendar-day {
   background: #f8fafc;
   border-radius: 12px;
-  padding: 10px;
+  padding: 8px;
   min-height: 100px;
   border: 1px solid transparent;
   transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 .calendar-day:hover {
-  background: white;
-  border-color: #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 .calendar-day.is-today {
-  background: #eff6ff;
-  border: 2px solid #3b82f6;
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 2px #3b82f6;
+  z-index: 2;
 }
 
 .calendar-day.empty {
@@ -565,44 +701,38 @@ const isToday = (dayNum: number) => {
 }
 
 .day-number {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #334155;
-  margin-bottom: 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: inherit;
+  opacity: 0.9;
 }
 
 .shifts-stack {
+  flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  justify-content: center;
 }
 
-.shift-pill {
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  font-size: 0.75rem;
+.shift-info {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
   text-align: center;
+  width: 100%;
 }
 .shift-name {
-  font-weight: 700;
-  font-size: 0.8rem;
+  font-weight: 800;
+  font-size: 1rem;
   line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
 }
 .shift-time {
   opacity: 0.9;
-  font-size: 0.65rem;
-}
-.shift-empty {
-  text-align: center;
-  color: #cbd5e1;
-  font-size: 1.5rem;
-  line-height: 1;
-  margin-top: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* Empty State */

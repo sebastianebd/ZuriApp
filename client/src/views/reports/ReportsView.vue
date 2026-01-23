@@ -542,45 +542,51 @@ const getUserLabel = (option: any) => {
           </thead>
           <tbody>
             <template v-for="day in reportStore.reportData.timeline" :key="day.dayNum">
-              <tr
-                v-if="
-                  day.items.length === 0 ||
-                  (day.items.length === 1 && ['X', 'LIBRE'].includes(day.items[0].sigla))
-                "
-              >
-                <td>{{ formatReportDate(day.date) }}</td>
-                <td colspan="8" style="text-align: center; color: #10b981; font-weight: 600">
-                  <span class="shift-type shift-libre">DÍA LIBRE</span>
-                </td>
-              </tr>
-
-              <template v-else>
-                <tr v-for="(item, idx) in day.items" :key="idx">
+              <template v-if="!day.isOutOfContract">
+                <tr
+                  v-if="
+                    day.items.length === 0 ||
+                    (day.items.length === 1 && ['X', 'LIBRE'].includes(day.items[0].sigla))
+                  "
+                >
                   <td>{{ formatReportDate(day.date) }}</td>
-                  <td>
-                    <span class="service-badge" :class="getServiceBadgeClass(item.service)">{{
-                      item.service
-                    }}</span>
-                  </td>
-                  <td>
-                    <span class="shift-type" :class="getShiftClass(item.sigla)">
-                      {{
-                        item.sigla === 'L' ? 'Diurno' : item.sigla === 'N' ? 'Nocturno' : item.sigla
-                      }}
-                      <span v-if="item.isReplacement" class="text-xs text-gray-500"
-                        >(Reemplazo)</span
-                      >
-                    </span>
-                  </td>
-                  <td class="center">{{ item.sigla }}</td>
-                  <td class="center">{{ item.startTime }}</td>
-                  <td class="center">{{ item.endTime }}</td>
-                  <td class="center">{{ item.dayHrs }}</td>
-                  <td class="center">{{ item.nightHrs }}</td>
-                  <td class="center">
-                    <strong>{{ item.hours }}</strong>
+                  <td colspan="8" style="text-align: center; color: #10b981; font-weight: 600">
+                    <span class="shift-type shift-libre">DÍA LIBRE</span>
                   </td>
                 </tr>
+
+                <template v-else>
+                  <tr v-for="(item, idx) in day.items" :key="idx">
+                    <td>{{ formatReportDate(day.date) }}</td>
+                    <td>
+                      <span class="service-badge" :class="getServiceBadgeClass(item.service)">{{
+                        item.service
+                      }}</span>
+                    </td>
+                    <td>
+                      <span class="shift-type" :class="getShiftClass(item.sigla)">
+                        {{
+                          item.sigla === 'L'
+                            ? 'Diurno'
+                            : item.sigla === 'N'
+                            ? 'Nocturno'
+                            : item.sigla
+                        }}
+                        <span v-if="item.isReplacement" class="text-xs text-gray-500"
+                          >(Reemplazo)</span
+                        >
+                      </span>
+                    </td>
+                    <td class="center">{{ item.sigla }}</td>
+                    <td class="center">{{ item.startTime }}</td>
+                    <td class="center">{{ item.endTime }}</td>
+                    <td class="center">{{ item.dayHrs }}</td>
+                    <td class="center">{{ item.nightHrs }}</td>
+                    <td class="center">
+                      <strong>{{ item.hours }}</strong>
+                    </td>
+                  </tr>
+                </template>
               </template>
             </template>
 

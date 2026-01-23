@@ -93,7 +93,6 @@
       :fechas-bloqueadas="fechasOcupadas"
       @cerrar="closeUpdateModal"
       @guardar="handleUpdate"
-      @buscar-entrante="seleccionarEntranteEnEdicion"
       @sustituir-usuario="handleSustitucion"
       @update:registro="(nuevoRegistro) => (registroActual = nuevoRegistro)"
     />
@@ -106,17 +105,6 @@
       @cerrar="closeSubstituteModal"
       @confirmar-sustitucion="confirmarSustitucion"
       @update:fecha-corte-a="(nuevaFecha) => (fechaCorteSustitucion = nuevaFecha)"
-      @sustituir-usuario="seleccionarEntranteEnEdicion"
-    />
-
-    <!-- MODAL USUARIOS -->
-    <ReplacementModalUsers
-      :visible="userModalVisible"
-      :grupo="grupo"
-      :lista-de-cargos="listaDeCargos"
-      :cargo-filtro="grupo === 2 ? cargoDeFiltrado : undefined"
-      @cerrar="closeUserModal"
-      @usuario-seleccionado="seleccionarUsuario"
     />
   </div>
 </template>
@@ -128,7 +116,6 @@ import {
   ReplacementFilter,
   ReplacementTable,
   ReplacementModalUpdate,
-  ReplacementModalUsers,
   ReplacementModalCreate,
   ReplacementModalSubstitute
 } from '@/components/replacements'
@@ -148,16 +135,12 @@ const {
   // Data Lists
   listaDeTurnos,
   listaDeServicios,
-  listaDeCargos,
   fechasOcupadas,
 
   // Modals Visibility & Data
   updateModalVisible,
   createModalVisible,
-  userModalVisible,
   substituteModalVisible,
-  grupo,
-  cargoDeFiltrado,
   registroActual,
   registroNuevo,
   nuevoEntranteSustitucion,
@@ -167,7 +150,6 @@ const {
   closeUpdateModal,
   closeCreateModal,
   closeSubstituteModal,
-  closeUserModal,
 
   // Actions
   openCreateModal,
@@ -176,11 +158,8 @@ const {
   handleFinalizar,
   handleAnular,
   handleUpdate,
-  seleccionarEntranteEnEdicion,
   handleSustitucion,
-  confirmarSustitucion,
-  seleccionarGrupo,
-  seleccionarUsuario
+  confirmarSustitucion
 } = useReplacements()
 
 const { exportReplacementToPDF } = useExport()
