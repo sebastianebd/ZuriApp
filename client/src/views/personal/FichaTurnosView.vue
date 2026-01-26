@@ -3,6 +3,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useReportStore } from '../../stores/report.store'
 import { useUserStore } from '../../stores/user.store'
 import { useTurnSiglaStore } from '../../stores/turn-sigla.store'
+import { useReplacementStore } from '../../stores/replacement.store'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
 import { debounce } from 'lodash-es'
@@ -10,6 +11,7 @@ import { debounce } from 'lodash-es'
 const reportStore = useReportStore()
 const userStore = useUserStore()
 const turnSiglaStore = useTurnSiglaStore()
+const replacementStore = useReplacementStore()
 
 // --- State ---
 const selectedUser = ref<any>(null)
@@ -62,7 +64,14 @@ const fetchData = async () => {
     reportStore.currentFilters.userId = selectedUser.value._id
     reportStore.currentFilters.month = month.value
     reportStore.currentFilters.year = year.value
-    await reportStore.fetchReportSummary()
+    await Promise.all([
+      reportStore.fetchReportSummary(),
+      // Fetch replacements where user is involved (search by RUT covers both, looking for Saliente)
+      replacementStore.fetchActiveReplacementsPaginated({
+        search: selectedUser.value.rut,
+        limit: 100 // Ensure we catch all relevant ones
+      })
+    ])
   } catch (error) {
     console.error('Error fetching data:', error)
   } finally {
@@ -112,7 +121,18 @@ const getShiftName = (sigla: string) => {
 
 // Dynamic Style for Calendar Day
 const getDayStyle = (day: any) => {
-  if (!day.items || day.items.length === 0) return {}
+  if (!day.items || day.items.length === 0) {
+    // Check for Absence
+    if (isAbsent(day.dayNum)) {
+      return {
+        backgroundColor: '#e2e8f0', // Gray-200
+        color: '#94a3b8',
+        borderColor: '#cbd5e1',
+        cursor: 'not-allowed'
+      }
+    }
+    return {}
+  }
 
   // Take the first breakdown item to color the cell
   // In this domain, usually 1 shift per day or replacement overrides it.
@@ -137,6 +157,16 @@ const getDayStyle = (day: any) => {
     color: '#ffffff',
     borderColor: `rgba(${r}, ${g}, ${b}, 1)`
   }
+}
+
+const isAbsent = (dayNum: number) => {
+  if (!selectedUser.value) return false
+  const dateStr = `${year.value}-${String(month.value).padStart(2, '0')}-${String(dayNum).padStart(
+    2,
+    '0'
+  )}`
+  const absenceDates = replacementStore.getFechasAusencia(selectedUser.value._id)
+  return absenceDates.includes(dateStr)
 }
 
 const isToday = (dayNum: number) => {
@@ -346,6 +376,9 @@ const isToday = (dayNum: number) => {
               </div>
             </div>
             <!-- Empty state handling via CSS or just empty div -->
+            <div v-if="!day.items?.length && isAbsent(day.dayNum)" class="absence-marker">
+              <span>AUSENTE</span>
+            </div>
           </div>
         </div>
       </div>
@@ -769,6 +802,18 @@ const isToday = (dayNum: number) => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.absence-marker {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
 }
 
 @media (max-width: 1024px) {

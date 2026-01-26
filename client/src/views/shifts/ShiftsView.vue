@@ -331,6 +331,7 @@ function openModal() {
 
 function closeModal() {
   showModal.value = false
+  loadData()
 }
 
 async function handleSaveAssignment(payload: any) {

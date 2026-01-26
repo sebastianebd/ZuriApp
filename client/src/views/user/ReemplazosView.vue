@@ -105,6 +105,7 @@
       @cerrar="closeSubstituteModal"
       @confirmar-sustitucion="confirmarSustitucion"
       @update:fecha-corte-a="(nuevaFecha) => (fechaCorteSustitucion = nuevaFecha)"
+      @update:nuevo-funcionario-b="(val) => (nuevoEntranteSustitucion = val)"
     />
   </div>
 </template>

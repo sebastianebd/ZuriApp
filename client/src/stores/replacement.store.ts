@@ -58,12 +58,16 @@ export const useReplacementStore = defineStore('replacement', {
 
     getFechasOcupadas:
       (state) =>
-      (funcionarioId: string): string[] => {
+      (funcionarioId: string, sourceData?: RegisterDataReemplazo[]): string[] => {
         const fechasOcupadasSet = new Set<string>()
+        const data = sourceData || state.currentPageReplacements
+        const getId = (val: any) => (val && typeof val === 'object' && val._id ? val._id : val)
 
-        // 1. Filtrar los reemplazos donde este funcionario es el SALIENTE
-        const reemplazosDelFuncionario = state.currentPageReplacements.filter(
-          (r) => r.id_entrante === funcionarioId
+        // 1. Filtrar los reemplazos donde este funcionario es el ENTRANTE (Ya está trabajando)
+        const reemplazosDelFuncionario = data.filter(
+          (r) =>
+            String(getId(r.id_entrante)) === String(funcionarioId) ||
+            r.rut_entrante === funcionarioId
         )
 
         // 2. Expandir los rangos de fechas de cada reemplazo a días individuales
@@ -74,6 +78,30 @@ export const useReplacementStore = defineStore('replacement', {
 
         // 3. Devolver la lista única de fechas ocupadas
         return Array.from(fechasOcupadasSet)
+      },
+
+    // NEW: Get dates where user is SALIENTE (Absent)
+    getFechasAusencia:
+      (state) =>
+      (funcionarioId: string, sourceData?: RegisterDataReemplazo[]): string[] => {
+        const fechasAusenciaSet = new Set<string>()
+        const data = sourceData || state.currentPageReplacements
+        const getId = (val: any) => (val && typeof val === 'object' && val._id ? val._id : val)
+
+        // 1. Filtrar reemplazos donde es SALIENTE
+        const ausencias = data.filter(
+          (r) =>
+            String(getId(r.id_saliente)) === String(funcionarioId) ||
+            r.rut_saliente === funcionarioId
+        )
+
+        // 2. Expand ranges
+        ausencias.forEach((r) => {
+          const fechasRango = getDatesInRange(r.fecha_inicio, r.fecha_termino)
+          fechasRango.forEach((fecha) => fechasAusenciaSet.add(fecha))
+        })
+
+        return Array.from(fechasAusenciaSet)
       },
 
     reemplazosFiltrados(state) {
@@ -148,6 +176,59 @@ export const useReplacementStore = defineStore('replacement', {
         throw error
       } finally {
         this.cargando = false
+      }
+    },
+
+    // 🚀 NEW: Check conflicts without mutating state (for Modals)
+    async checkConflicts(params: { search: string; limit?: number }) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      const searchTerm = params.search
+
+      // Helper: Normalize RUT (remove dots, lowercase) for comparison
+      const normalize = (val: string | undefined | null) => {
+        if (!val) return ''
+        return String(val).replace(/\./g, '').trim().toLowerCase()
+      }
+
+      const normalizedSearch = normalize(searchTerm)
+
+      try {
+        // WORKAROUND: Fetch ALL active replacements to manually filter client-side
+        // This ensures we find records where the user is 'Entrante', which might be missed by backend search.
+        const response = await ReplacementService.mostrarReemplazos(apiPrivate, { limit: 1000 })
+
+        let allReplacements: RegisterDataReemplazo[] = []
+
+        if (response.reemplazos) {
+          allReplacements = response.reemplazos
+        } else if (Array.isArray(response)) {
+          allReplacements = response
+        }
+
+        // Filter: Match normalized RUT or ID in either role
+        const matches = allReplacements.filter((r) => {
+          const sRut = normalize(r.rut_saliente)
+          const eRut = normalize(r.rut_entrante)
+          const sId = String(r.id_saliente)
+          const eId = String(r.id_entrante)
+
+          return (
+            sRut === normalizedSearch ||
+            eRut === normalizedSearch ||
+            sId === searchTerm || // ID match (case sensitive usually fine, but strictly equal)
+            eId === searchTerm
+          )
+        })
+
+        return matches.map((r) => ({
+          ...r,
+          fecha_inicio: String(r.fecha_inicio).slice(0, 10),
+          fecha_termino: String(r.fecha_termino).slice(0, 10)
+        }))
+      } catch (error) {
+        console.error('Error checking conflicts:', error)
+        return []
       }
     },
 

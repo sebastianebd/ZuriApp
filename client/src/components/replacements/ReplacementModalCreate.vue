@@ -237,11 +237,11 @@
                   <DatePicker
                     ref="dpInicio"
                     v-model="fechaInicioComputed"
-                    :disabled-dates="isDisabled"
+                    :disabled-dates="combinedDisabledDates"
                     :min-date="today"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :popover="popoverConfig"
-                    :attributes="dateAttributes"
+                    :attributes="combinedDateAttributes"
                     is-required
                     color="blue"
                   >
@@ -268,11 +268,11 @@
                   <DatePicker
                     ref="dpTermino"
                     v-model="fechaTerminoComputed"
-                    :disabled-dates="isDisabled"
+                    :disabled-dates="combinedDisabledDates"
                     :min-date="fechaInicioComputed || today"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :popover="popoverConfig"
-                    :attributes="dateAttributes"
+                    :attributes="combinedDateAttributes"
                     is-required
                     color="blue"
                   >
@@ -339,6 +339,8 @@ import 'v-calendar/style.css'
 import { useDatePicker } from '@/composables/useDatePicker'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
+import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
+import { useReplacementStore } from '@/stores/replacement.store'
 
 const props = defineProps<{
   visible: boolean
@@ -354,6 +356,8 @@ const emit = defineEmits<{
 }>()
 
 const userStore = useUserStore()
+const turnAssignmentStore = useTurnAssignmentStore()
+const replacementStore = useReplacementStore()
 
 const registroLocal = reactive({ ...props.registro })
 const showConfirmacion = ref(false)
@@ -437,8 +441,47 @@ const searchEntrante = (query: string, loading: (isLoading: boolean) => void) =>
   }, 300)
 }
 
-// Watch selections and update registroLocal
-watch(selectedSaliente, (user) => {
+// --- Blocking Logic State ---
+const salienteBlockedDates = ref<Date[]>([])
+const entranteBlockedRanges = ref<any[]>([])
+
+// Helper to parse "YYYY-MM-DD" to Date
+const parseDateStr = (str: string) => {
+  const [y, m, d] = str.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+// Shared helper to fetch ALL blocked dates for a user (Absence + Working + Shifts)
+const fetchAllBlockedDates = async (user: User) => {
+  try {
+    const [replacements, assignments] = await Promise.all([
+      replacementStore.checkConflicts({ search: user.rut, limit: 100 }),
+      turnAssignmentStore.fetchAssignmentsByUser(user._id)
+    ])
+
+    // 1. Absences (User is Saliente)
+    const absenceStrs = replacementStore.getFechasAusencia(user._id, replacements)
+    const absenceDates = absenceStrs.map(parseDateStr)
+
+    // 2. Occupied as Replacement (User is Entrante)
+    const occupiedStrs = replacementStore.getFechasOcupadas(user._id, replacements)
+    const occupiedDates = occupiedStrs.map(parseDateStr)
+
+    // 3. Occupied by Shift Assignment
+    const shiftRanges = assignments.map((a: any) => ({
+      start: new Date(a.start_date),
+      end: a.end_date ? new Date(a.end_date) : new Date(2100, 0, 1)
+    }))
+
+    return [...absenceDates, ...occupiedDates, ...shiftRanges]
+  } catch (error) {
+    console.error(`Error fetching blocked dates for ${user.rut}:`, error)
+    return []
+  }
+}
+
+// Watch Saliente -> Update Form & Fetch ALL Blocked Dates
+watch(selectedSaliente, async (user) => {
   if (user) {
     Object.assign(registroLocal, {
       id_saliente: user._id,
@@ -446,16 +489,18 @@ watch(selectedSaliente, (user) => {
       nombre_saliente: user.nombre,
       apellido_saliente: user.apellido
     })
+    salienteBlockedDates.value = await fetchAllBlockedDates(user)
   } else {
-    // Clear saliente data
     registroLocal.id_saliente = undefined
     registroLocal.rut_saliente = undefined
     registroLocal.nombre_saliente = undefined
     registroLocal.apellido_saliente = undefined
+    salienteBlockedDates.value = []
   }
 })
 
-watch(selectedEntrante, (user) => {
+// Watch Entrante -> Update Form & Fetch ALL Blocked Dates
+watch(selectedEntrante, async (user) => {
   if (user) {
     Object.assign(registroLocal, {
       id_entrante: user._id,
@@ -463,13 +508,33 @@ watch(selectedEntrante, (user) => {
       nombre_entrante: user.nombre,
       apellido_entrante: user.apellido
     })
+    entranteBlockedRanges.value = await fetchAllBlockedDates(user)
   } else {
-    // Clear entrante data
     registroLocal.id_entrante = undefined
     registroLocal.rut_entrante = undefined
     registroLocal.nombre_entrante = undefined
     registroLocal.apellido_entrante = undefined
+    entranteBlockedRanges.value = []
   }
+})
+
+// Combine everything
+const combinedDisabledDates = computed(() => {
+  const fromProps = (props.fechasBloqueadas || []).map(parseDateStr)
+  return [...fromProps, ...salienteBlockedDates.value, ...entranteBlockedRanges.value]
+})
+
+const combinedDateAttributes = computed(() => {
+  if (combinedDisabledDates.value.length === 0) return []
+  return [
+    {
+      highlight: {
+        color: 'red',
+        fillMode: 'light'
+      },
+      dates: combinedDisabledDates.value
+    }
+  ]
 })
 
 // --- Validation Logic ---
@@ -484,6 +549,8 @@ const validationError = computed(() => {
   // 2. Validar Fechas
   if (registroLocal.fecha_inicio) {
     const start = new Date(registroLocal.fecha_inicio + 'T00:00:00')
+    start.setHours(0, 0, 0, 0)
+
     const now = new Date()
     now.setHours(0, 0, 0, 0)
 
@@ -491,11 +558,42 @@ const validationError = computed(() => {
       return 'La fecha de inicio no puede ser anterior a hoy.'
     }
 
+    let end = start
     if (registroLocal.fecha_termino) {
-      const end = new Date(registroLocal.fecha_termino + 'T00:00:00')
+      end = new Date(registroLocal.fecha_termino + 'T00:00:00')
+      end.setHours(23, 59, 59, 999)
+
       if (end < start) {
         return 'La fecha de término no puede ser anterior a la fecha de inicio.'
       }
+    } else {
+      // If no end date set yet, we only validate start against blocks if strictly needed,
+      // but usually we validate range. If single day replacment assumption?
+      // User says "input start and end".
+      // If end is missing, we assume end = start for blocking check?
+      // No, let's wait for end date usually. But if user only wants 1 day...
+      // Let's assume end = start if not provided for safety check?
+      // Or just check conflict for start date.
+      const startEnd = new Date(start)
+      startEnd.setHours(23, 59, 59, 999)
+      end = startEnd
+    }
+
+    // Default to Check Overlap
+    // combinedDisabledDates is ref<Date[]>
+    const hasConflict = combinedDisabledDates.value.some((blockedDate) => {
+      const b = new Date(blockedDate)
+      b.setHours(0, 0, 0, 0)
+      const bEnd = new Date(blockedDate)
+      bEnd.setHours(23, 59, 59, 999)
+
+      // Check if blocked date is within [start, end]
+      // Since blockedDate is a specific day (00:00:00 usually), checking if it falls in range.
+      return b >= start && b <= end
+    })
+
+    if (hasConflict) {
+      return 'El rango de fechas seleccionado entra en conflicto con un turno o ausencia existente.'
     }
   }
   return ''
@@ -545,7 +643,7 @@ watch(
 // --- Date Logic ---
 const dpInicio = ref<any>(null)
 const dpTermino = ref<any>(null)
-const { popoverConfig, isDisabled, dateAttributes } = useDatePicker(props)
+const { popoverConfig } = useDatePicker(props)
 const today = new Date()
 today.setHours(0, 0, 0, 0)
 

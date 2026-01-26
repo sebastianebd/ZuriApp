@@ -244,6 +244,7 @@ import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
 import { useUserStore } from '@/stores/user.store'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
+import { useReplacementStore } from '@/stores/replacement.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import type { User } from '@/types/models'
@@ -262,6 +263,7 @@ const usersStore = useUserStore()
 const turnAssignmentStore = useTurnAssignmentStore()
 const optionStore = useOptionStore()
 const turnTypeStore = useTurnTypeStore()
+const replacementStore = useReplacementStore()
 
 // 🏢 ENTERPRISE: User search with server-side filtering (PLANTA only)
 const selectedUser = ref<User | null>(null)
@@ -404,10 +406,33 @@ const vCalendarDisabledDates = computed(() => {
 })
 
 // Watch selectedUser instead of handling in method for clearer reactivity
+// Watch selectedUser instead of handling in method for clearer reactivity
 watch(selectedUser, async (newUser) => {
   if (newUser) {
+    // 1. Fetch Assignments (shifts)
     const assignments = await turnAssignmentStore.fetchAssignmentsByUser(newUser._id)
-    blockedDates.value = getBlockedDates(assignments)
+    const shiftBlocks = getBlockedDates(assignments)
+
+    // 2. Fetch Active Replacements (Absences)
+    // Use non-mutating checkConflicts to avoid filtering the background table
+    const replacements = await replacementStore.checkConflicts({
+      search: newUser.rut,
+      limit: 100
+    })
+
+    // 3. Get Absence Dates (User is SALIENTE)
+    const absenceDateStrings = replacementStore.getFechasAusencia(newUser._id, replacements)
+    // Convert string "YYYY-MM-DD" to range { start, end }
+    const absenceBlocks = absenceDateStrings.map((dateStr: string) => {
+      // Parse UTC to avoid timezone shifts.
+      // Assuming dateStr is YYYY-MM-DD.
+      const [y, m, d] = dateStr.split('-').map(Number)
+      const dateObj = new Date(y, m - 1, d)
+      return { start: dateObj, end: dateObj } // Single day block
+    })
+
+    // Merge blocks
+    blockedDates.value = [...shiftBlocks, ...absenceBlocks]
   } else {
     blockedDates.value = []
   }
@@ -452,17 +477,30 @@ function validateForm() {
 
   // Overlap Check (Frontend)
   if (form.value.start_date) {
-    const newStart = form.value.start_date
-    const newEnd = form.value.end_date || new Date(2100, 0, 1)
+    const newStart = new Date(form.value.start_date)
+    // IMPORTANT: Clear time part to compare only dates
+    newStart.setHours(0, 0, 0, 0)
+
+    const newEnd = form.value.end_date ? new Date(form.value.end_date) : new Date(2100, 0, 1)
+    newEnd.setHours(23, 59, 59, 999) // End at end of day
 
     const hasOverlap = blockedDates.value.some((range) => {
-      const blockedStart = range.start
-      const blockedEnd = range.end || new Date(2100, 0, 1)
+      // Create fresh date objects from range to ensure clean comparison
+      const blockedStart = new Date(range.start)
+      blockedStart.setHours(0, 0, 0, 0)
+
+      const blockedEnd = range.end ? new Date(range.end) : new Date(2100, 0, 1)
+      blockedEnd.setHours(23, 59, 59, 999)
+
+      // Overlap logic: StartA <= EndB AND EndA >= StartB
       return newStart <= blockedEnd && newEnd >= blockedStart
     })
 
     if (hasOverlap) {
-      errors.value.start_date = 'La fecha seleccionada se traslapa con un turno existente.'
+      errors.value.start_date =
+        'La fecha seleccionada entra en conflicto con una ausencia o turno existente.'
+      errors.value.end_date =
+        'La fecha seleccionada entra en conflicto con una ausencia o turno existente.'
       isValid = false
     }
   }
