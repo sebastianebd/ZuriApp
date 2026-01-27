@@ -2,13 +2,17 @@
   <div class="historial-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-exclamation-triangle text-warning me-2"></i>Historial de Excepciones
-        </h4>
-        <p class="text-secondary mb-0">
-          Registro de modificaciones manuales de turnos ({{ filteredExceptions.length }} registros)
-        </p>
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-warning">
+          <i class="bi bi-exclamation-triangle fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Historial de Excepciones</h4>
+          <p class="text-secondary small mb-0">
+            Registro de modificaciones manuales de turnos ({{ filteredExceptions.length }}
+            registros)
+          </p>
+        </div>
       </div>
       <div class="d-flex gap-2">
         <button @click="clearFilters" class="btn btn-light border fw-semibold shadow-sm px-3">
@@ -457,6 +461,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .historial-view {
   background-color: #f8fafc;
 }

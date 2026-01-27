@@ -2,11 +2,14 @@
   <div class="shifts-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4" v-if="!historyMode">
-      <div>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-calendar-range text-primary me-2"></i>Grilla de Turnos
-        </h4>
-        <p class="text-secondary mb-0">Visualiza y gestiona los turnos operativos.</p>
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-calendar-range fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Grilla de Turnos</h4>
+          <p class="text-secondary small mb-0">Visualiza y gestiona los turnos operativos.</p>
+        </div>
       </div>
 
       <!-- Filters & Controls -->
@@ -1392,5 +1395,13 @@ thead .sticky-col {
     opacity: 1;
     transform: translate(-50%, -100%);
   }
+}
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

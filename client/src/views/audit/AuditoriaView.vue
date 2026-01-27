@@ -2,14 +2,17 @@
   <div class="audit-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-shield-check text-primary me-2"></i>Registro de Auditoría
-        </h4>
-        <p class="text-secondary mb-0">
-          Seguimiento detallado de cambios y acciones en el sistema ({{ logs.length }} logs
-          mostrados)
-        </p>
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-shield-check fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Registro de Auditoría</h4>
+          <p class="text-secondary small mb-0">
+            Seguimiento detallado de cambios y acciones en el sistema ({{ logs.length }} logs
+            mostrados)
+          </p>
+        </div>
       </div>
       <div class="d-flex gap-2">
         <button class="btn btn-light border fw-semibold shadow-sm px-3" @click="openExportModal">
@@ -132,6 +135,15 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .audit-view {
   background-color: #f8fafc;
   min-height: calc(100vh - 70px);

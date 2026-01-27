@@ -2,14 +2,17 @@
   <div class="user-management-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-people-fill text-primary me-2"></i>Gestión de Usuarios
-        </h4>
-        <p class="text-secondary mb-0">
-          Administra el personal y sus permisos ({{ usuariosFiltrados.length }} usuarios
-          registrados)
-        </p>
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-people-fill fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Gestión de Usuarios</h4>
+          <p class="text-secondary small mb-0">
+            Administra el personal y sus permisos ({{ usuariosFiltrados.length }} usuarios
+            registrados)
+          </p>
+        </div>
       </div>
       <div class="d-flex gap-2">
         <button class="btn btn-light border fw-semibold shadow-sm px-3" @click="openExportModal">
@@ -197,6 +200,15 @@ const handleExportFormat = (format: 'pdf' | 'excel') => {
 </script>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .user-management-view {
   background-color: #f8fafc;
 }

@@ -340,9 +340,14 @@ const isToday = (dayNum: number) => {
     <!-- RIGHT PANEL: CALENDAR -->
     <div class="panel-right">
       <div class="calendar-header">
-        <div class="title-group">
-          <h2>Ficha de Turnos</h2>
-          <p>Vista mensual detallada</p>
+        <div class="d-flex align-items-center gap-3">
+          <div class="icon-square bg-white shadow-sm text-primary">
+            <i class="bi bi-calendar-week fs-4"></i>
+          </div>
+          <div class="title-group">
+            <h2 class="mb-0" style="font-size: 1.5rem">Ficha de Turnos</h2>
+            <p class="mb-0 text-secondary small">Vista mensual detallada</p>
+          </div>
         </div>
         <div class="current-period">
           <span class="period-text">{{ months[month - 1] }} {{ year }}</span>
@@ -393,6 +398,15 @@ const isToday = (dayNum: number) => {
 </template>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .ficha-container {
   display: grid;
   grid-template-columns: 320px 1fr;

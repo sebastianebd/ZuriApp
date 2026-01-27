@@ -3,10 +3,15 @@
     <!-- Shifts Grid Component -->
     <ShiftsView ref="shiftsViewRef" :readonly="true" :historyMode="true" :externalFilters="filters">
       <template #header-title>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-clock-history text-secondary me-2"></i>Historial de Turnos
-        </h4>
-        <p class="text-secondary mb-0">Consulta registros de meses anteriores.</p>
+        <div class="d-flex align-items-center gap-3">
+          <div class="icon-square bg-white shadow-sm text-secondary">
+            <i class="bi bi-clock-history fs-4"></i>
+          </div>
+          <div>
+            <h4 class="fw-bold mb-0 text-dark">Historial de Turnos</h4>
+            <p class="text-secondary small mb-0">Consulta registros de meses anteriores.</p>
+          </div>
+        </div>
       </template>
 
       <template #history-filters>
@@ -103,6 +108,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .turnos-historial {
   background-color: #f8fafc;
   min-height: 100vh;

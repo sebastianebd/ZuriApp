@@ -135,6 +135,22 @@ const getUserLabel = (option: any) => {
 
 <template>
   <div class="page-container">
+    <!-- Header (Screen Only) -->
+    <div
+      class="d-flex justify-content-between align-items-center mb-4 w-100 hide-print"
+      style="max-width: 210mm"
+    >
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-file-earmark-bar-graph fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Centro de Reportes</h4>
+          <p class="text-secondary small mb-0">Generación y exportación de documentos</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Controls (Screen Only) -->
     <div class="controls hide-print">
       <v-select
@@ -622,6 +638,14 @@ const getUserLabel = (option: any) => {
 </template>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .page-container {
   background: #f8fafc;
   padding: 20px;

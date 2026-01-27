@@ -2,16 +2,19 @@
   <div class="reemplazos-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-arrow-repeat text-primary me-2"></i>Gestión de Reemplazos
-        </h4>
-        <p class="text-secondary mb-0">
-          Administra los reemplazos activos en el sistema ({{
-            replacementStore.reemplazosFiltrados.length
-          }}
-          registros)
-        </p>
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-arrow-repeat fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Gestión de Reemplazos</h4>
+          <p class="text-secondary small mb-0">
+            Administra los reemplazos activos en el sistema ({{
+              replacementStore.reemplazosFiltrados.length
+            }}
+            registros)
+          </p>
+        </div>
       </div>
       <div class="d-flex gap-2">
         <button
@@ -167,6 +170,15 @@ const { exportReplacementToPDF } = useExport()
 </script>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .reemplazos-view {
   background-color: #f8fafc;
 }
