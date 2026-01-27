@@ -71,7 +71,7 @@ export const createException = async (req: Request, res: Response) => {
 
       await auditService.logAction(
         "MODIFICAR",
-        "TURNOS",
+        "Excepciones de Turno",
         authReq.user,
         `Se modificó el turno de ${targetName} (Cambios: turno: ${original_type} -> ${override_type} para el día ${formattedDate})`,
         {
@@ -213,7 +213,7 @@ export const deleteException = async (req: Request, res: Response) => {
 
       await auditService.logAction(
         "MODIFICAR", // Unified Action
-        "TURNOS",
+        "Excepciones de Turno",
         authReq.user,
         `Se modificó el turno de ${targetName} (Cambios: turno: ${exception.override_type} -> ${exception.original_type} para el día ${formattedDate})`,
         {

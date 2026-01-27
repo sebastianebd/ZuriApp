@@ -77,11 +77,11 @@ export const createCargo = async (req: Request, res: Response) => {
     if (authReq.user) {
       await auditService.logAction(
         "CREAR",
-        "CARGOS",
+        "Gestión de Cargos",
         authReq.user,
         `Se creó el cargo ${cargo.nombre} (Nivel ${cargo.nivel})`,
         payload,
-        cargo._id.toString()
+        cargo._id.toString(),
       );
     }
 
@@ -118,7 +118,7 @@ export const updateCargo = async (req: Request, res: Response) => {
     const cargo = await Cargo.findByIdAndUpdate(
       id,
       { nombre, descripcion, activo, nivel, permisos },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     // Audit Modification
@@ -130,11 +130,11 @@ export const updateCargo = async (req: Request, res: Response) => {
         const actionDesc = activo ? "activó" : "desactivó";
         await auditService.logAction(
           "MODIFICAR",
-          "CARGOS",
+          "Gestión de Cargos",
           authReq.user,
           `Se ${actionDesc} el cargo ${original.nombre}`,
           { old_activo: original.activo, new_activo: activo },
-          cargo._id.toString()
+          cargo._id.toString(),
         );
       } else {
         // 2. Standard Modification
@@ -213,11 +213,11 @@ export const updateCargo = async (req: Request, res: Response) => {
         if (diff) {
           await auditService.logAction(
             "MODIFICAR",
-            "CARGOS",
+            "Gestión de Cargos",
             authReq.user,
             `Se modificó el cargo ${original.nombre} (Cambios: ${diff})`,
             { original: original.toObject(), new: cargo.toObject() },
-            cargo._id.toString()
+            cargo._id.toString(),
           );
         }
       }
@@ -255,7 +255,7 @@ export const deleteCargo = async (req: Request, res: Response) => {
     const cargo = await Cargo.findByIdAndUpdate(
       id,
       { deleted_at: new Date() }, // Set deleted_at instead of active: false
-      { new: true }
+      { new: true },
     );
 
     // Audit Deletion (Soft)
@@ -263,11 +263,11 @@ export const deleteCargo = async (req: Request, res: Response) => {
     if (authReq.user) {
       await auditService.logAction(
         "ELIMINAR",
-        "CARGOS",
+        "Gestión de Cargos",
         authReq.user,
         `Se eliminó el cargo ${original.nombre}`,
         null,
-        id
+        id,
       );
     }
 

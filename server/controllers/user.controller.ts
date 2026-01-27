@@ -13,7 +13,7 @@ async function register(req: AuthRequest, res: Response) {
     );
     await auditService.logAction(
       "CREAR",
-      "USUARIOS",
+      "Funcionarios",
       req.user,
       `Se creó al usuario RUT ${req.body.rut} ${req.body.nombre} ${req.body.apellido}`,
       req.body,
@@ -65,8 +65,12 @@ async function mostrarTodos(req: AuthRequest, res: Response) {
     const limit = parseInt(req.query.limit as string) || 10;
     const search = (req.query.search as string) || "";
 
-    // Generate unique cache key including pagination params
-    const cacheKey = `users:p${page}:l${limit}:s${search || "none"}:r${userRole}`;
+    const cargo = (req.query.cargo as string) || "";
+    const habilitado = (req.query.habilitado as string) || "";
+    const rut = (req.query.rut as string) || "";
+
+    // Generate unique cache key including ALL filter params
+    const cacheKey = `users:p${page}:l${limit}:s${search || "none"}:c${cargo}:h${habilitado}:rt${rut}:r${userRole}`;
 
     // 1. Try Cache
     const cachedData = await get(cacheKey);
@@ -94,6 +98,9 @@ async function mostrarTodos(req: AuthRequest, res: Response) {
     const result = await userService.obtenerTodosPaginado({
       allowedCargos,
       search,
+      cargo: req.query.cargo as string,
+      habilitado: req.query.habilitado as string,
+      rut: req.query.rut as string,
       page,
       limit,
     });
@@ -122,7 +129,7 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "MODIFICAR",
-      "USUARIOS",
+      "Funcionarios",
       req.user,
       descripcion,
       req.body,
@@ -152,7 +159,7 @@ async function eliminarUsuario(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "ELIMINAR",
-      "USUARIOS",
+      "Funcionarios",
       req.user,
       userToDelete
         ? `Se eliminó al usuario RUT ${userToDelete.rut} ${userToDelete.nombre} ${userToDelete.apellido}`

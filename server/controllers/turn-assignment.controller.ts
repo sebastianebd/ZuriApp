@@ -76,7 +76,7 @@ export const createAssignment = async (req: Request, res: Response) => {
       const targetUser = assignment.user_id as any;
       await auditService.logAction(
         "CREAR",
-        "TURNOS",
+        "Turnos Actuales",
         authReq.user,
         `Asignación de turno creada para ${targetUser.nombre} ${targetUser.apellido} (${turn_type})`,
         {

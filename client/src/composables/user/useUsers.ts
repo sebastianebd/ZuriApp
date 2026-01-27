@@ -151,7 +151,9 @@ export function useUsers() {
         page,
         limit: itemsPerPage,
         search: filtroNombre.value,
-        cargo: tipoCargo.value
+        cargo: tipoCargo.value,
+        habilitado: filtroHabilitado.value,
+        rut: filtroRut.value
       })
 
       // Load options only once
@@ -174,7 +176,7 @@ export function useUsers() {
   }, 300)
 
   // Watch filters and trigger debounced search
-  watch([filtroNombre, tipoCargo], () => {
+  watch([filtroNombre, tipoCargo, filtroHabilitado, filtroRut], () => {
     debouncedSearch()
   })
 

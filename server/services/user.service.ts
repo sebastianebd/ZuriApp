@@ -175,6 +175,9 @@ async function obtenerTodos(allowedCargos?: string[], search?: string) {
 async function obtenerTodosPaginado(options: {
   allowedCargos?: string[];
   search?: string;
+  cargo?: string;
+  habilitado?: string;
+  rut?: string;
   page: number;
   limit: number;
 }) {
@@ -194,7 +197,6 @@ async function obtenerTodosPaginado(options: {
     const andConditions = terms.map((term) => {
       const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       // Anchor to start (^) matches Index Prefixes.
-      // Data is Uppercase, so we removed 'i' flag and uppercased input.
       const regex = new RegExp("^" + safeTerm);
 
       return {
@@ -210,6 +212,20 @@ async function obtenerTodosPaginado(options: {
     if (andConditions.length > 0) {
       query.$and = andConditions;
     }
+  }
+
+  // --- NEW SPECIFIC FILTERS ---
+  if (options.cargo && options.cargo.trim() !== "") {
+    query.tipo_cargo = options.cargo;
+  }
+
+  if (options.habilitado && options.habilitado.trim() !== "") {
+    query.habilitado = options.habilitado;
+  }
+
+  if (options.rut && options.rut.trim() !== "") {
+    // Basic partial match for RUT if provided specifically
+    query.rut = { $regex: options.rut.toUpperCase(), $options: "i" };
   }
 
   // Calculate skip for pagination

@@ -1,8 +1,8 @@
 <template>
-  <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
-    <div class="row g-3 align-items-end">
+  <div class="mb-4">
+    <div class="row row-cols-1 row-cols-md-5 g-3 align-items-end">
       <!-- Fecha Inicio -->
-      <div class="col-md-3" v-if="!hideDates">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Desde:</label>
         <DatePicker
           :model-value="modelValue.startDate"
@@ -23,7 +23,7 @@
       </div>
 
       <!-- Fecha Fin -->
-      <div class="col-md-3" v-if="!hideDates">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Hasta:</label>
         <DatePicker
           :model-value="modelValue.endDate"
@@ -44,7 +44,7 @@
       </div>
 
       <!-- Servicio -->
-      <div class="col-md-3">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Servicio</label>
         <v-select
           :model-value="modelValue.service"
@@ -67,7 +67,7 @@
       </div>
 
       <!-- Cargo -->
-      <div class="col-md-3">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Cargo</label>
         <v-select
           :model-value="modelValue.cargo"
@@ -90,7 +90,7 @@
       </div>
 
       <!-- Tipo Turno -->
-      <div class="col-md-3">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Tipo Turno</label>
         <v-select
           :model-value="modelValue.shiftType"

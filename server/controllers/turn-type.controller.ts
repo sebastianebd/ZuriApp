@@ -21,7 +21,7 @@ const turnTypeSchema = z.object({
           .string()
           .regex(/^#([0-9A-F]{3}){1,2}$/i)
           .optional(),
-      })
+      }),
     )
     .min(1, "La secuencia es requerida"),
   activo: z.boolean().optional(),
@@ -88,11 +88,11 @@ export const createTurnType = async (req: Request, res: Response) => {
     if ((req as any).user) {
       await AuditService.logAction(
         "CREAR",
-        "Tipos Turno",
+        "Tipos de Turno",
         (req as any).user,
         `Creó el tipo de turno: ${turnType.nombre} (${turnType.codigo})`,
         turnType,
-        turnType._id.toString()
+        turnType._id.toString(),
       );
     }
 
@@ -133,7 +133,7 @@ export const updateTurnType = async (req: Request, res: Response) => {
     if (turnType && (req as any).user) {
       const diff = AuditService.generateDiff(
         oldTurnType?.toObject(),
-        turnType.toObject()
+        turnType.toObject(),
       );
 
       if (diff) {
@@ -141,11 +141,11 @@ export const updateTurnType = async (req: Request, res: Response) => {
 
         await AuditService.logAction(
           "MODIFICAR",
-          "Tipos Turno",
+          "Tipos de Turno",
           (req as any).user,
           description,
           { old: oldTurnType, new: validatedData, diff },
-          turnType._id.toString()
+          turnType._id.toString(),
         );
       }
     }
@@ -173,17 +173,17 @@ export const deleteTurnType = async (req: Request, res: Response) => {
     const turnType = await TurnType.findByIdAndUpdate(
       id,
       { activo: false, deleted_at: new Date() },
-      { new: true }
+      { new: true },
     );
 
     if (turnType && (req as any).user) {
       await AuditService.logAction(
         "ELIMINAR",
-        "Tipos Turno",
+        "Tipos de Turno",
         (req as any).user,
         `Se eliminó el turno: ${turnType.nombre} (${turnType.codigo})`,
         null,
-        turnType._id.toString()
+        turnType._id.toString(),
       );
     }
 

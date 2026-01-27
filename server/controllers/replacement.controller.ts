@@ -14,7 +14,7 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
     // Log Auditoría
     await auditService.logAction(
       "CREAR",
-      "REEMPLAZOS",
+      "Reemplazos Activos",
       req.user,
       `Se creó un nuevo reemplazo ${nuevoReemplazo.id_negocio} para ${req.body.nombre_saliente} ${req.body.apellido_saliente}`,
       req.body,
@@ -23,8 +23,8 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
 
     // Audit Implicit Shifts
     await auditService.logAction(
-      "GENERAR_TURNOS",
-      "TURNOS",
+      "CREAR",
+      "Turnos Actuales",
       req.user,
       `Generación automática de turnos para ${req.body.nombre_entrante} ${req.body.apellido_entrante} (Reemplazo ${nuevoReemplazo.id_negocio})`,
       {
@@ -136,7 +136,7 @@ async function actualizarReemplazo(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "MODIFICAR",
-      "REEMPLAZOS",
+      "Reemplazos Activos",
       req.user,
       descripcion,
       req.body,
@@ -160,7 +160,7 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "FINALIZAR",
-      "REEMPLAZOS",
+      "Reemplazos Activos",
       req.user,
       `Se finalizó el reemplazo ${nombreReemplazo}`,
       null,
@@ -193,7 +193,7 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "ANULAR",
-      "REEMPLAZOS",
+      "Reemplazos Activos",
       req.user,
       `Se anuló el reemplazo ${nombreReemplazo}`,
       null,
@@ -256,7 +256,7 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "SUSTITUCION",
-      "REEMPLAZOS",
+      "Reemplazos Activos",
       req.user,
       `Se sustituyó el reemplazo: ${registroA_cortado.id_negocio} (Cambios: funcionario reemplazante: ${registroA_cortado.nombre_entrante} ${registroA_cortado.apellido_entrante} -> ${nuevoRegistroB.nombre_entrante} ${nuevoRegistroB.apellido_entrante})`,
       req.body,

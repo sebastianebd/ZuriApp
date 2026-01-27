@@ -59,7 +59,14 @@ export const useUserStore = defineStore('user', {
     },
 
     // New: Server-Side Pagination
-    async fetchPaginated(params: { page: number; limit: number; search?: string; cargo?: string }) {
+    async fetchPaginated(params: {
+      page: number
+      limit: number
+      search?: string
+      cargo?: string
+      habilitado?: string
+      rut?: string
+    }) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       try {

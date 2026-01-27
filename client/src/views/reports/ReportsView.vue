@@ -136,10 +136,7 @@ const getUserLabel = (option: any) => {
 <template>
   <div class="page-container">
     <!-- Header (Screen Only) -->
-    <div
-      class="d-flex justify-content-between align-items-center mb-4 w-100 hide-print"
-      style="max-width: 210mm"
-    >
+    <div class="d-flex justify-content-between align-items-center mb-4 w-100 hide-print">
       <div class="d-flex align-items-center gap-3">
         <div class="icon-square bg-white shadow-sm text-primary">
           <i class="bi bi-file-earmark-bar-graph fs-4"></i>

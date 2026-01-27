@@ -395,9 +395,6 @@ function getBlockedDates(assignments: any[]) {
   })
 }
 
-// Convert logic for v-calendar
-// v-calendar expects ranges: { start: Date, end: Date }
-// For indefinite end, we can pick a far future date.
 const vCalendarDisabledDates = computed(() => {
   return blockedDates.value.map((range) => ({
     start: range.start,
@@ -405,8 +402,6 @@ const vCalendarDisabledDates = computed(() => {
   }))
 })
 
-// Watch selectedUser instead of handling in method for clearer reactivity
-// Watch selectedUser instead of handling in method for clearer reactivity
 watch(selectedUser, async (newUser) => {
   if (newUser) {
     // 1. Fetch Assignments (shifts)
