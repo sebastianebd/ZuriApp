@@ -14,16 +14,17 @@ export const useReportStore = defineStore('report', () => {
   })
 
   // Fetch summary JSON
-  const fetchReportSummary = async () => {
+  const fetchReportSummary = async (options?: { preview?: boolean }) => {
     if (!currentFilters.value.userId) return
 
     try {
       isLoading.value = true
       error.value = null // Reset error
-      reportData.value = null // Reset previous data
+
+      const params = { ...currentFilters.value, ...options, _t: Date.now() }
 
       const { data } = await axios.get('/reports/summary', {
-        params: currentFilters.value
+        params
       })
       reportData.value = data
     } catch (err: any) {

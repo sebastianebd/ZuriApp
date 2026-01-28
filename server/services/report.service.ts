@@ -113,6 +113,7 @@ export const getMonthlyReport = async ({
       nightHours: number;
       start: string;
       end: string;
+      color: string;
     }
   >();
   siglasDocs.forEach((s) => {
@@ -123,6 +124,7 @@ export const getMonthlyReport = async ({
       nightHours: metrics.nightHours,
       start: s.turno_entrada || "",
       end: s.turno_salida || "",
+      color: s.color,
     });
   });
 
@@ -265,6 +267,7 @@ export const getMonthlyReport = async ({
       const nightHrs = siglaData?.nightHours || 0;
       const startTime = siglaData?.start || "-";
       const endTime = siglaData?.end || "-";
+      const color = siglaData?.color || "#e2e8f0"; // Default color
 
       // Check if day is active
       const isActive = !!activeSource;
@@ -302,6 +305,7 @@ export const getMonthlyReport = async ({
             nightHrs,
             startTime,
             endTime,
+            color, // Include defined color
             isReplacement: !!rep,
           });
         }
@@ -435,6 +439,7 @@ export const getMonthlyReport = async ({
 
   return {
     user: {
+      _id: user._id,
       nombre: user.nombre,
       apellido: user.apellido,
       rut: user.rut,

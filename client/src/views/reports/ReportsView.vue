@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useReportStore } from '../../stores/report.store'
 import { useUserStore } from '../../stores/user.store'
 import vSelect from 'vue-select'
@@ -56,8 +56,21 @@ const years = [2024, 2025, 2026]
 
 // Fetch users for the dropdown (Load default top 20)
 onMounted(async () => {
+  reportStore.error = null // Clear any persistent errors on mount
   const defaults = await userStore.buscarUsuarios('')
   userOptions.value = defaults
+})
+
+// Validation: Restrict current/future months
+const isRestricted = computed(() => {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1 // 1-indexed (Jan=1)
+
+  // Block if Future Year OR (Current Year AND Future/Current Month)
+  if (year.value > currentYear) return true
+  if (year.value === currentYear && month.value >= currentMonth) return true
+  return false
 })
 
 // Explicit Report Generation Handler
@@ -69,6 +82,14 @@ watch([month, year, selectedUser], () => {
 
 const handleGenerateReport = async () => {
   if (!selectedUser.value) return
+
+  // Validation: Check if month is restricted
+  if (isRestricted.value) {
+    reportStore.error =
+      'El mes seleccionado se encuentra en curso. Solo se pueden emitir reportes de meses cerrados.'
+    reportStore.reportData = null
+    return
+  }
 
   // Update store filters explicitely
   reportStore.currentFilters.userId = selectedUser.value._id
@@ -749,6 +770,13 @@ const getUserLabel = (option: any) => {
   border-radius: 4px;
   cursor: pointer;
   font-weight: 600;
+}
+
+.btn-generate:disabled,
+.btn-disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .page {

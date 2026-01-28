@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, onUnmounted, onActivated } from 'vue'
 import { useReportStore } from '../../stores/report.store'
 import { useUserStore } from '../../stores/user.store'
 import { useTurnSiglaStore } from '../../stores/turn-sigla.store'
 import { useReplacementStore } from '../../stores/replacement.store'
+import socket from '../../plugins/socket'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
 import { debounce } from 'lodash-es'
@@ -59,13 +60,19 @@ const getUserLabel = (option: any) => `${option.nombre} ${option.apellido}`
 // --- Data Fetching ---
 const fetchData = async () => {
   if (!selectedUser.value) return
-  isLoading.value = true
+
+  // Silent Refresh: Only show loading if data is missing or belongs to another user
+  const isDifferentUser = reportStore.reportData?.user?._id !== selectedUser.value._id
+  if (!reportStore.reportData || isDifferentUser) {
+    isLoading.value = true
+  }
+
   try {
     reportStore.currentFilters.userId = selectedUser.value._id
     reportStore.currentFilters.month = month.value
     reportStore.currentFilters.year = year.value
     await Promise.all([
-      reportStore.fetchReportSummary(),
+      reportStore.fetchReportSummary({ preview: true }),
       // Fetch replacements where user is involved (search by RUT covers both, looking for Saliente)
       replacementStore.fetchActiveReplacementsPaginated({
         search: selectedUser.value.rut,
@@ -89,11 +96,62 @@ watch(selectedUser, () => {
   else reportStore.reportData = null
 })
 
+// Socket Handler
+const handleSocketUpdate = async (payload: { userId: string }) => {
+  if (selectedUser.value) {
+    const currentId = String(selectedUser.value._id)
+    const targetId = String(payload.userId)
+    console.log(`[Socket] Event received. Target: ${targetId}, Current: ${currentId}`)
+
+    if (currentId === targetId) {
+      console.log('[Socket] Match found! Refreshing...')
+      await fetchData()
+    }
+  }
+}
+
+// Refresh on Tab Focus
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible' && selectedUser.value) {
+    console.log('Tab active: Refreshing data...')
+    fetchData()
+  }
+}
+
+// Refresh upon Keep-Alive activation (Safety net)
+onActivated(() => {
+  if (selectedUser.value) {
+    console.log('View Activated: Refreshing...')
+    fetchData()
+  }
+})
+
 // Initialize
 onMounted(async () => {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+
+  // Socket Connection
+  if (!socket.connected) socket.connect()
+  socket.on('turn:update', handleSocketUpdate)
+
+  // 1. Capture cached user from Store (to persist selection)
+  const cachedUser = reportStore.reportData?.user
+
+  // 2. Load Options
   const defaults = await userStore.buscarUsuarios('')
   userOptions.value = defaults
   await turnSiglaStore.fetchSiglas()
+
+  // 3. Restore Selection (triggers watcher -> fetchData)
+  if (cachedUser) {
+    console.log('Restoring user context...')
+    selectedUser.value = cachedUser
+  }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  socket.off('turn:update', handleSocketUpdate)
 })
 
 // --- Computed Helpers ---
@@ -354,7 +412,16 @@ const isToday = (dayNum: number) => {
         </div>
       </div>
 
-      <div class="calendar-wrapper" v-if="reportStore.reportData">
+      <!-- Calendar View (Only if data exists) -->
+      <div class="calendar-wrapper position-relative" v-if="reportStore.reportData">
+        <!-- Overlay for Refreshing Data -->
+        <div v-if="isLoading" class="loading-overlay">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <span class="ms-2 fw-bold text-dark">Actualizando...</span>
+        </div>
+
         <div class="days-header">
           <span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span
           ><span>Sab</span><span>Dom</span>
@@ -388,10 +455,23 @@ const isToday = (dayNum: number) => {
         </div>
       </div>
 
+      <!-- Empty State / Loading State (Initial Load) -->
       <div v-else class="empty-state-large">
-        <i class="bi bi-person-badge"></i>
-        <h3>Seleccione un funcionario</h3>
-        <p>Utilice el buscador para ver la ficha de turnos.</p>
+        <div v-if="isLoading" class="d-flex flex-column align-items-center">
+          <div
+            class="spinner-border text-primary mb-3"
+            role="status"
+            style="width: 3rem; height: 3rem"
+          >
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <h4 class="text-muted fw-bold">Cargando Ficha...</h4>
+        </div>
+        <div v-else class="d-flex flex-column align-items-center">
+          <i class="bi bi-person-badge display-1 text-muted mb-3"></i>
+          <h4 class="text-muted">Seleccione un funcionario</h4>
+          <p class="text-muted">Utilice el buscador para ver la ficha de turnos.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -783,7 +863,8 @@ const isToday = (dayNum: number) => {
 }
 
 /* Empty State */
-.empty-state-large {
+.empty-state-large,
+.loading-state-large {
   height: 100%;
   display: flex;
   flex-direction: column;

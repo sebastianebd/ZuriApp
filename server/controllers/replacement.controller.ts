@@ -5,7 +5,7 @@ import auditService from "../services/audit.service";
 import Reemplazo from "../models/replacement.model";
 import { AuthRequest } from "../middleware/authentication.middleware";
 import { get, set, delPattern } from "../config/redis.config";
-import socketIO from "../config/socket";
+import socketService from "../services/socket.service";
 
 async function registerReemplazo(req: AuthRequest, res: Response) {
   try {
@@ -42,6 +42,11 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
 
     // Send WhatsApp Notification (Enterprise Standard: Async / Non-blocking if performance critical, but safe to await here)
     await genericNotificationService.notifyReplacement(nuevoReemplazo);
+
+    // Notify Frontend
+    if (nuevoReemplazo.id_entrante) {
+      socketService.emitTurnUpdate(nuevoReemplazo.id_entrante.toString());
+    }
 
     res.sendStatus(201);
   } catch (error: any) {
@@ -169,12 +174,7 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
     await delPattern("replacements:*"); // Invalidate cache
 
     // Emit socket event
-    try {
-      const io = socketIO.getIO();
-      io.emit("history:update", { action: "finalize", id: req.params.id });
-    } catch (err) {
-      // Socket not ready, ignore
-    }
+    socketService.emitHistoryUpdate("finalize", req.params.id);
 
     res.json(data);
   } catch (error: any) {
@@ -202,12 +202,7 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
     await delPattern("replacements:*"); // Invalidate cache
 
     // Emit socket event
-    try {
-      const io = socketIO.getIO();
-      io.emit("history:update", { action: "annul", id: req.params.id });
-    } catch (err) {
-      // Socket not ready, ignore
-    }
+    socketService.emitHistoryUpdate("annul", req.params.id);
 
     res.json(data);
   } catch (error: any) {
@@ -265,15 +260,7 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
     await delPattern("replacements:*");
 
     // Emit socket event
-    try {
-      const io = socketIO.getIO();
-      io.emit("history:update", {
-        action: "substitute",
-        id: registroA_cortado._id,
-      });
-    } catch (err) {
-      // Socket not ready, ignore
-    }
+    socketService.emitHistoryUpdate("substitute", registroA_cortado._id);
 
     res.status(200).json({
       mensaje: "Sustitución procesada exitosamente.",

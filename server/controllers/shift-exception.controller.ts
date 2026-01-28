@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { ShiftExceptionModel } from "../models/shift-exception.model";
 import auditService from "../services/audit.service";
+import socketService from "../services/socket.service";
 import { AuthRequest } from "../middleware/authentication.middleware";
 
 export const createException = async (req: Request, res: Response) => {
@@ -85,6 +86,30 @@ export const createException = async (req: Request, res: Response) => {
         },
         exception._id.toString(),
       );
+    }
+
+    // Notify Frontend via Socket (and potential future notifications)
+    if (exception.assignment_id) {
+      let targetId = "";
+      const assignment: any = exception.assignment_id;
+
+      if (
+        exception.assignment_model === "TurnAssignment" &&
+        assignment.user_id
+      ) {
+        targetId = assignment.user_id._id
+          ? assignment.user_id._id.toString()
+          : assignment.user_id.toString();
+      } else if (
+        exception.assignment_model === "Replacement" &&
+        assignment.id_entrante
+      ) {
+        targetId = assignment.id_entrante.toString();
+      }
+
+      if (targetId) {
+        socketService.emitTurnUpdate(targetId);
+      }
     }
 
     res.json(exception);

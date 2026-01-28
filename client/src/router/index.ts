@@ -19,6 +19,12 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/mi-calendario',
+      name: 'public-calendar',
+      component: () => import('@/views/public/PublicCalendar.vue'),
+      meta: { requiresAuth: false } // Explicitly public
+    },
 
     {
       path: '/app',
