@@ -29,9 +29,6 @@ const determineStatusCorte = (fecha_corte: Date | string): string => {
   return "EN CURSO";
 };
 
-const fechaLocal = new Date();
-fechaLocal.setMinutes(fechaLocal.getMinutes() - fechaLocal.getTimezoneOffset());
-
 async function registrar(data: any) {
   const initialStatus = determineStatus(data.fecha_inicio);
 
@@ -222,9 +219,15 @@ async function actualizar(id: string, data: any) {
 }
 
 async function finalizarReemplazo(id: string) {
+  // Adjust to Chile Time (approx -3h) to ensure date falls on the correct local day
+  // This effectively stores "Local Time" as UTC, which matches the user's legacy data expectation likely.
+  const now = new Date();
+  const chileOffset = 3 * 60 * 60 * 1000;
+  const fechaCierre = new Date(now.getTime() - chileOffset);
+
   await Reemplazo.findByIdAndUpdate(
     id,
-    { status: "FINALIZADO", fecha_termino: fechaLocal },
+    { status: "FINALIZADO", fecha_termino: fechaCierre },
     { new: true },
   );
   return await Reemplazo.findById(id);

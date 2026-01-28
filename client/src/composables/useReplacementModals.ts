@@ -9,10 +9,19 @@ const createModalVisible = ref(false)
 const substituteModalVisible = ref(false)
 
 const registroActual = ref<ReplacementRecord>({})
+
+const getTodayLocal = () => {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const registroNuevo = ref<ReplacementRecord>({
   tipo_cargo: '',
-  fecha_inicio: new Date().toISOString().slice(0, 10),
-  fecha_termino: new Date().toISOString().slice(0, 10)
+  fecha_inicio: getTodayLocal(),
+  fecha_termino: getTodayLocal()
 })
 
 const fechaCorteSustitucion = ref('')
