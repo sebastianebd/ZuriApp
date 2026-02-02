@@ -1,9 +1,9 @@
 <template>
-  <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
-    <div class="row g-3 align-items-end">
+  <div class="mb-4">
+    <div class="row row-cols-1 row-cols-md-4 g-3 align-items-end">
       <!-- Rango de Fechas -->
       <!-- Rango de Fechas -->
-      <div class="col-md-3">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Desde:</label>
         <DatePicker
           v-model="filters.startDate"
@@ -20,7 +20,7 @@
           </template>
         </DatePicker>
       </div>
-      <div class="col-md-3">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Hasta:</label>
         <DatePicker
           v-model="filters.endDate"
@@ -39,12 +39,14 @@
       </div>
 
       <!-- Filtro Módulo -->
-      <div class="col-md-2">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Módulo:</label>
         <v-select
           v-model="filters.module"
-          :options="['TODOS', 'USUARIOS', 'REEMPLAZOS']"
+          :options="moduleOptions"
           :searchable="false"
+          :reduce="(opt: any) => opt.value"
+          label="label"
           :clearable="false"
           class="custom-v-select"
           placeholder="Todos"
@@ -53,23 +55,17 @@
       </div>
 
       <!-- Filtro Acción -->
-      <div class="col-md-2">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Acción:</label>
         <v-select
           v-model="filters.action"
-          :options="[
-            'TODOS',
-            'CREAR',
-            'MODIFICAR',
-            'ELIMINAR',
-            'FINALIZAR',
-            'ANULAR',
-            'SUSTITUCION'
-          ]"
+          :options="actionOptions"
+          :reduce="(opt: any) => opt.value"
+          label="label"
           :searchable="false"
           :clearable="false"
           class="custom-v-select"
-          placeholder="Todas"
+          placeholder="Todos"
           @update:model-value="emitFilters"
         ></v-select>
       </div>
@@ -105,6 +101,27 @@ const filters = ref({
   action: 'TODOS',
   userId: ''
 })
+
+const moduleOptions = [
+  { label: 'Todos', value: 'TODOS' },
+  { label: 'Funcionarios', value: 'Funcionarios' },
+  { label: 'Reemplazos Activos', value: 'Reemplazos Activos' },
+  { label: 'Gestión de Cargos', value: 'Gestión de Cargos' },
+  { label: 'Turnos Actuales', value: 'Turnos Actuales' },
+  { label: 'Excepciones de Turno', value: 'Excepciones de Turno' },
+  { label: 'Servicios', value: 'Servicios' },
+  { label: 'Tipos de Turno', value: 'Tipos de Turno' }
+]
+
+const actionOptions = [
+  { label: 'Todos', value: 'TODOS' },
+  { label: 'Crear', value: 'CREAR' },
+  { label: 'Modificar', value: 'MODIFICAR' },
+  { label: 'Eliminar', value: 'ELIMINAR' },
+  { label: 'Finalizar', value: 'FINALIZAR' },
+  { label: 'Anular', value: 'ANULAR' },
+  { label: 'Sustitución', value: 'SUSTITUCION' }
+]
 
 function emitFilters() {
   // Convert timestamps/Dates to string format expected by backend if necessary

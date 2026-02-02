@@ -19,6 +19,12 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/mi-calendario',
+      name: 'public-calendar',
+      component: () => import('@/views/public/PublicCalendar.vue'),
+      meta: { requiresAuth: false } // Explicitly public
+    },
 
     {
       path: '/app',
@@ -49,6 +55,11 @@ const router = createRouter({
           name: 'personal-cargos',
           component: () => import('@/views/personal/CargoManagement.vue')
         },
+        {
+          path: 'personal/ficha-turnos',
+          name: 'personal-ficha-turnos',
+          component: () => import('@/views/personal/FichaTurnosView.vue')
+        },
 
         // ==================== OPERACIONES ====================
         {
@@ -65,11 +76,6 @@ const router = createRouter({
           path: 'operaciones/turnos',
           name: 'operaciones-turnos',
           component: () => import('@/views/shifts/ShiftsView.vue')
-        },
-        {
-          path: 'operaciones/calendario-turnos',
-          name: 'operaciones-calendario-turnos',
-          component: () => import('@/views/shifts/CalendarioTurnos.vue')
         },
 
         // ==================== HISTORIAL & REPORTES ====================

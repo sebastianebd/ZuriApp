@@ -2,8 +2,10 @@ import { Request, Response } from "express";
 import { TurnAssignmentModel } from "../models/turn-assignment.model";
 import auditService from "../services/audit.service";
 import { AuthRequest } from "../middleware/authentication.middleware";
+import socketService from "../services/socket.service";
 
 import TurnType from "../models/turn-type.model"; // Ensure this import exists at top
+import notificationService from "../services/notification.service";
 
 export const createAssignment = async (req: Request, res: Response) => {
   try {
@@ -61,7 +63,11 @@ export const createAssignment = async (req: Request, res: Response) => {
     const assignmentPayload = {
       ...req.body,
       turn_type: turnTypeDoc._id, // Save Reference ID
-      snapshot_secuencia: turnTypeDoc.secuencia, // IMMUTABLE HISTORY
+      // IMMUTABLE HISTORY (Exclude color to allow dynamic updates)
+      snapshot_secuencia: turnTypeDoc.toObject().secuencia.map((item: any) => {
+        const { color, ...rest } = item;
+        return rest;
+      }),
     };
 
     const assignment = await TurnAssignmentModel.create(assignmentPayload);
@@ -72,7 +78,7 @@ export const createAssignment = async (req: Request, res: Response) => {
       const targetUser = assignment.user_id as any;
       await auditService.logAction(
         "CREAR",
-        "TURNOS",
+        "Turnos Actuales",
         authReq.user,
         `Asignación de turno creada para ${targetUser.nombre} ${targetUser.apellido} (${turn_type})`,
         {
@@ -85,6 +91,17 @@ export const createAssignment = async (req: Request, res: Response) => {
         assignment._id.toString(),
       );
     }
+
+    // 4. Notify User via WhatsApp (Async)
+    notificationService
+      .notifyShiftAssignment({
+        ...assignment.toObject(),
+        user_id: assignment.user_id, // Populated
+        turn_type_name: turnTypeDoc.nombre, // Inject name for readability
+      })
+      .catch((err) =>
+        console.error("Error sending WhatsApp notification:", err),
+      );
 
     res.json(assignment);
   } catch (error) {

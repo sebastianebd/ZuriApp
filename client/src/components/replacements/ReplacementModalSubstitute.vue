@@ -86,22 +86,59 @@
                 Nuevo Funcionario Entrante
               </h6>
 
-              <div class="d-flex align-items-center mb-3">
-                <div class="flex-grow-1">
-                  <p class="mb-0 small fw-medium text-secondary">
-                    <i class="bi bi-calendar-plus me-1 text-success"></i>
-                    Inicio del Nuevo Reemplazo:
-                    <span class="text-dark fw-bold">{{
-                      fechaInicioB || 'Día siguiente a la Fecha de Corte'
-                    }}</span>
-                  </p>
-                </div>
-                <button
-                  @click.prevent="$emit('sustituir-usuario')"
-                  class="btn btn-success btn-sm fw-bold shadow-sm px-3 border-0"
+              <div
+                class="alert alert-success border-0 bg-success bg-opacity-10 p-2 mb-3 rounded-3 shadow-none d-flex align-items-center smaller"
+              >
+                <i class="bi bi-calendar-check-fill me-2 text-success"></i>
+                <span class="text-success-dark">
+                  El nuevo reemplazo iniciará el
+                  <strong>{{ fechaInicioB || 'Día siguiente a la Fecha de Corte' }}</strong>
+                </span>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  Buscar Nuevo Funcionario
+                </label>
+                <v-select
+                  v-model="selectedUser"
+                  :options="userOptions"
+                  :filterable="false"
+                  :loading="isSearchingUser"
+                  @search="searchUsers"
+                  label="displayName"
+                  placeholder="Buscar por RUT o nombre..."
+                  class="premium-select"
                 >
-                  <i class="bi bi-person-plus-fill me-1"></i> Asignar
-                </button>
+                  <template #option="option">
+                    <div class="user-option">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <span class="fw-bold text-dark">{{ option.rut }}</span>
+                          <span class="text-secondary ms-2"
+                            >{{ option.nombre }} {{ option.apellido }}</span
+                          >
+                        </div>
+                        <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                      </div>
+                    </div>
+                  </template>
+                  <template #selected-option="option">
+                    <div class="d-flex align-items-center">
+                      <div class="fw-bold text-dark text-truncate">
+                        {{ option.nombre }} {{ option.apellido }}
+                        <small class="text-muted ms-1">({{ option.rut }})</small>
+                      </div>
+                    </div>
+                  </template>
+                  <template #no-options="{ search }">
+                    <div class="text-center text-muted py-2">
+                      <i class="bi bi-search me-1"></i>
+                      <span v-if="!search">Escribe para buscar...</span>
+                      <span v-else>No se encontraron resultados</span>
+                    </div>
+                  </template>
+                </v-select>
               </div>
 
               <div
@@ -110,39 +147,6 @@
               >
                 <i class="bi bi-x-circle-fill me-2"></i>
                 <span>El funcionario entrante no puede ser el mismo que el actual.</span>
-              </div>
-
-              <div class="form-floating mb-3">
-                <input
-                  type="text"
-                  id="rutEntranteB"
-                  :value="nuevoFuncionarioB.rut_entrante || 'N/A'"
-                  class="form-control bg-white border-0 shadow-sm rounded-3"
-                  :class="{ 'is-invalid': isSameUser }"
-                  disabled
-                  placeholder="RUT"
-                />
-                <label for="rutEntranteB" class="text-secondary fw-semibold"
-                  >RUT Nuevo Funcionario</label
-                >
-              </div>
-
-              <div class="form-floating mb-2">
-                <input
-                  type="text"
-                  id="nombreEntranteB"
-                  :value="
-                    `${nuevoFuncionarioB.nombre_entrante || ''} ${
-                      nuevoFuncionarioB.apellido_entrante || ''
-                    }` || 'Pendiente de selección'
-                  "
-                  class="form-control bg-white border-0 shadow-sm rounded-3"
-                  disabled
-                  placeholder="Nombre"
-                />
-                <label for="nombreEntranteB" class="text-secondary fw-semibold"
-                  >Nombre Completo</label
-                >
               </div>
             </div>
           </div>
@@ -182,7 +186,11 @@ import type { RegisterDataReemplazo } from '@/types/models'
 import { computed, ref, watch } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
+import vSelect from 'vue-select'
+import 'vue-select/dist/vue-select.css'
 import 'v-calendar/style.css'
+import { debounce } from 'lodash-es'
+import { useUserStore } from '@/stores/user.store'
 
 interface ReemplazoModalData extends Partial<RegisterDataReemplazo> {
   fecha_inicio?: string
@@ -201,6 +209,7 @@ const emit = defineEmits<{
   (e: 'sustituir-usuario'): void
   (e: 'update:fechaCorteA', nuevaFecha: string): void
   (e: 'confirmar-sustitucion'): void
+  (e: 'update:nuevoFuncionarioB', val: any): void
 }>()
 
 // Formatear Fecha Inicio Original (DD-MM-YYYY)
@@ -216,8 +225,6 @@ const now = new Date()
 const minDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
 
 // Fecha máxima (Término Original - 1 día)
-// El reemplazante debe trabajar al menos 1 día, por lo tanto el corte A no puede ser el mismo día del término.
-// Máximo puede ser el penúltimo día.
 const maxDate = computed(() => {
   if (!props.registroActual.fecha_termino) return undefined
 
@@ -263,8 +270,7 @@ function onDateUpdate(val: any) {
     const day = String(val.getUTCDate()).padStart(2, '0')
     emit('update:fechaCorteA', `${year}-${month}-${day}`)
   } else if (typeof val === 'string') {
-    // Si ya es string, lo emitimos tal cual (esperando YYYY-MM-DD)
-    // A veces v-calendar emite el string ISO completo si no se ajusta la máscara
+    // Si ya es string, lo emitimos tal cual
     if (val.includes('T')) {
       emit('update:fechaCorteA', val.split('T')[0])
     } else {
@@ -298,10 +304,82 @@ const fechaInicioB = computed(() => {
   }
 })
 
+// User Search Logic
+const userStore = useUserStore()
+const selectedUser = ref<any>(null)
+const userOptions = ref<any[]>([])
+const isSearchingUser = ref(false)
+
+// 🚀 Debounced Search with Lodash (300ms) - Consistent with ReportsView
+const performSearch = debounce(async (search: string, loading: (l: boolean) => void) => {
+  try {
+    await userStore.searchUsers({ search, page: 1, limit: 10 })
+
+    userOptions.value = userStore.searchResults.map((u: any) => ({
+      ...u,
+      displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+    }))
+  } catch (error) {
+    console.error('Error searching users:', error)
+  } finally {
+    loading(false)
+    isSearchingUser.value = false
+  }
+}, 300)
+
+const searchUsers = (search: string, loading: (l: boolean) => void) => {
+  if (search.length < 2) {
+    userOptions.value = []
+    return
+  }
+
+  // 1. Immediate UI Feedback
+  loading(true)
+  isSearchingUser.value = true
+
+  // 2. Debounced API Call
+  performSearch(search, loading)
+}
+
+// Watch selection and emit update
+watch(selectedUser, (user) => {
+  if (user) {
+    emit('update:nuevoFuncionarioB', {
+      rut_entrante: user.rut,
+      nombre_entrante: user.nombre,
+      apellido_entrante: user.apellido,
+      id_entrante: user._id,
+      tipo_cargo: user.tipo_cargo
+    })
+  } else {
+    emit('update:nuevoFuncionarioB', {})
+  }
+})
+
+// Initialize selectedUser if prop has data (re-opening modal)
+watch(
+  () => props.visible,
+  (newVal) => {
+    if (newVal) {
+      if (props.nuevoFuncionarioB && props.nuevoFuncionarioB.rut_entrante) {
+        selectedUser.value = {
+          rut: props.nuevoFuncionarioB.rut_entrante,
+          nombre: props.nuevoFuncionarioB.nombre_entrante,
+          apellido: props.nuevoFuncionarioB.apellido_entrante,
+          _id: props.nuevoFuncionarioB.id_entrante
+        }
+      } else {
+        selectedUser.value = null
+      }
+    }
+  },
+  { immediate: true }
+)
+
 // Validar que no sea el mismo usuario
 const isSameUser = computed(() => {
-  if (!props.registroActual.rut_entrante || !props.nuevoFuncionarioB.rut_entrante) return false
-  return props.registroActual.rut_entrante === props.nuevoFuncionarioB.rut_entrante
+  if (!props.registroActual.rut_entrante || !selectedUser.value?.rut) return false
+  return props.registroActual.rut_entrante === selectedUser.value.rut
 })
 
 const isFormValid = computed(() => {
@@ -380,5 +458,73 @@ button:hover:not(:disabled) {
 
 button:active {
   transform: translateY(0);
+}
+
+/* Base Styles for Premium Selects (User Search + Dates) */
+.premium-select ::v-deep .vs__dropdown-toggle {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 3px;
+  background: white;
+  box-shadow: none;
+  transition: all 0.2s ease;
+  min-height: 42px;
+}
+
+/* Search Input */
+.premium-select ::v-deep .vs__search {
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.premium-select ::v-deep .vs__search::placeholder {
+  color: #94a3b8;
+}
+
+/* Selected Text */
+.premium-select ::v-deep .vs__selected {
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+/* Arrow/Actions */
+.premium-select ::v-deep .vs__actions svg {
+  fill: #64748b;
+  transform: scale(0.8);
+}
+
+/* Dropdown Menu */
+.premium-select ::v-deep .vs__dropdown-menu {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  font-size: 0.875rem;
+  margin-top: 4px;
+  z-index: 1000;
+}
+
+/* Options */
+.premium-select ::v-deep .vs__dropdown-option {
+  border-radius: 0.25rem;
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  color: #475569;
+}
+
+.premium-select ::v-deep .vs__dropdown-option--highlight {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Hover & Focus */
+.premium-select:hover ::v-deep .vs__dropdown-toggle {
+  border-color: #cbd5e1;
+}
+
+.premium-select ::v-deep .vs--open .vs__dropdown-toggle,
+.premium-select:focus-within ::v-deep .vs__dropdown-toggle {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 </style>

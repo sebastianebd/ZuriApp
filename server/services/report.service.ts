@@ -17,17 +17,70 @@ interface ReportFilters {
   service: string;
 }
 
-// Helper: Calculate duration between two HH:mm strings
-const calculateDuration = (entry?: string, exit?: string): number => {
-  if (!entry || !exit) return 0;
+// Helper: Parse HH:mm to minutes from start of day
+const parseTime = (time: string): number => {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+};
 
-  const [h1, m1] = entry.split(":").map(Number);
-  const [h2, m2] = exit.split(":").map(Number);
+// Configurable constants (could be moved to ENV or DB settings later)
+const DAY_START = 8 * 60; // 08:00
+const DAY_END = 20 * 60; // 20:00
 
-  let duration = h2 + m2 / 60 - (h1 + m1 / 60);
-  if (duration <= 0) duration += 24; // Handle overnight (e.g. 20:00 to 08:00)
+interface TimeMetrics {
+  totalHours: number;
+  dayHours: number;
+  nightHours: number;
+}
 
-  return Number(duration.toFixed(2));
+const calculateDayNightMetrics = (
+  entry?: string,
+  exit?: string,
+): TimeMetrics => {
+  if (!entry || !exit) return { totalHours: 0, dayHours: 0, nightHours: 0 };
+
+  const start = parseTime(entry);
+  const end = parseTime(exit);
+
+  let durationMinutes = end - start;
+  if (durationMinutes <= 0) durationMinutes += 24 * 60;
+
+  const totalHours = Number((durationMinutes / 60).toFixed(2));
+
+  // Calculate Day Overlap
+  // Interval of work: [start, end]. If end < start, it wraps around 24h.
+  // Day Window: [DAY_START, DAY_END]
+
+  let dayMinutes = 0;
+
+  // We can simulate the timeline
+  // Case 1: Same day (e.g. 08:00 to 20:00)
+  if (end > start) {
+    const workStart = Math.max(start, DAY_START);
+    const workEnd = Math.min(end, DAY_END);
+    if (workEnd > workStart) {
+      dayMinutes = workEnd - workStart;
+    }
+  } else {
+    // Case 2: Overnight (e.g. 20:00 to 08:00)
+    // Part 1: start to 24:00
+    const firstLegStart = Math.max(start, DAY_START);
+    const firstLegEnd = Math.min(24 * 60, DAY_END);
+    if (firstLegEnd > firstLegStart) {
+      dayMinutes += firstLegEnd - firstLegStart;
+    }
+    // Part 2: 00:00 to end
+    const secondLegStart = Math.max(0, DAY_START);
+    const secondLegEnd = Math.min(end, DAY_END);
+    if (secondLegEnd > secondLegStart) {
+      dayMinutes += secondLegEnd - secondLegStart;
+    }
+  }
+
+  const dayHours = Number((dayMinutes / 60).toFixed(2));
+  const nightHours = Number((totalHours - dayHours).toFixed(2));
+
+  return { totalHours, dayHours, nightHours };
 };
 
 export const getMonthlyReport = async ({
@@ -54,14 +107,24 @@ export const getMonthlyReport = async ({
   const siglasDocs = await TurnSigla.find({});
   const siglaMap = new Map<
     string,
-    { hours: number; start: string; end: string }
+    {
+      hours: number;
+      dayHours: number;
+      nightHours: number;
+      start: string;
+      end: string;
+      color: string;
+    }
   >();
   siglasDocs.forEach((s) => {
-    const hours = calculateDuration(s.turno_entrada, s.turno_salida);
+    const metrics = calculateDayNightMetrics(s.turno_entrada, s.turno_salida);
     siglaMap.set(s.sigla, {
-      hours,
+      hours: metrics.totalHours,
+      dayHours: metrics.dayHours,
+      nightHours: metrics.nightHours,
       start: s.turno_entrada || "",
       end: s.turno_salida || "",
+      color: s.color,
     });
   });
 
@@ -81,8 +144,11 @@ export const getMonthlyReport = async ({
 
   // 4. Fetch All Exceptions
   const assignmentIds = assignments.map((a) => a._id);
+  const replacementIds = replacements.map((r) => r._id);
+  const allIds = [...assignmentIds, ...replacementIds];
+
   const exceptions = await ShiftExceptionModel.find({
-    assignment_id: { $in: assignmentIds },
+    assignment_id: { $in: allIds },
     date: { $gte: startDate.toDate(), $lte: endDate.toDate() },
   });
 
@@ -117,8 +183,11 @@ export const getMonthlyReport = async ({
     const svcAssignments = assignments.filter((a) => a.service === service);
     const svcReplacements = replacements.filter((r) => r.servicio === service);
     const svcAssignmentIds = svcAssignments.map((a) => String(a._id));
+    const svcReplacementIds = svcReplacements.map((r) => String(r._id));
+    const allIds = [...svcAssignmentIds, ...svcReplacementIds];
+
     const svcExceptions = exceptions.filter((e) =>
-      svcAssignmentIds.includes(String(e.assignment_id)),
+      allIds.includes(String(e.assignment_id)),
     );
 
     // Iterate Days
@@ -151,12 +220,9 @@ export const getMonthlyReport = async ({
             const idx = diff % turnType.secuencia.length;
             matchedSigla = turnType.secuencia[idx].sigla;
           }
-        } else if (siglaMap.has(typeName)) {
-          matchedSigla = typeName;
         } else {
-          if (typeName === "LARGO") matchedSigla = "L";
-          else if (typeName === "NOCHE") matchedSigla = "N";
-          else matchedSigla = "?";
+          // Fallback: Use typeName directly as Sigla (legacy support relies on DB aliases if implemented)
+          matchedSigla = siglaMap.has(typeName) ? typeName : typeName || "?";
         }
         activeSigla = matchedSigla;
       } else {
@@ -188,13 +254,8 @@ export const getMonthlyReport = async ({
         dayjs(e.date).isSame(currentParamDate, "day"),
       );
       if (exception) {
-        // Exception implies active day? Or just overrides?
-        // Usually exception overrides an existing day. If standalone, it might enable the day.
         activeSource = "exception";
-        if (exception.override_type === "LARGO") activeSigla = "L";
-        else if (exception.override_type === "NOCHE") activeSigla = "N";
-        else if (exception.override_type === "LIBRE") activeSigla = "X";
-        else activeSigla = exception.override_type;
+        activeSigla = exception.override_type;
       }
 
       // ... Inside loop ...
@@ -202,38 +263,11 @@ export const getMonthlyReport = async ({
       // Calculations
       const siglaData = siglaMap.get(activeSigla);
       const hours = siglaData?.hours || 0;
-
-      let startTime = siglaData?.start || "-";
-      let endTime = siglaData?.end || "-";
-
-      // Heuristic for Split & Defaults for hardcoded Siglas
-      let dayHrs = 0;
-      let nightHrs = 0;
-      if (activeSigla === "L" || activeSigla === "LARGO") {
-        dayHrs = 12;
-        nightHrs = 0;
-        if (startTime === "-") {
-          startTime = "08:00";
-          endTime = "20:00";
-        }
-      } else if (activeSigla === "N" || activeSigla === "NOCHE") {
-        dayHrs = 0;
-        nightHrs = 12;
-        if (startTime === "-") {
-          startTime = "20:00";
-          endTime = "08:00";
-        }
-      } else if (activeSigla === "24") {
-        dayHrs = 12;
-        nightHrs = 12;
-        if (startTime === "-") {
-          startTime = "08:00";
-          endTime = "08:00";
-        }
-      } else if (hours > 0) {
-        dayHrs = hours;
-        // Default split for generic hours if lacking heuristics, can improve later
-      }
+      const dayHrs = siglaData?.dayHours || 0;
+      const nightHrs = siglaData?.nightHours || 0;
+      const startTime = siglaData?.start || "-";
+      const endTime = siglaData?.end || "-";
+      const color = siglaData?.color || "#e2e8f0"; // Default color
 
       // Check if day is active
       const isActive = !!activeSource;
@@ -247,9 +281,9 @@ export const getMonthlyReport = async ({
         }
 
         const upperSigla = activeSigla.toUpperCase();
-        if (upperSigla === "L" || upperSigla === "LARGO") svcL++;
-        else if (upperSigla === "N" || upperSigla === "NOCHE") svcN++;
-        else if (upperSigla === "X" || upperSigla === "LIBRE") svcX++;
+        if (upperSigla === "L") svcL++;
+        else if (upperSigla === "N") svcN++;
+        else if (upperSigla === "X") svcX++;
 
         // Add to Global Merged Grid
         if (!mergedGrid.has(day)) {
@@ -271,6 +305,7 @@ export const getMonthlyReport = async ({
             nightHrs,
             startTime,
             endTime,
+            color, // Include defined color
             isReplacement: !!rep,
           });
         }
@@ -325,8 +360,15 @@ export const getMonthlyReport = async ({
       const entry = mergedGrid.get(day);
       entry.isOutOfContract = false;
       timeline.push(entry);
+    } else {
+      // Day is out of contract or has no shifts, but we include it for the calendar view
+      timeline.push({
+        date: startDate.date(day).toDate(),
+        dayNum: day,
+        items: [],
+        isOutOfContract: true, // Marked as out of contract/empty
+      });
     }
-    // Else: Day is out of contract (not in mergedGrid), so exclude from timeline completely.
   }
 
   // Recalculate Grand Totals based on actual content
@@ -356,13 +398,13 @@ export const getMonthlyReport = async ({
         grandTotal.nightHours += item.nightHrs;
 
         const upperSigla = item.sigla.toUpperCase();
-        if (upperSigla === "L" || upperSigla === "LARGO") {
+        if (upperSigla === "L") {
           grandTotal.L++;
           hasRealShift = true;
-        } else if (upperSigla === "N" || upperSigla === "NOCHE") {
+        } else if (upperSigla === "N") {
           grandTotal.N++;
           hasRealShift = true;
-        } else if (upperSigla === "X" || upperSigla === "LIBRE") {
+        } else if (upperSigla === "X") {
           grandTotal.X++;
           isFreeShiftDay = true;
         }
@@ -381,7 +423,7 @@ export const getMonthlyReport = async ({
         // Check if ANY item is 'X' or just empty placeholder
         if (
           dayEntry.items.some(
-            (i: any) => ["X", "LIBRE", "-"].includes(i.sigla) || i.hours === 0,
+            (i: any) => ["X", "-"].includes(i.sigla) || i.hours === 0,
           )
         ) {
           totalFreeDays++;
@@ -397,6 +439,7 @@ export const getMonthlyReport = async ({
 
   return {
     user: {
+      _id: user._id,
       nombre: user.nombre,
       apellido: user.apellido,
       rut: user.rut,

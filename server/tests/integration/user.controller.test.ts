@@ -57,7 +57,7 @@ describe("User Controller - Integration", () => {
 
     const auditLog = await AuditLog.findOne({
       action: "CREAR",
-      module: "USUARIOS",
+      module: "Funcionarios",
     });
     expect(auditLog).toBeTruthy();
     expect(auditLog?.description).toContain(`RUT ${newUser.rut}`);

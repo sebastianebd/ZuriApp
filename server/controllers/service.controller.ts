@@ -114,11 +114,11 @@ export const createService = async (req: Request, res: Response) => {
     if ((req as any).user) {
       await AuditService.logAction(
         "CREAR",
-        "SERVICIOS",
+        "Servicios",
         (req as any).user,
         `Creó el servicio: ${service.nombre} (${service.codigo})`,
         service,
-        service._id.toString()
+        service._id.toString(),
       );
     }
 
@@ -235,8 +235,8 @@ export const updateService = async (req: Request, res: Response) => {
 
         // Check Relations (Array)
         for (const field of ["coordinadores", "jefes_turno"]) {
-          const oldList = ((currentService as any)[field] || []).map((u: any) =>
-            u && u._id ? u._id.toString() : String(u)
+          const oldList = ((currentService as any)[field] || []).map(
+            (u: any) => (u && u._id ? u._id.toString() : String(u)),
           );
           const newList = (validatedData as any)[field] || [];
 
@@ -247,7 +247,7 @@ export const updateService = async (req: Request, res: Response) => {
           if (!isSame) {
             const oldNames = ((currentService as any)[field] || [])
               .map((u: any) =>
-                u && u.nombre ? `${u.nombre} ${u.apellido}` : "Desconocido"
+                u && u.nombre ? `${u.nombre} ${u.apellido}` : "Desconocido",
               )
               .join(", ");
 
@@ -278,10 +278,10 @@ export const updateService = async (req: Request, res: Response) => {
             jefe_servicio: (currentService.jefe_servicio as any)?._id,
             supervisor: (currentService.supervisor as any)?._id,
             coordinadores: (currentService.coordinadores || []).map((u: any) =>
-              u && u._id ? u._id : u
+              u && u._id ? u._id : u,
             ),
             jefes_turno: (currentService.jefes_turno || []).map((u: any) =>
-              u && u._id ? u._id : u
+              u && u._id ? u._id : u,
             ),
             centro_costo: currentService.centro_costo,
             ubicacion: currentService.ubicacion,
@@ -292,11 +292,11 @@ export const updateService = async (req: Request, res: Response) => {
 
           await AuditService.logAction(
             "MODIFICAR",
-            "SERVICIOS",
+            "Servicios",
             (req as any).user,
             `Modificó el servicio: ${service.nombre}${detailsStr}`,
             { old: manualOld, new: validatedData },
-            service._id.toString()
+            service._id.toString(),
           );
         }
       }
@@ -325,17 +325,17 @@ export const deleteService = async (req: Request, res: Response) => {
     const service = await Service.findByIdAndUpdate(
       id,
       { deleted_at: new Date() }, // SOFT DELETE DATE
-      { new: true }
+      { new: true },
     );
 
     if (service && (req as any).user) {
       await AuditService.logAction(
         "ELIMINAR",
-        "SERVICIOS",
+        "Servicios",
         (req as any).user,
         `Eliminó el Servicio ${service.nombre} (${service.codigo})`,
         null,
-        service._id.toString()
+        service._id.toString(),
       );
     }
 

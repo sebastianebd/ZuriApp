@@ -2,11 +2,14 @@
   <div class="shifts-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4" v-if="!historyMode">
-      <div>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-calendar-range text-primary me-2"></i>Grilla de Turnos
-        </h4>
-        <p class="text-secondary mb-0">Visualiza y gestiona los turnos operativos.</p>
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-calendar-range fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Grilla de Turnos</h4>
+          <p class="text-secondary small mb-0">Visualiza y gestiona los turnos operativos.</p>
+        </div>
       </div>
 
       <!-- Filters & Controls -->
@@ -223,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useOptionStore } from '@/stores/option.store'
@@ -276,6 +279,7 @@ let tooltipTimer: number | null = null
 const showModifyModal = ref(false)
 const selectedShiftData = ref<{
   assignmentId: string
+  assignmentModel: 'TurnAssignment' | 'Replacement' // 🏢 ENTERPRISE: Polymorphic
   assignmentName: string
   date: Date
   currentShift: ShiftResult | null
@@ -294,6 +298,23 @@ const turnTypeStore = useTurnTypeStore()
 const turnSiglaStore = useTurnSiglaStore()
 const optionStore = useOptionStore()
 const exceptionStore = useShiftExceptionStore()
+
+// 🏢 ENTERPRISE: Dynamic Mapping for Exception Types -> Siglas
+function mapEnumToSigla(type: string): { sigla: string; color?: string } {
+  // 1. Try to find match in TurnSiglaStore by name OR sigla
+  const match = turnSiglaStore.siglas.find(
+    (s) =>
+      s.nombre.toUpperCase() === type.toUpperCase() || s.sigla.toUpperCase() === type.toUpperCase()
+  )
+  if (match) return { sigla: match.sigla, color: match.color }
+
+  // 2. Fallback for standard types (Legacy safety)
+  if (type === 'LARGO') return { sigla: 'L' }
+  if (type === 'NOCHE') return { sigla: 'N' }
+  if (type === 'LIBRE') return { sigla: 'X' }
+
+  return { sigla: type.charAt(0) }
+}
 const authStore = useAuthStore()
 const userStore = useUserStore()
 const alertComponent = ref()
@@ -313,6 +334,7 @@ function openModal() {
 
 function closeModal() {
   showModal.value = false
+  loadData()
 }
 
 async function handleSaveAssignment(payload: any) {
@@ -375,6 +397,7 @@ interface ShiftResult {
   color?: string
   assignmentId?: string // New: To identify which assignment
   assignmentName?: string // New: To display which assignment
+  assignmentModel?: 'TurnAssignment' | 'Replacement' // 🏢 ENTERPRISE: Polymorphic model
   replacementCode?: string // New: For replacements
 }
 
@@ -423,7 +446,11 @@ const filteredShifts = computed(() => {
   const userAssignmentsMap = new Map<string, TurnAssignment[]>()
 
   turnAssignmentStore.assignments.forEach((a) => {
-    const uid = (a.user_id as unknown as User)._id
+    // Handle both populated User object and string ID
+    const uid = typeof a.user_id === 'string' ? a.user_id : (a.user_id as unknown as User)?._id
+
+    if (!uid) return // Skip if no valid user ID
+
     if (!userAssignmentsMap.has(uid)) userAssignmentsMap.set(uid, [])
     userAssignmentsMap.get(uid)?.push(a)
   })
@@ -431,12 +458,27 @@ const filteredShifts = computed(() => {
   // 1. Process Replacements (Grouped by Entrante)
   const userReplacementsMap = new Map<string, RegisterDataReemplazo[]>()
 
-  replacementStore.reemplazosActivos.forEach((r) => {
+  // ✅ ENTERPRISE: Use currentPageReplacements (server-side pagination)
+  replacementStore.currentPageReplacements.forEach((r) => {
     if (!r.fecha_inicio) return
+
     // Use id_entrante (Real User ID) for grouping
     if (!r.id_entrante) return
 
-    const uid = r.id_entrante
+    // Handle populated id_entrante (can be object or string)
+    let uid = r.id_entrante
+
+    if (typeof uid === 'object' && uid !== null) {
+      // Try _id first, then id. If neither exists, KEEP the original object so String(uid) works on it.
+      const candidate = (uid as any)._id || (uid as any).id
+      if (candidate) uid = candidate
+    }
+
+    // Ensure string
+    uid = String(uid)
+
+    if (!uid || uid === 'undefined' || uid === 'null') return
+
     if (!userReplacementsMap.has(uid)) userReplacementsMap.set(uid, [])
     userReplacementsMap.get(uid)?.push(r)
   })
@@ -474,19 +516,29 @@ const filteredShifts = computed(() => {
       // Use first valid as representative for name/cargo (assuming consistency)
       const rep = validReplacements[0]
 
-      let cargo = rep.tipo_cargo
+      // Try to get cargo from multiple sources
+      let cargo = rep.tipo_cargo // First try: from replacement itself
+
+      // 1.5 Try from populated id_entrante
+      if (!cargo && typeof rep.id_entrante === 'object') {
+        cargo = (rep.id_entrante as any).tipo_cargo
+      }
+
       if (!cargo) {
-        // 1. Try to find user in assignments store (fastest if view has them)
-        const foundUserAssignment = turnAssignmentStore.assignments.find(
-          (a) => (a.user_id as unknown as User)._id === userId
-        )
-        if (foundUserAssignment) {
+        // 2. Try to find user in assignments store
+        const foundUserAssignment = turnAssignmentStore.assignments.find((a) => {
+          const uid =
+            typeof a.user_id === 'string' ? a.user_id : (a.user_id as unknown as User)?._id
+          return uid === userId
+        })
+
+        if (foundUserAssignment && typeof foundUserAssignment.user_id !== 'string') {
           const u = foundUserAssignment.user_id as unknown as User
-          cargo = u.tipo_cargo
+          cargo = u?.tipo_cargo
         }
 
-        // 2. Fallback: Check full user list
-        if (!cargo) {
+        // 3. Fallback: Check full user list
+        if (!cargo && Array.isArray(allUsers.value) && allUsers.value.length > 0) {
           const foundUser = allUsers.value.find((u) => u._id === userId)
           if (foundUser) cargo = foundUser.tipo_cargo
         }
@@ -611,35 +663,62 @@ function getShift(row: GridRow, date: Date): ShiftResult | null {
   // We need to know WHICH assignment is active today to check exceptions for IT.
 
   if (row.source === 'REPLACEMENT') {
-    // Dynamic lookup for Replacement
+    // 🏢 ENTERPRISE: Use the original replacement object directly from the row
+    // This avoids searching global arrays which might not contain the paginated data
+    const replacement = row.original as any // Cast as any or Replacement type
+
+    if (!replacement) return null
+
+    // Check date range validity for this specific replacement
     const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
 
-    const activeReplacement = replacementStore.reemplazosActivos.find((r) => {
-      if (r.id_entrante !== row.userId) return false
+    // Safety check for dates
+    if (!replacement.fecha_inicio) return null
 
-      const start = parseAsLocal(r.fecha_inicio)
-      const end = parseAsLocal(r.fecha_termino)
+    const start = parseAsLocal(replacement.fecha_inicio)
+    const end = replacement.fecha_termino
+      ? parseAsLocal(replacement.fecha_termino)
+      : new Date(9999, 11, 31)
 
-      // Normalize
-      const sDate = new Date(start.getFullYear(), start.getMonth(), start.getDate())
-      const eDate = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+    const sDate = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+    const eDate = new Date(end.getFullYear(), end.getMonth(), end.getDate())
 
-      return checkDate >= sDate && checkDate <= eDate
-    })
+    if (checkDate < sDate || checkDate > eDate) return null
 
-    if (!activeReplacement) return null
+    // 🚀 Check Exception for Replacement
+    const exception = exceptionStore.findException(replacement._id, date)
+    if (exception) {
+      const { sigla, color } = mapEnumToSigla(exception.override_type)
+      return {
+        sigla,
+        color,
+        assignmentId: replacement._id,
+        assignmentModel: 'Replacement',
+        assignmentName:
+          turnTypeStore.turnTypes.find((t) => t._id === replacement.tipo_turno)?.nombre ||
+          replacement.tipo_turno,
+        replacementCode: replacement.id_negocio
+      }
+    }
 
-    const pattern = getPattern(null, activeReplacement.tipo_turno)
-    if (pattern.length === 0) return null
+    // Pass replacement as assignment to use snapshot if available
+    // Replacement structure is compatible enough with TurnAssignment for getPattern
+    // (both have snapshot, tipo_turno, start/end dates)
+    const pattern = getPattern(replacement, replacement.tipo_turno)
 
-    const result = calculateShift<ShiftResult>(date, activeReplacement.fecha_inicio, pattern)
+    if (!pattern || pattern.length === 0) return null
+
+    const result = calculateShift<ShiftResult>(date, replacement.fecha_inicio, pattern)
+
     if (result) {
       return {
         ...result,
-        assignmentId: activeReplacement._id,
-        // Use replacement ID as name for debugging or type name?
-        assignmentName: activeReplacement.tipo_turno,
-        replacementCode: activeReplacement.id_negocio
+        assignmentId: replacement._id,
+        assignmentModel: 'Replacement', // 🏢
+        assignmentName:
+          turnTypeStore.turnTypes.find((t) => t._id === replacement.tipo_turno)?.nombre ||
+          replacement.tipo_turno,
+        replacementCode: replacement.id_negocio
       }
     }
     return null
@@ -667,21 +746,19 @@ function getShift(row: GridRow, date: Date): ShiftResult | null {
   // Base metadata
   const meta = {
     assignmentId: activeAssignment._id,
-    assignmentName: activeAssignment.turn_type
+    assignmentModel: 'TurnAssignment' as const, // 🏢
+    assignmentName:
+      turnTypeStore.turnTypes.find((t) => t._id === activeAssignment.turn_type)?.nombre ||
+      activeAssignment.turn_type
   }
 
   // Check Exception
   const exception = exceptionStore.findException(activeAssignment._id, date)
   if (exception) {
-    let sigla: string = exception.override_type
-    if (sigla === 'LARGO') sigla = 'L'
-    if (sigla === 'NOCHE') sigla = 'N'
-    if (sigla === 'LIBRE') sigla = 'X'
-
-    const globalSigla = turnSiglaStore.siglas.find((s) => s.sigla === sigla)
+    const { sigla, color } = mapEnumToSigla(exception.override_type)
     return {
-      sigla: sigla,
-      color: globalSigla ? globalSigla.color : undefined,
+      sigla,
+      color,
       ...meta
     }
   }
@@ -808,18 +885,6 @@ function isRecentlyModified(assignmentId: string, date: Date): boolean {
   )
 }
 
-function mapSiglaToEnum(sigla: string): 'LARGO' | 'NOCHE' | 'LIBRE' {
-  const s = sigla.toUpperCase()
-  if (s === 'L') return 'LARGO'
-  if (s === 'N') return 'NOCHE'
-  if (s === 'X') return 'LIBRE'
-  // Fallback for full names or unknown
-  if (s === 'LARGO') return 'LARGO'
-  if (s === 'NOCHE') return 'NOCHE'
-  if (s === 'LIBRE') return 'LIBRE'
-  return 'LIBRE' // Safe default
-}
-
 // Helper: Check if a date is editable (Current Month or Future)
 function isEditableDate(date: Date): boolean {
   const now = new Date()
@@ -848,6 +913,7 @@ function handleCellClick(item: GridRow, date: Date) {
   selectedShiftData.value = {
     // Use the specific assignment ID if available (from multi-assignment logic), else fallback to row ID
     assignmentId: shift.assignmentId || item._id,
+    assignmentModel: shift.assignmentModel || 'TurnAssignment', // Default safe
     // Use the specific assignment name if available
     assignmentName: shift.assignmentName
       ? formatTitleCase(shift.assignmentName)
@@ -877,16 +943,24 @@ async function handleDeleteAssignment() {
   }
 }
 
-async function handleSaveException(data: { override_type: 'LARGO' | 'NOCHE' | 'LIBRE' }) {
+async function handleSaveException(data: { override_type: string }) {
   if (!selectedShiftData.value) return
+
+  if (!authStore.user || !authStore.user._id) {
+    alertComponent.value.show('Error', 'Debe iniciar sesión para realizar cambios', 'error')
+    return
+  }
 
   try {
     await exceptionStore.createException({
       assignment_id: selectedShiftData.value.assignmentId,
+      assignment_model: selectedShiftData.value.assignmentModel, // 🏢
       date: selectedShiftData.value.date.toISOString(),
-      original_type: mapSiglaToEnum(selectedShiftData.value.currentShift?.sigla || 'X'),
+      original_type: turnSiglaStore.mapSiglaToNombre(
+        selectedShiftData.value.currentShift?.sigla || 'X'
+      ),
       override_type: data.override_type,
-      created_by: authStore.user?._id || ''
+      created_by: authStore.user._id
     })
 
     // Set recently modified cell for visual feedback
@@ -934,10 +1008,22 @@ async function loadData() {
     const startOfMonth = new Date(currentYear.value, currentMonth.value, 1)
     const endOfMonth = new Date(currentYear.value, currentMonth.value + 1, 0)
 
+    // 🔧 STEP 1: Load options FIRST to ensure service filter is available
+    await optionStore.mostrarOpciones()
+
+    // 🔧 STEP 2: Set default service if not set (BEFORE loading replacements)
+    if (!selectedService.value && serviceOptions.value.length > 0) {
+      selectedService.value = serviceOptions.value[0]
+    }
+
+    // 🔧 STEP 3: Load all data in parallel (replacements now use server-side pagination)
     await Promise.all([
-      replacementStore.mostrarReemplazos(),
+      // ✅ ENTERPRISE: Server-side pagination with service filter
+      replacementStore.fetchActiveReplacementsPaginated({
+        servicio: selectedService.value || undefined,
+        limit: 1000 // Large limit to get all replacements for the selected service
+      }),
       turnAssignmentStore.loadAssignments(),
-      optionStore.mostrarOpciones(),
       exceptionStore.loadExceptions(
         undefined,
         startOfMonth.toISOString(),
@@ -946,16 +1032,27 @@ async function loadData() {
       turnTypeStore.fetchTurnTypes(true),
       turnSiglaStore.fetchSiglas(),
       userStore
-        .mostrarTodos()
-        .then((users) => {
-          allUsers.value = users as User[]
+        .mostrarTodos(1000) // Load ALL users for modal selection
+        .then((data: User[]) => {
+          allUsers.value = data
         })
-        .catch((err) => console.error('Failed to load users for cargo info', err))
+        .catch((err) => console.error('[ShiftsView] Failed to load users:', err))
     ])
   } finally {
     loading.value = false
   }
 }
+
+// 🔧 Watch for service changes and reload replacements
+watch(selectedService, (newService, oldService) => {
+  if (newService && newService !== oldService) {
+    // Reload only replacements (assignments are not service-specific)
+    replacementStore.fetchActiveReplacementsPaginated({
+      servicio: newService,
+      limit: 1000
+    })
+  }
+})
 
 onMounted(() => {
   loadData()
@@ -1298,5 +1395,13 @@ thead .sticky-col {
     opacity: 1;
     transform: translate(-50%, -100%);
   }
+}
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

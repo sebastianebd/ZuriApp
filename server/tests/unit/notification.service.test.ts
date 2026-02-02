@@ -65,7 +65,7 @@ describe("Notification Service", () => {
     expect(payload.to).toBe("56912345678"); // cleaned number
     expect(payload.text.body).toContain("*Reemplazas a:* Maria Gonzalez");
     expect(payload.text.body).toContain("*Servicio:* UCI");
-    expect(payload.text.body).toContain("/api/calendar/view/");
+    expect(payload.text.body).toContain("mi-calendario");
   });
 
   it("should log warning if user has no phone", async () => {
@@ -82,7 +82,7 @@ describe("Notification Service", () => {
     await notificationService.notifyReplacement(mockReplacement);
 
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining("Skipping notification")
+      expect.stringContaining("Skipping notification"),
     );
   });
 });

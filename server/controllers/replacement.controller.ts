@@ -5,7 +5,7 @@ import auditService from "../services/audit.service";
 import Reemplazo from "../models/replacement.model";
 import { AuthRequest } from "../middleware/authentication.middleware";
 import { get, set, delPattern } from "../config/redis.config";
-import socketIO from "../config/socket";
+import socketService from "../services/socket.service";
 
 async function registerReemplazo(req: AuthRequest, res: Response) {
   try {
@@ -14,7 +14,7 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
     // Log Auditoría
     await auditService.logAction(
       "CREAR",
-      "REEMPLAZOS",
+      "Reemplazos Activos",
       req.user,
       `Se creó un nuevo reemplazo ${nuevoReemplazo.id_negocio} para ${req.body.nombre_saliente} ${req.body.apellido_saliente}`,
       req.body,
@@ -23,8 +23,8 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
 
     // Audit Implicit Shifts
     await auditService.logAction(
-      "GENERAR_TURNOS",
-      "TURNOS",
+      "CREAR",
+      "Turnos Actuales",
       req.user,
       `Generación automática de turnos para ${req.body.nombre_entrante} ${req.body.apellido_entrante} (Reemplazo ${nuevoReemplazo.id_negocio})`,
       {
@@ -43,6 +43,11 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
     // Send WhatsApp Notification (Enterprise Standard: Async / Non-blocking if performance critical, but safe to await here)
     await genericNotificationService.notifyReplacement(nuevoReemplazo);
 
+    // Notify Frontend
+    if (nuevoReemplazo.id_entrante) {
+      socketService.emitTurnUpdate(nuevoReemplazo.id_entrante.toString());
+    }
+
     res.sendStatus(201);
   } catch (error: any) {
     res.status(400).json({ mensaje: error.message });
@@ -50,15 +55,50 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
 }
 
 async function mostrarReemplazos(req: Request, res: Response) {
-  // Note: obtenerActivos doesn't really need params currently
   try {
-    const cacheKey = "replacements:active";
-    const cachedData = await get(cacheKey);
-    if (cachedData) return res.json(cachedData);
+    // Check if pagination parameters are provided
+    const hasPaginationParams = req.query.page || req.query.limit;
 
-    const data = await replacementService.obtenerActivos();
-    await set(cacheKey, data, 300);
-    res.json(data);
+    // Pagination parameters (use high limit for legacy calls)
+    const page = parseInt(req.query.page as string) || 1;
+    const limit =
+      parseInt(req.query.limit as string) || (hasPaginationParams ? 10 : 1000);
+    const search = (req.query.search as string) || "";
+    const servicio = (req.query.servicio as string) || "";
+
+    // Generate unique cache key including pagination params
+    // 🔧 v2: Added id_entrante populate
+    const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}`;
+
+    // 1. Try Cache
+    const cachedData = await get(cacheKey);
+    if (cachedData) {
+      console.log(`[Replacement Controller] Cache HIT for key: ${cacheKey}`);
+      return res.json(cachedData);
+    }
+
+    console.log(`[Replacement Controller] Cache MISS for key: ${cacheKey}`);
+
+    // 2. Fetch paginated data
+    const result = await replacementService.obtenerActivosPaginado({
+      search,
+      servicio,
+      page,
+      limit,
+    });
+
+    // 🔧 Debug: Check if id_entrante is populated
+    if (result.reemplazos && result.reemplazos.length > 0) {
+      console.log(
+        `[Replacement Controller] First replacement id_entrante:`,
+        result.reemplazos[0].id_entrante,
+      );
+    }
+
+    // 3. Cache result for 60 seconds
+    await set(cacheKey, result, 60);
+
+    res.json(result);
   } catch (error: any) {
     res.status(500).json({ mensaje: error.message });
   }
@@ -101,7 +141,7 @@ async function actualizarReemplazo(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "MODIFICAR",
-      "REEMPLAZOS",
+      "Reemplazos Activos",
       req.user,
       descripcion,
       req.body,
@@ -125,7 +165,7 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "FINALIZAR",
-      "REEMPLAZOS",
+      "Reemplazos Activos",
       req.user,
       `Se finalizó el reemplazo ${nombreReemplazo}`,
       null,
@@ -134,12 +174,7 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
     await delPattern("replacements:*"); // Invalidate cache
 
     // Emit socket event
-    try {
-      const io = socketIO.getIO();
-      io.emit("history:update", { action: "finalize", id: req.params.id });
-    } catch (err) {
-      // Socket not ready, ignore
-    }
+    socketService.emitHistoryUpdate("finalize", req.params.id);
 
     res.json(data);
   } catch (error: any) {
@@ -158,7 +193,7 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "ANULAR",
-      "REEMPLAZOS",
+      "Reemplazos Activos",
       req.user,
       `Se anuló el reemplazo ${nombreReemplazo}`,
       null,
@@ -167,12 +202,7 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
     await delPattern("replacements:*"); // Invalidate cache
 
     // Emit socket event
-    try {
-      const io = socketIO.getIO();
-      io.emit("history:update", { action: "annul", id: req.params.id });
-    } catch (err) {
-      // Socket not ready, ignore
-    }
+    socketService.emitHistoryUpdate("annul", req.params.id);
 
     res.json(data);
   } catch (error: any) {
@@ -221,7 +251,7 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "SUSTITUCION",
-      "REEMPLAZOS",
+      "Reemplazos Activos",
       req.user,
       `Se sustituyó el reemplazo: ${registroA_cortado.id_negocio} (Cambios: funcionario reemplazante: ${registroA_cortado.nombre_entrante} ${registroA_cortado.apellido_entrante} -> ${nuevoRegistroB.nombre_entrante} ${nuevoRegistroB.apellido_entrante})`,
       req.body,
@@ -230,15 +260,7 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
     await delPattern("replacements:*");
 
     // Emit socket event
-    try {
-      const io = socketIO.getIO();
-      io.emit("history:update", {
-        action: "substitute",
-        id: registroA_cortado._id,
-      });
-    } catch (err) {
-      // Socket not ready, ignore
-    }
+    socketService.emitHistoryUpdate("substitute", registroA_cortado._id);
 
     res.status(200).json({
       mensaje: "Sustitución procesada exitosamente.",
@@ -280,7 +302,7 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
       limiteNum,
     );
 
-    await set(cacheKey, data, 300);
+    await set(cacheKey, data, 60);
 
     res.json(data);
   } catch (error: any) {

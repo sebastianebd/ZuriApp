@@ -93,9 +93,17 @@ export const anularReemplazo = async (apiPrivate: ReturnType<typeof useApiPrivat
   }
 }
 
-export const mostrarReemplazos = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
+export const mostrarReemplazos = async (
+  apiPrivate: ReturnType<typeof useApiPrivate>,
+  params?: {
+    page?: number
+    limit?: number
+    search?: string
+    servicio?: string
+  }
+) => {
   try {
-    const { data } = await apiPrivate.get(`/reemplazos/`)
+    const { data } = await apiPrivate.get(`/reemplazos/`, { params })
     return data
   } catch (error) {
     throw errorHandler(error)

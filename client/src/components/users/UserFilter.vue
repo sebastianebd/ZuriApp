@@ -1,32 +1,32 @@
 <template>
-  <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
-    <div class="row g-3 align-items-end">
+  <div class="mb-4">
+    <div class="row row-cols-1 row-cols-md-4 g-3 align-items-end">
       <!-- Filtro RUT -->
-      <div class="col-md-3">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Rut:</label>
         <input
           type="text"
           v-model="filtroRutLocal"
           placeholder="Ingrese Rut"
-          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+          class="custom-input form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           @input="$emit('update:filtroRut', filtroRutLocal)"
         />
       </div>
 
       <!-- Filtro NOMBRE -->
-      <div class="col-md-3">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Nombre:</label>
         <input
           type="text"
           v-model="filtroNombreLocal"
           placeholder="Nombre o Apellido"
-          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+          class="custom-input form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           @input="$emit('update:filtroNombre', filtroNombreLocal)"
         />
       </div>
 
       <!-- Filtro CARGO -->
-      <div class="col-md-3">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Cargo:</label>
         <v-select
           id="filtroTipoCargo"
@@ -37,7 +37,7 @@
             }
           "
           :options="[
-            { label: 'TODOS', value: '' },
+            { label: 'Todos', value: '' },
             ...listaTipoCargo.map((c) => ({ label: c, value: c }))
           ]"
           :reduce="(option: any) => option.value"
@@ -54,7 +54,7 @@
       </div>
 
       <!-- Filtro HABILITADO -->
-      <div class="col-md-3">
+      <div class="col">
         <label class="form-label fw-semibold text-secondary small">Estado:</label>
         <v-select
           id="filtroHabilitado"
@@ -65,7 +65,7 @@
             }
           "
           :options="[
-            { label: 'TODOS', value: '' },
+            { label: 'Todos', value: '' },
             ...listaHabilitado.map((h) => ({ label: h, value: h }))
           ]"
           :reduce="(option: any) => option.value"
@@ -161,5 +161,21 @@ const filtroHabilitadoLocal = ref('')
 .custom-v-select :deep(.vs__dropdown-option--highlight) {
   background: #3b82f6;
   color: white;
+}
+
+/* Custom Input Style to match v-select */
+.custom-input {
+  background-color: #f8f9fa !important;
+  font-size: 0.8125rem !important; /* Match v-select */
+  color: #1e293b !important;
+  font-weight: 500 !important;
+  padding: 4px 10px !important;
+  min-height: 31px;
+}
+
+.custom-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 0.8125rem;
 }
 </style>

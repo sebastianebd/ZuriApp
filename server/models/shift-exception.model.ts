@@ -2,9 +2,10 @@ import { Schema, model, Document } from "mongoose";
 
 export interface IShiftException extends Document {
   assignment_id: Schema.Types.ObjectId;
+  assignment_model: "TurnAssignment" | "Replacement";
   date: Date;
-  original_type: "LARGO" | "NOCHE" | "LIBRE";
-  override_type: "LARGO" | "NOCHE" | "LIBRE";
+  original_type: string;
+  override_type: string;
   reason?: string;
   created_by: Schema.Types.ObjectId;
   created_at: Date;
@@ -14,9 +15,15 @@ const shiftExceptionSchema = new Schema<IShiftException>(
   {
     assignment_id: {
       type: Schema.Types.ObjectId,
-      ref: "TurnAssignment",
       required: true,
+      refPath: "assignment_model", // Polymorphic reference
       index: true,
+    },
+    assignment_model: {
+      type: String,
+      required: true,
+      enum: ["TurnAssignment", "Replacement"],
+      default: "TurnAssignment",
     },
     date: {
       type: Date,
@@ -25,12 +32,10 @@ const shiftExceptionSchema = new Schema<IShiftException>(
     },
     original_type: {
       type: String,
-      enum: ["LARGO", "NOCHE", "LIBRE"],
       required: true,
     },
     override_type: {
       type: String,
-      enum: ["LARGO", "NOCHE", "LIBRE"],
       required: true,
     },
     reason: {
@@ -49,7 +54,7 @@ const shiftExceptionSchema = new Schema<IShiftException>(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 // Compound index for efficient queries
@@ -57,5 +62,5 @@ shiftExceptionSchema.index({ assignment_id: 1, date: 1 }, { unique: true });
 
 export const ShiftExceptionModel = model<IShiftException>(
   "ShiftException",
-  shiftExceptionSchema
+  shiftExceptionSchema,
 );

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useReportStore } from '../../stores/report.store'
 import { useUserStore } from '../../stores/user.store'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
+import { debounce } from 'lodash-es'
 
 const reportStore = useReportStore()
 const userStore = useUserStore()
@@ -13,26 +14,26 @@ const userOptions = ref<any[]>([]) // Local options for autocomplete
 const month = ref(1)
 const year = ref(2026)
 
-// Debounce helper
-let debounceTimeout: any = null
+// 🚀 Debounced Search with Lodash (300ms)
+const performSearch = debounce(async (search: string, loading: (l: boolean) => void) => {
+  try {
+    const results = await userStore.buscarUsuarios(search)
+    userOptions.value = results
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading(false)
+  }
+}, 300)
 
 const onSearch = (search: string, loading: (l: boolean) => void) => {
   if (search.length < 1) return
 
+  // 1. Immediate UI Feedback
   loading(true)
 
-  if (debounceTimeout) clearTimeout(debounceTimeout)
-
-  debounceTimeout = setTimeout(async () => {
-    try {
-      const results = await userStore.buscarUsuarios(search)
-      userOptions.value = results
-    } catch (e) {
-      console.error(e)
-    } finally {
-      loading(false)
-    }
-  }, 350) // 350ms wait
+  // 2. Debounced API Call
+  performSearch(search, loading)
 }
 
 const months = [
@@ -55,8 +56,21 @@ const years = [2024, 2025, 2026]
 
 // Fetch users for the dropdown (Load default top 20)
 onMounted(async () => {
+  reportStore.error = null // Clear any persistent errors on mount
   const defaults = await userStore.buscarUsuarios('')
   userOptions.value = defaults
+})
+
+// Validation: Restrict current/future months
+const isRestricted = computed(() => {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1 // 1-indexed (Jan=1)
+
+  // Block if Future Year OR (Current Year AND Future/Current Month)
+  if (year.value > currentYear) return true
+  if (year.value === currentYear && month.value >= currentMonth) return true
+  return false
 })
 
 // Explicit Report Generation Handler
@@ -68,6 +82,14 @@ watch([month, year, selectedUser], () => {
 
 const handleGenerateReport = async () => {
   if (!selectedUser.value) return
+
+  // Validation: Check if month is restricted
+  if (isRestricted.value) {
+    reportStore.error =
+      'El mes seleccionado se encuentra en curso. Solo se pueden emitir reportes de meses cerrados.'
+    reportStore.reportData = null
+    return
+  }
 
   // Update store filters explicitely
   reportStore.currentFilters.userId = selectedUser.value._id
@@ -126,10 +148,27 @@ const downloadPDF = () => {
   window.print()
   document.title = originalTitle
 }
+
+const getUserLabel = (option: any) => {
+  return `${option.nombre} ${option.apellido}`
+}
 </script>
 
 <template>
   <div class="page-container">
+    <!-- Header (Screen Only) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 w-100 hide-print">
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-file-earmark-bar-graph fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Centro de Reportes</h4>
+          <p class="text-secondary small mb-0">Generación y exportación de documentos</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Controls (Screen Only) -->
     <div class="controls hide-print">
       <v-select
@@ -137,7 +176,7 @@ const downloadPDF = () => {
         :options="userOptions"
         :filterable="false"
         @search="onSearch"
-        label="full_name"
+        :get-option-label="getUserLabel"
         placeholder="Buscar Funcionario (Nombre o RUT)..."
         class="user-search premium-select"
       >
@@ -232,34 +271,37 @@ const downloadPDF = () => {
           <div class="employee-grid">
             <div class="employee-item">
               <label>Funcionario</label>
-              <value
+              <span class="value-text"
                 >{{ reportStore.reportData.user.nombre }}
-                {{ reportStore.reportData.user.apellido }}</value
+                {{ reportStore.reportData.user.apellido }}</span
               >
             </div>
             <div class="employee-item">
               <label>RUT</label>
-              <value>{{ reportStore.reportData.user.rut }}</value>
+              <span class="value-text">{{ reportStore.reportData.user.rut }}</span>
             </div>
             <div class="employee-item">
               <label>Cargo</label>
-              <value>{{ reportStore.reportData.user.cargo }}</value>
+              <span class="value-text">{{ reportStore.reportData.user.cargo }}</span>
             </div>
             <div class="employee-item">
               <label>Servicio Principal</label>
-              <value>{{ reportStore.reportData.serviceStats[0]?.serviceName || 'N/A' }}</value>
+              <span class="value-text">{{
+                reportStore.reportData.serviceStats[0]?.serviceName || 'N/A'
+              }}</span>
             </div>
             <div class="employee-item">
               <label>Antigüedad</label>
-              <value>{{ reportStore.reportData.user.antiguedad }}</value>
+              <span class="value-text">{{ reportStore.reportData.user.antiguedad }}</span>
             </div>
             <div class="employee-item">
               <label>Período Analizado</label>
-              <value
+              <label>Período Analizado</label>
+              <span class="value-text"
                 >01/{{ String(month).padStart(2, '0') }}/{{ year }} -
                 {{ new Date(year, month, 0).getDate() }}/{{ String(month).padStart(2, '0') }}/{{
                   year
-                }}</value
+                }}</span
               >
             </div>
           </div>
@@ -534,47 +576,51 @@ const downloadPDF = () => {
           </thead>
           <tbody>
             <template v-for="day in reportStore.reportData.timeline" :key="day.dayNum">
-              <!-- Case 1: Free Day (Empty OR Explicit 'X') -->
-              <tr
-                v-if="
-                  day.items.length === 0 ||
-                  (day.items.length === 1 && ['X', 'LIBRE'].includes(day.items[0].sigla))
-                "
-              >
-                <td>{{ formatReportDate(day.date) }}</td>
-                <td colspan="8" style="text-align: center; color: #10b981; font-weight: 600">
-                  <span class="shift-type shift-libre">DÍA LIBRE</span>
-                </td>
-              </tr>
-
-              <!-- Case 2: Regular Shifts -->
-              <template v-else>
-                <tr v-for="(item, idx) in day.items" :key="idx">
+              <template v-if="!day.isOutOfContract">
+                <tr
+                  v-if="
+                    day.items.length === 0 ||
+                    (day.items.length === 1 && ['X', 'LIBRE'].includes(day.items[0].sigla))
+                  "
+                >
                   <td>{{ formatReportDate(day.date) }}</td>
-                  <td>
-                    <span class="service-badge" :class="getServiceBadgeClass(item.service)">{{
-                      item.service
-                    }}</span>
-                  </td>
-                  <td>
-                    <span class="shift-type" :class="getShiftClass(item.sigla)">
-                      {{
-                        item.sigla === 'L' ? 'Diurno' : item.sigla === 'N' ? 'Nocturno' : item.sigla
-                      }}
-                      <span v-if="item.isReplacement" class="text-xs text-gray-500"
-                        >(Reemplazo)</span
-                      >
-                    </span>
-                  </td>
-                  <td class="center">{{ item.sigla }}</td>
-                  <td class="center">{{ item.startTime }}</td>
-                  <td class="center">{{ item.endTime }}</td>
-                  <td class="center">{{ item.dayHrs }}</td>
-                  <td class="center">{{ item.nightHrs }}</td>
-                  <td class="center">
-                    <strong>{{ item.hours }}</strong>
+                  <td colspan="8" style="text-align: center; color: #10b981; font-weight: 600">
+                    <span class="shift-type shift-libre">DÍA LIBRE</span>
                   </td>
                 </tr>
+
+                <template v-else>
+                  <tr v-for="(item, idx) in day.items" :key="idx">
+                    <td>{{ formatReportDate(day.date) }}</td>
+                    <td>
+                      <span class="service-badge" :class="getServiceBadgeClass(item.service)">{{
+                        item.service
+                      }}</span>
+                    </td>
+                    <td>
+                      <span class="shift-type" :class="getShiftClass(item.sigla)">
+                        {{
+                          item.sigla === 'L'
+                            ? 'Diurno'
+                            : item.sigla === 'N'
+                            ? 'Nocturno'
+                            : item.sigla
+                        }}
+                        <span v-if="item.isReplacement" class="text-xs text-gray-500"
+                          >(Reemplazo)</span
+                        >
+                      </span>
+                    </td>
+                    <td class="center">{{ item.sigla }}</td>
+                    <td class="center">{{ item.startTime }}</td>
+                    <td class="center">{{ item.endTime }}</td>
+                    <td class="center">{{ item.dayHrs }}</td>
+                    <td class="center">{{ item.nightHrs }}</td>
+                    <td class="center">
+                      <strong>{{ item.hours }}</strong>
+                    </td>
+                  </tr>
+                </template>
               </template>
             </template>
 
@@ -610,6 +656,14 @@ const downloadPDF = () => {
 </template>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .page-container {
   background: #f8fafc;
   padding: 20px;
@@ -718,6 +772,13 @@ const downloadPDF = () => {
   font-weight: 600;
 }
 
+.btn-generate:disabled,
+.btn-disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
 .page {
   background: white;
   width: 210mm;
@@ -814,7 +875,7 @@ const downloadPDF = () => {
   text-transform: uppercase;
 }
 
-.employee-item value {
+.employee-item .value-text {
   display: block;
   font-size: 14px;
   color: #333;

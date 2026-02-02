@@ -56,8 +56,8 @@ app.use(
     {
       stream: { write: (message: string) => logger.info(message.trim()) },
       skip: (req: Request) => req.url.startsWith("/admin/queues"),
-    }
-  )
+    },
+  ),
 );
 // Sentry Tunnel Body Parser (Capturar todo como buffer crudo para evitar corrupción)
 app.use("/api/sentry", express.raw({ limit: "50mb", type: () => true }));
@@ -106,7 +106,7 @@ app.use(
     type: ["application/json", "application/x-sentry-envelope", "text/plain"],
     limit: "50mb",
   }),
-  sentryRoutes
+  sentryRoutes,
 );
 
 import reportRoutes from "./routes/api/report.routes";
@@ -131,9 +131,12 @@ app.use(
     users: { [dashboardUser]: dashboardPass },
     challenge: true,
   }),
-  serverAdapter.getRouter()
+  serverAdapter.getRouter(),
 );
 // ------------------------
+
+import publicRoutes from "./routes/api/public.routes";
+app.use("/api/public", publicRoutes);
 
 app.all("*", (req: Request, res: Response) => {
   res.status(404).json({ error: "404 Not Found" });
