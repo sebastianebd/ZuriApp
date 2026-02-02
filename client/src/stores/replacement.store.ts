@@ -418,6 +418,24 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
+    async mostrarHistorialUsuario(userId: string) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      this.cargando = true
+      this.error = null
+
+      try {
+        const data = await ReplacementService.mostrarHistorialUsuario(apiPrivate, userId)
+        return data
+      } catch (error: any) {
+        console.error('Error al mostrar historial de usuario:', error)
+        this.error = 'No se pudo cargar el historial del usuario.'
+        throw error
+      } finally {
+        this.cargando = false
+      }
+    },
+
     setFiltroServicio(servicio: string) {
       this.filtroServicio = servicio
     },
