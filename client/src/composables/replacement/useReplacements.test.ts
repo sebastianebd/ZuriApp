@@ -8,8 +8,10 @@ import { mount } from '@vue/test-utils'
 const mockShowAlert = vi.fn()
 const mockReplacementStore = {
   reemplazosFiltrados: [],
+  paginationInfo: { totalPages: 1 },
   hayReemplazos: false,
   mostrarReemplazos: vi.fn(),
+  fetchActiveReplacementsPaginated: vi.fn(),
   procesarSustitucion: vi.fn(),
   crearReemplazo: vi.fn(),
   finalizarReemplazo: vi.fn(),
@@ -127,11 +129,11 @@ describe('useReplacements', () => {
 
   it('loads data on mount', async () => {
     const { result } = withSetup(() => useReplacements())
-    const { loadData, listaDeTurnos } = result
+    const { listaDeTurnos } = result
 
-    await loadData()
+    await new Promise((r) => setTimeout(r, 0))
 
-    expect(mockReplacementStore.mostrarReemplazos).toHaveBeenCalled()
+    expect(mockReplacementStore.fetchActiveReplacementsPaginated).toHaveBeenCalled()
     expect(mockOptionStore.mostrarOpciones).toHaveBeenCalled()
     expect(listaDeTurnos.value).toEqual(['MAÑANA'])
   })

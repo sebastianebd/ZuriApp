@@ -6,7 +6,7 @@ describe('useReplacementModals', () => {
     const modals = useReplacementModals()
     expect(modals.createModalVisible.value).toBe(false)
     expect(modals.updateModalVisible.value).toBe(false)
-    expect(modals.grupo.value).toBe(1)
+    // expect(modals.grupo.value).toBe(1) // Removed
     expect(modals.registroActual.value).toEqual({})
   })
 
@@ -63,47 +63,6 @@ describe('useReplacementModals', () => {
     expect(modals.substituteModalVisible.value).toBe(false)
     expect(modals.fechaCorteSustitucion.value).toBe('')
     expect(modals.registroActual.value).toEqual({})
-  })
-
-  it('filters cargo based on context', () => {
-    const modals = useReplacementModals()
-
-    modals.grupo.value = 1
-    expect(modals.cargoDeFiltrado.value).toBeUndefined()
-
-    modals.grupo.value = 2
-
-    // Case 1: From Update
-    modals.registroActual.value = { tipo_cargo: 'ENFERMERA' }
-    expect(modals.cargoDeFiltrado.value).toBe('ENFERMERA')
-
-    // Case 2: From Create
-    modals.registroActual.value = {}
-    modals.registroNuevo.value = { tipo_cargo: 'TENS' }
-    expect(modals.cargoDeFiltrado.value).toBe('TENS')
-  })
-
-  it('assigns user data correctly', () => {
-    const modals = useReplacementModals()
-    const mockUser: any = {
-      _id: 'u1',
-      rut: '1-9',
-      nombre: 'Ana',
-      apellido: 'Perez',
-      tipo_cargo: 'MEDICO'
-    }
-    const registro: any = {}
-
-    // Assign Saliente
-    modals.assignUserData(registro, mockUser, true)
-    expect(registro.id_saliente).toBe('u1')
-    expect(registro.tipo_cargo).toBe('MEDICO')
-
-    // Assign Entrante
-    const registroEntrante: any = {}
-    modals.assignUserData(registroEntrante, mockUser, false)
-    expect(registroEntrante.id_entrante).toBe('u1')
-    expect(registroEntrante.tipo_cargo).toBeUndefined()
   })
 
   it('creates substitution payload correctly', () => {

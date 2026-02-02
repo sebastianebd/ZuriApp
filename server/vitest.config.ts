@@ -8,6 +8,18 @@ export default defineConfig({
     exclude: ["node_modules", "dist", ".idea", ".git", ".cache"],
     coverage: {
       provider: "v8",
+      all: true,
+      include: ["**/*.ts"],
+      exclude: [
+        "node_modules",
+        "dist",
+        "tests/**",
+        "**/*.test.ts",
+        "**/*.d.ts",
+        "**/*.config.ts",
+        "app.ts",
+        "server.ts",
+      ],
     },
   },
 });
