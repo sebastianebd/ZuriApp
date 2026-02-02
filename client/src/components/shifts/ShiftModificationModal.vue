@@ -203,6 +203,7 @@ watch(
   (newVal) => {
     if (newVal) {
       selectedShift.value = null
+      showDeleteConfirm.value = false // Reset delete confirmation state
     }
   }
 )
