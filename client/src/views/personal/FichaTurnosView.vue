@@ -530,7 +530,7 @@ const isToday = (dayNum: number) => {
 }
 
 /* Premium Select Overrides */
-.premium-select ::v-deep .vs__dropdown-toggle {
+.premium-select :deep(.vs__dropdown-toggle) {
   border: 1px solid #e2e8f0;
   border-radius: 0.375rem;
   padding: 3px;
@@ -540,26 +540,26 @@ const isToday = (dayNum: number) => {
   min-height: 42px;
 }
 
-.premium-select ::v-deep .vs__search {
+.premium-select :deep(.vs__search) {
   font-size: 0.875rem;
   color: #1e293b;
 }
 
-.premium-select ::v-deep .vs__search::placeholder {
+.premium-select :deep(.vs__search::placeholder) {
   color: #94a3b8;
 }
 
-.premium-select ::v-deep .vs__selected {
+.premium-select :deep(.vs__selected) {
   font-size: 0.875rem;
   color: #1e293b;
 }
 
-.premium-select ::v-deep .vs__actions svg {
+.premium-select :deep(.vs__actions svg) {
   fill: #64748b;
   transform: scale(0.8);
 }
 
-.premium-select ::v-deep .vs__dropdown-menu {
+.premium-select :deep(.vs__dropdown-menu) {
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -569,24 +569,24 @@ const isToday = (dayNum: number) => {
   z-index: 1000;
 }
 
-.premium-select ::v-deep .vs__dropdown-option {
+.premium-select :deep(.vs__dropdown-option) {
   border-radius: 0.25rem;
   padding: 6px 10px;
   margin-bottom: 2px;
   color: #475569;
 }
 
-.premium-select ::v-deep .vs__dropdown-option--highlight {
+.premium-select :deep(.vs__dropdown-option--highlight) {
   background: #3b82f6;
   color: white;
 }
 
-.premium-select:hover ::v-deep .vs__dropdown-toggle {
+.premium-select:hover :deep(.vs__dropdown-toggle) {
   border-color: #cbd5e1;
 }
 
-.premium-select ::v-deep .vs--open .vs__dropdown-toggle,
-.premium-select:focus-within ::v-deep .vs__dropdown-toggle {
+.premium-select :deep(.vs--open .vs__dropdown-toggle),
+.premium-select:focus-within :deep(.vs__dropdown-toggle) {
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
