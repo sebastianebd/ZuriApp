@@ -2,14 +2,17 @@
   <div class="audit-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-shield-check text-primary me-2"></i>Registro de Auditoría
-        </h4>
-        <p class="text-secondary mb-0">
-          Seguimiento detallado de cambios y acciones en el sistema ({{ logs.length }} logs
-          mostrados)
-        </p>
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-shield-check fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Registro de Auditoría</h4>
+          <p class="text-secondary small mb-0">
+            Seguimiento detallado de cambios y acciones en el sistema ({{ logs.length }} logs
+            mostrados)
+          </p>
+        </div>
       </div>
       <div class="d-flex gap-2">
         <button class="btn btn-light border fw-semibold shadow-sm px-3" @click="openExportModal">
@@ -44,48 +47,12 @@
           <div v-else>
             <AuditTable :logs="logs" />
 
-            <!-- Pagination (Standardized with ReemplazosView) -->
-            <div
-              class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top"
-              v-if="totalPages > 1"
-            >
-              <span class="text-muted small"
-                >Mostrando página {{ currentPage }} de {{ totalPages }}</span
-              >
-              <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm mb-0 gap-1">
-                  <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                    <button
-                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
-                      @click="changePage(currentPage - 1)"
-                    >
-                      <i class="bi bi-chevron-left small"></i>
-                    </button>
-                  </li>
-                  <li
-                    class="page-item"
-                    v-for="page in totalPages"
-                    :key="page"
-                    :class="{ active: currentPage === page }"
-                  >
-                    <button
-                      class="page-link rounded-2 border-0 mx-1 shadow-xs"
-                      @click="changePage(page)"
-                    >
-                      {{ page }}
-                    </button>
-                  </li>
-                  <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                    <button
-                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
-                      @click="changePage(currentPage + 1)"
-                    >
-                      <i class="bi bi-chevron-right small"></i>
-                    </button>
-                  </li>
-                </ul>
-              </nav>
-            </div>
+            <!-- Pagination (Reusable Component) -->
+            <AppPagination
+              :currentPage="currentPage"
+              :totalPages="totalPages"
+              @changePage="changePage"
+            />
           </div>
         </div>
       </div>
@@ -107,6 +74,7 @@ import { useAuditStore } from '@/stores/audit.store'
 import AuditFilter from '@/components/audit/AuditFilter.vue'
 import AuditTable from '@/components/audit/AuditTable.vue'
 import TableLoader from '@/components/common/TableLoader.vue'
+import AppPagination from '@/components/common/AppPagination.vue'
 import ExportFormatModal from '@/components/users/ExportFormatModal.vue'
 import socket from '@/plugins/socket'
 import { useExport } from '@/composables/useExport'
@@ -167,6 +135,15 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .audit-view {
   background-color: #f8fafc;
   min-height: calc(100vh - 70px);

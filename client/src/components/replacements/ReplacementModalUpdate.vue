@@ -31,7 +31,7 @@
           <div class="modal-body p-3 bg-light bg-opacity-50">
             <!-- TRANSACTIONS CONTAINER (Saliente -> Entrante) -->
             <div class="bg-white rounded-4 shadow-sm p-3 mb-3 border">
-              <div class="row align-items-center g-0">
+              <div class="row align-items-start g-0">
                 <!-- COLUMNA SALIENTE -->
                 <div class="col-md-5">
                   <div
@@ -66,7 +66,7 @@
                 </div>
 
                 <!-- CONNECTOR ARROW -->
-                <div class="col-md-2 text-center py-2 py-md-0">
+                <div class="col-md-2 text-center py-2 py-md-0 align-self-center">
                   <div
                     class="connector-icon bg-white text-secondary shadow-sm rounded-circle d-inline-flex align-items-center justify-content-center border"
                   >
@@ -76,7 +76,22 @@
                 </div>
 
                 <!-- COLUMNA ENTRANTE -->
-                <div class="col-md-5">
+                <div class="col-md-5 position-relative">
+                  <!-- Substitution Button (Outside Card) -->
+                  <div
+                    class="position-absolute top-0 end-0 m-2"
+                    style="z-index: 5; margin-top: -15px !important; margin-right: -10px !important"
+                  >
+                    <button
+                      v-if="turnoEnCurso && !registro.corte_anticipado"
+                      @click.prevent="$emit('sustituir-usuario')"
+                      class="btn btn-icon btn-white text-danger shadow-sm border"
+                      title="Sustituir Funcionario"
+                    >
+                      <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                  </div>
+
                   <div
                     class="user-card incoming p-2 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10 position-relative h-100"
                   >
@@ -86,7 +101,8 @@
                       ENTRANTE
                     </div>
 
-                    <div v-if="registro.rut_entrante" class="d-flex align-items-center mt-4 pt-1">
+                    <!-- STATIC VIEW (Locked) -->
+                    <div v-if="turnoEnCurso" class="d-flex align-items-center mt-4 pt-1">
                       <div class="avatar-filled bg-gradient-success text-white shadow-sm me-3">
                         {{
                           getInitials(
@@ -104,46 +120,75 @@
                           {{ registro.rut_entrante }}
                         </div>
                       </div>
-
-                      <!-- Botones de Acción Inline -->
-                      <button
-                        v-if="turnoEnCurso && !registro.corte_anticipado"
-                        @click.prevent="$emit('sustituir-usuario')"
-                        class="btn btn-icon btn-white text-danger shadow-xs ms-2"
-                        title="Sustituir"
-                      >
-                        <i class="bi bi-arrow-repeat"></i>
-                      </button>
-                      <button
-                        v-else-if="turnoEnCurso && registro.corte_anticipado"
-                        class="btn btn-icon btn-light text-muted opacity-50 ms-2"
-                        title="Este registro ya fue sustituido anteriormente"
-                        disabled
-                        style="cursor: not-allowed"
-                      >
-                        <i class="bi bi-arrow-repeat"></i>
-                      </button>
-                      <button
-                        v-else
-                        @click.prevent="$emit('buscar-entrante')"
-                        class="btn btn-icon btn-white text-warning shadow-xs ms-2"
-                        title="Buscar / Cambiar"
-                      >
-                        <i class="bi bi-search"></i>
-                      </button>
                     </div>
 
-                    <div v-else class="text-center py-3">
-                      <p class="text-muted x-small mb-2">Sin asignar</p>
-                      <button
-                        @click.prevent="$emit('buscar-entrante')"
-                        class="btn btn-sm btn-light border text-success fw-bold shadow-xs py-0 px-2"
-                        style="font-size: 0.7rem"
+                    <!-- EDITABLE VIEW (Pending) -->
+                    <div v-else class="mt-4 pt-1">
+                      <!-- v-select for Entrante -->
+                      <v-select
+                        v-model="selectedEntrante"
+                        :options="entranteOptions"
+                        :filterable="false"
+                        :loading="isSearchingEntrante"
+                        @search="searchEntrante"
+                        label="displayName"
+                        placeholder="Buscar funcionario..."
+                        class="user-select-success"
                       >
-                        <i class="bi bi-search me-1"></i> Asignar
-                      </button>
+                        <template #option="option">
+                          <div class="user-option">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <div>
+                                <span class="fw-bold text-dark">{{ option.rut }}</span>
+                                <span class="text-secondary ms-2"
+                                  >{{ option.nombre }} {{ option.apellido }}</span
+                                >
+                              </div>
+                              <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                            </div>
+                          </div>
+                        </template>
+                        <template #selected-option="option">
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="avatar-filled bg-gradient-success text-white shadow-sm me-2"
+                              style="width: 32px; height: 32px; font-size: 0.75rem"
+                            >
+                              {{ getInitials(option.nombre + ' ' + option.apellido) }}
+                            </div>
+                            <div style="overflow: hidden">
+                              <div
+                                class="fw-bold text-dark text-truncate"
+                                style="font-size: 0.8rem"
+                              >
+                                {{ option.nombre }} {{ option.apellido }}
+                              </div>
+                              <div class="text-secondary x-small font-monospace text-truncate">
+                                {{ option.rut }}
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                        <template #no-options="{ search }">
+                          <div class="text-center text-muted py-2">
+                            <i class="bi bi-search me-1"></i>
+                            <span v-if="!search">Escribe para buscar...</span>
+                            <span v-else>No se encontraron resultados</span>
+                          </div>
+                        </template>
+                      </v-select>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <!-- Helper Text Row (Outside Grid) -->
+              <div class="row g-0" v-if="turnoEnCurso && !registro.corte_anticipado">
+                <div class="col-md-5 offset-md-7 text-center mt-1">
+                  <small class="text-muted fst-italic" style="font-size: 0.65rem"
+                    >Para cambiar funcionario en curso, use el botón de sustitución
+                    <i class="bi bi-arrow-repeat"></i>.</small
+                  >
                 </div>
               </div>
             </div>
@@ -340,12 +385,15 @@
 </template>
 
 <script setup lang="ts">
-import type { RegisterDataReemplazo } from '@/types/models'
-import { ref, computed } from 'vue'
+import type { RegisterDataReemplazo, User } from '@/types/models'
+import { ref, computed, watch } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
 import { useDatePicker } from '@/composables/useDatePicker'
+import vSelect from 'vue-select'
+import 'vue-select/dist/vue-select.css'
+import { useUserStore } from '@/stores/user.store'
 
 interface ReemplazoModalData extends Partial<RegisterDataReemplazo> {
   fecha_inicio?: string
@@ -363,12 +411,102 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardar'): void
-  (e: 'buscar-entrante'): void
+  // NO 'buscar-entrante' anymore
   (e: 'sustituir-usuario'): void
   (e: 'update:registro', nuevoRegistro: ReemplazoModalData): void
 }>()
 
+const userStore = useUserStore()
 const showConfirmacion = ref(false)
+
+// v-select state
+const selectedEntrante = ref<any>(null) // Use 'any' to construct incomplete user obj
+const entranteOptions = ref<User[]>([])
+const isSearchingEntrante = ref(false)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Initialize v-select logic
+// When modal becomes visible or registro changes, set selectedEntrante
+watch(
+  () => props.registro,
+  (newVal) => {
+    if (newVal && newVal.rut_entrante) {
+      selectedEntrante.value = {
+        _id: newVal.id_entrante,
+        rut: newVal.rut_entrante,
+        nombre: newVal.nombre_entrante || '',
+        apellido: newVal.apellido_entrante || '',
+        displayName: `${newVal.rut_entrante} - ${newVal.nombre_entrante} ${newVal.apellido_entrante}` // Helper for label if needed
+      }
+    } else {
+      selectedEntrante.value = null
+    }
+  },
+  { deep: true, immediate: true }
+)
+
+// Watch user selection to update registro
+watch(selectedEntrante, (user) => {
+  // If user selected
+  if (user) {
+    // Break loop: Only emit if ID is different
+    if (user._id !== props.registro.id_entrante) {
+      emit('update:registro', {
+        ...props.registro,
+        id_entrante: user._id,
+        rut_entrante: user.rut,
+        nombre_entrante: user.nombre,
+        apellido_entrante: user.apellido
+      })
+    }
+  }
+  // If user cleared
+  else if (!user && props.registro.id_entrante) {
+    emit('update:registro', {
+      ...props.registro,
+      id_entrante: undefined,
+      rut_entrante: undefined,
+      nombre_entrante: undefined,
+      apellido_entrante: undefined
+    })
+  }
+})
+
+// Search Logic
+const searchEntrante = (query: string, loading: (isLoading: boolean) => void) => {
+  if (!query || query.length < 2) {
+    entranteOptions.value = []
+    return
+  }
+
+  loading(true)
+  isSearchingEntrante.value = true
+
+  if (searchTimeout) clearTimeout(searchTimeout)
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      await userStore.searchUsers({
+        search: query.trim(),
+        page: 1,
+        limit: 20
+      })
+
+      entranteOptions.value = userStore.searchResults.map((u) => ({
+        ...u,
+        displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+      }))
+    } catch (error) {
+      console.error('Search error:', error)
+      entranteOptions.value = []
+    } finally {
+      loading(false)
+      isSearchingEntrante.value = false
+    }
+  }, 300)
+}
+
+// ... rest of script ...
 
 // --- Helper Initials ---
 function getInitials(name: string) {

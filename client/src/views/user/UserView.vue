@@ -2,39 +2,38 @@
   <div class="user-profile-view">
     <div class="container-fluid px-4 py-4">
       <!-- Header -->
-      <div class="mb-4">
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-person-circle text-primary me-2"></i>Mi Perfil
-        </h4>
-        <p class="text-secondary mb-0">Información de tu cuenta y actividad</p>
-      </div>
-
-      <div class="row g-4 mb-4">
-        <!-- Navegación de Pestañas -->
-        <div class="col-12">
-          <ul class="nav nav-pills custom-tabs p-1 rounded-4 bg-white shadow-sm d-inline-flex">
-            <li class="nav-item">
-              <button
-                class="nav-link rounded-4 px-4 py-2 fw-semibold d-flex align-items-center gap-2"
-                :class="{ active: activeTab === 'profile' }"
-                @click="activeTab = 'profile'"
-              >
-                <i class="bi bi-person-vcard"></i>
-                Mi Perfil
-              </button>
-            </li>
-            <li class="nav-item">
-              <button
-                class="nav-link rounded-4 px-4 py-2 fw-semibold d-flex align-items-center gap-2"
-                :class="{ active: activeTab === 'security' }"
-                @click="activeTab = 'security'"
-              >
-                <i class="bi bi-shield-lock"></i>
-                Seguridad
-              </button>
-            </li>
-          </ul>
+      <!-- Header & Tabs -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h4 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-person-circle text-primary me-2"></i>Mi Perfil
+          </h4>
+          <p class="text-secondary mb-0">Información de tu cuenta y actividad</p>
         </div>
+
+        <!-- Navegación de Pestañas -->
+        <ul class="nav nav-pills custom-tabs p-1 rounded-4 bg-white shadow-sm d-inline-flex">
+          <li class="nav-item">
+            <button
+              class="nav-link rounded-4 px-4 py-2 fw-semibold d-flex align-items-center gap-2"
+              :class="{ active: activeTab === 'profile' }"
+              @click="activeTab = 'profile'"
+            >
+              <i class="bi bi-person-vcard"></i>
+              Mi Perfil
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              class="nav-link rounded-4 px-4 py-2 fw-semibold d-flex align-items-center gap-2"
+              :class="{ active: activeTab === 'security' }"
+              @click="activeTab = 'security'"
+            >
+              <i class="bi bi-shield-lock"></i>
+              Seguridad
+            </button>
+          </li>
+        </ul>
       </div>
 
       <Suspense>

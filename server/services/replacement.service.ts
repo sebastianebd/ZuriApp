@@ -3,7 +3,7 @@ import Reemplazo, { IReplacement } from "../models/replacement.model";
 const determineStatus = (fecha_inicio: Date | string): string => {
   const now = new Date();
   const fechaActualUTC = new Date(
-    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()),
   );
 
   const inicio = new Date(fecha_inicio);
@@ -18,7 +18,7 @@ const determineStatus = (fecha_inicio: Date | string): string => {
 const determineStatusCorte = (fecha_corte: Date | string): string => {
   const now = new Date();
   const fechaActualUTC = new Date(
-    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()),
   );
 
   const fechaCorte = new Date(fecha_corte);
@@ -29,14 +29,32 @@ const determineStatusCorte = (fecha_corte: Date | string): string => {
   return "EN CURSO";
 };
 
-const fechaLocal = new Date();
-fechaLocal.setMinutes(fechaLocal.getMinutes() - fechaLocal.getTimezoneOffset());
-
 async function registrar(data: any) {
   const initialStatus = determineStatus(data.fecha_inicio);
 
+  /* 
+   Lookup TurnType ID 
+   We import basic mongoose model to avoid large circular deps if possible, 
+   or just use mongoose.model if registered.
+   But let's use dynamic import or assume TurnType is registered.
+  */
+  const { default: TurnTypeModel } = await import("../models/turn-type.model");
+  const turnTypeDoc = await TurnTypeModel.findOne({
+    // match by name (case insensitive) or code?
+    // Usually frontend sends name.
+    nombre: { $regex: new RegExp(`^${data.tipo_turno}$`, "i") },
+    deleted_at: null,
+  });
+
   const nuevoReemplazo = new Reemplazo({
     ...data,
+    turn_type_id: turnTypeDoc ? turnTypeDoc._id : undefined, // Save ID if found
+    snapshot_secuencia: turnTypeDoc
+      ? turnTypeDoc.toObject().secuencia.map((item: any) => {
+          const { color, ...rest } = item;
+          return rest;
+        })
+      : [],
     fecha_inicio: new Date(data.fecha_inicio),
     fecha_termino: new Date(data.fecha_termino),
     status: initialStatus,
@@ -48,13 +66,82 @@ async function registrar(data: any) {
 async function obtenerActivos() {
   return await Reemplazo.find({
     status: { $in: ["EN CURSO", "PENDIENTE"] },
-  }).populate("creado_por", "nombre apellido");
+  })
+    .populate("creado_por", "nombre apellido")
+    .populate("id_entrante", "tipo_cargo"); // Populate to get cargo
+}
+
+async function obtenerActivosPaginado(options: {
+  search?: string;
+  servicio?: string;
+  page: number;
+  limit: number;
+}) {
+  const { search, servicio, page, limit } = options;
+  const query: any = {
+    status: { $in: ["EN CURSO", "PENDIENTE"] },
+  };
+
+  // Service filter
+  if (servicio && servicio.trim().length > 0) {
+    query.servicio = servicio;
+  }
+
+  // Search Logic (optimized with indexes)
+  if (search && search.trim().length > 0) {
+    const safeTerm = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(safeTerm, "i");
+
+    query.$or = [
+      { rut_saliente: regex },
+      { nombre_saliente: regex },
+      { apellido_saliente: regex },
+      { rut_entrante: regex },
+      { nombre_entrante: regex },
+      { apellido_entrante: regex },
+    ];
+  }
+
+  // Calculate skip for pagination
+  const skip = (page - 1) * limit;
+
+  // Execute query and count in parallel for performance
+  const [reemplazos, total] = await Promise.all([
+    Reemplazo.find(query)
+      .populate("creado_por", "nombre apellido")
+      .populate("id_entrante", "_id tipo_cargo") // Explicitly get _id and cargo
+      .skip(skip)
+      .limit(limit)
+      .lean(), // Convert to plain objects (faster)
+    Reemplazo.countDocuments(query),
+  ]);
+
+  // 🔧 Debug: Verify populate worked
+  if (reemplazos.length > 0) {
+    console.log(
+      `[Replacement Service] Query returned ${reemplazos.length} replacements`,
+    );
+    console.log(
+      `[Replacement Service] First replacement id_entrante:`,
+      reemplazos[0].id_entrante,
+    );
+  }
+
+  return {
+    reemplazos,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      itemsPerPage: limit,
+    },
+  };
 }
 
 async function obtenerInactivosPaginados(
   filtros: any = {},
   pagina: number = 1,
-  limite: number = 10
+  limite: number = 10,
 ) {
   const query: any = {
     status: { $in: ["FINALIZADO", "ANULADO", "INTERRUMPIDO"] },
@@ -132,10 +219,16 @@ async function actualizar(id: string, data: any) {
 }
 
 async function finalizarReemplazo(id: string) {
+  // Adjust to Chile Time (approx -3h) to ensure date falls on the correct local day
+  // This effectively stores "Local Time" as UTC, which matches the user's legacy data expectation likely.
+  const now = new Date();
+  const chileOffset = 3 * 60 * 60 * 1000;
+  const fechaCierre = new Date(now.getTime() - chileOffset);
+
   await Reemplazo.findByIdAndUpdate(
     id,
-    { status: "FINALIZADO", fecha_termino: fechaLocal },
-    { new: true }
+    { status: "FINALIZADO", fecha_termino: fechaCierre },
+    { new: true },
   );
   return await Reemplazo.findById(id);
 }
@@ -191,11 +284,11 @@ async function sustituir(payload: SustitucionPayload) {
       corte_anticipado: true,
       updated_at: new Date(),
     },
-    { new: true }
+    { new: true },
   );
   if (!registroA_actualizado) {
     throw new Error(
-      `Registro de reemplazo con ID ${id_registro_a} no encontrado.`
+      `Registro de reemplazo con ID ${id_registro_a} no encontrado.`,
     );
   }
 
@@ -231,6 +324,7 @@ async function sustituir(payload: SustitucionPayload) {
 export default {
   registrar,
   obtenerActivos,
+  obtenerActivosPaginado,
   actualizar,
   finalizarReemplazo,
   anularReemplazo,

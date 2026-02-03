@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User, { IUser } from "../models/user.model";
+import Cargo from "../models/cargo.model";
 
 export class AuthError extends Error {
   status: number;
@@ -78,32 +79,36 @@ async function login({
 
   // --- CONCURRENT LOGIN CHECK ---
   // Check if user has an active session in Redis (Only if password matches)
-  const activeSession = await redis.get(`active_session:${user._id}`);
+  // Feature Flag: Allow disabling for CI/Testing to support parallel workers
+  if (process.env.DISABLE_CONCURRENT_SESSION !== "true") {
+    const activeSession = await redis.get(`active_session:${user._id}`);
 
-  if (activeSession) {
-    const sessionData = JSON.parse(activeSession);
-    const io = socketConfig.getIO();
+    if (activeSession) {
+      const sessionData = JSON.parse(activeSession);
+      const io = socketConfig.getIO();
 
-    // Verify if socket is truly connected
-    const connectedSockets = io.sockets.sockets; // Map<string, Socket>
-    if (connectedSockets.has(sessionData.socket_id)) {
-      // User is connected! Reject login.
-      // We log the attempt but do NOT return details to client (Security)
-      console.warn(
-        `[Security] Login bloqueado para usuario ${user.rut}. Ya tiene sesión activa en ${sessionData.device}`
-      );
+      // Verify if socket is truly connected
+      const connectedSockets = io.sockets.sockets; // Map<string, Socket>
+      if (connectedSockets.has(sessionData.socket_id)) {
+        // User is connected! Reject login.
+        // We log the attempt but do NOT return details to client (Security)
+        console.warn(
+          `[Security] Login bloqueado para usuario ${user.rut}. Ya tiene sesión activa en ${sessionData.device}`
+        );
 
-      // Return 409 Conflict
-      const error = new Error("Cuenta conectada");
-      (error as any).status = 409;
-      throw error;
-    } else {
-      // Socket ID in Redis but not in IO -> Stale session (e.g. server restart or crash)
-      // Allow login and it will be overwritten when client connects socket.
-      console.log(`[Info] Limpiando sesión stale para usuario ${user.rut}`);
-      await redis.del(`active_session:${user._id}`);
+        // Return 409 Conflict
+        const error = new Error("Cuenta conectada");
+        (error as any).status = 409;
+        throw error;
+      } else {
+        // Socket ID in Redis but not in IO -> Stale session (e.g. server restart or crash)
+        // Allow login and it will be overwritten when client connects socket.
+        console.log(`[Info] Limpiando sesión stale para usuario ${user.rut}`);
+        await redis.del(`active_session:${user._id}`);
+      }
     }
   }
+  // -----------------------------
   // -----------------------------
 
   // Log Success Attempt
@@ -122,7 +127,22 @@ async function login({
   user.refresh_token = hashedRefreshToken;
   await user.save();
 
-  return { accessToken, refreshToken, user };
+  // Fetch Permissions & Level (Case Insensitive Name OR Code)
+  const cargo = await Cargo.findOne({
+    $or: [
+      { nombre: { $regex: new RegExp(`^${user.tipo_cargo}$`, "i") } },
+      { codigo: user.tipo_cargo.toUpperCase() },
+    ],
+  }).lean();
+
+  // Create plain object and attach verified permissions/level
+  const userPayload = {
+    ...user.toObject(),
+    nivel: cargo?.nivel || 10,
+    permisos: cargo?.permisos || [],
+  };
+
+  return { accessToken, refreshToken, user: userPayload };
 }
 
 async function getLoginHistory(userId: string) {

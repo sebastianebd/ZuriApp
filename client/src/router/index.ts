@@ -19,43 +19,112 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/mi-calendario',
+      name: 'public-calendar',
+      component: () => import('@/views/public/PublicCalendar.vue'),
+      meta: { requiresAuth: false } // Explicitly public
+    },
 
     {
       path: '/app',
       component: AppLayout,
-      redirect: { name: 'user' },
+      redirect: { name: 'dashboard' },
       meta: { requiresAuth: true },
       children: [
+        // ==================== INICIO ====================
+        {
+          path: 'dashboard',
+          name: 'dashboard',
+          component: () => import('@/views/user/UserView.vue')
+        },
         {
           path: 'user',
           name: 'user',
           component: () => import('@/views/user/UserView.vue')
         },
+
+        // ==================== PERSONAL ====================
         {
-          path: 'reemplazos',
-          name: 'reemplazos',
-          component: () => import('@/views/user/ReemplazosView.vue')
-        },
-        {
-          path: 'calendario',
-          name: 'calendario',
-          component: () => import('@/views/user/CalendarioView.vue')
-        },
-        {
-          path: 'ver_usuarios',
-          name: 'ver_usuarios',
+          path: 'personal/funcionarios',
+          name: 'personal-funcionarios',
           component: () => import('@/views/user/VerUsuarios.vue')
         },
         {
-          path: 'ver_historial',
-          name: 'ver_historial',
+          path: 'personal/cargos',
+          name: 'personal-cargos',
+          component: () => import('@/views/personal/CargoManagement.vue')
+        },
+        {
+          path: 'personal/ficha-turnos',
+          name: 'personal-ficha-turnos',
+          component: () => import('@/views/personal/FichaTurnosView.vue')
+        },
+
+        // ==================== OPERACIONES ====================
+        {
+          path: 'operaciones/reemplazos',
+          name: 'operaciones-reemplazos',
+          component: () => import('@/views/user/ReemplazosView.vue')
+        },
+        {
+          path: 'operaciones/calendario-reemplazos',
+          name: 'operaciones-calendario-reemplazos',
+          component: () => import('@/views/user/CalendarioView.vue')
+        },
+        {
+          path: 'operaciones/turnos',
+          name: 'operaciones-turnos',
+          component: () => import('@/views/shifts/ShiftsView.vue')
+        },
+
+        // ==================== HISTORIAL & REPORTES ====================
+        {
+          path: 'historial/reemplazos',
+          name: 'historial-reemplazos',
           component: () => import('@/views/user/VerHistorial.vue')
         },
         {
-          path: 'auditoria',
-          name: 'auditoria',
+          path: 'historial/turnos',
+          name: 'historial-turnos',
+          component: () => import('@/views/historial/TurnosHistorial.vue')
+        },
+        {
+          path: 'historial/excepciones',
+          name: 'historial-excepciones',
+          component: () => import('@/views/historial/ExcepcionesHistorial.vue')
+        },
+        {
+          path: 'historial/auditoria',
+          name: 'historial-auditoria',
           component: () => import('@/views/audit/AuditoriaView.vue')
-        }
+        },
+        {
+          path: 'reportes',
+          name: 'reportes',
+          component: () => import('@/views/reports/ReportsView.vue')
+        },
+
+        // ==================== CONFIGURACIÓN ====================
+        {
+          path: 'configuracion/servicios',
+          name: 'configuracion-servicios',
+          component: () => import('@/views/configuracion/ServiceManagement.vue')
+        },
+        {
+          path: 'configuracion/tipos-turno',
+          name: 'configuracion-tipos-turno',
+          component: () => import('@/views/configuracion/ShiftTypeManagement.vue')
+        },
+
+        // ==================== REDIRECTS (Backward Compatibility) ====================
+        { path: 'user', redirect: { name: 'dashboard' } },
+        { path: 'ver_usuarios', redirect: { name: 'personal-funcionarios' } },
+        { path: 'reemplazos', redirect: { name: 'operaciones-reemplazos' } },
+        { path: 'calendario', redirect: { name: 'operaciones-calendario-reemplazos' } },
+        { path: 'turnos', redirect: { name: 'operaciones-turnos' } },
+        { path: 'ver_historial', redirect: { name: 'historial-reemplazos' } },
+        { path: 'auditoria', redirect: { name: 'historial-auditoria' } }
       ]
     }
   ]
@@ -69,7 +138,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    return next({ name: 'user' })
+    return next({ name: 'dashboard' })
   }
 
   next()

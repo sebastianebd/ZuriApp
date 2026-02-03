@@ -232,6 +232,28 @@
                       </div>
                     </div>
 
+                    <!-- Tipo Contrato -->
+                    <div class="mb-4 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Tipo Contrato</label
+                      >
+                      <v-select
+                        v-model="form.tipo_contrato"
+                        :options="['PLANTA', 'REEMPLAZO']"
+                        placeholder="Seleccione contrato"
+                        class="custom-v-select"
+                        :class="{ 'is-invalid': errors.tipo_contrato }"
+                        :clearable="false"
+                        :searchable="false"
+                      />
+                      <div
+                        v-if="errors.tipo_contrato"
+                        class="text-danger x-small fw-bold floating-error"
+                      >
+                        {{ errors.tipo_contrato }}
+                      </div>
+                    </div>
+
                     <!-- Habilitado -->
                     <div v-if="shouldShowHabilitado" class="mb-2 position-relative">
                       <label class="form-label x-small fw-bold text-secondary text-uppercase"
@@ -324,6 +346,7 @@ const initialForm = {
   email: '',
   tipo_cargo: '',
   servicio: '',
+  tipo_contrato: '',
   habilitado: ''
 }
 
@@ -438,6 +461,11 @@ const validateForm = () => {
   // Validar Cargo
   if (!form.value.tipo_cargo) {
     newErrors.tipo_cargo = 'Debe seleccionar un cargo'
+  }
+
+  // Validar Tipo Contrato
+  if (!form.value.tipo_contrato) {
+    newErrors.tipo_contrato = 'Debe seleccionar tipo contrato'
   }
 
   // Validar Habilitado (Solo si es visible)

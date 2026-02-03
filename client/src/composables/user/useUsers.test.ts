@@ -4,6 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { mount } from '@vue/test-utils'
 
 const mocks = vi.hoisted(() => ({
+  fetchPaginated: vi.fn(),
   mostrarTodos: vi.fn(),
   crearUsuario: vi.fn(),
   actualizarUsuario: vi.fn(),
@@ -13,12 +14,17 @@ const mocks = vi.hoisted(() => ({
   showAlert: vi.fn()
 }))
 
+const mockUsersState: any[] = []
+
 vi.mock('@/stores/user.store', () => ({
   useUserStore: () => ({
+    fetchPaginated: mocks.fetchPaginated,
     mostrarTodos: mocks.mostrarTodos,
     crearUsuario: mocks.crearUsuario,
     actualizarUsuario: mocks.actualizarUsuario,
-    eliminarUsuario: mocks.eliminarUsuario
+    eliminarUsuario: mocks.eliminarUsuario,
+    currentPageUsers: mockUsersState,
+    paginationInfo: { totalPages: 1 }
   })
 }))
 
@@ -51,8 +57,7 @@ describe('useUsers Composable', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
 
-    // Setup default mock returns
-    mocks.mostrarTodos.mockResolvedValue([
+    const users = [
       {
         _id: '1',
         nombre: 'Test',
@@ -69,7 +74,14 @@ describe('useUsers Composable', () => {
         tipo_cargo: 'ENFERMERA',
         habilitado: 'NO'
       }
-    ])
+    ]
+
+    // Update state directly as store action would
+    mockUsersState.length = 0
+    mockUsersState.push(...users)
+
+    // Setup mocks
+    mocks.fetchPaginated.mockResolvedValue({ total: 2, users })
     mocks.mostrarOpciones.mockResolvedValue({
       tipoCargo: ['TENS', 'ENFERMERA'],
       habilitado: ['SI', 'NO'],
@@ -92,31 +104,40 @@ describe('useUsers Composable', () => {
   }
 
   it('should load users and options on mount', async () => {
-    const { usuarios, listaTipoCargo } = mountComposable()
+    const { paginatedUsuarios: usuarios, listaTipoCargo } = mountComposable()
 
     await new Promise((r) => setTimeout(r, 0))
 
-    expect(mocks.mostrarTodos).toHaveBeenCalled()
+    expect(mocks.fetchPaginated).toHaveBeenCalled()
     expect(mocks.mostrarOpciones).toHaveBeenCalled()
     expect(usuarios.value).toHaveLength(2)
     expect(listaTipoCargo.value).toContain('TENS')
   })
 
   it('should filter users by RUT', async () => {
-    const { usuarios, filtroRut, usuariosFiltrados } = mountComposable()
+    const { paginatedUsuarios: usuarios, filtroRut, usuariosFiltrados } = mountComposable()
     await new Promise((r) => setTimeout(r, 0))
 
     filtroRut.value = '123'
+
+    // Simulate server-side filtering updating the store
+    const filtered = mockUsersState.filter((u) => u.rut.includes('123'))
+    mockUsersState.length = 0
+    mockUsersState.push(...filtered)
+
     expect(usuariosFiltrados.value).toHaveLength(1)
     expect(usuariosFiltrados.value[0].nombre).toBe('Test')
   })
 
   it('should handle user creation (CRUD)', async () => {
-    const { handleCreate, usuarios } = mountComposable()
+    const { handleCreate, paginatedUsuarios: usuarios } = mountComposable()
     await new Promise((r) => setTimeout(r, 0))
 
     const newUser = { nombre: 'New', apellido: 'User', rut: '11111111-1' }
     mocks.crearUsuario.mockResolvedValue({ ...newUser, _id: '3' })
+
+    // Simulate store update
+    mockUsersState.push({ ...newUser, _id: '3' })
 
     await handleCreate(newUser as any)
 
@@ -126,10 +147,14 @@ describe('useUsers Composable', () => {
   })
 
   it('should handle user deletion (CRUD)', async () => {
-    const { handleDelete, usuarios } = mountComposable()
+    const { handleDelete, paginatedUsuarios: usuarios } = mountComposable()
     await new Promise((r) => setTimeout(r, 0))
 
     expect(usuarios.value).toHaveLength(2)
+
+    // Simulate store update
+    const idx = mockUsersState.findIndex((u) => u._id === '1')
+    if (idx !== -1) mockUsersState.splice(idx, 1)
 
     await handleDelete('1')
 

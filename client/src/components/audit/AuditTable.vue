@@ -49,7 +49,7 @@
               </div>
               <div class="user-info ms-3">
                 <div class="fw-bold text-dark text-truncate">
-                  {{ log.user_name || 'Desconocido' }}
+                  {{ formatTitleCase(log.user_name || 'Desconocido') }}
                 </div>
                 <div class="rut-text" v-if="log.user_id">ID: ...{{ getUserId(log) }}</div>
               </div>
@@ -59,14 +59,14 @@
           <!-- Módulo -->
           <td>
             <span class="badge-modern-module">
-              <i class="bi bi-box-seam me-1"></i> {{ log.module }}
+              <i class="bi bi-box-seam me-1"></i> {{ formatTitleCase(log.module) }}
             </span>
           </td>
 
           <!-- Acción -->
           <td>
             <span class="status-glass" :class="getActionGlassClass(log.action)">
-              {{ log.action }}
+              {{ formatTitleCase(log.action) }}
             </span>
           </td>
 
@@ -74,7 +74,7 @@
           <td>
             <span
               class="text-secondary x-small d-block text-truncate"
-              style="max-width: 250px"
+              style="max-width: 450px"
               :title="log.description"
             >
               {{ log.description }}
@@ -154,6 +154,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { formatTitleCase } from '@/utils/text-formatters'
 
 defineProps({
   logs: {
@@ -221,7 +222,9 @@ async function copyJson() {
   if (!selectedLog.value) return
   try {
     await navigator.clipboard.writeText(JSON.stringify(selectedLog.value, null, 2))
-  } catch (e) {}
+  } catch (e) {
+    console.error('Failed to copy JSON', e)
+  }
 }
 </script>
 
@@ -349,7 +352,6 @@ async function copyJson() {
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
   backdrop-filter: blur(4px);
 }
 

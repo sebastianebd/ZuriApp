@@ -2,13 +2,38 @@
   <div class="calendar-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-calendar3 text-primary me-2"></i>Calendario de Reemplazos
-        </h4>
-        <p class="text-secondary mb-0">Visualiza y gestiona la programación de turnos</p>
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-calendar3 fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Calendario de Reemplazos</h4>
+          <p class="text-secondary small mb-0">Visualiza y gestiona la programación de turnos</p>
+        </div>
       </div>
-      <div class="d-none d-md-flex gap-2">
+      <div class="d-none d-md-flex gap-2 align-items-center">
+        <!-- Service Filter -->
+        <div style="min-width: 250px">
+          <v-select
+            v-model="selectedService"
+            :options="serviceOptions"
+            placeholder="Seleccione Servicio"
+            class="bg-white rounded shadow-sm custom-v-select"
+            :clearable="false"
+            :searchable="true"
+          >
+            <template #no-options="{ search, searching }">
+              <template v-if="searching">
+                No se encontraron resultados para <em>{{ search }}</em
+                >.
+              </template>
+              <em v-else>Escriba para buscar un servicio...</em>
+            </template>
+          </v-select>
+        </div>
+
+        <div class="vr mx-2 opacity-25"></div>
+
         <div
           class="badge bg-success bg-opacity-10 text-success p-2 px-3 border border-success border-opacity-25 rounded-pill"
         >
@@ -69,8 +94,11 @@
                     >Funcionario Saliente</label
                   >
                   <h5 class="fw-bold mb-0 text-dark">
-                    {{ eventoSeleccionado.nombre_saliente }}
-                    {{ eventoSeleccionado.apellido_saliente }}
+                    {{
+                      formatTitleCase(
+                        `${eventoSeleccionado.nombre_saliente} ${eventoSeleccionado.apellido_saliente}`
+                      )
+                    }}
                   </h5>
                 </div>
               </div>
@@ -89,8 +117,11 @@
                     >Reemplazante (Entrante)</label
                   >
                   <h5 class="fw-bold mb-0 text-dark">
-                    {{ eventoSeleccionado.nombre_entrante }}
-                    {{ eventoSeleccionado.apellido_entrante }}
+                    {{
+                      formatTitleCase(
+                        `${eventoSeleccionado.nombre_entrante} ${eventoSeleccionado.apellido_entrante}`
+                      )
+                    }}
                   </h5>
                 </div>
               </div>
@@ -125,7 +156,7 @@
                       <i class="bi bi-building me-1"></i>Servicio
                     </label>
                     <span class="badge bg-info text-dark w-100 py-2">{{
-                      eventoSeleccionado.servicio
+                      formatTitleCase(eventoSeleccionado.servicio)
                     }}</span>
                   </div>
                 </div>
@@ -134,7 +165,9 @@
                     <label class="text-secondary smaller fw-bold text-uppercase mb-1 d-block">
                       <i class="bi bi-clock me-1"></i>Turno
                     </label>
-                    <span class="fw-semibold text-dark">{{ eventoSeleccionado.tipo_turno }}</span>
+                    <span class="fw-semibold text-dark">{{
+                      formatTitleCase(eventoSeleccionado.tipo_turno)
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -144,12 +177,13 @@
                   class="badge px-3 py-2 rounded-pill"
                   :style="{ backgroundColor: getColorByStatus(eventoSeleccionado.status) }"
                 >
-                  <i class="bi bi-circle-fill me-1 small"></i>{{ eventoSeleccionado.status }}
+                  <i class="bi bi-circle-fill me-1 small"></i
+                  >{{ formatTitleCase(eventoSeleccionado.status) }}
                 </span>
                 <div class="text-end">
                   <p class="text-muted smaller mb-0">Creado por</p>
                   <p class="fw-medium text-dark small mb-0">
-                    {{ eventoSeleccionado.creado_por?.full_name || 'Sistema' }}
+                    {{ formatTitleCase(eventoSeleccionado.creado_por?.full_name) || 'Sistema' }}
                   </p>
                 </div>
               </div>
@@ -170,6 +204,8 @@
 <script setup lang="ts">
 import FullCalendar from '@fullcalendar/vue3'
 import { useCalendar } from '@/composables/replacement/useCalendar'
+import vSelect from 'vue-select'
+import 'vue-select/dist/vue-select.css'
 
 const {
   // Calendar Config
@@ -180,11 +216,73 @@ const {
   eventoSeleccionado,
   closeModal,
 
+  // Filters
+  selectedService,
+  serviceOptions,
+
   // Helpers
   formatDateDDMMYYYY,
   getColorByStatus
 } = useCalendar()
+
+import { formatTitleCase } from '@/utils/text-formatters'
 </script>
+
+<style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Custom v-select */
+.custom-v-select :deep(.vs__dropdown-toggle) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 3px;
+  background: white;
+  box-shadow: none;
+}
+
+.custom-v-select :deep(.vs__selected) {
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+}
+
+.custom-v-select :deep(.vs__actions svg) {
+  fill: #64748b;
+  transform: scale(0.8);
+}
+
+.custom-v-select :deep(.vs__dropdown-menu) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  font-size: 0.875rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.custom-v-select :deep(.vs__dropdown-option) {
+  border-radius: 0.25rem;
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  color: #475569;
+}
+
+.custom-v-select :deep(.vs__dropdown-option--highlight) {
+  background: #3b82f6;
+  color: white;
+}
+</style>
 
 <style>
 /* FullCalendar Customization */

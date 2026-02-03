@@ -2,16 +2,19 @@
   <div class="reemplazos-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-arrow-repeat text-primary me-2"></i>Gestión de Reemplazos
-        </h4>
-        <p class="text-secondary mb-0">
-          Administra los reemplazos activos en el sistema ({{
-            replacementStore.reemplazosFiltrados.length
-          }}
-          registros)
-        </p>
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-arrow-repeat fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Gestión de Reemplazos</h4>
+          <p class="text-secondary small mb-0">
+            Administra los reemplazos activos en el sistema ({{
+              replacementStore.reemplazosFiltrados.length
+            }}
+            registros)
+          </p>
+        </div>
       </div>
       <div class="d-flex gap-2">
         <button
@@ -20,7 +23,11 @@
         >
           <i class="bi bi-eraser me-2"></i>Limpiar Filtros
         </button>
-        <button @click="openCreateModal" class="btn btn-primary fw-bold shadow-sm px-4">
+        <button
+          v-if="authStore.hasPermission('replacement.create')"
+          @click="openCreateModal"
+          class="btn btn-primary fw-bold shadow-sm px-4"
+        >
           <i class="bi bi-plus-lg me-2"></i>Nuevo Reemplazo
         </button>
       </div>
@@ -59,47 +66,11 @@
             />
 
             <!-- Pagination -->
-            <div
-              class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top"
-              v-if="totalPages > 1"
-            >
-              <span class="text-muted small"
-                >Mostrando página {{ currentPage }} de {{ totalPages }}</span
-              >
-              <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm mb-0 gap-1">
-                  <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                    <button
-                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
-                      @click="changePage(currentPage - 1)"
-                    >
-                      <i class="bi bi-chevron-left small"></i>
-                    </button>
-                  </li>
-                  <li
-                    class="page-item"
-                    v-for="page in totalPages"
-                    :key="page"
-                    :class="{ active: currentPage === page }"
-                  >
-                    <button
-                      class="page-link rounded-2 border-0 mx-1 shadow-xs"
-                      @click="changePage(page)"
-                    >
-                      {{ page }}
-                    </button>
-                  </li>
-                  <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                    <button
-                      class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
-                      @click="changePage(currentPage + 1)"
-                    >
-                      <i class="bi bi-chevron-right small"></i>
-                    </button>
-                  </li>
-                </ul>
-              </nav>
-            </div>
+            <AppPagination
+              :currentPage="currentPage"
+              :totalPages="totalPages"
+              @changePage="changePage"
+            />
           </template>
         </div>
       </div>
@@ -114,7 +85,6 @@
       :fechas-bloqueadas="fechasOcupadas"
       @cerrar="closeCreateModal"
       @guardar="guardarNuevoReemplazo"
-      @buscar-usuario="seleccionarGrupo"
     />
 
     <!-- MODAL EDITAR -->
@@ -126,7 +96,6 @@
       :fechas-bloqueadas="fechasOcupadas"
       @cerrar="closeUpdateModal"
       @guardar="handleUpdate"
-      @buscar-entrante="seleccionarEntranteEnEdicion"
       @sustituir-usuario="handleSustitucion"
       @update:registro="(nuevoRegistro) => (registroActual = nuevoRegistro)"
     />
@@ -139,17 +108,7 @@
       @cerrar="closeSubstituteModal"
       @confirmar-sustitucion="confirmarSustitucion"
       @update:fecha-corte-a="(nuevaFecha) => (fechaCorteSustitucion = nuevaFecha)"
-      @sustituir-usuario="seleccionarEntranteEnEdicion"
-    />
-
-    <!-- MODAL USUARIOS -->
-    <ReplacementModalUsers
-      :visible="userModalVisible"
-      :usuarios="usuariosFiltradosPorCargo"
-      :grupo="grupo"
-      :lista-de-cargos="listaDeCargos"
-      @cerrar="closeUserModal"
-      @usuario-seleccionado="seleccionarUsuario"
+      @update:nuevo-funcionario-b="(val) => (nuevoEntranteSustitucion = val)"
     />
   </div>
 </template>
@@ -161,11 +120,14 @@ import {
   ReplacementFilter,
   ReplacementTable,
   ReplacementModalUpdate,
-  ReplacementModalUsers,
   ReplacementModalCreate,
   ReplacementModalSubstitute
 } from '@/components/replacements'
 import TableLoader from '@/components/common/TableLoader.vue'
+import AppPagination from '@/components/common/AppPagination.vue'
+import { useAuthStore } from '@/stores/auth.store'
+
+const authStore = useAuthStore()
 
 const {
   replacementStore,
@@ -177,16 +139,12 @@ const {
   // Data Lists
   listaDeTurnos,
   listaDeServicios,
-  listaDeCargos,
-  usuariosFiltradosPorCargo,
   fechasOcupadas,
 
   // Modals Visibility & Data
   updateModalVisible,
   createModalVisible,
-  userModalVisible,
   substituteModalVisible,
-  grupo,
   registroActual,
   registroNuevo,
   nuevoEntranteSustitucion,
@@ -196,7 +154,6 @@ const {
   closeUpdateModal,
   closeCreateModal,
   closeSubstituteModal,
-  closeUserModal,
 
   // Actions
   openCreateModal,
@@ -205,17 +162,23 @@ const {
   handleFinalizar,
   handleAnular,
   handleUpdate,
-  seleccionarEntranteEnEdicion,
   handleSustitucion,
-  confirmarSustitucion,
-  seleccionarGrupo,
-  seleccionarUsuario
+  confirmarSustitucion
 } = useReplacements()
 
 const { exportReplacementToPDF } = useExport()
 </script>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .reemplazos-view {
   background-color: #f8fafc;
 }

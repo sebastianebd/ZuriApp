@@ -24,6 +24,7 @@ vi.mock("../../middleware/authentication.middleware", () => ({
     };
     next();
   },
+  requirePermission: () => (req: any, res: any, next: any) => next(),
 }));
 
 describe("User Controller - Integration", () => {
@@ -56,7 +57,7 @@ describe("User Controller - Integration", () => {
 
     const auditLog = await AuditLog.findOne({
       action: "CREAR",
-      module: "USUARIOS",
+      module: "Funcionarios",
     });
     expect(auditLog).toBeTruthy();
     expect(auditLog?.description).toContain(`RUT ${newUser.rut}`);

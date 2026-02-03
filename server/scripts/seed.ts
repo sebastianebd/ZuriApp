@@ -29,7 +29,7 @@ async function seed() {
       apellido: "Principal",
       fecha_nac: new Date("1990-01-01"),
       direccion: "Calle Falsa 123",
-      telefono: "912345678",
+      telefono: "934768811",
       email: "admin@zuriapp.cl",
       ciudad: "Santiago",
       tipo_cargo: "ADMIN-TI",

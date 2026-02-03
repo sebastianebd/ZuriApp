@@ -1,12 +1,9 @@
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { ref, computed, inject, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
-import { mostrarTodosUsuarios } from '@/services/user.service'
-import { usePagination } from '@/composables/usePagination'
 import { useReplacementModals } from '@/composables/useReplacementModals'
-import type { User, RegisterDataReemplazo } from '@/types/models'
-import socket from '@/plugins/socket'
+import type { RegisterDataReemplazo } from '@/types/models'
 
 export function useReplacements() {
   const showAlert = inject<(title: string, message: string) => void>('showAlert')
@@ -14,43 +11,67 @@ export function useReplacements() {
   const replacementStore = useReplacementStore()
   const authStore = useAuthStore()
   const optionStore = useOptionStore()
-  const apiPrivate = authStore.usePrivateApi()
 
   const userLoged = computed(() => authStore.userDetail)
   const listaDeTurnos = ref<string[]>([])
   const listaDeServicios = ref<string[]>([])
   const listaDeCargos = ref<string[]>([])
-  const usuarios = ref<User[]>([])
 
-  // A. Paginación
-  const {
-    currentPage,
-    totalPages,
-    paginatedItems: paginatedReplacements,
-    changePage
-  } = usePagination(
-    computed(() => replacementStore.reemplazosFiltrados),
-    10
-  )
+  // 🏢 ENTERPRISE: Load options data on mount
+  onMounted(async () => {
+    try {
+      // Load Options
+      const opciones = await optionStore.mostrarOpciones()
+      listaDeTurnos.value = opciones.tiposTurno || []
+      listaDeServicios.value = opciones.servicios || []
+      listaDeCargos.value = opciones.tipoCargo || []
+
+      // Load Initial Data
+      await replacementStore.fetchActiveReplacementsPaginated({
+        page: currentPage.value,
+        limit: itemsPerPage.value
+      })
+    } catch (error) {
+      console.error('[useReplacements] Error loading data:', error)
+    }
+  })
+
+  // Server-side pagination state
+  const currentPage = ref(1)
+  const itemsPerPage = ref(10)
+
+  // Computed: Total pages from store
+  const totalPages = computed(() => replacementStore.paginationInfo.totalPages)
+
+  // Computed: Current page replacements (server-side paginated)
+  const paginatedReplacements = computed(() => replacementStore.reemplazosFiltrados)
+
+  // Page change handler
+  const changePage = (page: number) => {
+    if (page >= 1 && page <= totalPages.value) {
+      currentPage.value = page
+    }
+  }
+
+  // Watch for page changes and fetch data
+  watch(currentPage, async () => {
+    await replacementStore.fetchActiveReplacementsPaginated({
+      page: currentPage.value,
+      limit: itemsPerPage.value
+    })
+  })
 
   // B. Modales y Datos
   const modalLogic = useReplacementModals()
   const {
     createModalVisible,
     updateModalVisible,
-    substituteModalVisible,
     registroNuevo,
     registroActual,
-    grupo,
-    cargoDeFiltrado,
     nuevoEntranteSustitucion
   } = modalLogic
 
   // --- ACTIONS ---
-
-  const seleccionarEntranteEnEdicion = () => {
-    modalLogic.openUserModal(2)
-  }
 
   const handleSustitucion = () => {
     modalLogic.handleSustitucion()
@@ -74,49 +95,10 @@ export function useReplacements() {
     }
   }
 
-  const seleccionarGrupo = (numeroGrupo: 1 | 2) => {
-    modalLogic.openUserModal(numeroGrupo)
-  }
-
-  const seleccionarUsuario = (usuario: User) => {
-    if (substituteModalVisible.value) {
-      Object.assign(nuevoEntranteSustitucion.value, {
-        id_entrante: usuario._id,
-        rut_entrante: usuario.rut,
-        nombre_entrante: usuario.nombre,
-        apellido_entrante: usuario.apellido
-      })
-    } else if (updateModalVisible.value) {
-      Object.assign(registroActual.value, {
-        id_entrante: usuario._id,
-        rut_entrante: usuario.rut,
-        nombre_entrante: usuario.nombre,
-        apellido_entrante: usuario.apellido
-      })
-    } else if (createModalVisible.value) {
-      const isSaliente = grupo.value === 1
-      modalLogic.assignUserData(registroNuevo.value, usuario, isSaliente)
-    }
-    modalLogic.closeUserModal()
-  }
-
   const openUpdateModal = (reemplazo: RegisterDataReemplazo) => {
-    const saliente = usuarios.value.find((u) => u._id === reemplazo.id_saliente)
-    let reemplazoConCargo: RegisterDataReemplazo
-    if (saliente && saliente.tipo_cargo) {
-      reemplazoConCargo = { ...reemplazo, tipo_cargo: saliente.tipo_cargo } as RegisterDataReemplazo
-    } else {
-      reemplazoConCargo = reemplazo
-    }
+    const reemplazoConCargo = { ...reemplazo, tipo_cargo: reemplazo.tipo_cargo || '' }
     modalLogic.openUpdateModal(reemplazoConCargo)
   }
-
-  const usuariosFiltradosPorCargo = computed(() => {
-    if (grupo.value === 2 && cargoDeFiltrado.value) {
-      return usuarios.value.filter((u) => u.tipo_cargo === cargoDeFiltrado.value)
-    }
-    return usuarios.value
-  })
 
   const openCreateModal = () => {
     if (userLoged.value && userLoged.value._id) {
@@ -139,7 +121,10 @@ export function useReplacements() {
 
   const handleUpdate = async () => {
     if (registroActual.value._id) {
-      await replacementStore.actualizarReemplazo(registroActual.value._id, registroActual.value)
+      await replacementStore.actualizarReemplazo(
+        registroActual.value._id,
+        registroActual.value as RegisterDataReemplazo
+      )
     }
     modalLogic.closeUpdateModal()
     showAlert?.('Modificado', 'El registro se ha modificado correctamente.')
@@ -161,34 +146,6 @@ export function useReplacements() {
     return replacementStore.getFechasOcupadas(entranteId)
   })
 
-  // --- LIFECYCLE ---
-
-  async function loadData() {
-    if (!replacementStore.hayReemplazos) {
-      await replacementStore.mostrarReemplazos()
-    }
-    const [opciones, usuariosCargados] = await Promise.all([
-      optionStore.mostrarOpciones(),
-      mostrarTodosUsuarios(apiPrivate)
-    ])
-    listaDeTurnos.value = opciones.tiposTurno
-    listaDeServicios.value = opciones.servicios
-    listaDeCargos.value = opciones.tipoCargo
-    usuarios.value = usuariosCargados as User[]
-  }
-
-  onMounted(async () => {
-    await loadData()
-
-    socket.on('replacements:update', async () => {
-      await replacementStore.mostrarReemplazos()
-    })
-  })
-
-  onUnmounted(() => {
-    socket.off('replacements:update')
-  })
-
   return {
     replacementStore,
     paginatedReplacements,
@@ -200,7 +157,7 @@ export function useReplacements() {
     listaDeTurnos,
     listaDeServicios,
     listaDeCargos,
-    usuariosFiltradosPorCargo,
+
     fechasOcupadas,
 
     // Modal Logic (exposed from useReplacementModals)
@@ -213,11 +170,7 @@ export function useReplacements() {
     handleFinalizar,
     handleAnular,
     handleUpdate,
-    seleccionarEntranteEnEdicion,
     handleSustitucion,
-    confirmarSustitucion,
-    seleccionarGrupo,
-    seleccionarUsuario,
-    loadData
+    confirmarSustitucion
   }
 }

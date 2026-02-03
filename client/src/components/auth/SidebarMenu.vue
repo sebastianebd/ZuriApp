@@ -4,7 +4,7 @@
     <div class="sidebar-header">
       <div class="logo">
         <img :src="logoURL" alt="ZuriApp" />
-        <span class="logo-text ms-2" v-if="is_expanded">ZuriApp</span>
+        <span class="logo-text ms-2">ZuriApp</span>
       </div>
       <button class="menu-toggle" @click="ToggleMenu">
         <i class="bi" :class="is_expanded ? 'bi-chevron-left' : 'bi-chevron-right'"></i>
@@ -12,43 +12,134 @@
     </div>
 
     <div class="menu-container">
-      <!-- Calendario Section -->
+      <!-- Personal Section -->
       <div class="menu-group">
-        <h3 v-if="is_expanded">Calendario</h3>
-        <router-link :to="{ name: 'calendario' }" class="menu-item" title="Calendario">
+        <h3>Personal</h3>
+        <router-link
+          :to="{ name: 'personal-funcionarios' }"
+          class="menu-item"
+          title="Funcionarios"
+          v-if="can('users.view')"
+        >
+          <i class="bi bi-person-badge"></i>
+          <span class="text">Funcionarios</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'personal-cargos' }"
+          class="menu-item"
+          title="Gestión de Cargos"
+          v-if="can('cargos.view')"
+        >
+          <i class="bi bi-briefcase"></i>
+          <span class="text">Gestión de Cargos</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'personal-ficha-turnos' }"
+          class="menu-item"
+          title="Ficha de Turnos"
+          v-if="can('shifts.view')"
+        >
+          <i class="bi bi-person-lines-fill"></i>
+          <span class="text">Ficha de Turnos</span>
+        </router-link>
+      </div>
+
+      <!-- Operaciones Section -->
+      <div class="menu-group" v-if="can('shifts.view') || can('replacement.view')">
+        <h3>Operaciones</h3>
+        <router-link
+          :to="{ name: 'operaciones-reemplazos' }"
+          class="menu-item"
+          title="Reemplazos Activos"
+          v-if="can('replacement.view')"
+        >
+          <i class="bi bi-arrow-repeat"></i>
+          <span class="text">Reemplazos Activos</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'operaciones-calendario-reemplazos' }"
+          class="menu-item"
+          title="Calendario de Reemplazos"
+          v-if="can('replacement.view')"
+        >
           <i class="bi bi-calendar3"></i>
-          <span class="text">Calendario</span>
+          <span class="text">Calendario Reemplazos</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'operaciones-turnos' }"
+          class="menu-item"
+          title="Turnos Actuales"
+          v-if="can('shifts.view')"
+        >
+          <i class="bi bi-calendar-range"></i>
+          <span class="text">Turnos Actuales</span>
         </router-link>
       </div>
 
-      <!-- Turnos Section -->
+      <!-- Historial & Reportes Section -->
       <div class="menu-group">
-        <h3 v-if="is_expanded">Gestión de Turnos</h3>
-        <router-link :to="{ name: 'reemplazos' }" class="menu-item" title="Reemplazos">
-          <i class="bi bi-person-workspace"></i>
-          <span class="text">Reemplazos</span>
+        <h3>Historial & Reportes</h3>
+        <router-link
+          :to="{ name: 'historial-reemplazos' }"
+          class="menu-item"
+          title="Reemplazos Finalizados"
+          v-if="can('replacement.view')"
+        >
+          <i class="bi bi-archive"></i>
+          <span class="text">Reemplazos Finalizados</span>
         </router-link>
-        <router-link :to="{ name: 'ver_historial' }" class="menu-item" title="Historial">
-          <i class="bi bi-clock-history"></i>
-          <span class="text">Historial</span>
+        <router-link
+          :to="{ name: 'historial-turnos' }"
+          class="menu-item"
+          title="Turnos Anteriores"
+          v-if="can('shifts.view')"
+        >
+          <i class="bi bi-calendar-x"></i>
+          <span class="text">Turnos Anteriores</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'historial-excepciones' }"
+          class="menu-item"
+          title="Excepciones de Turno"
+          v-if="can('shifts.view')"
+        >
+          <i class="bi bi-exclamation-triangle"></i>
+          <span class="text">Excepciones de Turno</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'historial-auditoria' }"
+          class="menu-item"
+          title="Auditoría de Cambios"
+          v-if="can('audit.view')"
+        >
+          <i class="bi bi-journal-text"></i>
+          <span class="text">Auditoría de Cambios</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'reportes' }"
+          class="menu-item"
+          title="Centro de Reportes"
+          v-if="can('shifts.view')"
+        >
+          <i class="bi bi-file-earmark-bar-graph"></i>
+          <span class="text">Centro de Reportes</span>
         </router-link>
       </div>
 
-      <!-- Usuarios Section -->
-      <div class="menu-group">
-        <h3 v-if="is_expanded">Administración</h3>
-        <router-link :to="{ name: 'ver_usuarios' }" class="menu-item" title="Usuarios">
-          <i class="bi bi-people"></i>
-          <span class="text">Usuarios</span>
+      <!-- Configuración Section -->
+      <div class="menu-group" v-if="can('config.view')">
+        <h3>Configuración</h3>
+        <router-link :to="{ name: 'configuracion-servicios' }" class="menu-item" title="Servicios">
+          <i class="bi bi-hospital"></i>
+          <span class="text">Servicios</span>
         </router-link>
-      </div>
-
-      <!-- Sistema Section -->
-      <div class="menu-group">
-        <h3 v-if="is_expanded">Configuración</h3>
-        <router-link :to="{ name: 'auditoria' }" class="menu-item" title="Auditoría">
-          <i class="bi bi-shield-check"></i>
-          <span class="text">Auditoría</span>
+        <router-link
+          :to="{ name: 'configuracion-tipos-turno' }"
+          class="menu-item"
+          title="Tipos de Turno"
+        >
+          <i class="bi bi-clock"></i>
+          <span class="text">Tipos de Turno</span>
         </router-link>
       </div>
     </div>
@@ -61,6 +152,8 @@ import logoURL from '../../assets/images/logo-zuri.png'
 import { useAuthStore } from '../../stores/auth.store'
 
 const authStore = useAuthStore()
+
+const can = (permission: string) => authStore.hasPermission(permission)
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 
@@ -77,6 +170,21 @@ const ToggleMenu = () => {
 
 <style lang="scss" scoped>
 aside {
+  // Palette definition
+  --sidebar-bg: #0f172a; // Slate 900
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --text-muted: #64748b; // Slate 500
+  --text-main: #94a3b8; // Slate 400
+  --text-focus: #f8fafc; // Slate 50
+
+  --primary-glow: rgba(59, 130, 246, 0.5);
+  --primary-color: #3b82f6; // Blue 500
+  --active-gradient-start: rgba(59, 130, 246, 0.15);
+  --active-gradient-end: rgba(59, 130, 246, 0.02);
+
+  --hover-bg: rgba(255, 255, 255, 0.04);
+  --transition-cubic: cubic-bezier(0.4, 0, 0.2, 1);
+
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -84,65 +192,78 @@ aside {
   top: 0;
   left: 0;
 
-  background-color: #0f172a; // Slate 900
-  color: #f8fafc;
+  background-color: var(--sidebar-bg);
+  width: calc(4.5rem); // Collapsed width
+  height: 100vh;
+  border-right: 1px solid var(--sidebar-border);
+  box-shadow: 10px 0 30px -10px rgba(0, 0, 0, 0.5); // Deep ambient shadow
 
-  width: calc(3.5rem + 16px);
+  transition: width 0.4s var(--transition-cubic);
   overflow: hidden;
-  min-height: 100vh;
-  transition: width 0.3s ease-in-out;
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
 
+  // Header Zone
   .sidebar-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.25rem 0.75rem;
-    height: 70px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    height: 70px; // Relaxed Header
+    padding: 0 1.25rem; // Centered alignment
+    border-bottom: 1px solid var(--sidebar-border);
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.6));
+    backdrop-filter: blur(12px);
+    flex-shrink: 0;
 
     .logo {
       display: flex;
       align-items: center;
+      gap: 0.75rem;
       overflow: hidden;
 
       img {
-        width: 2rem;
-        height: 2rem;
+        width: 1.75rem; // Slightly smaller logo
+        height: 1.75rem;
         object-fit: contain;
+        // Removed heavy glow to prevent square contour artifacts
+        transition: transform 0.3s ease;
       }
 
       .logo-text {
-        font-weight: 800;
-        font-size: 1.25rem;
-        letter-spacing: -0.025em;
-        white-space: nowrap;
-        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        font-family: 'Inter', sans-serif;
+        font-weight: 800; // Extra Bold
+        font-size: 1.35rem; // Larger
+        letter-spacing: -0.03em;
+
+        // Clean Gradient inside text only
+        background: linear-gradient(to right, #60a5fa, #f1f5f9);
         background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+
+        // Removed drop-shadow filter to avoid contour issues
+        opacity: 0;
+        transform: translateX(-15px);
+        transition: all 0.4s var(--transition-cubic);
       }
     }
 
     .menu-toggle {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #f8fafc;
       width: 28px;
       height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-muted);
       cursor: pointer;
-      transition: all 0.3s ease;
-      z-index: 100;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease;
 
       &:hover {
-        background: #3b82f6;
-        border-color: #3b82f6;
-        transform: scale(1.1);
+        background: var(--hover-bg);
+        color: var(--text-focus);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); // Toggle Glow
       }
 
       i {
@@ -151,94 +272,130 @@ aside {
     }
   }
 
+  // Content Zone
   .menu-container {
-    padding-top: 2.5rem;
     flex: 1;
+    padding: 1.5rem 0.75rem; // More breathing room
     overflow-y: auto;
     overflow-x: hidden;
 
+    // Invisible Scrollbar but functional
+    scrollbar-width: none; // Firefox
     &::-webkit-scrollbar {
-      width: 4px;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-    }
+      display: none;
+    } // Chrome/Safari
   }
 
+  // Groups
   .menu-group {
-    margin-bottom: 1.5rem;
-    padding: 0 0.75rem;
-    padding-bottom: 0.7rem;
+    margin-bottom: 2rem; // Increased Spacing between groups
 
     h3 {
-      color: #64748b;
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
+      padding-left: 0.85rem;
       margin-bottom: 0.75rem;
-      padding-left: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      opacity: 0; // Hide in collapsed
+      transition: opacity 0.3s ease;
       white-space: nowrap;
     }
   }
 
+  // Items
   .menu-item {
+    position: relative;
     display: flex;
     align-items: center;
+    height: 44px; // Increased Height for comfort
+    padding: 0 0.85rem;
+    margin-bottom: 4px; // Increased gap
+    border-radius: 10px;
+    color: var(--text-main);
     text-decoration: none;
-    padding: 0.75rem 0.85rem;
-    border-radius: 0.5rem;
-    margin-bottom: 0.25rem;
-    color: #94a3b8;
     transition: all 0.2s ease;
-    white-space: nowrap;
+    border: 1px solid transparent;
 
+    // Icon Container
     i {
-      font-size: 1.25rem;
-      min-width: 1.5rem;
       display: flex;
+      align-items: center;
       justify-content: center;
+      font-size: 1.2rem;
+      min-width: 1.5rem;
+      transition: all 0.3s var(--transition-cubic);
+      color: var(--text-muted);
     }
 
     .text {
-      margin-left: 1rem;
+      margin-left: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 500;
+      white-space: nowrap;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transform: translateX(-10px);
+      transition: all 0.3s var(--transition-cubic);
     }
 
+    // Hover State
     &:hover {
-      background-color: rgba(255, 255, 255, 0.05);
-      color: #f8fafc;
+      background: var(--hover-bg);
+      color: var(--text-focus);
+      transform: translateX(2px); // Subtle movement
 
       i {
-        color: #3b82f6;
+        color: var(--text-focus);
+        transform: scale(1.1);
       }
     }
 
-    &.router-link-exact-active {
-      background-color: rgba(59, 130, 246, 0.1);
-      color: #60a5fa;
-      font-weight: 600;
+    // Active State (The "Wow" Factor)
+    &.router-link-active {
+      background: linear-gradient(
+        90deg,
+        var(--active-gradient-start) 0%,
+        var(--active-gradient-end) 100%
+      );
+      border: 1px solid rgba(59, 130, 246, 0.3); // Subtle blue border
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); // Stronger Glow
 
       i {
-        color: #60a5fa;
+        color: var(--primary-color);
+        filter: drop-shadow(0 0 6px var(--primary-glow));
+      }
+
+      .text {
+        font-weight: 600;
+        letter-spacing: 0.01em;
       }
     }
   }
 
+  // Expanded State Logic
   &.is-expanded {
     width: var(--sidebar-width);
 
-    .text {
+    // Specific selection to ensure visibility
+    .sidebar-header .logo .logo-text,
+    .menu-container .menu-group h3,
+    .menu-container .menu-group .menu-item .text {
       opacity: 1;
+      transform: translateX(0);
     }
   }
 
+  // Mobile Response
   @media (max-width: 1024px) {
-    position: absolute;
-    z-index: 1100;
+    width: 0;
+    border: none;
+
+    &.is-expanded {
+      width: var(--sidebar-width);
+      box-shadow: 10px 0 50px rgba(0, 0, 0, 0.8);
+    }
   }
 }
 </style>

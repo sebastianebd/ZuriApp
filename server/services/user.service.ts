@@ -134,8 +134,122 @@ async function obtenerPorId(id: string) {
   return await User.findById(id).lean();
 }
 
-async function obtenerTodos() {
-  return await User.find({ eliminado: false });
+async function obtenerTodos(allowedCargos?: string[], search?: string) {
+  const query: any = { eliminado: false };
+
+  // If filter is provided, restrict query.
+  if (allowedCargos && Array.isArray(allowedCargos)) {
+    query.tipo_cargo = { $in: allowedCargos };
+  }
+
+  // Search Logic (Optimized: Prefix Match for Index Usage)
+  if (search && search.trim().length > 0) {
+    const terms = search.trim().toUpperCase().split(/\s+/); // Normalize to Uppercase
+
+    // Each term must match at least one field ($and of $ors)
+    const andConditions = terms.map((term) => {
+      const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // Anchor to start (^), Case sensitive (since data is Uppercase)
+      const regex = new RegExp("^" + safeTerm);
+
+      return {
+        $or: [
+          { rut: regex },
+          { nombre: regex },
+          { apellido: regex },
+          { tipo_cargo: regex }, // Also checking cargo if users search "TENS"
+        ],
+      };
+    });
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
+  }
+
+  // Return all matching users (frontend handles pagination)
+  return await User.find(query);
+}
+
+// Server-Side Pagination (Enterprise)
+async function obtenerTodosPaginado(options: {
+  allowedCargos?: string[];
+  search?: string;
+  cargo?: string;
+  habilitado?: string;
+  rut?: string;
+  page: number;
+  limit: number;
+}) {
+  const { allowedCargos, search, page, limit } = options;
+  const query: any = { eliminado: false };
+
+  // Role-based visibility filter
+  if (allowedCargos && Array.isArray(allowedCargos)) {
+    query.tipo_cargo = { $in: allowedCargos };
+  }
+
+  // Search Logic (Optimized: Prefix Match for Index Usage)
+  if (search && search.trim().length > 0) {
+    const terms = search.trim().toUpperCase().split(/\s+/); // Normalize to Uppercase
+
+    // Each term must match at least one field ($and of $ors)
+    const andConditions = terms.map((term) => {
+      const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // Anchor to start (^) matches Index Prefixes.
+      const regex = new RegExp("^" + safeTerm);
+
+      return {
+        $or: [
+          { rut: regex },
+          { nombre: regex },
+          { apellido: regex },
+          // { tipo_cargo: regex } // Optional
+        ],
+      };
+    });
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
+  }
+
+  // --- NEW SPECIFIC FILTERS ---
+  if (options.cargo && options.cargo.trim() !== "") {
+    query.tipo_cargo = options.cargo;
+  }
+
+  if (options.habilitado && options.habilitado.trim() !== "") {
+    query.habilitado = options.habilitado;
+  }
+
+  if (options.rut && options.rut.trim() !== "") {
+    // Basic partial match for RUT if provided specifically
+    query.rut = { $regex: options.rut.toUpperCase(), $options: "i" };
+  }
+
+  // Calculate skip for pagination
+  const skip = (page - 1) * limit;
+
+  // Execute query and count in parallel for performance
+  const [usuarios, total] = await Promise.all([
+    User.find(query)
+      .select("-password") // Exclude sensitive fields
+      .skip(skip)
+      .limit(limit)
+      .lean(), // Convert to plain objects (faster)
+    User.countDocuments(query),
+  ]);
+
+  return {
+    usuarios,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      itemsPerPage: limit,
+    },
+  };
 }
 
 async function actualizar(id: string, data: Partial<IUser>) {
@@ -152,6 +266,7 @@ export default {
   register,
   obtenerUsuariosTENS,
   obtenerTodos,
+  obtenerTodosPaginado,
   actualizar,
   eliminar,
   obtenerPorId,

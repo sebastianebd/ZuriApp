@@ -1,20 +1,20 @@
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useAuthStore } from '@/stores/auth.store'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+// import { useAuthStore } from '@/stores/auth.store' // Unused
 import { useOptionStore } from '@/stores/option.store'
-import { obtenerInactivosPaginados } from '@/services/replacement.service'
+import { useReplacementStore } from '@/stores/replacement.store'
 import type { RegisterDataReemplazo, User } from '@/types/models'
 import socket from '@/plugins/socket'
+import { debounce } from 'lodash-es'
 
 export function useHistory() {
   // --- ESTADO Y STORES ---
-  const authStore = useAuthStore()
-  const useApi = authStore.usePrivateApi()
+  // const authStore = useAuthStore() // No longer needed directly
+  // const useApi = authStore.usePrivateApi() // No longer needed directly
   const optionStore = useOptionStore()
+  const replacementStore = useReplacementStore()
 
-  // --- ESTADO DE PAGINACIÓN Y DATOS ---
-  const reemplazosHistorico = ref<RegisterDataReemplazo[]>([])
-  const listaDeServicios = ref<string[]>([])
   const cargando = ref(true)
+  const listaDeServicios = ref<string[]>([])
 
   // --- ESTADO DE FILTROS ---
   const filtros = ref({
@@ -25,43 +25,50 @@ export function useHistory() {
     servicio: ''
   })
 
-  // --- ESTADO DE PAGINACIÓN ---
-  const currentPage = ref(1)
-  const totalPages = ref(1)
-  const totalRegistros = ref(0)
-  const itemsPerPage = 10
+  // --- ESTADO DE PAGINACIÓN (Mapeado al Store) ---
+  const reemplazosHistorico = computed(() => replacementStore.finalizedReplacements)
+  const currentPage = computed(() => replacementStore.finalizedPagination.currentPage)
+  const totalPages = computed(() => replacementStore.finalizedPagination.totalPages)
+  const totalRegistros = computed(() => replacementStore.finalizedPagination.totalItems)
+  // const itemsPerPage = 10 // Managed by store
 
-  async function cargarHistorial() {
+  async function cargarHistorial(page: number = 1) {
     cargando.value = true
     try {
-      const resultado = await obtenerInactivosPaginados(
-        useApi,
-        filtros.value,
-        currentPage.value,
-        itemsPerPage
-      )
-      reemplazosHistorico.value = resultado.registros
-      totalPages.value = resultado.totalPages
-      totalRegistros.value = resultado.totalRegistros
+      // ✅ Usa la acción paginada del Store
+      await replacementStore.fetchFinalizedPaginated(filtros.value, page)
     } catch (error) {
       console.error('Error al cargar historial paginado:', error)
-      reemplazosHistorico.value = []
-      totalRegistros.value = 0
-      totalPages.value = 1
+      // Store maneja el error internamente, pero podríamos limpiar aquí si fuera necesario
     } finally {
       cargando.value = false
     }
   }
 
+  // ✅ DEBOUNCE (300ms)
+  const debouncedSearch = debounce(() => {
+    cargarHistorial(1) // Siempre volver a pág 1 al filtrar
+  }, 300)
+
+  // Watch profundo a filtros
+  watch(
+    filtros,
+    () => {
+      debouncedSearch()
+    },
+    { deep: true }
+  )
+
   const handleFiltroCambiado = () => {
-    currentPage.value = 1
-    cargarHistorial()
+    // Legacy mapping (view calls this, but watcher handles it now)
+    // Mantener vacío o remover si la vista usa v-model directo
+    // La vista usa @update:model-value="handleFiltroCambiado", así que lo dejamos compatible
+    // pero el trabajo real lo hace el watcher
   }
 
   const changePage = (page: number) => {
     if (page >= 1 && page <= totalPages.value) {
-      currentPage.value = page
-      cargarHistorial()
+      cargarHistorial(page)
     }
   }
 
@@ -73,8 +80,7 @@ export function useHistory() {
       fechaFin: '',
       servicio: ''
     }
-    currentPage.value = 1
-    cargarHistorial()
+    // El watcher detectará el cambio y recargará
   }
 
   const formatearFecha = (fecha: string) => {
@@ -106,10 +112,12 @@ export function useHistory() {
     try {
       const opciones = await optionStore.mostrarOpciones()
       listaDeServicios.value = opciones.servicios
-      await cargarHistorial()
+
+      // Carga inicial
+      await cargarHistorial(currentPage.value)
 
       socket.on('history:update', async () => {
-        await cargarHistorial()
+        await cargarHistorial(currentPage.value)
       })
     } catch (error) {
       console.error('Error en el montaje:', error)

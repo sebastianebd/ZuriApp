@@ -2,13 +2,17 @@
   <div class="historial-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h4 class="fw-bold mb-1 text-dark">
-          <i class="bi bi-clock-history text-primary me-2"></i>Historial de Reemplazos
-        </h4>
-        <p class="text-secondary mb-0">
-          Consulta el registro histórico de movimientos ({{ totalRegistros }} registros encontrados)
-        </p>
+      <div class="d-flex align-items-center gap-3">
+        <div class="icon-square bg-white shadow-sm text-primary">
+          <i class="bi bi-clock-history fs-4"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0 text-dark">Historial de Reemplazos</h4>
+          <p class="text-secondary small mb-0">
+            Consulta el registro histórico de movimientos ({{ totalRegistros }} registros
+            encontrados)
+          </p>
+        </div>
       </div>
       <div class="d-flex gap-2">
         <button
@@ -142,10 +146,10 @@
                 <td>
                   <div class="d-flex flex-column justify-content-center h-100">
                     <span class="badge-modern-context mb-1">
-                      <i class="bi bi-hospital me-1"></i> {{ reemplazo.servicio }}
+                      <i class="bi bi-hospital me-1"></i> {{ formatTitleCase(reemplazo.servicio) }}
                     </span>
                     <span class="text-secondary x-small ms-1">
-                      {{ reemplazo.tipo_turno }}
+                      {{ formatTitleCase(reemplazo.tipo_turno) }}
                     </span>
                   </div>
                 </td>
@@ -174,10 +178,10 @@
                 <td class="text-center last-cell">
                   <div class="h-100 d-flex flex-column align-items-center justify-content-center">
                     <span class="status-glass" :class="getStatusClass(reemplazo.status)">
-                      {{ reemplazo.status }}
+                      {{ formatTitleCase(reemplazo.status) }}
                     </span>
                     <small class="creator-text mt-1">
-                      {{ getCreatorName(reemplazo).split(' ')[0] }}
+                      {{ formatTitleCase(getCreatorName(reemplazo).split(' ')[0]) }}
                     </small>
                   </div>
                 </td>
@@ -186,47 +190,11 @@
           </table>
 
           <!-- Pagination -->
-          <div
-            class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top"
-            v-if="totalPages > 1"
-          >
-            <span class="text-muted small"
-              >Mostrando página {{ currentPage }} de {{ totalPages }}</span
-            >
-            <nav aria-label="Page navigation">
-              <ul class="pagination pagination-sm mb-0 gap-1">
-                <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                  <button
-                    class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
-                    @click="changePage(currentPage - 1)"
-                  >
-                    <i class="bi bi-chevron-left small"></i>
-                  </button>
-                </li>
-                <li
-                  class="page-item"
-                  v-for="page in totalPages"
-                  :key="page"
-                  :class="{ active: currentPage === page }"
-                >
-                  <button
-                    class="page-link rounded-2 border-0 mx-1 shadow-xs"
-                    @click="changePage(page)"
-                  >
-                    {{ page }}
-                  </button>
-                </li>
-                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                  <button
-                    class="page-link rounded-2 border-0 bg-light text-dark shadow-xs"
-                    @click="changePage(currentPage + 1)"
-                  >
-                    <i class="bi bi-chevron-right small"></i>
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </div>
+          <AppPagination
+            :currentPage="currentPage"
+            :totalPages="totalPages"
+            @changePage="changePage"
+          />
         </div>
       </div>
     </div>
@@ -241,7 +209,9 @@ import { obtenerInactivosPaginados } from '@/services/replacement.service'
 import { ref } from 'vue'
 import HistoryFilter from '@/components/historial/HistorialFilter.vue'
 import TableLoader from '@/components/common/TableLoader.vue'
+import AppPagination from '@/components/common/AppPagination.vue'
 import type { User } from '@/types/models'
+import { formatTitleCase } from '@/utils/text-formatters'
 
 const {
   // Data & State
@@ -301,7 +271,7 @@ function formatShortName(nombre: string, apellido: string) {
   if (!nombre) return ''
   const n = nombre.split(' ')[0]
   const a = apellido ? apellido.split(' ')[0].charAt(0) + '.' : ''
-  return `${n} ${a}`.toUpperCase()
+  return formatTitleCase(`${n} ${a}`)
 }
 
 function getStatusClass(status: string) {
@@ -349,6 +319,15 @@ async function copyCode(code: string) {
 </script>
 
 <style scoped>
+.icon-square {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .historial-view {
   background-color: #f8fafc;
 }

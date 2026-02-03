@@ -90,7 +90,7 @@ describe('ReplacementService', () => {
   it('mostrarReemplazos should GET /reemplazos/', async () => {
     mockApi.get.mockResolvedValue({ data: [] })
     await ReplacementService.mostrarReemplazos(mockApi as any)
-    expect(mockApi.get).toHaveBeenCalledWith('/reemplazos/')
+    expect(mockApi.get).toHaveBeenCalledWith('/reemplazos/', expect.anything())
   })
 
   it('mostrarHistorialUsuario should GET /reemplazos/:id', async () => {

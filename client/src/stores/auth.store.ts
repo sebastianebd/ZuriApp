@@ -49,6 +49,7 @@ export const useAuthStore = defineStore('auth', {
 
       // Connect Socket with User ID
       if (this.user && this.user._id) {
+        if (socket.connected) socket.disconnect() // Reset connection to apply new auth
         socket.auth = { userId: this.user._id }
         socket.connect()
       }
@@ -100,6 +101,38 @@ export const useAuthStore = defineStore('auth', {
       const privateApi = this.usePrivateApi()
       const { data } = await privateApi.get('/auth/history')
       return data
+    },
+
+    /**
+     * Verifica si el usuario tiene un permiso específico o es SuperAdmin (Nivel 100)
+     */
+    hasPermission(permission: string): boolean {
+      if (!this.user) return false
+
+      // Super Admin Override
+      if (this.user.nivel === 100) return true
+
+      // Check permissions array
+      if (this.user.permisos && this.user.permisos.includes(permission)) {
+        return true
+      }
+
+      return false
+    },
+
+    bindSocketEvents() {
+      // Avoid duplicate binding
+      if (socket.hasListeners('cargo_updated')) return
+
+      socket.on('cargo_updated', async (data: { cargoNombre: string; action: string }) => {
+        // If the updated cargo matches current user's cargo, refresh permissions
+        if (this.user && this.user.tipo_cargo === data.cargoNombre) {
+          console.log(
+            `[AuthStore] Cargo '${data.cargoNombre}' updated. Refreshing user permissions...`
+          )
+          await this.getUser()
+        }
+      })
     }
   },
 

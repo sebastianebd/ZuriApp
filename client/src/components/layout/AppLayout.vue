@@ -69,4 +69,30 @@ provide(
   flex-direction: column;
   overflow: hidden; /* Evita que el layout principal desborde */
 }
+@media print {
+  .navbar,
+  aside,
+  .alert-message,
+  .menu-toggle {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .app-layout {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body,
+  #app {
+    background: white !important;
+  }
+}
 </style>

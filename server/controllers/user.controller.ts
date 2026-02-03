@@ -9,15 +9,15 @@ async function register(req: AuthRequest, res: Response) {
   try {
     const data = await userService.register(
       req.body,
-      req.user?.tipo_cargo || ""
+      req.user?.tipo_cargo || "",
     );
     await auditService.logAction(
       "CREAR",
-      "USUARIOS",
+      "Funcionarios",
       req.user,
-      `Se creó al usuario RUT ${req.body.rut}`,
+      `Se creó al usuario RUT ${req.body.rut} ${req.body.nombre} ${req.body.apellido}`,
       req.body,
-      data._id as string
+      data._id as string,
     );
     await delPattern("users:*"); // Invalidate cache
 
@@ -51,17 +51,64 @@ async function mostrarUsuarios(req: Request, res: Response) {
   }
 }
 
-async function mostrarTodos(req: Request, res: Response) {
+import Cargo from "../models/cargo.model"; // Added Cargo import
+
+// ... (other imports)
+
+// Updated signature to AuthRequest
+async function mostrarTodos(req: AuthRequest, res: Response) {
   try {
-    const cacheKey = "users:all";
+    const userRole = req.user?.tipo_cargo || "UNKNOWN";
+
+    // Pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = (req.query.search as string) || "";
+
+    const cargo = (req.query.cargo as string) || "";
+    const habilitado = (req.query.habilitado as string) || "";
+    const rut = (req.query.rut as string) || "";
+
+    // Generate unique cache key including ALL filter params
+    const cacheKey = `users:p${page}:l${limit}:s${search || "none"}:c${cargo}:h${habilitado}:rt${rut}:r${userRole}`;
+
+    // 1. Try Cache
     const cachedData = await get(cacheKey);
     if (cachedData) {
       return res.json(cachedData);
     }
 
-    const usuarios = await userService.obtenerTodos();
-    await set(cacheKey, usuarios, 300); // Cache for 5 minutes
-    res.json(usuarios);
+    // 2. Calculate Visibility based on role
+    let allowedCargos: string[] | undefined = undefined;
+
+    // Fetch requester's cargo level
+    const myCargo = await Cargo.findOne({ nombre: userRole });
+    const myLevel = myCargo?.nivel || 0;
+
+    // Logic: See only strictly LOWER levels (Invisibility Layer)
+    // Exception: Level 100 (Admin) sees everything (pass undefined)
+    if (myLevel < 100) {
+      const visibleCargos = await Cargo.find({
+        nivel: { $lt: myLevel },
+      }).select("nombre");
+      allowedCargos = visibleCargos.map((c) => c.nombre);
+    }
+
+    // 3. Fetch paginated data
+    const result = await userService.obtenerTodosPaginado({
+      allowedCargos,
+      search,
+      cargo: req.query.cargo as string,
+      habilitado: req.query.habilitado as string,
+      rut: req.query.rut as string,
+      page,
+      limit,
+    });
+
+    // 4. Cache result for 60 seconds
+    await set(cacheKey, result, 60);
+
+    res.json(result);
   } catch (error: any) {
     res.status(error.status || 500).json({ mensaje: error.message });
   }
@@ -82,11 +129,11 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
 
     await auditService.logAction(
       "MODIFICAR",
-      "USUARIOS",
+      "Funcionarios",
       req.user,
       descripcion,
       req.body,
-      req.params.id
+      req.params.id,
     );
     await delPattern("users:*"); // Invalidate cache
 
@@ -106,14 +153,19 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
 
 async function eliminarUsuario(req: AuthRequest, res: Response) {
   try {
+    // Audit: Need to fetch first to get name
+    const userToDelete: any = await userService.obtenerPorId(req.params.id);
     const usuarios = await userService.eliminar(req.params.id);
+
     await auditService.logAction(
       "ELIMINAR",
-      "USUARIOS",
+      "Funcionarios",
       req.user,
-      `Se eliminó al usuario ID ${req.params.id}`,
+      userToDelete
+        ? `Se eliminó al usuario RUT ${userToDelete.rut} ${userToDelete.nombre} ${userToDelete.apellido}`
+        : `Se eliminó al usuario ID ${req.params.id}`,
       null,
-      req.params.id
+      req.params.id,
     );
     await delPattern("users:*"); // Invalidate cache
 

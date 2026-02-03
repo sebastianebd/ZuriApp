@@ -55,44 +55,60 @@
                       SALIENTE
                     </div>
 
-                    <div class="text-center py-2" v-if="!registroLocal.rut_saliente">
-                      <div
-                        class="avatar-empty mx-auto mb-2 text-danger bg-white border border-danger border-opacity-25"
+                    <!-- 🏢 ENTERPRISE: v-select with server-side search -->
+                    <div class="mt-4">
+                      <label class="form-label small fw-semibold text-danger mb-2">
+                        <i class="bi bi-search me-1"></i>Buscar Funcionario
+                      </label>
+                      <v-select
+                        v-model="selectedSaliente"
+                        :options="salienteOptions"
+                        :filterable="false"
+                        :loading="isSearchingSaliente"
+                        @search="searchSaliente"
+                        label="displayName"
+                        placeholder="Escribe RUT o nombre..."
+                        class="user-select-danger"
                       >
-                        <i class="bi bi-person"></i>
-                      </div>
-                      <p class="text-muted small mb-2">No seleccionado</p>
-                      <button
-                        class="btn btn-sm btn-light border text-danger fw-bold shadow-xs"
-                        @click="$emit('buscar-usuario', 1)"
-                      >
-                        <i class="bi bi-search me-1"></i> Buscar
-                      </button>
-                    </div>
-
-                    <div v-else class="d-flex align-items-center">
-                      <div class="avatar-filled bg-gradient-danger text-white shadow-sm me-3">
-                        {{
-                          getInitials(
-                            registroLocal.nombre_saliente + ' ' + registroLocal.apellido_saliente
-                          )
-                        }}
-                      </div>
-                      <div class="flex-grow-1 overflow-hidden">
-                        <div class="fw-bold text-dark text-truncate">
-                          {{ registroLocal.nombre_saliente }} {{ registroLocal.apellido_saliente }}
-                        </div>
-                        <div class="text-secondary x-small font-monospace">
-                          {{ registroLocal.rut_saliente }}
-                        </div>
-                      </div>
-                      <button
-                        class="btn btn-icon btn-light text-secondary ms-2"
-                        @click="$emit('buscar-usuario', 1)"
-                        title="Cambiar"
-                      >
-                        <i class="bi bi-arrow-repeat"></i>
-                      </button>
+                        <template #option="option">
+                          <div class="user-option">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <div>
+                                <span class="fw-bold text-dark">{{ option.rut }}</span>
+                                <span class="text-secondary ms-2"
+                                  >{{ option.nombre }} {{ option.apellido }}</span
+                                >
+                              </div>
+                              <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                            </div>
+                          </div>
+                        </template>
+                        <template #selected-option="option">
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="avatar-filled bg-gradient-danger text-white shadow-sm me-2"
+                              style="width: 32px; height: 32px; font-size: 0.75rem"
+                            >
+                              {{ getInitials(option.nombre + ' ' + option.apellido) }}
+                            </div>
+                            <div>
+                              <div class="fw-bold text-dark" style="font-size: 0.875rem">
+                                {{ option.nombre }} {{ option.apellido }}
+                              </div>
+                              <div class="text-secondary" style="font-size: 0.7rem">
+                                {{ option.rut }}
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                        <template #no-options="{ search }">
+                          <div class="text-center text-muted py-2">
+                            <i class="bi bi-search me-1"></i>
+                            <span v-if="!search">Escribe para buscar...</span>
+                            <span v-else>No se encontraron resultados</span>
+                          </div>
+                        </template>
+                      </v-select>
                     </div>
                   </div>
                 </div>
@@ -118,44 +134,60 @@
                       ENTRANTE
                     </div>
 
-                    <div class="text-center py-2" v-if="!registroLocal.rut_entrante">
-                      <div
-                        class="avatar-empty mx-auto mb-2 text-success bg-white border border-success border-opacity-25"
+                    <!-- 🏢 ENTERPRISE: v-select with server-side search -->
+                    <div class="mt-4">
+                      <label class="form-label small fw-semibold text-success mb-2">
+                        <i class="bi bi-search me-1"></i>Buscar Funcionario
+                      </label>
+                      <v-select
+                        v-model="selectedEntrante"
+                        :options="entranteOptions"
+                        :filterable="false"
+                        :loading="isSearchingEntrante"
+                        @search="searchEntrante"
+                        label="displayName"
+                        placeholder="Escribe RUT o nombre..."
+                        class="user-select-success"
                       >
-                        <i class="bi bi-person-plus"></i>
-                      </div>
-                      <p class="text-muted small mb-2">No seleccionado</p>
-                      <button
-                        class="btn btn-sm btn-light border text-success fw-bold shadow-xs"
-                        @click="$emit('buscar-usuario', 2)"
-                      >
-                        <i class="bi bi-search me-1"></i> Buscar
-                      </button>
-                    </div>
-
-                    <div v-else class="d-flex align-items-center">
-                      <div class="avatar-filled bg-gradient-success text-white shadow-sm me-3">
-                        {{
-                          getInitials(
-                            registroLocal.nombre_entrante + ' ' + registroLocal.apellido_entrante
-                          )
-                        }}
-                      </div>
-                      <div class="flex-grow-1 overflow-hidden">
-                        <div class="fw-bold text-dark text-truncate">
-                          {{ registroLocal.nombre_entrante }} {{ registroLocal.apellido_entrante }}
-                        </div>
-                        <div class="text-secondary x-small font-monospace">
-                          {{ registroLocal.rut_entrante }}
-                        </div>
-                      </div>
-                      <button
-                        class="btn btn-icon btn-light text-secondary ms-2"
-                        @click="$emit('buscar-usuario', 2)"
-                        title="Cambiar"
-                      >
-                        <i class="bi bi-arrow-repeat"></i>
-                      </button>
+                        <template #option="option">
+                          <div class="user-option">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <div>
+                                <span class="fw-bold text-dark">{{ option.rut }}</span>
+                                <span class="text-secondary ms-2"
+                                  >{{ option.nombre }} {{ option.apellido }}</span
+                                >
+                              </div>
+                              <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                            </div>
+                          </div>
+                        </template>
+                        <template #selected-option="option">
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="avatar-filled bg-gradient-success text-white shadow-sm me-2"
+                              style="width: 32px; height: 32px; font-size: 0.75rem"
+                            >
+                              {{ getInitials(option.nombre + ' ' + option.apellido) }}
+                            </div>
+                            <div>
+                              <div class="fw-bold text-dark" style="font-size: 0.875rem">
+                                {{ option.nombre }} {{ option.apellido }}
+                              </div>
+                              <div class="text-secondary" style="font-size: 0.7rem">
+                                {{ option.rut }}
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                        <template #no-options="{ search }">
+                          <div class="text-center text-muted py-2">
+                            <i class="bi bi-search me-1"></i>
+                            <span v-if="!search">Escribe para buscar...</span>
+                            <span v-else>No se encontraron resultados</span>
+                          </div>
+                        </template>
+                      </v-select>
                     </div>
                   </div>
                 </div>
@@ -179,7 +211,7 @@
                     v-model="registroLocal.servicio"
                     :options="listaDeServicios"
                     :clearable="false"
-                    :searchable="true"
+                    :filterable="true"
                     placeholder="Seleccione servicio..."
                     class="custom-v-select"
                   />
@@ -193,7 +225,7 @@
                     v-model="registroLocal.tipo_turno"
                     :options="listaDeTurnos"
                     :clearable="false"
-                    :searchable="true"
+                    :filterable="true"
                     placeholder="Tipo de turno..."
                     class="custom-v-select"
                   />
@@ -205,11 +237,11 @@
                   <DatePicker
                     ref="dpInicio"
                     v-model="fechaInicioComputed"
-                    :disabled-dates="isDisabled"
+                    :disabled-dates="combinedDisabledDates"
                     :min-date="today"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :popover="popoverConfig"
-                    :attributes="dateAttributes"
+                    :attributes="combinedDateAttributes"
                     is-required
                     color="blue"
                   >
@@ -236,11 +268,11 @@
                   <DatePicker
                     ref="dpTermino"
                     v-model="fechaTerminoComputed"
-                    :disabled-dates="isDisabled"
+                    :disabled-dates="combinedDisabledDates"
                     :min-date="fechaInicioComputed || today"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :popover="popoverConfig"
-                    :attributes="dateAttributes"
+                    :attributes="combinedDateAttributes"
                     is-required
                     color="blue"
                   >
@@ -299,11 +331,16 @@
 
 <script setup lang="ts">
 import { ref, watch, reactive, computed } from 'vue'
-import type { RegisterDataReemplazo } from '@/types/models'
+import type { RegisterDataReemplazo, User } from '@/types/models'
+import { useUserStore } from '@/stores/user.store'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
 import { useDatePicker } from '@/composables/useDatePicker'
+import vSelect from 'vue-select'
+import 'vue-select/dist/vue-select.css'
+import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
+import { useReplacementStore } from '@/stores/replacement.store'
 
 const props = defineProps<{
   visible: boolean
@@ -316,11 +353,189 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'cerrar'): void
   (e: 'guardar', registro: RegisterDataReemplazo): void
-  (e: 'buscar-usuario', grupo: 1 | 2): void
 }>()
+
+const userStore = useUserStore()
+const turnAssignmentStore = useTurnAssignmentStore()
+const replacementStore = useReplacementStore()
 
 const registroLocal = reactive({ ...props.registro })
 const showConfirmacion = ref(false)
+
+// 🏢 ENTERPRISE: User selection with server-side search
+const selectedSaliente = ref<User | null>(null)
+const selectedEntrante = ref<User | null>(null)
+const salienteOptions = ref<User[]>([])
+const entranteOptions = ref<User[]>([])
+const isSearchingSaliente = ref(false)
+const isSearchingEntrante = ref(false)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Debounced search for Saliente (300ms)
+const searchSaliente = (query: string, loading: (isLoading: boolean) => void) => {
+  if (!query || query.length < 2) {
+    salienteOptions.value = []
+    return
+  }
+
+  loading(true)
+  isSearchingSaliente.value = true
+
+  if (searchTimeout) clearTimeout(searchTimeout)
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      await userStore.searchUsers({
+        search: query.trim(),
+        page: 1,
+        limit: 20
+      })
+
+      // Transform results for v-select
+      salienteOptions.value = userStore.searchResults.map((u) => ({
+        ...u,
+        displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+      }))
+    } catch (error) {
+      console.error('[ReplacementModalCreate] Search saliente error:', error)
+      salienteOptions.value = []
+    } finally {
+      loading(false)
+      isSearchingSaliente.value = false
+    }
+  }, 300)
+}
+
+// Debounced search for Entrante (300ms)
+const searchEntrante = (query: string, loading: (isLoading: boolean) => void) => {
+  if (!query || query.length < 2) {
+    entranteOptions.value = []
+    return
+  }
+
+  loading(true)
+  isSearchingEntrante.value = true
+
+  if (searchTimeout) clearTimeout(searchTimeout)
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      await userStore.searchUsers({
+        search: query.trim(),
+        page: 1,
+        limit: 20
+      })
+
+      // Transform results for v-select
+      entranteOptions.value = userStore.searchResults.map((u) => ({
+        ...u,
+        displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+      }))
+    } catch (error) {
+      console.error('[ReplacementModalCreate] Search entrante error:', error)
+      entranteOptions.value = []
+    } finally {
+      loading(false)
+      isSearchingEntrante.value = false
+    }
+  }, 300)
+}
+
+// --- Blocking Logic State ---
+const salienteBlockedDates = ref<Date[]>([])
+const entranteBlockedRanges = ref<any[]>([])
+
+// Helper to parse "YYYY-MM-DD" to Date
+const parseDateStr = (str: string) => {
+  const [y, m, d] = str.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+// Shared helper to fetch ALL blocked dates for a user (Absence + Working + Shifts)
+const fetchAllBlockedDates = async (user: User) => {
+  try {
+    const [replacements, assignments] = await Promise.all([
+      replacementStore.checkConflicts({ search: user.rut, limit: 100 }),
+      turnAssignmentStore.fetchAssignmentsByUser(user._id)
+    ])
+
+    // 1. Absences (User is Saliente)
+    const absenceStrs = replacementStore.getFechasAusencia(user._id, replacements)
+    const absenceDates = absenceStrs.map(parseDateStr)
+
+    // 2. Occupied as Replacement (User is Entrante)
+    const occupiedStrs = replacementStore.getFechasOcupadas(user._id, replacements)
+    const occupiedDates = occupiedStrs.map(parseDateStr)
+
+    // 3. Occupied by Shift Assignment
+    const shiftRanges = assignments.map((a: any) => ({
+      start: new Date(a.start_date),
+      end: a.end_date ? new Date(a.end_date) : new Date(2100, 0, 1)
+    }))
+
+    return [...absenceDates, ...occupiedDates, ...shiftRanges]
+  } catch (error) {
+    console.error(`Error fetching blocked dates for ${user.rut}:`, error)
+    return []
+  }
+}
+
+// Watch Saliente -> Update Form & Fetch ALL Blocked Dates
+watch(selectedSaliente, async (user) => {
+  if (user) {
+    Object.assign(registroLocal, {
+      id_saliente: user._id,
+      rut_saliente: user.rut,
+      nombre_saliente: user.nombre,
+      apellido_saliente: user.apellido
+    })
+    salienteBlockedDates.value = await fetchAllBlockedDates(user)
+  } else {
+    registroLocal.id_saliente = undefined
+    registroLocal.rut_saliente = undefined
+    registroLocal.nombre_saliente = undefined
+    registroLocal.apellido_saliente = undefined
+    salienteBlockedDates.value = []
+  }
+})
+
+// Watch Entrante -> Update Form & Fetch ALL Blocked Dates
+watch(selectedEntrante, async (user) => {
+  if (user) {
+    Object.assign(registroLocal, {
+      id_entrante: user._id,
+      rut_entrante: user.rut,
+      nombre_entrante: user.nombre,
+      apellido_entrante: user.apellido
+    })
+    entranteBlockedRanges.value = await fetchAllBlockedDates(user)
+  } else {
+    registroLocal.id_entrante = undefined
+    registroLocal.rut_entrante = undefined
+    registroLocal.nombre_entrante = undefined
+    registroLocal.apellido_entrante = undefined
+    entranteBlockedRanges.value = []
+  }
+})
+
+// Combine everything
+const combinedDisabledDates = computed(() => {
+  const fromProps = (props.fechasBloqueadas || []).map(parseDateStr)
+  return [...fromProps, ...salienteBlockedDates.value, ...entranteBlockedRanges.value]
+})
+
+const combinedDateAttributes = computed(() => {
+  if (combinedDisabledDates.value.length === 0) return []
+  return [
+    {
+      highlight: {
+        color: 'red',
+        fillMode: 'light'
+      },
+      dates: combinedDisabledDates.value
+    }
+  ]
+})
 
 // --- Validation Logic ---
 const validationError = computed(() => {
@@ -334,6 +549,8 @@ const validationError = computed(() => {
   // 2. Validar Fechas
   if (registroLocal.fecha_inicio) {
     const start = new Date(registroLocal.fecha_inicio + 'T00:00:00')
+    start.setHours(0, 0, 0, 0)
+
     const now = new Date()
     now.setHours(0, 0, 0, 0)
 
@@ -341,11 +558,42 @@ const validationError = computed(() => {
       return 'La fecha de inicio no puede ser anterior a hoy.'
     }
 
+    let end = start
     if (registroLocal.fecha_termino) {
-      const end = new Date(registroLocal.fecha_termino + 'T00:00:00')
+      end = new Date(registroLocal.fecha_termino + 'T00:00:00')
+      end.setHours(23, 59, 59, 999)
+
       if (end < start) {
         return 'La fecha de término no puede ser anterior a la fecha de inicio.'
       }
+    } else {
+      // If no end date set yet, we only validate start against blocks if strictly needed,
+      // but usually we validate range. If single day replacment assumption?
+      // User says "input start and end".
+      // If end is missing, we assume end = start for blocking check?
+      // No, let's wait for end date usually. But if user only wants 1 day...
+      // Let's assume end = start if not provided for safety check?
+      // Or just check conflict for start date.
+      const startEnd = new Date(start)
+      startEnd.setHours(23, 59, 59, 999)
+      end = startEnd
+    }
+
+    // Default to Check Overlap
+    // combinedDisabledDates is ref<Date[]>
+    const hasConflict = combinedDisabledDates.value.some((blockedDate) => {
+      const b = new Date(blockedDate)
+      b.setHours(0, 0, 0, 0)
+      const bEnd = new Date(blockedDate)
+      bEnd.setHours(23, 59, 59, 999)
+
+      // Check if blocked date is within [start, end]
+      // Since blockedDate is a specific day (00:00:00 usually), checking if it falls in range.
+      return b >= start && b <= end
+    })
+
+    if (hasConflict) {
+      return 'El rango de fechas seleccionado entra en conflicto con un turno o ausencia existente.'
     }
   }
   return ''
@@ -395,7 +643,7 @@ watch(
 // --- Date Logic ---
 const dpInicio = ref<any>(null)
 const dpTermino = ref<any>(null)
-const { popoverConfig, isDisabled, dateAttributes } = useDatePicker(props)
+const { popoverConfig } = useDatePicker(props)
 const today = new Date()
 today.setHours(0, 0, 0, 0)
 
@@ -643,5 +891,92 @@ function cancelarConfirmacion() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* 🏢 ENTERPRISE: Custom v-select styles for user selection */
+.user-select-danger :deep(.vs__dropdown-toggle),
+.user-select-success :deep(.vs__dropdown-toggle) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 6px;
+  background: white;
+  min-height: 60px; /* Fixed height to prevent expansion */
+  max-height: 60px;
+  overflow: hidden;
+}
+
+.user-select-danger :deep(.vs__selected-options),
+.user-select-success :deep(.vs__selected-options) {
+  min-height: 48px;
+  max-height: 48px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.user-select-danger :deep(.vs__selected),
+.user-select-success :deep(.vs__selected) {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.user-select-danger :deep(.vs__dropdown-toggle) {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.user-select-success :deep(.vs__dropdown-toggle) {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.user-select-danger :deep(.vs__dropdown-toggle):hover,
+.user-select-success :deep(.vs__dropdown-toggle):hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-select-danger :deep(.vs__search::placeholder),
+.user-select-success :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.user-select-danger :deep(.vs__dropdown-menu),
+.user-select-success :deep(.vs__dropdown-menu) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  min-width: 320px; /* Balanced width for info display */
+  z-index: 9999; /* Above everything */
+}
+
+.user-select-danger :deep(.vs__dropdown-option),
+.user-select-success :deep(.vs__dropdown-option) {
+  border-radius: 0.375rem;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  font-size: 0.875rem;
+}
+
+.user-select-danger :deep(.vs__dropdown-option--highlight) {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.user-select-success :deep(.vs__dropdown-option--highlight) {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.user-select-danger :deep(.vs__spinner),
+.user-select-success :deep(.vs__spinner) {
+  border-left-color: #3b82f6;
+}
+
+.user-option {
+  width: 100%;
 }
 </style>

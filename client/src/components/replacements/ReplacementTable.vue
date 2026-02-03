@@ -85,10 +85,10 @@
           <td>
             <div class="d-flex flex-column justify-content-center h-100">
               <span class="badge-modern-context mb-1">
-                <i class="bi bi-hospital me-1"></i> {{ reemplazo.servicio }}
+                <i class="bi bi-hospital me-1"></i> {{ formatTitleCase(reemplazo.servicio) }}
               </span>
               <span class="text-secondary x-small ms-1">
-                {{ reemplazo.tipo_turno }}
+                {{ formatTitleCase(reemplazo.tipo_turno) }}
               </span>
             </div>
           </td>
@@ -117,7 +117,7 @@
           <td class="text-center">
             <div class="h-100 d-flex flex-column align-items-center justify-content-center">
               <span class="status-glass" :class="getStatusClass(reemplazo.status)">
-                {{ reemplazo.status }}
+                {{ formatTitleCase(reemplazo.status) }}
               </span>
               <small class="creator-text mt-1">
                 {{ getCreatorName(reemplazo).split(' ')[0] }}
@@ -129,6 +129,7 @@
           <td class="pe-4 text-end last-cell">
             <div class="actions-wrapper h-100 d-flex align-items-center justify-content-end gap-2">
               <button
+                v-if="authStore.hasPermission('replacement.update')"
                 @click="$emit('modificar', reemplazo)"
                 class="btn-glass btn-edit"
                 title="Editar"
@@ -146,22 +147,24 @@
 
               <div class="vr mx-1 opacity-25"></div>
 
-              <button
-                v-if="turnoEnCurso(reemplazo)"
-                @click="confirmarFinalizar(reemplazo._id)"
-                class="btn-glass btn-finalize"
-                title="Finalizar Turno"
-              >
-                <i class="bi bi-check-lg"></i>
-              </button>
-              <button
-                v-else
-                @click="confirmarAnular(reemplazo._id)"
-                class="btn-glass btn-delete"
-                title="Anular"
-              >
-                <i class="bi bi-x-lg"></i>
-              </button>
+              <template v-if="authStore.hasPermission('replacement.update')">
+                <button
+                  v-if="turnoEnCurso(reemplazo)"
+                  @click="confirmarFinalizar(reemplazo._id)"
+                  class="btn-glass btn-finalize"
+                  title="Finalizar Turno"
+                >
+                  <i class="bi bi-check-lg"></i>
+                </button>
+                <button
+                  v-else
+                  @click="confirmarAnular(reemplazo._id)"
+                  class="btn-glass btn-delete"
+                  title="Anular"
+                >
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </template>
             </div>
           </td>
         </tr>
@@ -186,6 +189,10 @@
 import { ref } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import type { RegisterDataReemplazo, User } from '@/types/models'
+import { useAuthStore } from '@/stores/auth.store'
+import { formatTitleCase } from '@/utils/text-formatters'
+
+const authStore = useAuthStore()
 
 defineProps({
   reemplazos: {
@@ -271,7 +278,7 @@ function formatShortName(nombre: string, apellido: string) {
   if (!nombre) return ''
   const n = nombre.split(' ')[0]
   const a = apellido ? apellido.split(' ')[0].charAt(0) + '.' : ''
-  return `${n} ${a}`.toUpperCase()
+  return formatTitleCase(`${n} ${a}`)
 }
 
 const formatearFecha = (fecha: string) => {

@@ -8,8 +8,10 @@ import { mount } from '@vue/test-utils'
 const mockShowAlert = vi.fn()
 const mockReplacementStore = {
   reemplazosFiltrados: [],
+  paginationInfo: { totalPages: 1 },
   hayReemplazos: false,
   mostrarReemplazos: vi.fn(),
+  fetchActiveReplacementsPaginated: vi.fn(),
   procesarSustitucion: vi.fn(),
   crearReemplazo: vi.fn(),
   finalizarReemplazo: vi.fn(),
@@ -59,6 +61,27 @@ vi.mock('vue', async (importOriginal) => {
   }
 })
 
+const mockTurnTypeStore = {
+  fetchTurnTypes: vi.fn(),
+  turnTypes: {
+    // Make sure this is a ref-like object or array as expected by the component
+    value: [{ nombre: 'MAÑANA' }]
+  }
+  // If useReplacements accesses .value directly from the store (unlikely if it uses storeToRefs),
+  // but if it iterates store.turnTypes, it needs to be an array.
+  // Let's assume storeToRefs usage or direct access.
+  // Safest is to mock the hook return value
+}
+
+// Ensure turnTypes is treated as a reactive array in the store
+// But for the mock factor, we just return the object
+vi.mock('@/stores/turn-type.store', () => ({
+  useTurnTypeStore: () => ({
+    fetchTurnTypes: vi.fn(),
+    turnTypes: [{ nombre: 'MAÑANA' }]
+  })
+}))
+
 // Mock Modal Logic
 const mockModalLogic = {
   createModalVisible: ref(false),
@@ -106,11 +129,11 @@ describe('useReplacements', () => {
 
   it('loads data on mount', async () => {
     const { result } = withSetup(() => useReplacements())
-    const { loadData, listaDeTurnos } = result
+    const { listaDeTurnos } = result
 
-    await loadData()
+    await new Promise((r) => setTimeout(r, 0))
 
-    expect(mockReplacementStore.mostrarReemplazos).toHaveBeenCalled()
+    expect(mockReplacementStore.fetchActiveReplacementsPaginated).toHaveBeenCalled()
     expect(mockOptionStore.mostrarOpciones).toHaveBeenCalled()
     expect(listaDeTurnos.value).toEqual(['MAÑANA'])
   })

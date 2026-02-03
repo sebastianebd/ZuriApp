@@ -25,6 +25,7 @@ import authRoutes from "./routes/api/auth.routes";
 import userRoutes from "./routes/api/users.routes";
 import replacementRoutes from "./routes/api/replacement.routes";
 import optionRoutes from "./routes/api/options.routes";
+import cargoRoutes from "./routes/api/cargo.routes";
 import auditRoutes from "./routes/api/audit.routes";
 import profileRoutes from "./routes/api/profile.routes";
 
@@ -55,8 +56,8 @@ app.use(
     {
       stream: { write: (message: string) => logger.info(message.trim()) },
       skip: (req: Request) => req.url.startsWith("/admin/queues"),
-    }
-  )
+    },
+  ),
 );
 // Sentry Tunnel Body Parser (Capturar todo como buffer crudo para evitar corrupción)
 app.use("/api/sentry", express.raw({ limit: "50mb", type: () => true }));
@@ -78,9 +79,23 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reemplazos", replacementRoutes);
 app.use("/api/options", optionRoutes);
+app.use("/api/cargos", cargoRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/calendar", calendarRoutes);
+import turnAssignmentRoutes from "./routes/api/turn-assignment.routes";
+app.use("/api/assignments", turnAssignmentRoutes);
+app.use("/api/assignments", turnAssignmentRoutes);
+import shiftExceptionRoutes from "./routes/api/shift-exception.routes";
+app.use("/api/shift-exceptions", shiftExceptionRoutes);
+
+import serviceRoutes from "./routes/api/service.routes";
+import turnTypeRoutes from "./routes/api/turn-type.routes";
+import turnSiglaRoutes from "./routes/api/turn-sigla.routes";
+
+app.use("/api/services", serviceRoutes);
+app.use("/api/turn-types", turnTypeRoutes);
+app.use("/api/turn-siglas", turnSiglaRoutes);
 
 // Sentry Tunnel - Debe ir antes del catch-all *
 import sentryRoutes from "./routes/api/sentry.routes";
@@ -91,8 +106,11 @@ app.use(
     type: ["application/json", "application/x-sentry-envelope", "text/plain"],
     limit: "50mb",
   }),
-  sentryRoutes
+  sentryRoutes,
 );
+
+import reportRoutes from "./routes/api/report.routes";
+app.use("/api/reports", reportRoutes);
 
 // --- Bull Board Setup ---
 const serverAdapter = new ExpressAdapter();
@@ -113,9 +131,12 @@ app.use(
     users: { [dashboardUser]: dashboardPass },
     challenge: true,
   }),
-  serverAdapter.getRouter()
+  serverAdapter.getRouter(),
 );
 // ------------------------
+
+import publicRoutes from "./routes/api/public.routes";
+app.use("/api/public", publicRoutes);
 
 app.all("*", (req: Request, res: Response) => {
   res.status(404).json({ error: "404 Not Found" });

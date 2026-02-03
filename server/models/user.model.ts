@@ -16,6 +16,7 @@ export interface IUser extends Document {
   password?: string;
   servicio?: string;
   habilitado?: string;
+  tipo_contrato?: string;
   refresh_token?: string;
   created_at: Date;
   updated_at: Date;
@@ -105,6 +106,13 @@ const userSchema: Schema = new Schema(
       },
       enum: ["HABILITADO", "NO HABILITADO"],
       default: "HABILITADO",
+      uppercase: true,
+      trim: true,
+    },
+    tipo_contrato: {
+      type: String,
+      enum: ["PLANTA", "REEMPLAZO"],
+      default: "REEMPLAZO",
       uppercase: true,
       trim: true,
     },

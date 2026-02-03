@@ -6,6 +6,9 @@ import App from './App.vue'
 import router from './router'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
+import VCalendar from 'v-calendar'
+import 'v-calendar/style.css'
+import * as Sentry from '@sentry/vue'
 
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap'
@@ -15,8 +18,7 @@ const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 app.component('v-select', vSelect as any)
-
-import * as Sentry from '@sentry/vue'
+app.use(VCalendar, {})
 
 app.use(router)
 
@@ -37,7 +39,7 @@ if (import.meta.env.PROD) {
 }
 // --- Supresión de errores conocidos de v-calendar ---
 // --- Supresión de errores conocidos de v-calendar ---
-app.config.errorHandler = (err, _instance, _info) => {
+app.config.errorHandler = (err) => {
   // Ignorar error específico de dayIndex en v-calendar
   if (err instanceof TypeError && err.message.includes('dayIndex')) {
     return

@@ -1,8 +1,8 @@
 <template>
-  <div class="filter-section shadow-sm rounded-4 p-4 mb-4 bg-white">
-    <div class="row g-3 align-items-end">
+  <div class="mb-4">
+    <div class="row row-cols-1 row-cols-md-5 g-3 align-items-end">
       <!-- Filtro Rut Saliente -->
-      <div class="col-md-3">
+      <div class="col">
         <label for="filtroRutSaliente" class="form-label fw-semibold text-secondary small"
           >Rut (saliente):</label
         >
@@ -16,7 +16,7 @@
       </div>
 
       <!-- Filtro Rut Entrante -->
-      <div class="col-md-3">
+      <div class="col">
         <label for="filtroRutEntrante" class="form-label fw-semibold text-secondary small"
           >Rut (entrante):</label
         >
@@ -30,7 +30,7 @@
       </div>
 
       <!-- Fecha Inicio -->
-      <div class="col-md-2">
+      <div class="col">
         <label for="fechaInicio" class="form-label fw-semibold text-secondary small">Desde:</label>
         <DatePicker
           v-model="store.fechaInicio"
@@ -49,7 +49,7 @@
       </div>
 
       <!-- Fecha Fin -->
-      <div class="col-md-2">
+      <div class="col">
         <label for="fechaFin" class="form-label fw-semibold text-secondary small">Hasta:</label>
         <DatePicker
           v-model="store.fechaFin"
@@ -68,7 +68,7 @@
       </div>
 
       <!-- Servicio -->
-      <div class="col-md-2">
+      <div class="col">
         <label for="filtroServicio" class="form-label fw-semibold text-secondary small"
           >Servicio</label
         >
@@ -76,7 +76,7 @@
           id="filtroServicio"
           v-model="store.filtroServicio"
           :options="[
-            { label: 'TODOS', value: '' },
+            { label: 'Todos', value: '' },
             ...listaServicios.map((s) => ({ label: s, value: s }))
           ]"
           :reduce="(option: any) => option.value"

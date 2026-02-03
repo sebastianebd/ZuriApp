@@ -1,4 +1,5 @@
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject, watch } from 'vue'
+import { debounce } from 'lodash-es'
 import { useUserStore } from '@/stores/user.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useAuthStore } from '@/stores/auth.store'
@@ -19,7 +20,6 @@ export function useUsers() {
   const replacementStore = useReplacementStore()
 
   // --- REFS
-  const usuarios = ref<any[]>([])
   const loading = ref(false)
 
   // Filters
@@ -30,6 +30,7 @@ export function useUsers() {
 
   // Lists
   const listaTipoCargo = ref<string[]>([])
+  const listaTipoContrato = ref<string[]>(['PLANTA', 'REEMPLAZO'])
   const listaHabilitado = ref<string[]>([])
   const listaServicios = ref<string[]>([])
   const listaTiposTurno = ref<string[]>([])
@@ -45,8 +46,9 @@ export function useUsers() {
   const usuarioActual = ref<any>({})
   const historialUsuario = ref<any[]>([])
 
-  // --- PAGINACIÓN
+  // --- SERVER-SIDE PAGINATION
   const currentPage = ref(1)
+  const totalPages = computed(() => userStore.pagination.totalPages)
   const itemsPerPage = 10
 
   const userLoged = computed(() => {
@@ -66,36 +68,15 @@ export function useUsers() {
     return []
   })
 
-  const usuariosFiltrados = computed(() => {
-    const filtrados = usuarios.value.filter((u) => {
-      const coincideRut = !filtroRut.value || u.rut.startsWith(filtroRut.value)
-      const coincideCargo = !tipoCargo.value || u.tipo_cargo === tipoCargo.value
-      const coincideHabilitado = !filtroHabilitado.value || u.habilitado === filtroHabilitado.value
-      const nombreCompleto = ((u.nombre || '') + ' ' + (u.apellido || '')).toLowerCase()
-      const busquedaNombre = (filtroNombre.value || '').toLowerCase()
-      const coincideNombre = !busquedaNombre || nombreCompleto.includes(busquedaNombre)
-      return coincideRut && coincideCargo && coincideHabilitado && coincideNombre
-    })
-    return filtrados.sort((a, b) => {
-      const nombreA = (a.nombre || '').toLowerCase()
-      const nombreB = (b.nombre || '').toLowerCase()
-      return nombreA.localeCompare(nombreB)
-    })
-  })
+  // Server-side data (from store)
+  const usuariosFiltrados = computed(() => userStore.currentPageUsers)
+  const paginatedUsuarios = computed(() => userStore.currentPageUsers)
 
-  const totalPages = computed(() => {
-    return Math.ceil(usuariosFiltrados.value.length / itemsPerPage)
-  })
-
-  const paginatedUsuarios = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage
-    const end = start + itemsPerPage
-    return usuariosFiltrados.value.slice(start, end)
-  })
-
-  function changePage(page: number) {
+  // Server-side pagination
+  async function changePage(page: number) {
     if (page >= 1 && page <= totalPages.value) {
       currentPage.value = page
+      await loadUsers(page)
     }
   }
 
@@ -138,44 +119,66 @@ export function useUsers() {
   // --- CRUD HANDLERS
   async function handleUpdate(usuario: User) {
     await userStore.actualizarUsuario(usuario._id, usuario)
-    usuarios.value = await userStore.mostrarTodos()
+    await loadUsers(currentPage.value) // Reload current page
     closeUpdateModal()
     showAlert?.('Modificado', 'El registro se ha modificado correctamente.')
   }
 
   async function handleDelete(id: string) {
     await userStore.eliminarUsuario(id)
-    usuarios.value = usuarios.value.filter((u) => u._id !== id)
+    await loadUsers(currentPage.value) // Reload current page
     showAlert?.('Eliminado', 'El usuario se ha eliminado correctamente.')
   }
 
   async function handleCreate(nuevoUsuario: User) {
     try {
-      const usuarioCreado = await userStore.crearUsuario(nuevoUsuario)
-      usuarios.value.push(usuarioCreado)
+      await userStore.crearUsuario(nuevoUsuario)
+      await loadUsers(1) // Go to page 1 to see new user
+      currentPage.value = 1
       closeCreateModal()
       showAlert?.('Guardado', 'El usuario se ha creado correctamente.')
     } catch (error: any) {
-      // El errorHandler devuelve directamente el objeto data (ej: { mensaje: "..." })
-      // o el error original axios si falla algo más. Verificamos ambas estructuras.
       const message = error.mensaje || error.response?.data?.mensaje || 'Error al crear usuario.'
       showAlert?.('Error', message, 'error')
     }
   }
 
-  async function loadUsers() {
+  async function loadUsers(page: number = 1) {
     loading.value = true
     try {
-      usuarios.value = await userStore.mostrarTodos()
-      const opciones = await optionStore.mostrarOpciones()
-      listaTipoCargo.value = opciones.tipoCargo
-      listaHabilitado.value = opciones.habilitado
-      listaServicios.value = opciones.servicios
-      listaTiposTurno.value = opciones.tiposTurno
+      // Fetch paginated users from server
+      await userStore.fetchPaginated({
+        page,
+        limit: itemsPerPage,
+        search: filtroNombre.value,
+        cargo: tipoCargo.value,
+        habilitado: filtroHabilitado.value,
+        rut: filtroRut.value
+      })
+
+      // Load options only once
+      if (listaTipoCargo.value.length === 0) {
+        const opciones = await optionStore.mostrarOpciones()
+        listaTipoCargo.value = opciones.tipoCargo
+        listaHabilitado.value = opciones.habilitado
+        listaServicios.value = opciones.servicios
+        listaTiposTurno.value = opciones.tiposTurno
+      }
     } finally {
       loading.value = false
     }
   }
+
+  // Debounced search (waits 300ms after user stops typing)
+  const debouncedSearch = debounce(async () => {
+    currentPage.value = 1 // Reset to page 1 on search
+    await loadUsers(1)
+  }, 300)
+
+  // Watch filters and trigger debounced search
+  watch([filtroNombre, tipoCargo, filtroHabilitado, filtroRut], () => {
+    debouncedSearch()
+  })
 
   onMounted(async () => {
     await loadUsers()
@@ -191,7 +194,6 @@ export function useUsers() {
 
   return {
     // State
-    usuarios,
     loading,
     usuariosFiltrados,
     paginatedUsuarios,
@@ -205,6 +207,7 @@ export function useUsers() {
 
     // Lists
     listaTipoCargo,
+    listaTipoContrato,
     rolesDisponiblesCreacion,
     listaHabilitado,
     listaServicios,
