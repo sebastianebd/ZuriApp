@@ -9,7 +9,7 @@ export const getCargos = async (req: Request, res: Response) => {
   try {
     const { activo } = req.query;
     const filter: any = {};
-    // Default: Exclude deleted
+    // Exclusión por defecto de soft-deleted
     filter.deleted_at = null;
     if (activo !== undefined) {
       filter.activo = activo === "true";
@@ -27,19 +27,20 @@ export const createCargo = async (req: Request, res: Response) => {
   try {
     const { nombre, descripcion, nivel, permisos } = req.body;
 
-    // Check duplicity by name
+    // Validación de Unicidad
     const existing = await Cargo.findOne({ nombre: nombre?.toUpperCase() });
     if (existing) {
       return res.status(400).json({ message: "El cargo ya existe" });
     }
 
-    // Smart SKU Generation (Global Sequence)
+    // Generación Inteligente de SKU (Código de Cargo)
+    // Se autogenera basado en prefijo del nombre + secuencia global.
     let codigo = req.body.codigo;
 
     if (!codigo && nombre) {
       const prefix = nombre.substring(0, 3).toUpperCase();
 
-      // Fetch all codes to find the highest global sequence number
+      // Buscamos el mayor número de secuencia existente
       const allCargos = await Cargo.find({
         codigo: { $exists: true, $ne: null },
       }).select("codigo");
@@ -72,7 +73,7 @@ export const createCargo = async (req: Request, res: Response) => {
     const cargo = new Cargo(payload);
     await cargo.save();
 
-    // Audit Creation
+    // Auditoría de Creación
     const authReq = req as AuthRequest;
     if (authReq.user) {
       await auditService.logAction(
@@ -97,12 +98,12 @@ export const updateCargo = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { nombre, descripcion, activo, nivel, permisos } = req.body;
 
-    // Fetch original for diff
+    // Recuperamos original para diffing
     const original: any = await Cargo.findById(id);
     if (!original)
       return res.status(404).json({ message: "Cargo no encontrado" });
 
-    // Check unique name if changing name
+    // Validación de unicidad en cambio de nombre
     if (nombre && nombre.toUpperCase() !== original.nombre.toUpperCase()) {
       const existing = await Cargo.findOne({
         nombre: nombre.toUpperCase(),
@@ -121,11 +122,10 @@ export const updateCargo = async (req: Request, res: Response) => {
       { new: true, runValidators: true },
     );
 
-    // Audit Modification
-    // Audit Modification
+    // Auditoría Detallada de Cambios
     const authReq = req as AuthRequest;
     if (authReq.user && cargo) {
-      // 1. Check Activation Toggle
+      // 1. Detección de activación/desactivación
       if (activo !== undefined && activo !== original.activo) {
         const actionDesc = activo ? "activó" : "desactivó";
         await auditService.logAction(
@@ -137,8 +137,7 @@ export const updateCargo = async (req: Request, res: Response) => {
           cargo._id.toString(),
         );
       } else {
-        // 2. Standard Modification
-        // Prevent generic diff from diffing permissions
+        // 2. Modificación Estándar (evitando diff falso en array de permisos)
         const originalForDiff = original.toObject();
         const bodyForDiff = { ...req.body };
         delete originalForDiff.permisos;
@@ -147,7 +146,7 @@ export const updateCargo = async (req: Request, res: Response) => {
         let diff =
           auditService.generateDiff(originalForDiff, bodyForDiff) || "";
 
-        // Custom diff for permissions
+        // Diff específico para permisos (Legible para humanos)
         if (permisos) {
           const oldPerms: string[] = original.permisos || [];
           const newPerms: string[] = permisos;
@@ -158,7 +157,7 @@ export const updateCargo = async (req: Request, res: Response) => {
           if (added.length > 0 || removed.length > 0) {
             const readableChanges: string[] = [];
 
-            // Helper to translate tech name to human name
+            // Helper: Traduce técnica 'users.create' a 'Crear Usuarios'
             const translatePerm = (p: string) => {
               const [module, action] = p.split(".");
               const moduleMap: any = {
@@ -170,7 +169,6 @@ export const updateCargo = async (req: Request, res: Response) => {
               };
               const modName = moduleMap[module] || module;
 
-              // Special case for visibility
               if (action === "view" || action === "read") return modName;
 
               const actionMap: any = {
@@ -183,7 +181,6 @@ export const updateCargo = async (req: Request, res: Response) => {
 
             added.forEach((p) => {
               const name = translatePerm(p);
-              // Check if it's a visibility permission (view/read)
               if (p.endsWith(".view") || p.endsWith(".read")) {
                 readableChanges.push(`${name} -> Visible`);
               } else {
@@ -223,10 +220,10 @@ export const updateCargo = async (req: Request, res: Response) => {
       }
     }
 
-    // Real-time Permission Update
+    // Actualización en Tiempo Real
+    // Emitimos evento para que clientes conectados refresquen sus permisos sin reload.
     try {
       const io = socketConfig.getIO();
-      // Emit event with cargo name so frontend can match it
       io.emit("cargo_updated", {
         cargoNombre: cargo!.nombre,
         action: "update",
@@ -242,23 +239,22 @@ export const updateCargo = async (req: Request, res: Response) => {
   }
 };
 
-// DELETE /api/cargos/:id (Soft delete preferiblemente)
+// DELETE /api/cargos/:id (Soft delete)
 export const deleteCargo = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Audit requires pre-fetch
     const original = await Cargo.findById(id);
     if (!original)
       return res.status(404).json({ message: "Cargo no encontrado" });
 
     const cargo = await Cargo.findByIdAndUpdate(
       id,
-      { deleted_at: new Date() }, // Set deleted_at instead of active: false
+      { deleted_at: new Date() }, // Soft Delete: Marcamos fecha sin borrar documento
       { new: true },
     );
 
-    // Audit Deletion (Soft)
+    // Auditoría de Eliminación
     const authReq = req as AuthRequest;
     if (authReq.user) {
       await auditService.logAction(

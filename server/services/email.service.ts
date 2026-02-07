@@ -2,16 +2,21 @@ import { Resend } from "resend";
 import { emailConfig } from "../config/email.config";
 import logger from "../config/logger.config";
 
-// --- Resend Initialization ---
+// --- Inicialización de Resend ---
+// Inicializamos el cliente de correo solo si existe una API Key.
+// Esto permite arrancar el servidor en entornos de desarrollo local sin configurar credenciales de email reales.
 let resend: Resend | null = null;
 if (emailConfig.resendApiKey) {
   resend = new Resend(emailConfig.resendApiKey);
 } else {
-  logger.warn("[EmailService] RESEND_API_KEY missing. Email sending disabled.");
+  logger.warn(
+    "[EmailService] RESEND_API_KEY no encontrada. El envío de correos está deshabilitado.",
+  );
 }
 
 // --- Templates ---
-// Professional HTML Template
+// Definimos templates HTML funcionales directamente en código para mantener simplicidad y portabilidad
+// sin requerir un motor de vistas complejo. El diseño es responsive y profesional.
 const getWelcomeTemplate = (nombre: string, rut: string, pass: string) => {
   return `
 <!DOCTYPE html>
@@ -61,26 +66,26 @@ const getWelcomeTemplate = (nombre: string, rut: string, pass: string) => {
   `;
 };
 
-// --- Service Methods ---
+// --- Métodos del Servicio ---
 
 export const sendWelcomeEmail = async (
   to: string,
   nombre: string,
   rut: string,
-  pass: string
+  pass: string,
 ) => {
   const htmlContent = getWelcomeTemplate(nombre, rut, pass);
 
   try {
     if (!resend) {
       logger.warn(
-        `[EmailService] Skipping email to ${to} (No API Key configured)`
+        `[EmailService] Saltando envío a ${to} (Sin API Key configurada)`,
       );
       return null;
     }
 
     const { data, error } = await resend.emails.send({
-      from: emailConfig.from, // e.g., "onboarding@resend.dev" or your verified domain
+      from: emailConfig.from, // e.g., "onboarding@resend.dev" o dominio verificado
       to: [to],
       subject: "Bienvenido a ZuriApp - Credenciales de Acceso",
       html: htmlContent,
@@ -91,11 +96,15 @@ export const sendWelcomeEmail = async (
       throw new Error(`Resend Error: ${error.message}`);
     }
 
-    logger.info(`Email sent successfully via Resend to ${to}. ID: ${data?.id}`);
+    logger.info(
+      `Email enviado exitosamente vía Resend a ${to}. ID: ${data?.id}`,
+    );
     return data;
   } catch (error: any) {
-    logger.error(`Failed to send email to ${to}:`, error.message);
-    throw error; // Propagate to BullMQ for retry
+    // Propagación de Error:
+    // Lanzamos el error para que BullMQ (si se usa) pueda reintentar el trabajo más tarde (estrategia de Retry).
+    logger.error(`Falló envío de email a ${to}:`, error.message);
+    throw error;
   }
 };
 

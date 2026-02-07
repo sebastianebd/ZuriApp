@@ -10,12 +10,14 @@ export const getPublicUserShifts = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "User ID is required" });
     }
 
-    // Default to current date if not provided
+    // Default: Mes actual si no se especifica
     const now = new Date();
     if (!month) month = (now.getMonth() + 1).toString();
     if (!year) year = now.getFullYear().toString();
 
-    // Fetch Report Data
+    // Obtención de Datos
+    // Reutilizamos la lógica del servicio de reportes para garantizar consistencia
+    // entre la vista privada del funcionario y esta vista pública compartible.
     try {
       const data = await ReportService.getMonthlyReport({
         month: Number(month),
@@ -23,15 +25,17 @@ export const getPublicUserShifts = async (req: Request, res: Response) => {
         userId: String(userId),
       });
 
-      // The report service returns 'timeline' which contains day-by-day info
-      // We return the raw report structure, frontend will map it to events
+      // Transformación de Respuesta
+      // Retornamos la estructura cruda; el frontend público se encarga de renderizar
+      // una vista simplificada (solo lectura) de los turnos.
       return res.json({
         user: data.user,
         timeline: data.timeline,
         metadata: data.metadata,
       });
     } catch (svcError: any) {
-      // If 404 (No data), return empty timeline instead of crash
+      // Manejo de 'No Encontrado' (404)
+      // En lugar de error, retornamos timeline vacío para una UI más amigable.
       if (
         svcError.status === 404 ||
         (svcError.message && svcError.message.includes("No se encontraron"))

@@ -8,7 +8,7 @@ export const createException = async (req: Request, res: Response) => {
   try {
     const {
       assignment_id,
-      assignment_model = "TurnAssignment", // Default for backward compatibility
+      assignment_model = "TurnAssignment", // Default: Compatibilidad hacia atrás
       date,
       original_type,
       override_type,
@@ -16,13 +16,13 @@ export const createException = async (req: Request, res: Response) => {
       created_by,
     } = req.body;
 
-    // Use findOneAndUpdate with upsert to update existing or create new
-    // We include original_type in the update payload. For new records it's essential.
-    // For existing records, it might update it if the pattern changed underneath (though rare being an exception)
+    // Upsert Logic (Crear o Actualizar)
+    // Utilizamos findOneAndUpdate para manejar condiciones de carrera de forma atómica.
+    // 'original_type' se guarda siempre, crucial para la reversión (Undo).
     const exception = await ShiftExceptionModel.findOneAndUpdate(
       { assignment_id, date: new Date(date) },
       {
-        assignment_model, // Save the model type
+        assignment_model,
         original_type,
         override_type,
         reason,
@@ -32,14 +32,12 @@ export const createException = async (req: Request, res: Response) => {
       { upsert: true, new: true, setDefaultsOnInsert: true },
     ).populate({
       path: "assignment_id",
-      // Dynamic populate based on model is tricky in single statement if fields differ widely
-      // But Mongoose handles it if we don't specify strict path selection that fails,
-      // or we accept that for Replacement we might get different fields.
-      // For TurnAssignment: populate user_id
-      // For Replacement: user info is at root
+      // Populate Dinámico: Mongoose resuelve el modelo correcto (TurnAssignment o Replacement)
+      // basado en 'assignment_model' (Polymorphic Association).
     });
 
-    // Manually populate nested user if it's TurnAssignment
+    // Populate Manual Anidado
+    // Si es un TurnAssignment, necesitamos llegar al usuario final para obtener su nombre.
     if (exception.assignment_model === "TurnAssignment") {
       await exception.populate({
         path: "assignment_id.user_id",
@@ -47,17 +45,17 @@ export const createException = async (req: Request, res: Response) => {
       });
     }
 
-    // Audit Creation/Modification
+    // Auditoría de Modificación
     const authReq = req as AuthRequest;
     if (authReq.user) {
       let targetName = "Desconocido";
       const assignment: any = exception.assignment_id;
 
       if (exception.assignment_model === "Replacement") {
-        // Replacement model has names at root
+        // En Reemplazos, los datos del usuario están en la raíz del documento
         targetName = `${assignment.nombre_entrante} ${assignment.apellido_entrante}`;
       } else {
-        // TurnAssignment model has user_id ref
+        // En Asignaciones, están en la referencia 'user_id'
         const u = assignment.user_id;
         if (u) {
           targetName = `${u.nombre} ${u.apellido}`;
@@ -88,7 +86,7 @@ export const createException = async (req: Request, res: Response) => {
       );
     }
 
-    // Notify Frontend via Socket (and potential future notifications)
+    // Notificación en Tiempo Real (Socket)
     if (exception.assignment_id) {
       let targetId = "";
       const assignment: any = exception.assignment_id;
@@ -127,7 +125,8 @@ export const getExceptions = async (req: Request, res: Response) => {
     const query: any = {};
     if (assignment_id) query.assignment_id = assignment_id;
     if (start_date && end_date) {
-      // Adjust end_date to include the entire day (23:59:59)
+      // Ajuste de Rango Diario
+      // Extendemos end_date al final del día (23:59:59) para asegurar cobertura completa.
       const endDateTime = new Date(end_date as string);
       endDateTime.setHours(23, 59, 59, 999);
 
@@ -141,13 +140,13 @@ export const getExceptions = async (req: Request, res: Response) => {
       .populate("created_by", "nombre apellido")
       .populate({
         path: "assignment_id",
-        // We populate the assignment itself (TurnAssignment or Replacement)
       })
       .sort({ date: 1 });
 
-    // Polymorphic Population:
-    // Only populate nested user_id if the assignment is a TurnAssignment
-    // Replacements have user info at the root level
+    // Populate Polimórfico Condicional:
+    // Filtramos y populamos datos específicos según el tipo de asignación subyacente.
+
+    // Caso 1: Asignaciones Regulares (TurnAssignment) -> Populamos user_id
     const turnAssignmentExceptions = exceptions.filter(
       (e) => e.assignment_model === "TurnAssignment",
     );
@@ -160,7 +159,7 @@ export const getExceptions = async (req: Request, res: Response) => {
       });
     }
 
-    // Populate id_entrante for Replacements to get tipo_cargo
+    // Caso 2: Reemplazos -> Populamos id_entrante
     const replacementExceptions = exceptions.filter(
       (e) => e.assignment_model === "Replacement",
     );
@@ -196,8 +195,7 @@ export const getExceptionById = async (req: Request, res: Response) => {
 
 export const deleteException = async (req: Request, res: Response) => {
   try {
-    // 1. Find document before deleting (Undo Audit)
-    // 1. Find document before deleting (Undo Audit)
+    // 1. Recuperación Previa (Para Auditoría de Reversión)
     const exception = await ShiftExceptionModel.findById(
       req.params.id,
     ).populate("assignment_id");
@@ -206,7 +204,7 @@ export const deleteException = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Exception not found" });
     }
 
-    // Conditionally populate user if TurnAssignment
+    // Populate Condicional para obtener nombres logs
     if (exception.assignment_model === "TurnAssignment") {
       await exception.populate({
         path: "assignment_id.user_id",
@@ -214,7 +212,8 @@ export const deleteException = async (req: Request, res: Response) => {
       });
     }
 
-    // 2. Audit the Reversion (The "Undo" logic)
+    // 2. Auditoría tipo "Undo"
+    // Registramos explícitamente que se revirtió una excepción (Cambio: Override -> Original)
     const authReq = req as AuthRequest;
     if (authReq.user) {
       let targetName = "Desconocido";
@@ -237,7 +236,7 @@ export const deleteException = async (req: Request, res: Response) => {
       );
 
       await auditService.logAction(
-        "MODIFICAR", // Unified Action
+        "MODIFICAR", // Acción Unificada
         "Excepciones de Turno",
         authReq.user,
         `Se modificó el turno de ${targetName} (Cambios: turno: ${exception.override_type} -> ${exception.original_type} para el día ${formattedDate})`,
@@ -253,7 +252,7 @@ export const deleteException = async (req: Request, res: Response) => {
       );
     }
 
-    // 3. Delete
+    // 3. Eliminación Física
     await ShiftExceptionModel.findByIdAndDelete(req.params.id);
 
     res.json({ message: "Exception deleted successfully" });

@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+/**
+ * Validaciones de Rutina de Usuarios
+ * Incluye reglas de negocio complejas como la exención de ciertos campos (habilitado)
+ * basada en roles específicos, usando `superRefine`.
+ */
 export const createUserSchema = z.object({
   body: z
     .object({
@@ -31,10 +36,12 @@ export const createUserSchema = z.object({
       habilitado: z.string().optional(),
     })
     .superRefine((data, ctx) => {
-      // Lista de cargos que NO requieren habilitacion
+      // Regla de Negocio: Habilitación por Cargo
+      // Los cargos administrativos de alto nivel (RRHH, ADMIN-TI) están implícitamente habilitados
+      // o gestionados por políticas separadas. Para el resto (TENS, Enfermeras), el estado
+      // debe ser explícito para evitar usuarios "flotantes" no asignables.
       const cargosExentos = ["RECURSOS HUMANOS", "ADMIN-TI"];
 
-      // Si el cargo NO está en la lista de exentos, habilitado es obligatorio
       if (!cargosExentos.includes(data.tipo_cargo) && !data.habilitado) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

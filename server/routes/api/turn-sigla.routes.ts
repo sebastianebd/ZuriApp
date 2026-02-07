@@ -4,7 +4,8 @@ import authMiddleware from "../../middleware/authentication.middleware";
 
 const router = Router();
 
-// Protect all routes
+// --- Configuración de Siglas de Turno ---
+// ABM simple para las siglas visuales en el calendario (L, N, X, etc.)
 router.use(authMiddleware);
 
 router.get("/", TurnSiglaController.getTurnSiglas);

@@ -6,21 +6,21 @@ import authMiddleware, {
 
 const router = Router();
 
-// Protect all report routes
+// Middleware Global: Restricción total de acceso a reportes (Información Sensible).
 router.use(authMiddleware);
 
-// GET /api/reports/summary?month=1&year=2025&service=UCI
+// Resumen Mensual: Agregación de horas y cumplimiento.
 router.get(
   "/summary",
-  requirePermission("shifts.view"),
-  ReportController.getMonthlySummary
+  requirePermission("shifts.view"), // El mismo permiso de ver turnos habilita ver reportes agregados
+  ReportController.getMonthlySummary,
 );
 
-// GET /api/reports/export/excel?month=1&year=2025&service=UCI
+// Exportación de Datos: Generación de Excel para nómina/RRHH.
 router.get(
   "/export/excel",
   requirePermission("shifts.view"),
-  ReportController.exportExcel
+  ReportController.exportExcel,
 );
 
 export default router;

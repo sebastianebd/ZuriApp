@@ -6,6 +6,7 @@ import Cargo from "../models/cargo.model";
 
 async function login(req: Request, res: Response) {
   try {
+    // Captura de metadatos de conexión para auditoría de seguridad
     const ip =
       (req.headers["x-forwarded-for"] as string) ||
       req.socket.remoteAddress ||
@@ -19,14 +20,14 @@ async function login(req: Request, res: Response) {
     });
     res
       .cookie("refresh_token", refreshToken, {
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Lowercase for type safety (option "strict" | "lax" | "none")
-        secure: process.env.NODE_ENV === "production",
+        httpOnly: true, // Prevención XSS: Cookie inaccesible desde JS del cliente
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 'None' necesario para Cross-Site en Prod (si front y back están en dominios distintos)
+        secure: process.env.NODE_ENV === "production", // Solo HTTPS en Prod
       })
       .json({ access_token: accessToken, user });
 
     logger.info(
-      `✅ Login exitoso: ${user.rut} ${user.nombre} ${user.apellido}`
+      `✅ Login exitoso: ${user.rut} ${user.nombre} ${user.apellido}`,
     );
   } catch (error: any) {
     res.status(error.status || 500).json({ mensaje: error.message });
@@ -36,6 +37,7 @@ async function login(req: Request, res: Response) {
 async function logout(req: AuthRequest, res: Response) {
   try {
     await authService.logout(req.cookies.refresh_token);
+    // Limpieza de cookie segura
     res.clearCookie("refresh_token", {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
@@ -44,7 +46,7 @@ async function logout(req: AuthRequest, res: Response) {
 
     if (req.user) {
       logger.info(
-        `👋 Logout realizado: User ${req.user.rut} ${req.user.nombre} ${req.user.apellido}`
+        `👋 Logout realizado: User ${req.user.rut} ${req.user.nombre} ${req.user.apellido}`,
       );
     }
     res.sendStatus(204);
@@ -67,7 +69,8 @@ async function user(req: AuthRequest, res: Response) {
     return res.status(401).json({ mensaje: "Usuario no autenticado" });
   }
 
-  // Fetch Permissions & Level (Case Insensitive Name OR Code)
+  // Resolución Dinámica de Rol/Cargo
+  // Buscamos por nombre (insensible a mayúsculas) o código para máxima compatibilidad con datos legacy.
   const cargo = await Cargo.findOne({
     $or: [
       { nombre: { $regex: new RegExp(`^${req.user.tipo_cargo}$`, "i") } },
@@ -75,6 +78,8 @@ async function user(req: AuthRequest, res: Response) {
     ],
   }).lean();
 
+  // Composición del Payload de Usuario
+  // Inyectamos nivel y permisos calculados para la UI.
   const userPayload = {
     ...req.user.toObject(),
     nivel: cargo?.nivel || 10,
@@ -87,7 +92,7 @@ async function user(req: AuthRequest, res: Response) {
 async function changePassword(req: AuthRequest, res: Response) {
   try {
     const { currentPassword, newPassword } = req.body;
-    // Assuming authMiddleware populates req.user
+    // authMiddleware garantiza req.user, pero validamos defensivamente.
     if (!req.user) {
       return res.status(401).json({ mensaje: "Usuario no autenticado" });
     }
@@ -95,15 +100,13 @@ async function changePassword(req: AuthRequest, res: Response) {
     await authService.changePassword(req.user.id, currentPassword, newPassword);
 
     logger.info(
-      `🔐 Contraseña cambiada exitosamente para usuario ${req.user.id}`
+      `🔐 Contraseña cambiada exitosamente para usuario ${req.user.id}`,
     );
     res.status(200).json({ mensaje: "Contraseña actualizada exitosamente" });
   } catch (error: any) {
     res.status(error.status || 500).json({ mensaje: error.message });
   }
 }
-
-export default { login, logout, refresh, user, changePassword, getHistory };
 
 async function getHistory(req: AuthRequest, res: Response) {
   try {
@@ -116,3 +119,5 @@ async function getHistory(req: AuthRequest, res: Response) {
     res.status(500).json({ mensaje: error.message });
   }
 }
+
+export default { login, logout, refresh, user, changePassword, getHistory };
