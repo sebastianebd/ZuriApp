@@ -33,7 +33,7 @@ const generateRefreshToken = (userId: string) => {
   });
 };
 
-// Import dependencies for Concurrent Login Check
+// Import Dependencies for Concurrent Login Check
 import socketConfig from "../config/socket";
 import redis from "../config/redis.config";
 
@@ -57,29 +57,32 @@ async function login({
   const user = await User.findOne({ rut }).select("+password").exec();
 
   if (!user) {
-    // Log Failed Attempt (Unknown User or Wrong User)
+    // Audit Log Failure:
+    // Logueamos intento fallido registrando "Usuario no encontrado" pero sin dar feedback específico
+    // al frontend para evitar enumeración de usuarios.
     console.warn(`[Login Failed] User not found for rut: ${rut}`);
     throw new AuthError("Rut o contraseña incorrecta.");
   }
 
   const match = await bcrypt.compare(password, user.password as string);
   if (!match) {
-    // Log Failed Attempt
+    // Seguridad: Registro de Fallo
     await LoginHistory.create({
       user: user._id,
       ip: ip || "Unknown",
       userAgent: userAgent || "Unknown",
       status: "FAILED",
     });
-    // Ideally we'd log against the attempted RUT but that's PII without a user link.
-    // Decision: Only log history for found users to avoid clutter/DOS.
+    // Decisión de Diseño: Solo registramos historial para usuarios existentes para evitar
+    // llenar la BD con spam de intentos a RUTs aleatorios.
     console.warn(`[Login Failed] Password mismatch for user: ${rut}`);
     throw new AuthError("Rut o contraseña incorrecta.");
   }
 
-  // --- CONCURRENT LOGIN CHECK ---
-  // Check if user has an active session in Redis (Only if password matches)
-  // Feature Flag: Allow disabling for CI/Testing to support parallel workers
+  // --- SINGLE SESSION ENFORCEMENT ---
+  // Política de Seguridad: Evitar logins concurrentes.
+  // Verificamos si existe una sesión activa en Redis antes de otorgar un nuevo token.
+  // Flag Feature: Permitimos deshabilitar esto en CI/Test para facilitar pruebas paralelas.
   if (process.env.DISABLE_CONCURRENT_SESSION !== "true") {
     const activeSession = await redis.get(`active_session:${user._id}`);
 
@@ -87,31 +90,31 @@ async function login({
       const sessionData = JSON.parse(activeSession);
       const io = socketConfig.getIO();
 
-      // Verify if socket is truly connected
+      // Verificación de Conectividad Real:
+      // No basta con que este en Redis, verificamos si el Socket sigue vivo en el servidor.
       const connectedSockets = io.sockets.sockets; // Map<string, Socket>
       if (connectedSockets.has(sessionData.socket_id)) {
-        // User is connected! Reject login.
-        // We log the attempt but do NOT return details to client (Security)
+        // Usuario conectado activamente -> Rechazar Login.
+        // Retornamos 409 Conflict para que el frontend pueda mostrar un mensaje específico ("Cuenta en uso").
         console.warn(
-          `[Security] Login bloqueado para usuario ${user.rut}. Ya tiene sesión activa en ${sessionData.device}`
+          `[Security] Login bloqueado para usuario ${user.rut}. Ya tiene sesión activa en ${sessionData.device}`,
         );
 
-        // Return 409 Conflict
         const error = new Error("Cuenta conectada");
         (error as any).status = 409;
         throw error;
       } else {
-        // Socket ID in Redis but not in IO -> Stale session (e.g. server restart or crash)
-        // Allow login and it will be overwritten when client connects socket.
+        // Sesión Stale:
+        // El registro existía en Redis pero el socket ya no está.
+        // (Ej: Reinicio de servidor o desconexión no limpia). Limpiamos y permitimos proceder.
         console.log(`[Info] Limpiando sesión stale para usuario ${user.rut}`);
         await redis.del(`active_session:${user._id}`);
       }
     }
   }
   // -----------------------------
-  // -----------------------------
 
-  // Log Success Attempt
+  // Audit Log Success
   await LoginHistory.create({
     user: user._id,
     ip: ip || "Unknown",
@@ -122,12 +125,16 @@ async function login({
   const accessToken = generateAccessToken(user.id);
   const refreshToken = generateRefreshToken(user.id);
 
+  // Seguridad Token:
+  // Almacenamos el refresh token hasheado en la base de datos (como si fuera una password)
+  // para prevenir robo de sesiones en caso de dump de base de datos.
   const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
   user.refresh_token = hashedRefreshToken;
   await user.save();
 
-  // Fetch Permissions & Level (Case Insensitive Name OR Code)
+  // Resolución de Permisos:
+  // Buscamos el cargo ya sea por nombre (Regex case-insensitive) o código exacto.
   const cargo = await Cargo.findOne({
     $or: [
       { nombre: { $regex: new RegExp(`^${user.tipo_cargo}$`, "i") } },
@@ -135,7 +142,8 @@ async function login({
     ],
   }).lean();
 
-  // Create plain object and attach verified permissions/level
+  // Construcción de Payload:
+  // Inyectamos niveles y permisos calculados al objeto usuario para uso inmediato en frontend.
   const userPayload = {
     ...user.toObject(),
     nivel: cargo?.nivel || 10,
@@ -162,7 +170,7 @@ async function logout(refreshToken: string) {
       process.env.REFRESH_TOKEN_SECRET as string,
       {
         ignoreExpiration: true,
-      }
+      },
     );
   } catch (error) {
     return;
@@ -178,15 +186,9 @@ async function logout(refreshToken: string) {
 
   if (!match) return;
 
-  user.refresh_token = undefined; // Mongoose unset behavior? Or null?
-  // Schema defines type String. null is fine.
-  // Interface defines optional string.
-  // Setting undefined usually skips it in update?
-  // But strictly removing it:
+  // Revocación de Sesión:
+  // Al hacer logout, limpiamos el refresh token de la BD, invalidando efectivamente la sesión persistente.
   user.refresh_token = undefined;
-  // Wait, if I want to remove it from DB, explicitly set to undefined/null works if Schema allows.
-  // Better use $unset logic or just string | undefined in interface.
-  // user.refresh_token = null as any; // forceful
   await user.save();
 }
 
@@ -199,7 +201,7 @@ async function refresh(refreshToken: string) {
   try {
     decoded = jwt.verify(
       refreshToken,
-      process.env.REFRESH_TOKEN_SECRET as string
+      process.env.REFRESH_TOKEN_SECRET as string,
     );
   } catch (error) {
     throw new AuthError("Token de actualización inválido o expirado.");
@@ -215,10 +217,12 @@ async function refresh(refreshToken: string) {
     throw new AuthError("Sesión no válida o usuario no encontrado.");
   }
 
+  // Rotación/Verificación:
+  // Validamos contra el hash en BD. Esto permite invalidar tokens remotamente simplemente cambiando el hash en BD.
   const match = await bcrypt.compare(refreshToken, user.refresh_token);
   if (!match) {
     throw new AuthError(
-      "Token de actualización no coincide. Re-autenticación requerida."
+      "Token de actualización no coincide. Re-autenticación requerida.",
     );
   }
 
@@ -230,7 +234,7 @@ async function refresh(refreshToken: string) {
 async function changePassword(
   userId: string,
   current: string,
-  newPass: string
+  newPass: string,
 ) {
   const user = await User.findById(userId).select("+password");
   if (!user) {
@@ -242,13 +246,7 @@ async function changePassword(
     throw new AuthError("La contraseña actual es incorrecta");
   }
 
-  // Passwords will be hashed by the pre-save hook in the User model
   user.password = newPass;
-
-  // DEBUG: Log the new password explicitly requested by user for confirmation
-  console.log(
-    `[DEBUG] Contraseña actualizada para usuario ${user.rut}: ${newPass}`
-  );
 
   await user.save();
 }

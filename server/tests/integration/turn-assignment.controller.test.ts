@@ -6,7 +6,8 @@ import TurnType from "../../models/turn-type.model";
 import auditService from "../../services/audit.service";
 import notificationService from "../../services/notification.service";
 
-// Mock authentication middleware
+// Mock del middleware de autenticación:
+// Necesario para que las rutas protegidas no rechacen las peticiones. Simulamos un ADMIN.
 vi.mock("../../middleware/authentication.middleware", () => ({
   default: (req: any, res: any, next: any) => {
     req.user = { _id: "admin_id", nombre: "TEST", apellido: "ADMIN" };
@@ -15,7 +16,10 @@ vi.mock("../../middleware/authentication.middleware", () => ({
   requirePermission: () => (req: any, res: any, next: any) => next(),
 }));
 
-// Mock dependencies
+// Mock de dependencias (Modelos y Servicios):
+// Usamos vi.mock para todos los modelos de Mongoose y servicios externos.
+// Esto nos permite probar la lógica de los controladores (HTTP, Códigos de estado, Validación)
+// sin depender de una base de datos real.
 vi.mock("../../models/turn-assignment.model");
 vi.mock("../../models/turn-type.model");
 vi.mock("../../services/audit.service");
@@ -27,7 +31,7 @@ describe("Turn Assignment Controller - Integration", () => {
   });
 
   describe("POST /api/assignments", () => {
-    it("should create a new turn assignment", async () => {
+    it("debería crear una nueva asignación de turno exitosamente", async () => {
       const mockTurnType = {
         _id: "turntype123",
         nombre: "DIURNO",
@@ -68,7 +72,7 @@ describe("Turn Assignment Controller - Integration", () => {
       expect(TurnAssignmentModel.create).toHaveBeenCalled();
     });
 
-    it("should return 404 if turn type not found", async () => {
+    it("debería retornar 404 si el tipo de turno no existe", async () => {
       (TurnType.findOne as any).mockResolvedValue(null);
 
       const response = await request(app).post("/api/assignments").send({
@@ -82,7 +86,7 @@ describe("Turn Assignment Controller - Integration", () => {
       expect(response.body.message).toContain("Tipo de turno no encontrado");
     });
 
-    it("should return 409 on overlapping assignments", async () => {
+    it("debería retornar 409 si existe traslape de asignaciones", async () => {
       const mockTurnType = {
         _id: "turntype123",
         nombre: "DIURNO",
@@ -96,6 +100,7 @@ describe("Turn Assignment Controller - Integration", () => {
       };
 
       (TurnType.findOne as any).mockResolvedValue(mockTurnType);
+      // Simular que YA existe una asignación en ese rango (Conflicto)
       (TurnAssignmentModel.findOne as any).mockResolvedValue(
         existingAssignment,
       );
@@ -114,7 +119,7 @@ describe("Turn Assignment Controller - Integration", () => {
   });
 
   describe("GET /api/assignments", () => {
-    it("should return all assignments", async () => {
+    it("debería retornar todas las asignaciones", async () => {
       const mockAssignments = [
         { _id: "1", user_id: "user1", service: "UCI" },
         { _id: "2", user_id: "user2", service: "Urgencias" },
@@ -133,7 +138,7 @@ describe("Turn Assignment Controller - Integration", () => {
       expect(response.body).toEqual(mockAssignments);
     });
 
-    it("should filter by user_id", async () => {
+    it("debería filtrar asignaciones por user_id", async () => {
       const mockQuery = {
         populate: vi.fn().mockReturnThis(),
         sort: vi.fn().mockResolvedValue([]),
@@ -150,7 +155,7 @@ describe("Turn Assignment Controller - Integration", () => {
   });
 
   describe("GET /api/assignments/:id", () => {
-    it("should return assignment by id", async () => {
+    it("debería retornar una asignación por ID", async () => {
       const mockAssignment = {
         _id: "assignment123",
         user_id: "user123",
@@ -168,7 +173,7 @@ describe("Turn Assignment Controller - Integration", () => {
       expect(response.body).toEqual(mockAssignment);
     });
 
-    it("should return 404 if assignment not found", async () => {
+    it("debería retornar 404 si la asignación no se encuentra", async () => {
       const mockQuery = {
         populate: vi.fn().mockResolvedValue(null),
       };
@@ -183,7 +188,7 @@ describe("Turn Assignment Controller - Integration", () => {
   });
 
   describe("PUT /api/assignments/:id", () => {
-    it("should update assignment", async () => {
+    it("debería actualizar una asignación existente", async () => {
       const updatedAssignment = {
         _id: "assignment123",
         end_date: "2024-12-31",
@@ -203,7 +208,7 @@ describe("Turn Assignment Controller - Integration", () => {
       expect(response.body).toEqual(updatedAssignment);
     });
 
-    it("should return 404 if assignment not found", async () => {
+    it("debería retornar 404 si intenta actualizar algo que no existe", async () => {
       const mockQuery = {
         populate: vi.fn().mockResolvedValue(null),
       };
@@ -219,7 +224,7 @@ describe("Turn Assignment Controller - Integration", () => {
   });
 
   describe("DELETE /api/assignments/:id", () => {
-    it("should delete assignment", async () => {
+    it("debería eliminar una asignación", async () => {
       const deletedAssignment = { _id: "assignment123" };
 
       (TurnAssignmentModel.findByIdAndDelete as any).mockResolvedValue(
@@ -234,7 +239,7 @@ describe("Turn Assignment Controller - Integration", () => {
       expect(response.body.message).toBe("Assignment deleted successfully");
     });
 
-    it("should return 404 if assignment not found", async () => {
+    it("debería retornar 404 si intenta eliminar algo que no existe", async () => {
       (TurnAssignmentModel.findByIdAndDelete as any).mockResolvedValue(null);
 
       const response = await request(app).delete("/api/assignments/invalid123");

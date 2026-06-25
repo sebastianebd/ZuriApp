@@ -1,6 +1,13 @@
 import { Request, Response } from "express";
 import optionService from "../services/option.service";
 
+/**
+ * Controladores de Opciones (Dropdowns/Selects)
+ * Estos endpoints actúan como passthrough directos a servicios de configuración.
+ * Se mantienen separados para permitir caching agresivo a nivel de HTTP o CDN en el futuro,
+ * ya que son datos de "baja volatilidad".
+ */
+
 async function mostrarServicios(req: Request, res: Response) {
   try {
     const data = await optionService.obtener("SERVICIOS");

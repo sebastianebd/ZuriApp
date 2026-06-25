@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import replacementService from "../services/replacement.service";
 
-// Helper to format date for ICS (YYYYMMDDTHHMMSSZ - UTC)
+// Helper: Formato de fecha para estándar ICS (YYYYMMDDTHHMMSSZ - UTC)
 const formatDateICS = (date: Date): string => {
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 };
 
-// Helper to format date for Google Calendar (YYYYMMDDTHHMMSSZ)
+// Helper: Formato de fecha para enlaces de Google Calendar
 const formatToGoogleCalendarDate = (date: Date): string => {
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 };
@@ -28,14 +28,14 @@ async function downloadIcs(req: Request, res: Response) {
     const description = `Reemplazas a: ${replacement.nombre_saliente} ${replacement.apellido_saliente}\\nTurno: ${replacement.tipo_turno}\\nServicio: ${replacement.servicio}`;
     const location = replacement.servicio;
 
-    // ICS File Content
+    // Construcción del contenido del archivo ICS (iCalendar Std)
     const icsContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
       "PRODID:-//ZuriApp//Reemplazos v1.0//ES",
       "CALSCALE:GREGORIAN",
       "BEGIN:VEVENT",
-      `UID:${replacement._id}@zuriapp.com`,
+      `UID:${replacement._id}@zuriapp.com`, // UID persistente para actualizaciones futuras
       "SEQUENCE:0",
       `DTSTAMP:${formatDateICS(now)}`,
       `DTSTART:${formatDateICS(start)}`,
@@ -44,16 +44,16 @@ async function downloadIcs(req: Request, res: Response) {
       `DESCRIPTION:${description}`,
       `LOCATION:${location}`,
       "STATUS:CONFIRMED",
-      "TRANSP:OPAQUE",
+      "TRANSP:OPAQUE", // Bloquea disponibilidad en el calendario
       "END:VEVENT",
       "END:VCALENDAR",
     ].join("\r\n");
 
-    // Revert to attachment for better "Save" behavior if inline fails
+    // Forzamos descarga como archivo .ics
     res.setHeader("Content-Type", "text/calendar; charset=utf-8");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="reemplazo-${id}.ics"`
+      `attachment; filename="reemplazo-${id}.ics"`,
     );
 
     res.send(icsContent);
@@ -75,12 +75,11 @@ async function viewEventPage(req: Request, res: Response) {
     const start = new Date(replacement.fecha_inicio);
     const end = new Date(replacement.fecha_termino);
 
-    // Landing Page HTML
-    // We replace 'http'/'https' with 'webcal' to force the device to open the Calendar App directly
-    // instead of the browser preview.
+    // Estrategia de "Deep Linking" a Calendario Nativo:
+    // Reemplazamos el protocolo 'http/https' por 'webcal' para instruir al SO móvil
+    // que abra directamente la app de calendario suscrita.
 
-    // Robust Host Resolution for Production (Railway/Proxies)
-    // Prefer API_URL or BACKEND_URL from env, otherwise trust the Host header.
+    // Resolución Robust de Host para Producción (behind Proxy/Railway)
     let host = req.get("host"); // fallback
     const envUrl = process.env.API_URL || process.env.BACKEND_URL;
 
@@ -89,10 +88,11 @@ async function viewEventPage(req: Request, res: Response) {
         const url = new URL(envUrl);
         host = url.host;
       } catch (e) {
-        // invalid url in env, fallback to header
+        // Ignorar URL inválida en env, usar fallback
       }
     }
 
+    // Cache busting con timestamp params para evitar cacheos de archivos .ics antiguos
     const webcalUrl = `webcal://${host}/api/calendar/ics/${id}?t=${Date.now()}`;
 
     const startDisplay = start.toLocaleString("es-CL", {
@@ -102,7 +102,9 @@ async function viewEventPage(req: Request, res: Response) {
       timeZone: "America/Santiago",
     });
 
-    // Landing Page HTML
+    // Landing Page HTML Simple
+    // Diseño minimalista optimizado para móviles (Mobile-First) dado que el caso de uso
+    // principal es el usuario confirmando desde su celular.
     const html = `
       <!DOCTYPE html>
       <html lang="es">
@@ -136,7 +138,7 @@ async function viewEventPage(req: Request, res: Response) {
             <p><strong>Término:</strong> ${endDisplay}</p>
           </div>
 
-          <!-- Webcal Link: Forces native Calendar App open -->
+          <!-- Webcal Link: Fuerza apertura en App Nativa -->
           <a href="${webcalUrl}" class="btn btn-primary">📅 Agregar a mi Calendario</a>
           
           <div class="footer">

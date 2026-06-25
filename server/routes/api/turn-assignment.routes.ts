@@ -18,23 +18,29 @@ import authMiddleware, {
 
 const router = Router();
 
+// --- Asignación de Turnos (Grilla Base) ---
+// Define la estructura "permanente" de turnos de los funcionarios.
 router.use(authMiddleware);
-// router.use(requirePermission("shifts.manage"));
+// Nota: Se requieren permisos granulares para cada acción debido a la sensibilidad
+// de alterar la planificación operativa.
 
 router.get("/", requirePermission("shifts.view"), getAssignments);
 router.get("/:id", requirePermission("shifts.view"), getAssignmentById);
+
 router.post(
   "/",
-  requirePermission("shifts.create"),
+  requirePermission("shifts.create"), // Solo Jefaturas/Admin
   validateSchema(createTurnAssignmentSchema),
-  createAssignment
+  createAssignment,
 );
+
 router.put(
   "/:id",
   requirePermission("shifts.update"),
   validateSchema(updateTurnAssignmentSchema),
-  updateAssignment
+  updateAssignment,
 );
+
 router.delete("/:id", requirePermission("shifts.delete"), deleteAssignment);
 
 export default router;

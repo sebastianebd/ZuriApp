@@ -3,7 +3,8 @@ import request from "supertest";
 import app from "../../app";
 import authService from "../../services/auth.service";
 
-// Mock authentication middleware
+// Mock del middleware de autenticación:
+// Necesario para pruebas que requieren un usuario ya logueado en `req.user` sin pasar por el proceso real de login.
 vi.mock("../../middleware/authentication.middleware", () => ({
   default: (req: any, res: any, next: any) => {
     req.user = {
@@ -19,7 +20,8 @@ vi.mock("../../middleware/authentication.middleware", () => ({
   requirePermission: () => (req: any, res: any, next: any) => next(),
 }));
 
-// Mock Cargo model
+// Mock del modelo Cargo:
+// Evitamos consultas reales a la BD para permisos. Devolvemos permisos por defecto para las pruebas.
 vi.mock("../../models/cargo.model", () => ({
   default: {
     findOne: vi.fn().mockReturnValue({
@@ -31,7 +33,7 @@ vi.mock("../../models/cargo.model", () => ({
   },
 }));
 
-// Mocking the module
+// Mock completo del servicio de auth para aislar la lógica del controlador (unit testing del controller).
 vi.mock("../../services/auth.service");
 
 describe("Auth Controller - Integration", () => {
@@ -40,15 +42,15 @@ describe("Auth Controller - Integration", () => {
   });
 
   describe("POST /api/auth/login", () => {
-    it("should return 200 and tokens on successful login", async () => {
-      // Mock return value
+    it("debería retornar 200 y tokens en un login exitoso", async () => {
+      // Valor de retorno simulado que imita la estructura real.
       const mockTokens = {
         accessToken: "mock-access-token",
         refreshToken: "mock-refresh-token",
-        user: { id: "1", rut: "12345678-9" }, // added user to match controller response
+        user: { id: "1", rut: "12345678-9" }, // Usuario agregado para coincidir con respuesta del controlador
       };
 
-      // Type assertion for mocked function
+      // Mockeamos el servicio para que resuelva exitosamente sin tocar la BD.
       (authService.login as any).mockResolvedValue(mockTokens);
 
       const credentials = {
@@ -66,13 +68,13 @@ describe("Auth Controller - Integration", () => {
       const cookies = response.headers["set-cookie"];
       expect(cookies).toBeDefined();
       expect(cookies[0]).toContain(`refresh_token=${mockTokens.refreshToken}`);
-      // Check for HttpOnly (case insensitive usually in headers, but value string might vary)
-      // Node headers are lowercase, but cookie attributes case depends on implementation.
-      // Usually "HttpOnly".
+      // Validación de Seguridad:
+      // Verificamos "HttpOnly" para mitigar ataques XSS (Cross-Site Scripting).
+      // Aunque las cabeceras de Node son minúsculas, la cookie suele mantener el case estándar.
       expect(cookies[0]).toMatch(/HttpOnly/i);
     });
 
-    it("should return 401/500 if service throws error", async () => {
+    it("debería retornar 401/500 si el servicio lanza un error", async () => {
       const mockError: any = new Error("Credenciales inválidas");
       mockError.status = 401;
 
@@ -88,7 +90,7 @@ describe("Auth Controller - Integration", () => {
   });
 
   describe("POST /api/auth/refresh", () => {
-    it("should return new access token on valid refresh token", async () => {
+    it("debería retornar nuevo access token con un refresh token válido", async () => {
       const mockAccessToken = "new-access-token";
       (authService.refresh as any).mockResolvedValue(mockAccessToken);
 
@@ -101,7 +103,7 @@ describe("Auth Controller - Integration", () => {
       expect(authService.refresh).toHaveBeenCalledWith("valid-refresh-token");
     });
 
-    it("should return 401 on invalid refresh token", async () => {
+    it("debería retornar 401 con un refresh token inválido", async () => {
       const mockError: any = new Error("Token inválido");
       mockError.status = 401;
       (authService.refresh as any).mockRejectedValue(mockError);
@@ -116,7 +118,7 @@ describe("Auth Controller - Integration", () => {
   });
 
   describe("POST /api/auth/logout", () => {
-    it("should clear refresh token cookie and return 204", async () => {
+    it("debería limpiar la cookie de refresh token y retornar 204", async () => {
       (authService.logout as any).mockResolvedValue(undefined);
 
       const response = await request(app)
@@ -128,10 +130,11 @@ describe("Auth Controller - Integration", () => {
 
       const cookies = response.headers["set-cookie"];
       expect(cookies).toBeDefined();
+      // Esperamos que la cookie se setee vacía para borrarla
       expect(cookies[0]).toContain("refresh_token=");
     });
 
-    it("should handle logout errors gracefully", async () => {
+    it("debería manejar errores de logout correctamente", async () => {
       const mockError: any = new Error("Logout failed");
       mockError.status = 500;
       (authService.logout as any).mockRejectedValue(mockError);
@@ -146,10 +149,10 @@ describe("Auth Controller - Integration", () => {
   });
 
   describe("GET /api/auth/user", () => {
-    it("should return user info with permissions", async () => {
+    it("debería retornar información del usuario con permisos", async () => {
       const response = await request(app).get("/api/auth/user");
 
-      // With mocked auth, should return 200
+      // Con el auth mockeado, debería retornar 200 directo
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty("_id");
       expect(response.body).toHaveProperty("nombre");
@@ -157,13 +160,13 @@ describe("Auth Controller - Integration", () => {
   });
 
   describe("POST /api/auth/change-password", () => {
-    it("should return 400 for invalid payload", async () => {
+    it("debería retornar 400 para payloads inválidos", async () => {
       const response = await request(app)
         .post("/api/auth/change-password")
         .send({
           currentPassword: "old123",
           newPassword: "new456",
-          // Missing confirmPassword
+          // Falta confirmPassword a propósito para probar la validación
         });
 
       expect(response.status).toBe(400);
@@ -171,7 +174,7 @@ describe("Auth Controller - Integration", () => {
   });
 
   describe("GET /api/auth/history", () => {
-    it("should return login history", async () => {
+    it("debería retornar el historial de login", async () => {
       const mockHistory = [{ timestamp: "2024-01-01", ip: "127.0.0.1" }];
       (authService.getLoginHistory as any).mockResolvedValue(mockHistory);
 

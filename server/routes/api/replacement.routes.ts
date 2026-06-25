@@ -17,86 +17,73 @@ const router = express.Router();
  *   name: Replacements
  *   description: Operaciones de Reemplazos
  */
-// Todas protegidas
+
+// Middleware de Seguridad Base
+// Requiere autenticación para cualquier operación de reemplazos.
 router.use(authMiddleware);
 
-// Remove global permission
-// router.use(requirePermission("replacement.manage"));
-
+// --- Operaciones de Creación ---
+// Requieren permiso explícito 'creation' para evitar solicitudes de roles no autorizados.
 router.post(
   "/",
   requirePermission("replacement.create"),
-  validateSchema(createReplacementSchema),
-  replacementController.registerReemplazo
+  validateSchema(createReplacementSchema), // Validación estricta de payload
+  replacementController.registerReemplazo,
 );
 
-/**
- * ...
- */
+// --- Operaciones de Modificación ---
+// El flujo de vida (Aprobar, Rechazar) se maneja a través de PUT.
 router.put(
   "/:id",
   requirePermission("replacement.update"),
   validateSchema(updateReplacementSchema),
-  replacementController.actualizarReemplazo
+  replacementController.actualizarReemplazo,
 );
 
-/**
- * ...
- */
 router.put(
   "/finalizar/:id",
   requirePermission("replacement.update"),
-  replacementController.finalizarReemplazo
+  replacementController.finalizarReemplazo,
 );
 
-/**
- * ...
- */
 router.put(
   "/anular/:id",
   requirePermission("replacement.update"),
-  replacementController.anularReemplazo
-); // Anular considered Update status
+  replacementController.anularReemplazo,
+); // Anular se considera una actualización de estado (Soft Delete lógico)
 
-/**
- * ...
- */
+// --- Sustituciones Complejas ---
+// Caso especial: Reemplazo de un reemplazo existente.
 router.post(
   "/sustituir",
-  requirePermission("replacement.create"), // Creates a NEW replacement
+  requirePermission("replacement.create"), // Se trata como crear un nuevo contrato
   validateSchema(substitutionSchema),
-  replacementController.procesarSustitucion
+  replacementController.procesarSustitucion,
 );
 
-/**
- * ...
- */
+// --- Consultas / Lectura ---
 router.get(
   "/",
   requirePermission("replacement.view"),
-  replacementController.mostrarReemplazos
-); // Activos
-/**
- * ...
- */
+  replacementController.mostrarReemplazos,
+); // Filtra por activos
+
 router.get(
   "/historial",
   requirePermission("replacement.view"),
-  replacementController.mostrarHistorial
-); // Historial antiguo
-/**
- * ...
- */
+  replacementController.mostrarHistorial,
+); // Historial histórico / archivado
+
 router.get(
   "/historial-paginado",
   requirePermission("replacement.view"),
-  replacementController.mostrarHistorialPaginado
+  replacementController.mostrarHistorialPaginado,
 );
 
 router.get(
   "/:id",
   requirePermission("replacement.view"),
-  replacementController.obtenerHistorialUsuario
+  replacementController.obtenerHistorialUsuario,
 );
 
 export default router;

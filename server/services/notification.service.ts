@@ -4,10 +4,13 @@ import { IReplacement } from "../models/replacement.model";
 import axios from "axios";
 
 /**
- * Service to handle notifications (WhatsApp, Email, etc.)
+ * Servicio de Notificaciones Multicanal.
+ * Actualmente centrado en WhatsApp Business API (Meta) para alertas críticas de turnos y reemplazos.
  */
 
-// Helper to generate Frontend Calendar Link
+// Helper: Generador de Links Frontend
+// Centralizamos la construcción de URLs para garantizar que los deep-links apuntan
+// correctamente al entorno desplegado (o localhost en dev).
 const generateFrontendLink = (userId: string, date?: Date): string => {
   const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
   let link = `${baseUrl}/mi-calendario?uid=${userId}`;
@@ -19,25 +22,27 @@ const generateFrontendLink = (userId: string, date?: Date): string => {
   return link;
 };
 
-// Environment variables for WhatsApp Cloud API
-const WHATSAPP_VERSION = "v18.0"; // Or latest version
+// Configuración API Meta
+const WHATSAPP_VERSION = "v18.0";
 
 async function sendWhatsApp(to: string, message: string) {
-  // Read env vars dynamically to allow dotenv to load first in scripts
+  // Leemos env vars dinámicamente para asegurar que estén disponibles en tiempo de ejecución,
+  // especialmente útil en scripts de seeding o workers que inicializan distintos contextos.
   const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
   const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
 
   if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_ID) {
     logger.warn(
-      "[WhatsApp] Missing configuration (WHATSAPP_TOKEN or WHATSAPP_PHONE_ID). Returning without sending.",
+      "[WhatsApp] Falta configuración (WHATSAPP_TOKEN o WHATSAPP_PHONE_ID). Envío omitido.",
     );
     return false;
   }
 
   try {
-    // Meta requires the phone number without the '+' for the "to" field usually,
-    // but accepts standard international format. Let's ensure it's clean.
-    // ZuriApp format: +569XXXXXXXX. Meta often expects 569XXXXXXXX.
+    // Sanitización de Teléfono:
+    // Meta / WhatsApp API es estricta con los formatos.
+    // ZuriApp almacena +569XXXXXXXX, pero la API suele preferir el formato raw sin '+'
+    // aunque soporta internacional. Limpiamos espacios y símbolos para maximizar compatibilidad.
     const cleanTo = to.replace("+", "").replace(/\s/g, "");
 
     const url = `https://graph.facebook.com/${WHATSAPP_VERSION}/${WHATSAPP_PHONE_ID}/messages`;
@@ -48,7 +53,7 @@ async function sendWhatsApp(to: string, message: string) {
       to: cleanTo,
       type: "text",
       text: {
-        preview_url: true, // Show preview for the calendar link
+        preview_url: true, // Permitimos preview para que el usuario vea 'ZuriApp' en el link
         body: message,
       },
     };
@@ -61,19 +66,22 @@ async function sendWhatsApp(to: string, message: string) {
     });
 
     logger.info(
-      `[WhatsApp] Message sent to ${to}. Message ID: ${response.data.messages?.[0]?.id}`,
+      `[WhatsApp] Mensaje enviado a ${to}. ID: ${response.data.messages?.[0]?.id}`,
     );
     return true;
   } catch (error: any) {
+    // Manejo de Errores de Integración:
+    // No lanzamos excepción para no romper el flujo de negocio que llamó a la notificación.
+    // Solo logueamos el error detallado de Meta para debugging.
     logger.error(
-      `[WhatsApp] Error sending message to ${to}: ${
+      `[WhatsApp] Error enviando a ${to}: ${
         error.response?.data?.error?.message || error.message
       }`,
     );
-    // Log full error for debugging integration
+
     if (error.response?.data) {
       logger.error(
-        `[WhatsApp] Meta API Error Details: ${JSON.stringify(
+        `[WhatsApp] Detalle Error Meta API: ${JSON.stringify(
           error.response.data,
         )}`,
       );
@@ -84,18 +92,20 @@ async function sendWhatsApp(to: string, message: string) {
 
 async function notifyReplacement(replacement: IReplacement) {
   try {
-    // 1. Get the Incoming User (Entrante) to get their phone number
+    // 1. Obtención de Datos del Destinatario (Entrante)
+    // Es vital confirmar que tenemos un número de teléfono válido antes de intentar construir el mensaje.
     const entranteId = replacement.id_entrante.toString();
     const userEntrante: any = await userService.obtenerPorId(entranteId);
 
     if (!userEntrante || !userEntrante.telefono) {
       logger.warn(
-        `[NotifyReplacement] Skipping notification. User ${entranteId} not found or has no phone.`,
+        `[NotifyReplacement] Omitiendo notificación. Usuario ${entranteId} no encontrado o sin teléfono.`,
       );
       return;
     }
 
-    // 2. Format the message
+    // 2. Formateo y Construcción de Mensaje
+    // Usamos templates literales claros con emojis para mejorar la legibilidad rápida en móvil.
     const nombreEntrante = `${userEntrante.nombre} ${userEntrante.apellido}`;
     const nombreSaliente = `${replacement.nombre_saliente} ${replacement.apellido_saliente}`;
 
@@ -108,7 +118,7 @@ async function notifyReplacement(replacement: IReplacement) {
       { timeZone: "America/Santiago" },
     );
 
-    // Generate Public Calendar Link with Month Lock
+    // Deep Link al Calendario Específico
     const publicLink = generateFrontendLink(
       userEntrante._id.toString(),
       new Date(replacement.fecha_inicio),
@@ -124,41 +134,41 @@ async function notifyReplacement(replacement: IReplacement) {
       `👇 *Revisa tu calendario aquí:*\n` +
       `${publicLink}`;
 
-    // 4. Send
+    // 3. Envío
     await sendWhatsApp(userEntrante.telefono, message);
   } catch (error) {
-    logger.error(`[NotifyReplacement] Error sending notification: ${error}`);
+    logger.error(`[NotifyReplacement] Error general en notificación: ${error}`);
   }
 }
 
 async function notifyShiftAssignment(assignment: any) {
   try {
-    // 1. Get the User
-    // Assignment usually has user_id populated, but let's be safe.
+    // 1. Resolución de Usuario
+    // La asignación puede venir con el objeto de usuario populado o solo el ID.
+    // Normalizamos esto para asegurar acceso a propiedades críticas (teléfono).
     let user = assignment.user_id;
 
-    // Determine the ID string safely
     const userIdString = user._id ? user._id.toString() : user.toString();
 
-    // If user object is incomplete (missing phone or service) or just an ID, fetch fresh
+    // Si el objeto está incompleto (ej: populado parcialmente), re-fesechamos.
     if (!user.telefono || !user.servicio) {
       user = await userService.obtenerPorId(userIdString);
     }
 
     if (!user || !user.telefono) {
       logger.warn(
-        `[NotifyShiftAssignment] Skipping notification. User not found or has no phone.`,
+        `[NotifyShiftAssignment] Omitiendo notificación. Usuario sin teléfono o no encontrado.`,
       );
       return;
     }
 
-    // 2. Format
+    // 2. Formateo
     const nombreUsuario = `${user.nombre} ${user.apellido}`;
     const startDisplay = new Date(assignment.start_date).toLocaleDateString(
       "es-CL",
       { timeZone: "America/Santiago" },
     );
-    // Determine end date display
+
     let endDisplay = "Indefinido";
     if (assignment.end_date) {
       endDisplay = new Date(assignment.end_date).toLocaleDateString("es-CL", {
@@ -177,11 +187,11 @@ async function notifyShiftAssignment(assignment: any) {
       `👇 *Revisa el detalle en tu calendario:*\n` +
       `${calendarLink}`;
 
-    // 3. Send
+    // 3. Envío
     await sendWhatsApp(user.telefono, message);
   } catch (error) {
     logger.error(
-      `[NotifyShiftAssignment] Error sending notification: ${error}`,
+      `[NotifyShiftAssignment] Error general en notificación: ${error}`,
     );
   }
 }

@@ -65,7 +65,7 @@ export const createTurnSigla = async (req: Request, res: Response) => {
         (req as any).user,
         `Creó la sigla: ${newSigla.sigla} - ${newSigla.nombre}${times}`,
         newSigla,
-        newSigla._id.toString()
+        newSigla._id.toString(),
       );
     }
 
@@ -95,11 +95,14 @@ export const updateTurnSigla = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Sigla no encontrada" });
 
     if ((req as any).user) {
+      // Generación automática de Diff usando el servicio de auditoría
+      // Comparar estado 'existing' (pre-update) vs 'updated' (post-update)
       const diff = AuditService.generateDiff(
         (existing as any)?.toObject(),
-        updated.toObject()
+        updated.toObject(),
       );
 
+      // Solo registramos auditoría si hubo cambios reales
       if (diff) {
         const description = `Modificó la sigla: ${updated.sigla}. Cambios: [${diff}]`;
 
@@ -109,7 +112,7 @@ export const updateTurnSigla = async (req: Request, res: Response) => {
           (req as any).user,
           description,
           { old: existing, new: validation.data, diff },
-          updated._id.toString()
+          updated._id.toString(),
         );
       }
     }
@@ -127,7 +130,7 @@ export const deleteTurnSigla = async (req: Request, res: Response) => {
     const deleted = await TurnSigla.findByIdAndUpdate(
       id,
       { activo: false, deleted_at: new Date() },
-      { new: true }
+      { new: true },
     );
     if (!deleted)
       return res.status(404).json({ message: "Sigla no encontrada" });
@@ -139,7 +142,7 @@ export const deleteTurnSigla = async (req: Request, res: Response) => {
         (req as any).user,
         `Se eliminó la sigla: ${deleted.sigla} - ${deleted.nombre}`,
         null,
-        deleted._id.toString()
+        deleted._id.toString(),
       );
     }
 

@@ -7,10 +7,16 @@ export interface AuthRequest extends Request {
   user?: IUser;
 }
 
+/**
+ * Middleware de Autenticación (JWT Strategy)
+ * Verifica la presencia y validez del token Bearer en cada solicitud protegida.
+ * Decisión de Diseño: Se consulta la BD en cada request para asegurar que cambios críticos
+ * (ej: bloqueo de usuario) tengan efecto inmediato, sacrificando latencia por seguridad.
+ */
 async function authMiddleware(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const authHeader =
@@ -36,6 +42,8 @@ async function authMiddleware(
           });
         }
 
+        // Recuperación del Contexto de Usuario
+        // Filtramos campos sensibles (password, refresh_token) preventivamente.
         const user = await User.findById(decoded.id)
           .select("-password -refresh_token")
           .exec();
@@ -47,12 +55,9 @@ async function authMiddleware(
           });
         }
 
-        // We assign the user document to req.user.
-        // Using 'as unknown as IUser' if simple casting fails, but usually Document compatible if interface matches well?
-        // Actually user is a Mongoose Document.
         req.user = user as IUser;
         next();
-      }
+      },
     );
   } catch (error) {
     logger.error(`❌ Error en authMiddleware: ${error}`);
@@ -63,10 +68,14 @@ async function authMiddleware(
   }
 }
 
+/**
+ * Middleware de Validación de Rol (RBAC) - Admin
+ * Shortcut específico para proteger rutas críticas de infraestructura.
+ */
 export function requireAdmin(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   if (!req.user) {
     return res.status(401).json({
@@ -75,7 +84,8 @@ export function requireAdmin(
     });
   }
 
-  // Assuming 'ADMIN-TI' is the super admin role based on user model logic
+  // Jerarquía Estática: ADMIN-TI se considera Super Admin hardcodeado
+  // para evitar bloqueos si la BD de permisos se corrompe.
   if (req.user.tipo_cargo !== "ADMIN-TI") {
     return res.status(403).json({
       success: false,
@@ -88,6 +98,11 @@ export function requireAdmin(
 
 import Cargo from "../models/cargo.model";
 
+/**
+ * Factory de Middleware para Permisos Granulares
+ * Permite definir políticas de acceso dinámicas basadas en las capacidades ('capabilities') del cargo,
+ * en lugar de validar roles fijos ('users.create' vs 'es_jefe').
+ */
 export const requirePermission = (permission: string) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
@@ -98,36 +113,33 @@ export const requirePermission = (permission: string) => {
     }
 
     try {
-      // Fetch the Cargo definition to check permissions
       const cargo = await Cargo.findOne({ nombre: req.user.tipo_cargo });
 
       if (!cargo) {
-        // Fallback: If cargo not found in DB but is ADMIN-TI string, allow?
-        // Safer to Strict deny, but for migration compatibility, we might default to deny.
-        // Wait, if cargo doesn't exist, they have NO permissions.
+        // Política de Fallo Seguro (Fail-Close):
+        // Si el cargo no existe en la configuración actual, se deniega el acceso por defecto.
         return res.status(403).json({
           success: false,
           message: "Acceso denegado: rol no configurado en el sistema",
         });
       }
 
-      // Rule #1: Super Admin Bypass (The Master Key)
+      // Bypass Maestro: Nivel 100 garantiza acceso total de emergencia.
       if (cargo.nivel === 100) {
         return next();
       }
 
-      // Rule #2: Check specific permission
+      // Verificación de Capacidad Específica
       if (cargo.permisos && cargo.permisos.includes(permission)) {
         return next();
       }
 
-      // Deny
       return res.status(403).json({
         success: false,
         message: `Acceso denegado: se requiere el permiso '${permission}'`,
       });
     } catch (error) {
-      console.error("Error checking permissions:", error);
+      console.error("Error verificando permisos:", error);
       return res
         .status(500)
         .json({ success: false, message: "Error verificando permisos" });

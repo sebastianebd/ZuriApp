@@ -1,6 +1,9 @@
 import express from "express";
 import userController from "../../controllers/user.controller";
-import authMiddleware from "../../middleware/authentication.middleware";
+import authMiddleware, {
+  requirePermission,
+} from "../../middleware/authentication.middleware"; // Fixed import: requirePermission was pulled from default export in original? checking context.
+// Actually original had explicit import below. Cleaning up imports.
 
 const router = express.Router();
 
@@ -10,6 +13,8 @@ const router = express.Router();
  *   name: Users
  *   description: Gestión de usuarios del sistema
  */
+
+// Middleware de Seguridad: Todo CRUD de usuarios requiere autenticación previa.
 router.use(authMiddleware);
 
 /**
@@ -35,13 +40,15 @@ router.use(authMiddleware);
 
 import { validateSchema } from "../../middleware/validate.middleware";
 import { createUserSchema, updateUserSchema } from "../../schemas/user.schema";
-import { requirePermission } from "../../middleware/authentication.middleware";
 
+// --- Creación de Usuarios ---
+// Requiere permiso 'users.create'.
+// Se valida contra esquema Zod antes de pasar al controlador.
 router.post(
   "/",
   requirePermission("users.create"),
   validateSchema(createUserSchema),
-  userController.register
+  userController.register,
 );
 
 /**
@@ -51,7 +58,7 @@ router.put(
   "/:id",
   requirePermission("users.update"),
   validateSchema(updateUserSchema),
-  userController.actualizarUsuario
+  userController.actualizarUsuario,
 );
 /**
  * ...
@@ -63,7 +70,7 @@ router.get("/", requirePermission("users.view"), userController.mostrarTodos);
 router.get(
   "/tens",
   requirePermission("users.view"),
-  userController.mostrarUsuarios
+  userController.mostrarUsuarios,
 );
 /**
  * ...
@@ -71,7 +78,7 @@ router.get(
 router.delete(
   "/:id",
   requirePermission("users.delete"),
-  userController.eliminarUsuario
+  userController.eliminarUsuario,
 );
 
 export default router;

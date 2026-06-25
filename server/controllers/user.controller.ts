@@ -19,15 +19,12 @@ async function register(req: AuthRequest, res: Response) {
       req.body,
       data._id as string,
     );
-    await delPattern("users:*"); // Invalidate cache
+    await delPattern("users:*");
 
-    // Emit socket event
     try {
       const io = socketIO.getIO();
       io.emit("users:update", { action: "create", user: data });
-    } catch (err) {
-      // Socket not ready, ignore
-    }
+    } catch (err) {}
 
     res.status(201).json(data);
   } catch (error: any) {
@@ -44,23 +41,21 @@ async function mostrarUsuarios(req: Request, res: Response) {
     }
 
     const usuarios = await userService.obtenerUsuariosTENS();
-    await set(cacheKey, usuarios, 300); // Cache for 5 minutes
+    await set(cacheKey, usuarios, 300);
     res.json(usuarios);
   } catch (error: any) {
     res.status(error.status || 500).json({ mensaje: error.message });
   }
 }
 
-import Cargo from "../models/cargo.model"; // Added Cargo import
-
-// ... (other imports)
+import Cargo from "../models/cargo.model";
 
 // Updated signature to AuthRequest
 async function mostrarTodos(req: AuthRequest, res: Response) {
   try {
     const userRole = req.user?.tipo_cargo || "UNKNOWN";
 
-    // Pagination parameters
+    // Paginación Estándar
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = (req.query.search as string) || "";
@@ -69,32 +64,34 @@ async function mostrarTodos(req: AuthRequest, res: Response) {
     const habilitado = (req.query.habilitado as string) || "";
     const rut = (req.query.rut as string) || "";
 
-    // Generate unique cache key including ALL filter params
+    // Key de Caché Compuesta
+    // Debe incluir TODOS los factores de variabilidad, incluidos los roles del solicitante,
+    // ya que diferentes roles ven diferentes subconjuntos de datos.
     const cacheKey = `users:p${page}:l${limit}:s${search || "none"}:c${cargo}:h${habilitado}:rt${rut}:r${userRole}`;
 
-    // 1. Try Cache
+    // 1. Estrategia de Caché (Read-Through)
     const cachedData = await get(cacheKey);
     if (cachedData) {
       return res.json(cachedData);
     }
 
-    // 2. Calculate Visibility based on role
+    // 2. Capa de Visibilidad (Invisibility Layer)
+    // Regla de Seguridad: Un usuario solo puede ver funcionarios de jerarquía INFERIOR a la suya,
+    // a menos que sea Admin (Nivel 100).
     let allowedCargos: string[] | undefined = undefined;
 
-    // Fetch requester's cargo level
     const myCargo = await Cargo.findOne({ nombre: userRole });
     const myLevel = myCargo?.nivel || 0;
 
-    // Logic: See only strictly LOWER levels (Invisibility Layer)
-    // Exception: Level 100 (Admin) sees everything (pass undefined)
     if (myLevel < 100) {
+      // Filtramos la query a MongoDB para traer solo cargos con nivel estricto menor (<)
       const visibleCargos = await Cargo.find({
         nivel: { $lt: myLevel },
       }).select("nombre");
       allowedCargos = visibleCargos.map((c) => c.nombre);
     }
 
-    // 3. Fetch paginated data
+    // 3. Consulta a Base de Datos
     const result = await userService.obtenerTodosPaginado({
       allowedCargos,
       search,
@@ -105,7 +102,7 @@ async function mostrarTodos(req: AuthRequest, res: Response) {
       limit,
     });
 
-    // 4. Cache result for 60 seconds
+    // 4. Escritura en Caché (TTL Corto 60s)
     await set(cacheKey, result, 60);
 
     res.json(result);
@@ -135,15 +132,12 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
       req.body,
       req.params.id,
     );
-    await delPattern("users:*"); // Invalidate cache
+    await delPattern("users:*");
 
-    // Emit socket event
     try {
       const io = socketIO.getIO();
       io.emit("users:update", { action: "update", userId: req.params.id });
-    } catch (err) {
-      // Socket not ready, ignore
-    }
+    } catch (err) {}
 
     res.json(usuarios);
   } catch (error: any) {
@@ -153,7 +147,6 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
 
 async function eliminarUsuario(req: AuthRequest, res: Response) {
   try {
-    // Audit: Need to fetch first to get name
     const userToDelete: any = await userService.obtenerPorId(req.params.id);
     const usuarios = await userService.eliminar(req.params.id);
 
@@ -167,15 +160,12 @@ async function eliminarUsuario(req: AuthRequest, res: Response) {
       null,
       req.params.id,
     );
-    await delPattern("users:*"); // Invalidate cache
+    await delPattern("users:*");
 
-    // Emit socket event
     try {
       const io = socketIO.getIO();
       io.emit("users:update", { action: "delete", userId: req.params.id });
-    } catch (err) {
-      // Socket not ready, ignore
-    }
+    } catch (err) {}
 
     res.json(usuarios);
   } catch (error: any) {

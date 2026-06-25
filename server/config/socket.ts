@@ -1,10 +1,12 @@
 import { Server, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import logger from "./logger.config";
-import redis from "./redis.config"; // Import Redis
+import redis from "./redis.config"; // Cliente Redis compartido
 
 let ioInstance: Server | undefined;
 
+// Inicialización de WebSockets
+// Configura Socket.IO asociado al servidor HTTP existente, compartiendo el mismo puerto.
 const init = (httpServer: HttpServer, clientUrl: string | string[]): Server => {
   if (ioInstance) {
     return ioInstance;
@@ -14,21 +16,23 @@ const init = (httpServer: HttpServer, clientUrl: string | string[]): Server => {
     cors: {
       origin: clientUrl,
       methods: ["GET", "POST"],
-      credentials: true,
+      credentials: true, // Necesario para cookies de sesión si las hubiera
     },
   });
 
   ioInstance.on("connection", async (socket: Socket) => {
     logger.info(`🟢 Cliente conectado: ${socket.id}`);
+
+    // Debugging de Handshake
+    // Útil para verificar qué datos envía el cliente al conectar.
     logger.info(`🔍 Handshake Auth: ${JSON.stringify(socket.handshake.auth)}`);
     logger.info(
-      `🔍 Handshake Query: ${JSON.stringify(socket.handshake.query)}`
+      `🔍 Handshake Query: ${JSON.stringify(socket.handshake.query)}`,
     );
 
-    // Retrieve User ID from Auth (assuming middleware or handshake query)
-    // Note: Standard JWT middlewares usually attach user to socket.
-    // For now, we will assume the client sends userId in handshake.auth or query
-    // Adjust this match your actual client-side socket connection logic.
+    // Identificación de Usuario
+    // Extracción robusta del ID de usuario desde el handshake (auth object o query param).
+    // Esto es crítico para mapear sockets a usuarios específicos en Redis.
     const userId =
       (socket.handshake.auth && socket.handshake.auth.userId) ||
       (socket.handshake.query && socket.handshake.query.userId);
@@ -42,14 +46,18 @@ const init = (httpServer: HttpServer, clientUrl: string | string[]): Server => {
       };
 
       try {
+        // Registro de Sesión Activa (Single Session Enforcement)
+        // Guardamos la metadata de la conexión en Redis.
+        // TTL de 1 día (86400s) como mecanismo de seguridad (limpieza automática).
         await redis.set(
           `active_session:${userId}`,
           JSON.stringify(metadata),
           "EX",
-          86400
-        ); // 1 day TTL
+          86400,
+        );
         logger.info(`🔐 Sesión registrada en Redis para usuario: ${userId}`);
       } catch (err) {
+        // Fallor no-bloqueante: Si Redis falla, el usuario conecta pero sin control de concurrencia.
         logger.error(`❌ Error guardando sesión en Redis: ${err}`);
       }
     }
@@ -58,14 +66,16 @@ const init = (httpServer: HttpServer, clientUrl: string | string[]): Server => {
       logger.info(`🔴 Cliente desconectado: ${socket.id}`);
       if (userId) {
         try {
-          // Only delete if the stored socket_id matches this socket (avoid race conditions)
+          // Limpieza de Sesión
+          // Verificamos que la sesión en Redis corresponda al socket que se desconecta
+          // para evitar cerrar la sesión de una nueva conexión concurrente válida.
           const storedSession = await redis.get(`active_session:${userId}`);
           if (storedSession) {
             const sessionData = JSON.parse(storedSession);
             if (sessionData.socket_id === socket.id) {
               await redis.del(`active_session:${userId}`);
               logger.info(
-                `🔓 Sesión eliminada de Redis para usuario: ${userId}`
+                `🔓 Sesión eliminada de Redis para usuario: ${userId}`,
               );
             }
           }
@@ -79,6 +89,9 @@ const init = (httpServer: HttpServer, clientUrl: string | string[]): Server => {
   return ioInstance;
 };
 
+// Singleton Accessor
+// Permite obtener la instancia de IO desde controladores u otros servicios
+// sin necesidad de pasarla como dependencia.
 const getIO = (): Server => {
   if (!ioInstance) {
     throw new Error("Socket.io no está inicializado. Llama a init() primero.");

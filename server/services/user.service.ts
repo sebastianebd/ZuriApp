@@ -2,7 +2,6 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import User, { IUser } from "../models/user.model";
 import logger from "../config/logger.config";
-// import emailService from "./email.service"; // Decoupled: used by Worker now
 import { emailQueue } from "../queues/email.queue";
 
 interface RegisterData {
@@ -32,7 +31,8 @@ async function register(data: RegisterData, creatorRole: string) {
     tipo_cargo,
   } = data;
 
-  // 1. Permission Validation
+  // 1. Validación de Jerarquía de Roles
+  // Evitamos escalada de privilegios: Un usuario RRHH no puede crear otros Administradores.
   if (
     creatorRole === "RECURSOS HUMANOS" &&
     ["ADMIN-TI", "RECURSOS HUMANOS"].includes(tipo_cargo)
@@ -44,13 +44,13 @@ async function register(data: RegisterData, creatorRole: string) {
     };
   }
 
-  // Normalize data for checks
+  // Normalización de Datos
   const normalizedRut = rut.toUpperCase();
   const normalizedEmail = email.toLowerCase();
-  // Phone usually doesn't need casing, but trim is good
-  const normalizedTelef = telefono.trim(); // Assuming we rely on frontend +56
+  const normalizedTelef = telefono.trim(); // Confiamos en validación del frontend (+56)
 
-  // 2. Validate Uniqueness
+  // 2. Verificaciones Unicidad
+  // Chequeos explícitos antes de intentar guardar para dar mensajes de error amigables.
   if (await User.exists({ rut: normalizedRut })) {
     throw { status: 409, message: "El RUT ya está registrado." };
   }
@@ -61,7 +61,9 @@ async function register(data: RegisterData, creatorRole: string) {
     throw { status: 409, message: "Ya existe un usuario con ese teléfono." };
   }
 
-  // 2. Conditional Password Generation
+  // 3. Generación Condicional de Credenciales
+  // Solo los cargos administrativos requieren login con password.
+  // El resto (operativos) solo requieren existencia como entidad para asignación de turnos.
   let hashedPassword = undefined;
   const rolesWithPassword = ["ADMIN-TI", "RECURSOS HUMANOS"];
 
@@ -69,7 +71,7 @@ async function register(data: RegisterData, creatorRole: string) {
     const generarPassword = crypto.randomBytes(3).toString("hex");
     hashedPassword = await bcrypt.hash(generarPassword, 10);
 
-    // Dispatch email job to Queue (Fire and Forget)
+    // Job Queue (Email): Fire-and-forget para no bloquear el registro si el mail server está lento.
     await emailQueue.add("send-welcome-email", {
       to: normalizedEmail,
       nombre: `${nombre} ${apellido}`,
@@ -96,7 +98,7 @@ async function register(data: RegisterData, creatorRole: string) {
   if (tipo_cargo === "TENS") nuevoUsuario.habilitado = data.habilitado;
   if (tipo_cargo === "JEFA SERVICIO") nuevoUsuario.servicio = data.servicio;
 
-  // Sanitize password if undefined to prevent DB issues
+  // Limpieza final de objeto
   if (nuevoUsuario.password === undefined) {
     delete nuevoUsuario.password;
   }
@@ -105,6 +107,7 @@ async function register(data: RegisterData, creatorRole: string) {
   try {
     userCreated = await User.create(nuevoUsuario);
   } catch (error: any) {
+    // Manejo de Race Conditions: Si dos requests pasaron la validación previa simultáneamente.
     if (error.code === 11000) {
       if (error.keyPattern.rut)
         throw { status: 409, message: "El RUT ya está registrado." };
@@ -126,7 +129,7 @@ async function register(data: RegisterData, creatorRole: string) {
 async function obtenerUsuariosTENS() {
   return await User.find({
     eliminado: false,
-    tipo_cargo: { $nin: ["ADMIN-TI", "RECURSOS HUMANOS"] }, // Changed $ne chaining to $nin for cleaner syntax
+    tipo_cargo: { $nin: ["ADMIN-TI", "RECURSOS HUMANOS"] }, // Excluye admins
   });
 }
 
@@ -137,27 +140,27 @@ async function obtenerPorId(id: string) {
 async function obtenerTodos(allowedCargos?: string[], search?: string) {
   const query: any = { eliminado: false };
 
-  // If filter is provided, restrict query.
+  // Filtro de Seguridad por Rol
   if (allowedCargos && Array.isArray(allowedCargos)) {
     query.tipo_cargo = { $in: allowedCargos };
   }
 
-  // Search Logic (Optimized: Prefix Match for Index Usage)
+  // Búsqueda Optimizada (Prefix Match)
+  // Aprovecha índices B-tree si existen en rut/nombre/apellido.
   if (search && search.trim().length > 0) {
-    const terms = search.trim().toUpperCase().split(/\s+/); // Normalize to Uppercase
+    const terms = search.trim().toUpperCase().split(/\s+/);
 
-    // Each term must match at least one field ($and of $ors)
+    // Estrategia Multi-Término: Cada palabra debe coincidir en AL MENOS un campo.
     const andConditions = terms.map((term) => {
       const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      // Anchor to start (^), Case sensitive (since data is Uppercase)
-      const regex = new RegExp("^" + safeTerm);
+      const regex = new RegExp("^" + safeTerm); // Anchor ^ para rendimiento
 
       return {
         $or: [
           { rut: regex },
           { nombre: regex },
           { apellido: regex },
-          { tipo_cargo: regex }, // Also checking cargo if users search "TENS"
+          { tipo_cargo: regex },
         ],
       };
     });
@@ -167,11 +170,10 @@ async function obtenerTodos(allowedCargos?: string[], search?: string) {
     }
   }
 
-  // Return all matching users (frontend handles pagination)
   return await User.find(query);
 }
 
-// Server-Side Pagination (Enterprise)
+// Paginación Servidor
 async function obtenerTodosPaginado(options: {
   allowedCargos?: string[];
   search?: string;
@@ -184,28 +186,19 @@ async function obtenerTodosPaginado(options: {
   const { allowedCargos, search, page, limit } = options;
   const query: any = { eliminado: false };
 
-  // Role-based visibility filter
   if (allowedCargos && Array.isArray(allowedCargos)) {
     query.tipo_cargo = { $in: allowedCargos };
   }
 
-  // Search Logic (Optimized: Prefix Match for Index Usage)
   if (search && search.trim().length > 0) {
-    const terms = search.trim().toUpperCase().split(/\s+/); // Normalize to Uppercase
+    const terms = search.trim().toUpperCase().split(/\s+/);
 
-    // Each term must match at least one field ($and of $ors)
     const andConditions = terms.map((term) => {
       const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      // Anchor to start (^) matches Index Prefixes.
       const regex = new RegExp("^" + safeTerm);
 
       return {
-        $or: [
-          { rut: regex },
-          { nombre: regex },
-          { apellido: regex },
-          // { tipo_cargo: regex } // Optional
-        ],
+        $or: [{ rut: regex }, { nombre: regex }, { apellido: regex }],
       };
     });
 
@@ -214,7 +207,7 @@ async function obtenerTodosPaginado(options: {
     }
   }
 
-  // --- NEW SPECIFIC FILTERS ---
+  // --- Filtros Específicos ---
   if (options.cargo && options.cargo.trim() !== "") {
     query.tipo_cargo = options.cargo;
   }
@@ -224,20 +217,18 @@ async function obtenerTodosPaginado(options: {
   }
 
   if (options.rut && options.rut.trim() !== "") {
-    // Basic partial match for RUT if provided specifically
     query.rut = { $regex: options.rut.toUpperCase(), $options: "i" };
   }
 
-  // Calculate skip for pagination
   const skip = (page - 1) * limit;
 
-  // Execute query and count in parallel for performance
+  // Ejecución Paralela: Query + Count
   const [usuarios, total] = await Promise.all([
     User.find(query)
-      .select("-password") // Exclude sensitive fields
+      .select("-password") // Seguridad: Excluir hash
       .skip(skip)
       .limit(limit)
-      .lean(), // Convert to plain objects (faster)
+      .lean(),
     User.countDocuments(query),
   ]);
 
@@ -258,6 +249,8 @@ async function actualizar(id: string, data: Partial<IUser>) {
 }
 
 async function eliminar(id: string) {
+  // Soft Delete:
+  // Nunca borramos físicamente usuarios para mantener integridad referencial de auditoría e historial.
   await User.findByIdAndUpdate(id, { eliminado: true }, { new: true });
   return await User.find({ eliminado: { $ne: true } });
 }

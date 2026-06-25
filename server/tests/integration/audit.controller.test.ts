@@ -4,7 +4,8 @@ import app from "../../app";
 import AuditLog from "../../models/audit.model";
 import * as redisConfig from "../../config/redis.config";
 
-// Mock authentication middleware
+// Simulamos el middleware de autenticación para saltarnos la seguridad real.
+// Inyectamos un usuario "admin" ficticio para tener permisos totales durante estas pruebas.
 vi.mock("../../middleware/authentication.middleware", () => ({
   default: (req: any, res: any, next: any) => {
     req.user = { _id: "admin_id", nombre: "TEST", apellido: "ADMIN" };
@@ -13,10 +14,11 @@ vi.mock("../../middleware/authentication.middleware", () => ({
   requirePermission: () => (req: any, res: any, next: any) => next(),
 }));
 
-// Mock Redis
+// Mockeamos Redis para evitar requerir una instancia real en ejecución durante las pruebas
+// y para controlar determinísticamente cuándo hay aciertos (hits) o fallos (misses) de caché.
 vi.mock("../../config/redis.config");
 
-// Mock AuditLog model
+// Mock del modelo AuditLog para aislar el controlador de la base de datos real.
 vi.mock("../../models/audit.model");
 
 describe("Audit Controller - Integration", () => {
@@ -25,7 +27,7 @@ describe("Audit Controller - Integration", () => {
   });
 
   describe("GET /api/audit", () => {
-    it("should return paginated audit logs", async () => {
+    it("debería retornar logs de auditoría paginados correctamente", async () => {
       const mockLogs = [
         { _id: "1", action: "CREATE", module: "Users", userId: "user1" },
         { _id: "2", action: "UPDATE", module: "Replacements", userId: "user2" },
@@ -38,11 +40,11 @@ describe("Audit Controller - Integration", () => {
         page: 1,
       };
 
-      // Mock Redis cache miss
+      // Simulamos "cache miss" (Redis retorna null) para forzar la consulta a la BD.
       (redisConfig.get as any).mockResolvedValue(null);
       (redisConfig.set as any).mockResolvedValue(undefined);
 
-      // Mock paginate
+      // Simulamos la respuesta exitosa de la paginación de Mongoose.
       (AuditLog as any).paginate = vi
         .fn()
         .mockResolvedValue(mockPaginateResult);
@@ -55,22 +57,24 @@ describe("Audit Controller - Integration", () => {
       expect(response.body.currentPage).toBe(1);
     });
 
-    it("should return cached data if available", async () => {
+    it("debería retornar datos desde caché si están disponibles (optimizacion)", async () => {
       const cachedData = {
         logs: [{ _id: "cached", action: "CACHED" }],
         totalDocs: 1,
       };
 
+      // Simulamos "cache hit" para verificar que NO se llame a la BD.
       (redisConfig.get as any).mockResolvedValue(cachedData);
 
       const response = await request(app).get("/api/audit");
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual(cachedData);
+      // Prueba crítica: Asegurar que la BD no se toca si Redis responde.
       expect(AuditLog.paginate).not.toHaveBeenCalled();
     });
 
-    it("should filter by module", async () => {
+    it("debería filtrar correctamente por módulo", async () => {
       const mockPaginateResult = {
         docs: [],
         totalDocs: 0,
@@ -92,7 +96,7 @@ describe("Audit Controller - Integration", () => {
       );
     });
 
-    it("should filter by date range", async () => {
+    it("debería filtrar correctamente por rango de fechas", async () => {
       const mockPaginateResult = {
         docs: [],
         totalDocs: 0,
@@ -110,6 +114,7 @@ describe("Audit Controller - Integration", () => {
         "/api/audit?startDate=2024-01-01&endDate=2024-12-31",
       );
 
+      // Verificamos que se construya correctamente la query de MongoDB ($gte, $lte)
       expect(AuditLog.paginate).toHaveBeenCalledWith(
         expect.objectContaining({
           created_at: expect.objectContaining({
@@ -121,14 +126,16 @@ describe("Audit Controller - Integration", () => {
       );
     });
 
-    it("should handle errors gracefully", async () => {
+    it("debería manejar errores de base de datos agraciadamente (Graceful Degredation)", async () => {
       (redisConfig.get as any).mockResolvedValue(null);
+      // Simulamos un fallo catastrófico en la BD.
       (AuditLog as any).paginate = vi
         .fn()
         .mockRejectedValue(new Error("Database error"));
 
       const response = await request(app).get("/api/audit");
 
+      // No queremos que el servidor "crashee", sino que retorne 500.
       expect(response.status).toBe(500);
       expect(response.body.message).toBe("Error al obtener logs de auditoría");
     });
