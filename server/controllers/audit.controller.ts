@@ -3,6 +3,7 @@ import auditService from "../services/audit.service";
 import AuditLog from "../models/audit.model";
 import logger from "../config/logger.config";
 import { get, set } from "../config/redis.config";
+import { AUDIT_ACTIONS, AUDIT_MODULES } from "../constants/audit.constants";
 
 async function getAuditLogs(req: Request, res: Response) {
   try {
@@ -61,6 +62,14 @@ async function getAuditLogs(req: Request, res: Response) {
   }
 }
 
+function getAuditOptions(req: Request, res: Response) {
+  res.json({
+    modules: Object.values(AUDIT_MODULES),
+    actions: Object.values(AUDIT_ACTIONS),
+  });
+}
+
 export default {
   getAuditLogs,
+  getAuditOptions,
 };

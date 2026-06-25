@@ -36,3 +36,21 @@ export const formatTitleCase = (text: string | null | undefined): string => {
     })
     .join(' ')
 }
+
+export function getInitials(name: string | null | undefined): string {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .filter((n) => n.length > 0)
+    .map((n: string) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
+export function truncateMongoId(id: string | null | undefined): string {
+  if (!id) return ''
+  return id.slice(-6)
+}
+
+

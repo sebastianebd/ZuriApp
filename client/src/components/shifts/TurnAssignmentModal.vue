@@ -247,7 +247,7 @@ import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
-import type { User } from '@/types/models'
+import { type User } from '@/types/user.types'
 
 const props = defineProps<{
   visible: boolean
@@ -333,7 +333,7 @@ const serviceOptions = computed(() => {
   return optionStore.opciones?.servicios || []
 })
 
-// Form State
+// Form AuthState
 const form = ref({
   user_id: '',
   service: '',

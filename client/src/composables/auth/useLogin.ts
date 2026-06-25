@@ -1,7 +1,7 @@
 import { reactive, ref } from 'vue'
 import { useAuthStore } from '../../stores/auth.store'
 import { useRouter } from 'vue-router'
-import type { LoginData } from '../../types/models'
+import { type LoginData } from '../../types/auth.types'
 import { validateRut, formatRut } from '@fdograph/rut-utilities'
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'

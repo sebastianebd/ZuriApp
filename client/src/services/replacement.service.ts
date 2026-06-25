@@ -1,10 +1,10 @@
 import { errorHandler } from '@/utils/errorHandler'
 import type { useApiPrivate } from '../composables/useApi'
-import type { RegisterDataReemplazo, SustitucionPayload } from '../types/models'
+import { type ReplacementRegistration, type SubstitutionPayload } from '../types/replacement.types'
 
 // 💡 Interfaz para la respuesta del backend
 interface PaginacionResult {
-  registros: RegisterDataReemplazo[]
+  registros: ReplacementRegistration[]
   totalRegistros: number
   paginaActual: number
   limite: number
@@ -47,7 +47,7 @@ export const obtenerInactivosPaginados = async (
 }
 
 export const crearReemplazo = async (
-  payload: RegisterDataReemplazo,
+  payload: ReplacementRegistration,
   apiPrivate: ReturnType<typeof useApiPrivate>
 ) => {
   try {
@@ -61,7 +61,7 @@ export const crearReemplazo = async (
 export const actualizarReemplazo = async (
   apiPrivate: ReturnType<typeof useApiPrivate>,
   reemplazoId: string,
-  payload: RegisterDataReemplazo
+  payload: ReplacementRegistration
 ) => {
   try {
     const { data } = await apiPrivate.put(`/reemplazos/${reemplazoId}`, payload)
@@ -133,7 +133,7 @@ export const mostrarHistorialUsuario = async (
 
 export const procesarSustitucion = async (
   apiPrivate: ReturnType<typeof useApiPrivate>,
-  payload: SustitucionPayload
+  payload: SubstitutionPayload
 ) => {
   try {
     // LLAMADA AL NUEVO ENDPOINT

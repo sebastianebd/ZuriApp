@@ -7,7 +7,7 @@ import {
   createAssignment as createAssignmentService,
   deleteAssignment as deleteAssignmentService
 } from '../services/turn-assignment.service'
-import type { TurnAssignment } from '@/types/models'
+import { type TurnAssignment } from '@/types/turn.types'
 
 export const useTurnAssignmentStore = defineStore('turnAssignment', () => {
   const assignments = ref<TurnAssignment[]>([])

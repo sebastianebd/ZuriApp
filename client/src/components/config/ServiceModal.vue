@@ -3,7 +3,7 @@ import { ref, watch, computed } from 'vue'
 import { Form, Field, ErrorMessage } from 'vee-validate'
 import * as yup from 'yup'
 import { useServiceStore, type Service } from '@/stores/service.store'
-import type { User } from '@/types/models'
+import { type User } from '@/types/user.types'
 import UserSelectionModal from '@/components/common/UserSelectionModal.vue'
 
 const props = defineProps<{
@@ -43,7 +43,7 @@ const formData = ref({
   activo: true
 })
 
-// User Selection Modal State
+// User Selection Modal AuthState
 const showUserModal = ref(false)
 const userModalConfig = ref({
   title: '',

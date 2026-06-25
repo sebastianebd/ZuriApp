@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './auth.store'
+import * as AuditService from '../services/audit.service'
+import type { AuditFilterOptions } from '../services/audit.service'
 
 export const useAuditStore = defineStore('audit', () => {
   const authStore = useAuthStore()
@@ -20,6 +22,20 @@ export const useAuditStore = defineStore('audit', () => {
     userId: ''
   })
 
+  // Opciones de filtro dinámicas (cacheadas desde el backend)
+  const filterOptions = ref<AuditFilterOptions | null>(null)
+
+  async function fetchFilterOptions(): Promise<AuditFilterOptions> {
+    // Cache: Si ya las tenemos, no volvemos a consultar
+    if (filterOptions.value) {
+      return filterOptions.value
+    }
+    const apiPrivate = authStore.usePrivateApi()
+    const data = await AuditService.getAuditOptions(apiPrivate)
+    filterOptions.value = data
+    return filterOptions.value
+  }
+
   async function fetchLogs(page = 1, limit = 14, filters: any = {}) {
     loading.value = true
     error.value = null
@@ -28,24 +44,12 @@ export const useAuditStore = defineStore('audit', () => {
       currentFilters.value = { ...filters }
       currentPage.value = page
 
-      // Construir query params
-      const params = new URLSearchParams()
-      params.append('page', page.toString())
-      params.append('limit', limit.toString())
+      const apiPrivate = authStore.usePrivateApi()
+      const data = await AuditService.getAuditLogs(apiPrivate, page, limit, filters)
 
-      if (filters.module && filters.module !== 'TODOS') params.append('module', filters.module)
-      if (filters.action && filters.action !== 'TODOS') params.append('action', filters.action)
-      if (filters.userId) params.append('userId', filters.userId)
-      if (filters.startDate) params.append('startDate', filters.startDate)
-      if (filters.endDate) params.append('endDate', filters.endDate)
-
-      // Force fresh build to fix api path
-      const axios = authStore.usePrivateApi()
-      const response = await axios.get(`/audit?${params.toString()}`)
-
-      logs.value = response.data.logs
-      total.value = response.data.total
-      totalPages.value = response.data.totalPages
+      logs.value = data.logs
+      total.value = data.total
+      totalPages.value = data.totalPages
     } catch (err: any) {
       console.error('Error fetching audit logs:', err)
       error.value = err.response?.data?.mensaje || 'Error al cargar historial de auditoría'
@@ -58,20 +62,8 @@ export const useAuditStore = defineStore('audit', () => {
   async function getLogsForExport(filters: any = {}) {
     loading.value = true
     try {
-      // Construir query params
-      const params = new URLSearchParams()
-      params.append('page', '1')
-      params.append('limit', '10000') // Fetch "all"
-
-      if (filters.module && filters.module !== 'TODOS') params.append('module', filters.module)
-      if (filters.action && filters.action !== 'TODOS') params.append('action', filters.action)
-      if (filters.userId) params.append('userId', filters.userId)
-      if (filters.startDate) params.append('startDate', filters.startDate)
-      if (filters.endDate) params.append('endDate', filters.endDate)
-
-      const axios = authStore.usePrivateApi()
-      const response = await axios.get(`/audit?${params.toString()}`)
-      return response.data.logs
+      const apiPrivate = authStore.usePrivateApi()
+      return await AuditService.getLogsForExport(apiPrivate, filters)
     } catch (err: any) {
       console.error('Error fetching export logs:', err)
       return []
@@ -88,6 +80,8 @@ export const useAuditStore = defineStore('audit', () => {
     loading,
     error,
     currentFilters,
+    filterOptions,
+    fetchFilterOptions,
     fetchLogs,
     getLogsForExport
   }

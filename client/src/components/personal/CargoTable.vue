@@ -100,12 +100,12 @@
 </template>
 
 <script setup lang="ts">
-import type { ICargo } from '@/types/models'
+import { type JobRole } from '@/types/job-role.types'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatTitleCase } from '@/utils/text-formatters'
 
 defineProps<{
-  cargos: ICargo[]
+  cargos: JobRole[]
 }>()
 
 defineEmits(['edit', 'delete'])

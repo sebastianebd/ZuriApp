@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
-import type { RegisterDataReemplazo, SustitucionPayload } from '@/types/models'
+import { type ReplacementRegistration, type SubstitutionPayload } from '@/types/replacement.types'
 
-type ReplacementRecord = Partial<RegisterDataReemplazo>
+type ReplacementRecord = Partial<ReplacementRegistration>
 
 // --- ESTADOS REACTIVOS ---
 const updateModalVisible = ref(false)
@@ -31,7 +31,7 @@ const cargoDeFiltrado = computed(() => {
   return undefined
 })
 
-const openUpdateModal = (reemplazo: RegisterDataReemplazo) => {
+const openUpdateModal = (reemplazo: ReplacementRegistration) => {
   updateModalVisible.value = true
 
   const { fecha_inicio, fecha_termino, ...resto } = reemplazo
@@ -82,7 +82,7 @@ const closeSubstituteModal = () => {
   nuevoEntranteSustitucion.value = {}
 }
 
-const createSustitucionPayload = (): SustitucionPayload => {
+const createSustitucionPayload = (): SubstitutionPayload => {
   if (!registroActual.value._id || !fechaCorteSustitucion.value) {
     throw new Error('Datos de sustitución incompletos.')
   }

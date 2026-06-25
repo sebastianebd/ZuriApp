@@ -70,7 +70,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useCargoStore } from '@/stores/cargo.store'
 import { useAuthStore } from '@/stores/auth.store'
-import type { ICargo } from '@/types/models'
+import { type JobRole } from '@/types/job-role.types'
 import CargoTable from '@/components/personal/CargoTable.vue'
 import CargoModal from '@/components/personal/CargoModal.vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
@@ -81,9 +81,9 @@ const showModal = ref(false)
 const showDeleteModal = ref(false)
 const showConfirmationModal = ref(false)
 
-const selectedCargo = ref<ICargo | null>(null)
-const cargoToDelete = ref<ICargo | null>(null)
-const pendingCargoData = ref<Partial<ICargo> | null>(null)
+const selectedCargo = ref<JobRole | null>(null)
+const cargoToDelete = ref<JobRole | null>(null)
+const pendingCargoData = ref<Partial<JobRole> | null>(null)
 
 const confirmationMessage = computed(() => {
   return pendingCargoData.value?._id
@@ -101,7 +101,7 @@ function openCreateModal() {
   showModal.value = true
 }
 
-function openEditModal(cargo: ICargo) {
+function openEditModal(cargo: JobRole) {
   selectedCargo.value = cargo
   showModal.value = true
 }
@@ -111,7 +111,7 @@ function closeModal() {
   selectedCargo.value = null
 }
 
-function handleSave(cargoData: Partial<ICargo>) {
+function handleSave(cargoData: Partial<JobRole>) {
   pendingCargoData.value = cargoData
   showConfirmationModal.value = true
 }
@@ -137,7 +137,7 @@ async function confirmSave() {
   }
 }
 
-function confirmDelete(cargo: ICargo) {
+function confirmDelete(cargo: JobRole) {
   cargoToDelete.value = cargo
   showDeleteModal.value = true
 }
