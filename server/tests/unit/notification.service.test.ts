@@ -90,7 +90,7 @@ describe("Notification Service", () => {
     // No tener teléfono no es un error de sistema (500), pero es una condición que requiere atención (Warning),
     // ya que la notificación no se enviará.
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining("Skipping notification"),
+      expect.stringContaining("Omitiendo notificación"),
     );
   });
 });
