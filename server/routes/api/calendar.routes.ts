@@ -3,14 +3,14 @@ import calendarController from "../../controllers/calendar.controller";
 
 const router = Router();
 
-// Public route (no auth required) so it works easily from phone link
-// Security Note: In strict enterprise, we might want a signed token in URL,
-// but for this use case, ID enumeration risk is low impact (just calendar info).
+// --- Rutas Públicas (Sin Autenticación) ---
+// Decisión de Diseño: Estas rutas son accesibles públicamente para facilitar la integración
+// rápida (ej: añadir a Google Calendar desde móvil) sin flujos de login complejos.
 
-// Direct download
+// Descarga directa de archivo .ics
 router.get("/ics/:id", calendarController.downloadIcs);
 
-// Landing page for better Mobile UX
+// Vista web landing para mejor UX móvil antes de descargar
 router.get("/view/:id", calendarController.viewEventPage);
 
 export default router;

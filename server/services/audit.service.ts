@@ -11,7 +11,7 @@ async function logAction(
   user: any,
   description: string,
   details: any = null,
-  entityId: string | null = null
+  entityId: string | null = null,
 ): Promise<void> {
   try {
     const logEntry = new AuditLog({
@@ -25,10 +25,15 @@ async function logAction(
     });
 
     await logEntry.save();
-    await delPattern("audit:*"); // Invalidate cache on new log
+    // Cache Invalidation Strategy:
+    // Invalidamos todo el patrón audit:* para asegurar consistencia inmediata en listados.
+    // Aunque agresivo, garantiza que el admin siempre vea la última acción.
+    await delPattern("audit:*");
 
-    // Emit socket event
-    // Try/catch for socket to avoid breaking main auditing if socket fails (unlikely if locally initialized)
+    // Notificaciones en Tiempo Real (Fire-and-Forget):
+    // Emitimos el evento vía Socket.IO para actualizar dashboards de administradores activos.
+    // Envolvemos esto en try/catch independiente porque un fallo en el sistema de notificación (o si socketIO no está init)
+    // NO debe interrumpir el flujo principal de negocio ni el registro de auditoría.
     try {
       const io = socketIO.getIO();
       io.emit("audit:update", {
@@ -38,9 +43,12 @@ async function logAction(
         description,
       });
     } catch (err) {
-      // Socket might not be init if running in script or test env
+      // Silencioso: Es común en entornos de scripts/tests donde Socket no está levantado.
     }
   } catch (error: any) {
+    // Fallback de Seguridad:
+    // Si falla el registro de auditoría (ej: DB caída), lo logueamos a archivo/consola
+    // para no perder la trazabilidad del error, aunque se pierda el audit record.
     logger.error(`Error al registrar auditoría: ${error.message}`);
   }
 }
@@ -48,7 +56,7 @@ async function logAction(
 async function getLogs(
   filters: any = {},
   page: number = 1,
-  limit: number = 20
+  limit: number = 20,
 ) {
   const query: FilterQuery<IAuditLog> = {};
 
@@ -62,10 +70,11 @@ async function getLogs(
   }
 
   if (filters.startDate || filters.endDate) {
-    // Need to handle created_at range
+    // Manejo de rangos de fecha para created_at
     const dateQuery: any = {};
     if (filters.startDate) dateQuery.$gte = new Date(filters.startDate);
     if (filters.endDate) {
+      // Ajustamos al final del día para incluir registros ocurridos durante la fecha de término.
       const end = new Date(filters.endDate);
       end.setHours(23, 59, 59, 999);
       dateQuery.$lte = end;
@@ -93,6 +102,8 @@ function generateDiff(oldData: any, newData: any): string {
   if (!oldData || !newData) return "";
 
   const changes: string[] = [];
+  // Lista Negra de Campos:
+  // Excluimos campos técnicos o sensibles que no aportan valor semántico al historial de cambios visible por el usuario.
   const ignoredKeys = [
     "_id",
     "created_at",
@@ -112,7 +123,8 @@ function generateDiff(oldData: any, newData: any): string {
     let oldVal = oldData[key];
     let newVal = newData[key];
 
-    // date handling
+    // Manejo Especial: Fechas
+    // Comparamos timestamps para evitar falsos positivos por formatos de string distintos.
     if (
       (newVal instanceof Date ||
         (typeof newVal === "string" && !isNaN(Date.parse(newVal)))) &&
@@ -123,14 +135,16 @@ function generateDiff(oldData: any, newData: any): string {
       if (!isNaN(t1) && !isNaN(t2) && t1 !== t2) {
         changes.push(
           `${key}: ${new Date(t1).toLocaleString()} -> ${new Date(
-            t2
-          ).toLocaleString()}`
+            t2,
+          ).toLocaleString()}`,
         );
       }
       return;
     }
 
-    // SPECIAL HANDLING: Turn Type Sequence
+    // Manejo Especial: Secuencia de Turnos (TurnType)
+    // Desglosamos cambios dentro de la estructura compleja de array de objetos 'secuencia'
+    // para reportar legiblemente qué día cambió y qué propiedad (horario, sigla, etc).
     if (key === "secuencia" && Array.isArray(oldVal) && Array.isArray(newVal)) {
       const seqChanges: string[] = [];
       newVal.forEach((newDay: any) => {
@@ -169,7 +183,8 @@ function generateDiff(oldData: any, newData: any): string {
       return;
     }
 
-    // Generic deep equality check for other objects/arrays
+    // Comparación Profunda Genérica
+    // Para objetos/arrays no manejados específicamente, usamos stringify como fallback.
     if (typeof newVal === "object" && newVal !== null && oldVal !== undefined) {
       if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
         const oldStr = JSON.stringify(oldVal, null, 1).replace(/\n/g, "");
@@ -179,7 +194,9 @@ function generateDiff(oldData: any, newData: any): string {
       return;
     }
 
+    // Comparación Simple de Primitivos
     if (oldVal != newVal) {
+      // Ignoramos transiciones de null/undefined a string vacío para reducir ruido
       if (
         (oldVal === undefined || oldVal === null) &&
         (newVal === "" || newVal === null)

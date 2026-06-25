@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import auditService from "../../services/audit.service";
 import AuditLog from "../../models/audit.model";
 
-// Mock AuditLog model with constructor and static methods
+// Mock del modelo AuditLog:
+// Necesitamos simular tanto los métodos estáticos (find, countDocuments) como los de instancia (save).
+// Usamos Object.assign para copiar las propiedades al "this" del mock, imitando el comportamiento del constructor de Mongoose.
 vi.mock("../../models/audit.model", () => {
   const mockSave = vi.fn().mockResolvedValue({ _id: "log123" });
   return {
@@ -20,13 +22,13 @@ vi.mock("../../models/audit.model", () => {
 });
 
 describe("Audit Service - generateDiff", () => {
-  it("should return an empty string if there are no changes", () => {
+  it("debería retornar un string vacío si no hay cambios", () => {
     const oldData = { nombre: "JUAN", apellido: "PEREZ" };
     const newData = { nombre: "JUAN", apellido: "PEREZ" };
     expect(auditService.generateDiff(oldData, newData)).toBe("");
   });
 
-  it("should detect changes in string fields", () => {
+  it("debería detectar cambios en campos de tipo string", () => {
     const oldData = { nombre: "JUAN", apellido: "PEREZ" };
     const newData = { nombre: "JUAN", apellido: "SOTO" };
     expect(auditService.generateDiff(oldData, newData)).toBe(
@@ -34,13 +36,14 @@ describe("Audit Service - generateDiff", () => {
     );
   });
 
-  it("should ignore restricted keys like _id, password, etc.", () => {
+  it("debería ignorar claves restringidas como _id, password, etc.", () => {
+    // Seguridad y Limpieza: No queremos exponer datos sensibles o técnicos en los logs de auditoría.
     const oldData = { _id: "123", password: "old", nombre: "JUAN" };
     const newData = { _id: "123", password: "new", nombre: "JUAN" };
     expect(auditService.generateDiff(oldData, newData)).toBe("");
   });
 
-  it("should detect changes in dates", () => {
+  it("debería detectar cambios en fechas", () => {
     const oldDate = new Date("2023-01-01T10:00:00Z");
     const newDate = new Date("2023-01-02T10:00:00Z");
     const oldData = { fecha: oldDate };
@@ -51,13 +54,13 @@ describe("Audit Service - generateDiff", () => {
     expect(result).toContain("->");
   });
 
-  it("should handle null or undefined vs empty values gracefully", () => {
+  it("debería manejar valores nulos o indefinidos vs cadenas vacías", () => {
     const oldData = { direccion: null };
     const newData = { direccion: "" };
     expect(auditService.generateDiff(oldData, newData)).toBe("");
   });
 
-  it("should handle multiple changes", () => {
+  it("debería manejar múltiples cambios simultáneamente", () => {
     const oldData = { nombre: "JUAN", ciudad: "SANTIAGO" };
     const newData = { nombre: "PEDRO", ciudad: "VALPARAISO" };
     const result = auditService.generateDiff(oldData, newData);
@@ -72,7 +75,7 @@ describe("Audit Service - logAction", () => {
     vi.clearAllMocks();
   });
 
-  it("should create audit log with all fields", async () => {
+  it("debería crear un registro de auditoría con todos los campos", async () => {
     const mockUser = {
       _id: "user123",
       id: "user123",
@@ -102,7 +105,7 @@ describe("Audit Service - logAction", () => {
     );
   });
 
-  it("should handle missing optional fields gracefully", async () => {
+  it("debería manejar la falta de campos opcionales sin fallar", async () => {
     const mockUser = {
       _id: "user123",
       id: "user123",
@@ -115,7 +118,7 @@ describe("Audit Service - logAction", () => {
     expect(AuditLog).toHaveBeenCalled();
   });
 
-  it("should handle very long detail strings", async () => {
+  it("debería manejar cadenas de detalles muy largas", async () => {
     const mockUser = {
       _id: "user123",
       id: "user123",
@@ -130,7 +133,7 @@ describe("Audit Service - logAction", () => {
     expect(AuditLog).toHaveBeenCalled();
   });
 
-  it("should handle special characters in details", async () => {
+  it("debería manejar caracteres especiales en los detalles (XSS/Injection prevention check)", async () => {
     const mockUser = {
       _id: "user123",
       id: "user123",
@@ -149,7 +152,9 @@ describe("Audit Service - logAction", () => {
     );
   });
 
-  it("should not throw if AuditLog save fails (graceful degradation)", async () => {
+  it("no debería lanzar error si falla el guardado en AuditLog (Graceful Degradation)", async () => {
+    // Resiliencia: Si el servicio de auditoría falla (ej. DB caída),
+    // no deberíamos interrumpir la operación principal del usuario, aunque idealmente se alertaría.
     const mockUser = {
       _id: "user123",
       id: "user123",
@@ -157,7 +162,7 @@ describe("Audit Service - logAction", () => {
       apellido: "User",
     };
 
-    // Mock save to fail
+    // Simular fallo en save
     const mockFailingSave = vi
       .fn()
       .mockRejectedValue(new Error("Database error"));
@@ -166,7 +171,6 @@ describe("Audit Service - logAction", () => {
       this.save = mockFailingSave;
     });
 
-    // Should not throw
     await expect(
       auditService.logAction("CREATE", "Test", mockUser, "Test action"),
     ).resolves.toBeUndefined();
@@ -178,7 +182,7 @@ describe("Audit Service - getLogs", () => {
     vi.clearAllMocks();
   });
 
-  it("should return paginated logs with default parameters", async () => {
+  it("debería retornar logs paginados con parámetros por defecto", async () => {
     const mockLogs = [
       { _id: "log1", action: "CREATE", module: "Users" },
       { _id: "log2", action: "UPDATE", module: "Users" },
@@ -200,7 +204,7 @@ describe("Audit Service - getLogs", () => {
     expect(result.totalPages).toBe(1);
   });
 
-  it("should filter by module", async () => {
+  it("debería filtrar por módulo", async () => {
     (AuditLog.find as any).mockReturnValue({
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -216,7 +220,7 @@ describe("Audit Service - getLogs", () => {
     );
   });
 
-  it("should filter by action", async () => {
+  it("debería filtrar por acción", async () => {
     (AuditLog.find as any).mockReturnValue({
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -232,7 +236,7 @@ describe("Audit Service - getLogs", () => {
     );
   });
 
-  it("should filter by date range", async () => {
+  it("debería filtrar por rango de fechas", async () => {
     (AuditLog.find as any).mockReturnValue({
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -253,7 +257,7 @@ describe("Audit Service - getLogs", () => {
     );
   });
 
-  it("should handle pagination correctly", async () => {
+  it("debería manejar la paginación correctamente", async () => {
     (AuditLog.find as any).mockReturnValue({
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -268,7 +272,7 @@ describe("Audit Service - getLogs", () => {
     expect(result.totalPages).toBe(10);
   });
 
-  it("should ignore TODOS filter values", async () => {
+  it("debería ignorar filtros con valor 'TODOS'", async () => {
     (AuditLog.find as any).mockReturnValue({
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -283,15 +287,15 @@ describe("Audit Service - getLogs", () => {
   });
 });
 
-describe("Audit Service - generateDiff (Additional Cases)", () => {
-  it("should handle object changes", () => {
+describe("Audit Service - generateDiff (Casos Adicionales)", () => {
+  it("debería manejar cambios en objetos anidados", () => {
     const oldData = { config: { theme: "dark", lang: "es" } };
     const newData = { config: { theme: "light", lang: "es" } };
     const result = auditService.generateDiff(oldData, newData);
     expect(result).toContain("config:");
   });
 
-  it("should handle array changes in secuencia", () => {
+  it("debería manejar cambios en arrays (secuencia)", () => {
     const oldData = {
       secuencia: [
         {
@@ -319,7 +323,7 @@ describe("Audit Service - generateDiff (Additional Cases)", () => {
     expect(result).toContain("Sigla:");
   });
 
-  it("should return empty string for null/undefined inputs", () => {
+  it("debería retornar string vacío para inputs nulos/indefinidos", () => {
     expect(auditService.generateDiff(null, { name: "test" })).toBe("");
     expect(auditService.generateDiff({ name: "test" }, null)).toBe("");
   });

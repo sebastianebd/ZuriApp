@@ -4,9 +4,10 @@ import { AuthRequest } from "../middleware/authentication.middleware";
 
 async function getReplacementStats(req: AuthRequest, res: Response) {
   try {
+    // Extracción segura del ID de usuario desde el token JWT decodificado (req.user)
+    // Se soporta tanto la propiedad 'id' (virtual) como '_id' (bson) para robustez.
     const userId = req.user?.id || (req.user as any)?._id;
-    // Auth middleware puts user object. user object has id getter? or _id?
-    // Mongoose toObject({getters: true}) means id exists.
+
     const stats = await profileService.getUserReplacementStats(userId);
     res.json(stats);
   } catch (error: any) {

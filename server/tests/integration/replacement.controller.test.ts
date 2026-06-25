@@ -4,7 +4,8 @@ import replacementService from "../../services/replacement.service";
 import auditService from "../../services/audit.service";
 import app from "../../app";
 
-// Mock middleware
+// Mock del middleware de autenticación:
+// Simulamos un usuario admin autenticado para saltar la validación de JWT y permisos en estas pruebas de integración.
 vi.mock("../../middleware/authentication.middleware", () => ({
   default: (req: any, res: any, next: any) => {
     req.user = { _id: "admin_id", nombre: "TEST", apellido: "ADMIN" };
@@ -13,13 +14,21 @@ vi.mock("../../middleware/authentication.middleware", () => ({
   requirePermission: () => (req: any, res: any, next: any) => next(),
 }));
 
+// Mock de servicios:
+// Aislamos el controlador de la lógica de negocio compleja (Service Layer) y dependencias externas.
 vi.mock("../../services/replacement.service");
 vi.mock("../../services/audit.service");
+
+// Mock de notificaciones:
+// Evitamos el envío real de correos o notificaciones push durante la ejecución de tests.
 vi.mock("../../services/notification.service", () => ({
   default: {
     notifyReplacement: vi.fn(),
   },
 }));
+
+// Mock de WebSockets:
+// Prevenimos intentos de conexión o emisión de eventos socket.io que fallarían sin un servidor real levantado.
 vi.mock("../../services/socket.service", () => ({
   default: {
     emitTurnUpdate: vi.fn(),
@@ -27,10 +36,13 @@ vi.mock("../../services/socket.service", () => ({
   },
 }));
 
+// Mock de Redis:
+// Control total sobre el caché para evitar flakiness por timeouts o estado compartido.
 vi.mock("../../config/redis.config", () => ({
   get: vi.fn(),
   set: vi.fn(),
   delPattern: vi.fn(),
+  // Simular limpieza de caché
 }));
 
 describe("Replacement Controller - Integration", () => {
@@ -39,7 +51,7 @@ describe("Replacement Controller - Integration", () => {
   });
 
   describe("POST /api/reemplazos", () => {
-    it("should create a replacement and log audit", async () => {
+    it("debería crear un reemplazo y registrar la auditoría correspondiente", async () => {
       const mockPayload = {
         id_saliente: "507f1f77bcf86cd799439011",
         rut_saliente: "12345678-9",
@@ -72,6 +84,8 @@ describe("Replacement Controller - Integration", () => {
 
       expect(replacementService.registrar).toHaveBeenCalledWith(mockPayload);
 
+      // Verificación de Cumplimiento (Compliance):
+      // Es crítico asegurar que cada acción de escritura deje un rastro de auditoría.
       expect(auditService.logAction).toHaveBeenCalledWith(
         "CREAR",
         "Reemplazos Activos",
@@ -84,7 +98,7 @@ describe("Replacement Controller - Integration", () => {
   });
 
   describe("GET /api/reemplazos", () => {
-    it("should return list of active replacements", async () => {
+    it("debería retornar la lista de reemplazos activos paginados", async () => {
       const mockList = [{ id: 1 }, { id: 2 }];
       const mockResult = {
         reemplazos: mockList,
@@ -102,7 +116,7 @@ describe("Replacement Controller - Integration", () => {
   });
 
   describe("PUT /api/reemplazos/:id", () => {
-    it("should update replacement and log audit", async () => {
+    it("debería actualizar un reemplazo y registrar auditoría", async () => {
       const mockId = "507f1f77bcf86cd799439011";
       const mockUpdate = { fecha_termino: "2024-02-01" };
       const mockOriginal = {
@@ -138,7 +152,7 @@ describe("Replacement Controller - Integration", () => {
   });
 
   describe("PUT /api/reemplazos/finalizar/:id", () => {
-    it("should finalize replacement and log audit", async () => {
+    it("debería finalizar un reemplazo y auditar el cambio de estado", async () => {
       const mockId = "507f1f77bcf86cd799439011";
       const mockOriginal = { _id: mockId, status: "ACTIVO", id_negocio: "RP2" };
 
@@ -165,7 +179,7 @@ describe("Replacement Controller - Integration", () => {
   });
 
   describe("PUT /api/reemplazos/anular/:id", () => {
-    it("should annul replacement and log audit", async () => {
+    it("debería anular un reemplazo (lógica de negocio) y auditar", async () => {
       const mockId = "507f1f77bcf86cd799439011";
       const mockOriginal = { _id: mockId, status: "ACTIVO", id_negocio: "RP3" };
 
@@ -192,7 +206,7 @@ describe("Replacement Controller - Integration", () => {
   });
 
   describe("POST /api/reemplazos/sustituir", () => {
-    it("should process substitution and log audit", async () => {
+    it("debería procesar una sustitución compleja y auditar la operación", async () => {
       const mockPayload = {
         id_registro_a: "507f1f77bcf86cd799439011",
         fecha_corte_a: "2024-06-01",
@@ -255,7 +269,7 @@ describe("Replacement Controller - Integration", () => {
   });
 
   describe("GET /api/reemplazos/historial-paginado", () => {
-    it("should return paginated history", async () => {
+    it("debería retornar el historial paginado de reemplazos inactivos", async () => {
       const mockResult = {
         reemplazos: [{ id: "hist1" }],
         pagination: { total: 1 },
@@ -273,14 +287,11 @@ describe("Replacement Controller - Integration", () => {
     });
   });
 
-  describe("GET /api/reemplazos/:id (User History)", () => {
-    it("should return user history", async () => {
+  describe("GET /api/reemplazos/:id (Historial Usuario)", () => {
+    it("debería retornar el historial de un usuario específico", async () => {
       const mockResult = [{ id: "hist_user_1" }];
-      // ID doesn't need to be ObjectId for this specific route if the controller/service handles it,
-      // but if validation middleware runs, it needs to be valid.
-      // Route `GET /:id` uses `requirePermission` but NO `validateSchema`.
-      // So "user123" might work if service accepts it.
-      // But let's use a valid ObjectId just in case.
+      // Usamos un ObjectId válido para asegurar que pase cualquier validación de Mongoose,
+      // aunque en la práctica el servicio determina como buscarlo.
       const userId = "507f1f77bcf86cd799439099";
 
       (replacementService.obtenerHistorialUsuario as any).mockResolvedValue(

@@ -11,7 +11,8 @@ import LoginHistory from "../../models/login-history.model";
 import redis from "../../config/redis.config";
 import socketConfig from "../../config/socket";
 
-// Mock all dependencies
+// Mock global de dependencias:
+// Control total sobre librerías externas y modelos para pruebas unitarias deterministas.
 vi.mock("bcrypt");
 vi.mock("jsonwebtoken");
 vi.mock("../../models/user.model");
@@ -23,7 +24,7 @@ vi.mock("../../config/socket");
 describe("Auth Service - Unit Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset environment variable
+    // Limpieza de estado: Asegurar que variables de entorno temporales no filtren entre tests.
     delete process.env.DISABLE_CONCURRENT_SESSION;
   });
 
@@ -35,7 +36,7 @@ describe("Auth Service - Unit Tests", () => {
       userAgent: "Mozilla/5.0",
     };
 
-    it("should authenticate valid credentials and return tokens", async () => {
+    it("debería autenticar credenciales válidas y retornar tokens (Access & Refresh)", async () => {
       const mockUser = {
         _id: "user123",
         id: "user123",
@@ -67,6 +68,7 @@ describe("Auth Service - Unit Tests", () => {
       (Cargo.findOne as any).mockReturnValue({
         lean: vi.fn().mockResolvedValue(mockCargo),
       });
+      // Importante: Simular que no hay sesión activa en Redis.
       (redis.get as any).mockResolvedValue(null);
 
       const result = await authService.login(mockLoginData);
@@ -81,7 +83,7 @@ describe("Auth Service - Unit Tests", () => {
       );
     });
 
-    it("should throw ValidationError if rut or password missing", async () => {
+    it("debería lanzar ValidationError si falta rut o contraseña", async () => {
       await expect(
         authService.login({ rut: "", password: "test", ip: "", userAgent: "" }),
       ).rejects.toThrow(ValidationError);
@@ -96,7 +98,7 @@ describe("Auth Service - Unit Tests", () => {
       ).rejects.toThrow(ValidationError);
     });
 
-    it("should throw AuthError if user not found", async () => {
+    it("debería lanzar AuthError si el usuario no existe", async () => {
       (User.findOne as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
           exec: vi.fn().mockResolvedValue(null),
@@ -106,7 +108,7 @@ describe("Auth Service - Unit Tests", () => {
       await expect(authService.login(mockLoginData)).rejects.toThrow(AuthError);
     });
 
-    it("should throw AuthError if password incorrect", async () => {
+    it("debería lanzar AuthError si la contraseña es incorrecta", async () => {
       const mockUser = {
         _id: "user123",
         rut: "12345678-9",
@@ -128,7 +130,7 @@ describe("Auth Service - Unit Tests", () => {
       );
     });
 
-    it("should throw 409 error if user has active session (concurrent login)", async () => {
+    it("debería lanzar error 409 si el usuario ya tiene una sesión activa (Concurrencia)", async () => {
       const mockUser = {
         _id: "user123",
         id: "user123",
@@ -148,6 +150,7 @@ describe("Auth Service - Unit Tests", () => {
         JSON.stringify({ socket_id: "socket123", device: "Chrome" }),
       );
 
+      // Simular que el socket asociado está realmente conectado.
       const mockSocket = { id: "socket123" };
       const mockSockets = new Map([["socket123", mockSocket]]);
       (socketConfig.getIO as any).mockReturnValue({
@@ -159,7 +162,9 @@ describe("Auth Service - Unit Tests", () => {
       );
     });
 
-    it("should allow login if session is stale (socket disconnected)", async () => {
+    it("debería permitir login si la sesión es 'stale' (socket desconectado)", async () => {
+      // Caso Borde Crítico: El registro en Redis dice "conectado", pero el socket real user ya no existe.
+      // Esto pasa si el servidor se reinicia o el socket se cae sin limpiar Redis.
       const mockUser = {
         _id: "user123",
         id: "user123",
@@ -191,7 +196,7 @@ describe("Auth Service - Unit Tests", () => {
       );
       (redis.del as any).mockResolvedValue(1);
 
-      const mockSockets = new Map(); // Empty - socket not connected
+      const mockSockets = new Map(); // Vacío - socket no conectado
       (socketConfig.getIO as any).mockReturnValue({
         sockets: { sockets: mockSockets },
       });
@@ -204,7 +209,7 @@ describe("Auth Service - Unit Tests", () => {
   });
 
   describe("refresh()", () => {
-    it("should generate new access token with valid refresh token", async () => {
+    it("debería generar un nuevo access token con un refresh token válido", async () => {
       const mockUser = {
         _id: "user123",
         id: "user123",
@@ -229,11 +234,11 @@ describe("Auth Service - Unit Tests", () => {
       );
     });
 
-    it("should throw AuthError if refresh token missing", async () => {
+    it("debería lanzar AuthError si falta el refresh token", async () => {
       await expect(authService.refresh("")).rejects.toThrow(AuthError);
     });
 
-    it("should throw AuthError if refresh token expired", async () => {
+    it("debería lanzar AuthError si el refresh token ha expirado", async () => {
       (jwt.verify as any).mockImplementation(() => {
         throw new Error("Token expired");
       });
@@ -243,7 +248,7 @@ describe("Auth Service - Unit Tests", () => {
       );
     });
 
-    it("should throw AuthError if user not found", async () => {
+    it("debería lanzar AuthError si el usuario no existe", async () => {
       (jwt.verify as any).mockReturnValue({ id: "user123" });
       (User.findById as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -256,7 +261,7 @@ describe("Auth Service - Unit Tests", () => {
       );
     });
 
-    it("should throw AuthError if refresh token doesn't match stored hash", async () => {
+    it("debería lanzar AuthError si el refresh token no coincide con el hash almacenado (Posible robo)", async () => {
       const mockUser = {
         _id: "user123",
         refresh_token: "hashedRefreshToken",
@@ -277,7 +282,7 @@ describe("Auth Service - Unit Tests", () => {
   });
 
   describe("logout()", () => {
-    it("should clear refresh_token from user document", async () => {
+    it("debería eliminar el refresh_token del documento del usuario", async () => {
       const mockUser = {
         _id: "user123",
         refresh_token: "hashedRefreshToken",
@@ -298,11 +303,11 @@ describe("Auth Service - Unit Tests", () => {
       expect(mockUser.save).toHaveBeenCalled();
     });
 
-    it("should handle missing refresh token gracefully", async () => {
+    it("debería manejar token faltante sin lanzar error", async () => {
       await expect(authService.logout("")).resolves.toBeUndefined();
     });
 
-    it("should handle invalid refresh token gracefully", async () => {
+    it("debería manejar token inválido sin lanzar error", async () => {
       (jwt.verify as any).mockImplementation(() => {
         throw new Error("Invalid token");
       });
@@ -310,7 +315,7 @@ describe("Auth Service - Unit Tests", () => {
       await expect(authService.logout("invalidToken")).resolves.toBeUndefined();
     });
 
-    it("should handle user not found gracefully", async () => {
+    it("debería manejar usuario no encontrado sin lanzar error", async () => {
       (jwt.verify as any).mockReturnValue({ id: "user123" });
       (User.findById as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -323,7 +328,7 @@ describe("Auth Service - Unit Tests", () => {
   });
 
   describe("changePassword()", () => {
-    it("should update password when current password is correct", async () => {
+    it("debería actualizar contraseña cuando la actual es correcta", async () => {
       const mockUser = {
         _id: "user123",
         rut: "12345678-9",
@@ -342,7 +347,7 @@ describe("Auth Service - Unit Tests", () => {
       expect(mockUser.save).toHaveBeenCalled();
     });
 
-    it("should throw AuthError if user not found", async () => {
+    it("debería lanzar AuthError si el usuario no existe", async () => {
       (User.findById as any).mockReturnValue({
         select: vi.fn().mockResolvedValue(null),
       });
@@ -352,7 +357,7 @@ describe("Auth Service - Unit Tests", () => {
       ).rejects.toThrow(AuthError);
     });
 
-    it("should throw AuthError if current password incorrect", async () => {
+    it("debería lanzar AuthError si la contraseña actual es incorrecta", async () => {
       const mockUser = {
         _id: "user123",
         password: "hashedPassword",
@@ -370,7 +375,7 @@ describe("Auth Service - Unit Tests", () => {
   });
 
   describe("getLoginHistory()", () => {
-    it("should return last 20 login attempts for user", async () => {
+    it("debería retornar los últimos 20 intentos de login", async () => {
       const mockHistory = [
         { user: "user123", timestamp: new Date(), status: "SUCCESS" },
         { user: "user123", timestamp: new Date(), status: "FAILED" },

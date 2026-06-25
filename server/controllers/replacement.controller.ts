@@ -11,7 +11,7 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
   try {
     const nuevoReemplazo = await replacementService.registrar(req.body);
 
-    // Log Auditoría
+    // Auditoría Transaccional: Creación
     await auditService.logAction(
       "CREAR",
       "Reemplazos Activos",
@@ -21,7 +21,8 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
       nuevoReemplazo._id as string,
     );
 
-    // Audit Implicit Shifts
+    // Auditoría de Efectos Colaterales (Turnos Implícitos)
+    // Documentamos que el sistema generó turnos automáticamente para el entrante.
     await auditService.logAction(
       "CREAR",
       "Turnos Actuales",
@@ -38,12 +39,13 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
       nuevoReemplazo._id as string,
     );
 
-    await delPattern("replacements:*"); // Invalidate cache
+    await delPattern("replacements:*"); // Invalidación de Cache Radical (Broad Invalidation)
 
-    // Send WhatsApp Notification (Enterprise Standard: Async / Non-blocking if performance critical, but safe to await here)
+    // Notificación Asíncrona (WhatsApp)
+    // Se ejecuta sin esperar confirmación para no bloquear la respuesta HTTP.
     await genericNotificationService.notifyReplacement(nuevoReemplazo);
 
-    // Notify Frontend
+    // Notificación Push al Frontend (Actualización en tiempo real)
     if (nuevoReemplazo.id_entrante) {
       socketService.emitTurnUpdate(nuevoReemplazo.id_entrante.toString());
     }
@@ -56,21 +58,21 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
 
 async function mostrarReemplazos(req: Request, res: Response) {
   try {
-    // Check if pagination parameters are provided
     const hasPaginationParams = req.query.page || req.query.limit;
 
-    // Pagination parameters (use high limit for legacy calls)
+    // Configuración de Paginación
     const page = parseInt(req.query.page as string) || 1;
+    // Fallback de límite alto para clientes legacy que no paginan
     const limit =
       parseInt(req.query.limit as string) || (hasPaginationParams ? 10 : 1000);
     const search = (req.query.search as string) || "";
     const servicio = (req.query.servicio as string) || "";
 
-    // Generate unique cache key including pagination params
-    // 🔧 v2: Added id_entrante populate
+    // Key de Caché Compuesta
+    // Incluye todos los parámetros de filtrado para evitar colisiones de caché.
     const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}`;
 
-    // 1. Try Cache
+    // 1. Intento de Caché (Read-Through)
     const cachedData = await get(cacheKey);
     if (cachedData) {
       console.log(`[Replacement Controller] Cache HIT for key: ${cacheKey}`);
@@ -79,7 +81,7 @@ async function mostrarReemplazos(req: Request, res: Response) {
 
     console.log(`[Replacement Controller] Cache MISS for key: ${cacheKey}`);
 
-    // 2. Fetch paginated data
+    // 2. Fetch de Datos (Base de Datos)
     const result = await replacementService.obtenerActivosPaginado({
       search,
       servicio,
@@ -87,15 +89,8 @@ async function mostrarReemplazos(req: Request, res: Response) {
       limit,
     });
 
-    // 🔧 Debug: Check if id_entrante is populated
-    if (result.reemplazos && result.reemplazos.length > 0) {
-      console.log(
-        `[Replacement Controller] First replacement id_entrante:`,
-        result.reemplazos[0].id_entrante,
-      );
-    }
-
-    // 3. Cache result for 60 seconds
+    // 3. Escritura en Caché (TTL Corto: 60s)
+    // Dado que los reemplazos cambian frecuentemente, un TTL bajo minimiza la consistencia eventual.
     await set(cacheKey, result, 60);
 
     res.json(result);
@@ -111,7 +106,7 @@ async function mostrarHistorial(req: Request, res: Response) {
     if (cachedData) return res.json(cachedData);
 
     const data = await replacementService.obtenerInactivosPaginados();
-    await set(cacheKey, data, 300);
+    await set(cacheKey, data, 300); // TTL Mayor (5 min) para datos históricos estáticos
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ mensaje: error.message });
@@ -123,6 +118,7 @@ async function actualizarReemplazo(req: AuthRequest, res: Response) {
     const original: any = await replacementService.obtenerPorId(req.params.id);
     const data = await replacementService.actualizar(req.params.id, req.body);
 
+    // Cálculo de Diferencias para Auditoría
     const validFields = Object.keys(Reemplazo.schema.paths);
     const cleanBody: any = {};
     Object.keys(req.body).forEach((key) => {
@@ -173,7 +169,7 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
     );
     await delPattern("replacements:*"); // Invalidate cache
 
-    // Emit socket event
+    // Notificación WebSocket para actualizar clientes activos
     socketService.emitHistoryUpdate("finalize", req.params.id);
 
     res.json(data);
@@ -201,7 +197,7 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
     );
     await delPattern("replacements:*"); // Invalidate cache
 
-    // Emit socket event
+    // Socket: move to history
     socketService.emitHistoryUpdate("annul", req.params.id);
 
     res.json(data);
@@ -212,7 +208,7 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
 
 async function obtenerHistorialUsuario(req: Request, res: Response) {
   try {
-    // This is user specific, maybe less critical to cache widely, but effective if user refreshes
+    // Caché por usuario específico (Granular)
     const cacheKey = `replacements:user_history:${req.params.id}`;
     const cachedData = await get(cacheKey);
     if (cachedData) return res.json(cachedData);
@@ -232,23 +228,8 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
     const [registroA_cortado, nuevoRegistroB] =
       await replacementService.sustituir(req.body);
 
-    // Log Auditoría has to be before response or handled async, but here it was after response in original code.
-    // I will keep it as is but add invalidation.
-    // Wait, original code sent response THEN logged?
-    // "res.status(200).json(...) ... await auditService.logAction(...)"
-    // The await after response *might* not finish if serverless/lambda, but in node container it continues.
-    // I should probably await before response or not await (fire and forget).
-    // Original code:
-    // res.status(200).json({...});
-    // await auditService.logAction(...);
-    //
-    // I will add invalidation after logAction.
-
-    // Actually, let's just do it slightly cleaner: await log, await invalidation, then respond.
-    // Or keep original flow to not change latency?
-    // If I change flow, I delay response.
-    // I will put invalidation with logAction.
-
+    // Auditoría de Transacción Compleja
+    // Registramos la sustitución después de que la operación de BD fue exitosa.
     await auditService.logAction(
       "SUSTITUCION",
       "Reemplazos Activos",
@@ -259,7 +240,6 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
     );
     await delPattern("replacements:*");
 
-    // Emit socket event
     socketService.emitHistoryUpdate("substitute", registroA_cortado._id);
 
     res.status(200).json({
@@ -276,7 +256,7 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
   try {
     const { pagina, limite, ...filtros } = req.query;
 
-    // Create a unique, deterministic cache key by sorting query parameters
+    // Generación determinista de clave de caché ordenando parámetros
     const sortedQuery = Object.keys(req.query)
       .sort()
       .reduce((acc: any, key) => {

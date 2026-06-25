@@ -1,5 +1,8 @@
 import Reemplazo, { IReplacement } from "../models/replacement.model";
 
+// --- Helpers de Estado ---
+// Determinamos el estado inicial basado puramente en fecha vs ahora.
+// Esto mejora la UX al mostrar inmediatamente si un turno es "futuro" o "activo".
 const determineStatus = (fecha_inicio: Date | string): string => {
   const now = new Date();
   const fechaActualUTC = new Date(
@@ -33,26 +36,25 @@ async function registrar(data: any) {
   const initialStatus = determineStatus(data.fecha_inicio);
 
   /* 
-   Lookup TurnType ID 
-   We import basic mongoose model to avoid large circular deps if possible, 
-   or just use mongoose.model if registered.
-   But let's use dynamic import or assume TurnType is registered.
+   Resolución de Tipo de Turno:
+   Importamos dinámicamente el modelo para evitar dependencias circulares si existieran.
+   Buscamos el TurnType para "congelar" su configuración (secuencia) en el momento de la creación.
+   Esto es crucial: Si el admin cambia la definición del turno "Largo" en el futuro, 
+   este reemplazo histórico NO debe cambiar, debe preservar la secuencia original (Snapshot Pattern).
   */
   const { default: TurnTypeModel } = await import("../models/turn-type.model");
   const turnTypeDoc = await TurnTypeModel.findOne({
-    // match by name (case insensitive) or code?
-    // Usually frontend sends name.
     nombre: { $regex: new RegExp(`^${data.tipo_turno}$`, "i") },
     deleted_at: null,
   });
 
   const nuevoReemplazo = new Reemplazo({
     ...data,
-    turn_type_id: turnTypeDoc ? turnTypeDoc._id : undefined, // Save ID if found
+    turn_type_id: turnTypeDoc ? turnTypeDoc._id : undefined,
     snapshot_secuencia: turnTypeDoc
       ? turnTypeDoc.toObject().secuencia.map((item: any) => {
           const { color, ...rest } = item;
-          return rest;
+          return rest; // Solo guardamos la lógica de turnos, el color puede ser cosmético
         })
       : [],
     fecha_inicio: new Date(data.fecha_inicio),
@@ -68,7 +70,7 @@ async function obtenerActivos() {
     status: { $in: ["EN CURSO", "PENDIENTE"] },
   })
     .populate("creado_por", "nombre apellido")
-    .populate("id_entrante", "tipo_cargo"); // Populate to get cargo
+    .populate("id_entrante", "tipo_cargo");
 }
 
 async function obtenerActivosPaginado(options: {
@@ -82,12 +84,13 @@ async function obtenerActivosPaginado(options: {
     status: { $in: ["EN CURSO", "PENDIENTE"] },
   };
 
-  // Service filter
   if (servicio && servicio.trim().length > 0) {
     query.servicio = servicio;
   }
 
-  // Search Logic (optimized with indexes)
+  // Búsqueda Optimizada:
+  // Utilizamos Regex con escape seguro para búsqueda parcial case-insensitive en múltiples campos.
+  // Nota: Para alto volumen, considerar índice de texto en MongoDB (Atlas Search).
   if (search && search.trim().length > 0) {
     const safeTerm = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(safeTerm, "i");
@@ -102,30 +105,18 @@ async function obtenerActivosPaginado(options: {
     ];
   }
 
-  // Calculate skip for pagination
   const skip = (page - 1) * limit;
 
-  // Execute query and count in parallel for performance
+  // Ejecución Paralela: Data + Conteo Total
   const [reemplazos, total] = await Promise.all([
     Reemplazo.find(query)
       .populate("creado_por", "nombre apellido")
-      .populate("id_entrante", "_id tipo_cargo") // Explicitly get _id and cargo
+      .populate("id_entrante", "_id tipo_cargo")
       .skip(skip)
       .limit(limit)
-      .lean(), // Convert to plain objects (faster)
+      .lean(),
     Reemplazo.countDocuments(query),
   ]);
-
-  // 🔧 Debug: Verify populate worked
-  if (reemplazos.length > 0) {
-    console.log(
-      `[Replacement Service] Query returned ${reemplazos.length} replacements`,
-    );
-    console.log(
-      `[Replacement Service] First replacement id_entrante:`,
-      reemplazos[0].id_entrante,
-    );
-  }
 
   return {
     reemplazos,
@@ -219,8 +210,9 @@ async function actualizar(id: string, data: any) {
 }
 
 async function finalizarReemplazo(id: string) {
-  // Adjust to Chile Time (approx -3h) to ensure date falls on the correct local day
-  // This effectively stores "Local Time" as UTC, which matches the user's legacy data expectation likely.
+  // Ajuste Horario Chile:
+  // Forzamos la fecha de término al "ahora" local para cerrar el ciclo correctamente
+  // según la zona horaria del negocio, evitando problemas de cierre en horas UTC vs Local.
   const now = new Date();
   const chileOffset = 3 * 60 * 60 * 1000;
   const fechaCierre = new Date(now.getTime() - chileOffset);
@@ -262,6 +254,10 @@ interface SustitucionPayload {
   datos_base_evento: any;
 }
 
+// Lógica de Negocio: Sustitución de Reemplazo
+// Maneja el caso complejo donde un reemplazo en curso (Usuario A) debe ser interrumpido
+// y continuado por otro usuario (Usuario B) desde el día siguiente.
+// Esto implica una transacción lógica: Cerrar A con estado "Interrumpido" y crear B.
 async function sustituir(payload: SustitucionPayload) {
   const { id_registro_a, fecha_corte_a, nuevo_entrante, datos_base_evento } =
     payload;
@@ -276,6 +272,7 @@ async function sustituir(payload: SustitucionPayload) {
   }
   const fechaCorteDate = new Date(fecha_corte_a);
 
+  // 1. Cerrar Registro A
   const registroA_actualizado = await Reemplazo.findByIdAndUpdate(
     id_registro_a,
     {
@@ -292,9 +289,11 @@ async function sustituir(payload: SustitucionPayload) {
     );
   }
 
+  // 2. Crear Registro B (Continuidad)
+  // El nuevo reemplazo comienza al día siguiente del corte.
   const fechaInicioB = getNextDay(fecha_corte_a);
   const datosNuevoReemplazo = {
-    id_negocio: datos_base_evento.id_evento_principal,
+    id_negocio: datos_base_evento.id_evento_principal, // Mantenemos link al parental si existe
     id_saliente: datos_base_evento.id_saliente,
     rut_saliente: datos_base_evento.rut_saliente,
     nombre_saliente: datos_base_evento.nombre_saliente,

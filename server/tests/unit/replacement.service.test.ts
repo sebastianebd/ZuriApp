@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import replacementService from "../../services/replacement.service";
 import Reemplazo from "../../models/replacement.model";
 
-// Mock dependencies
+// Mock de Dependencias:
+// Mockeamos totalmente el modelo Mongoose 'Reemplazo' y 'TurnType' para que las pruebas unitarias
+// no dependan de una conexión a base de datos.
 vi.mock("../../models/replacement.model", () => ({
   default: Object.assign(
     vi.fn(), // Constructor
@@ -26,7 +28,7 @@ describe("Replacement Service - Unit Tests", () => {
   });
 
   describe("registrar()", () => {
-    it("should create replacement with PENDIENTE status for future date", async () => {
+    it("debería crear un reemplazo con estado PENDIENTE para una fecha futura", async () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 10);
 
@@ -53,6 +55,7 @@ describe("Replacement Service - Unit Tests", () => {
         _id: "replacement123",
       };
 
+      // Import dinámico necesario dentro del mock de vitest si se usa fuera del factory inicial
       const TurnTypeModel = await import("../../models/turn-type.model");
       (TurnTypeModel.default.findOne as any).mockResolvedValue(mockTurnType);
       (Reemplazo as any).mockImplementation(function (this: any, data: any) {
@@ -62,10 +65,12 @@ describe("Replacement Service - Unit Tests", () => {
 
       const result = await replacementService.registrar(mockData);
 
+      // Regla de Negocio:
+      // Si el reemplazo inicia en el futuro, no debe estar activo inmediatamente.
       expect(result.status).toBe("PENDIENTE");
     });
 
-    it("should create replacement with EN CURSO status for current/past date", async () => {
+    it("debería crear un reemplazo con estado EN CURSO para fechas actuales o pasadas", async () => {
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 5);
 
@@ -94,10 +99,12 @@ describe("Replacement Service - Unit Tests", () => {
 
       const result = await replacementService.registrar(mockData);
 
+      // Regla de Negocio:
+      // Si la fecha de inicio ya pasó o es hoy, el reemplazo entra en vigor inmediatamente.
       expect(result.status).toBe("EN CURSO");
     });
 
-    it("should handle missing TurnType gracefully", async () => {
+    it("debería manejar gracefully si TurnType no existe (aunque idealmente debería validarse antes)", async () => {
       const mockData = {
         fecha_inicio: new Date().toISOString(),
         fecha_termino: new Date().toISOString(),
@@ -118,7 +125,7 @@ describe("Replacement Service - Unit Tests", () => {
   });
 
   describe("obtenerActivosPaginado()", () => {
-    it("should return paginated active replacements", async () => {
+    it("debería retornar reemplazos activos paginados", async () => {
       const mockReplacements = [
         { _id: "1", status: "EN CURSO" },
         { _id: "2", status: "PENDIENTE" },
@@ -142,7 +149,7 @@ describe("Replacement Service - Unit Tests", () => {
       expect(result.pagination.currentPage).toBe(1);
     });
 
-    it("should filter by search term", async () => {
+    it("debería filtrar por término de búsqueda (nombre/apellido)", async () => {
       (Reemplazo.find as any).mockReturnValue({
         populate: vi.fn().mockReturnThis(),
         skip: vi.fn().mockReturnThis(),
@@ -164,7 +171,7 @@ describe("Replacement Service - Unit Tests", () => {
       );
     });
 
-    it("should filter by servicio", async () => {
+    it("debería filtrar por servicio", async () => {
       (Reemplazo.find as any).mockReturnValue({
         populate: vi.fn().mockReturnThis(),
         skip: vi.fn().mockReturnThis(),
@@ -188,7 +195,7 @@ describe("Replacement Service - Unit Tests", () => {
   });
 
   describe("actualizar()", () => {
-    it("should update replacement fields", async () => {
+    it("debería actualizar campos de un reemplazo", async () => {
       const mockUpdated = {
         _id: "replacement123",
         status: "EN CURSO",
@@ -212,7 +219,7 @@ describe("Replacement Service - Unit Tests", () => {
   });
 
   describe("finalizarReemplazo()", () => {
-    it("should set status to FINALIZADO", async () => {
+    it("debería establecer el estado a FINALIZADO", async () => {
       const mockFinalized = {
         _id: "replacement123",
         status: "FINALIZADO",
@@ -235,7 +242,7 @@ describe("Replacement Service - Unit Tests", () => {
   });
 
   describe("anularReemplazo()", () => {
-    it("should set status to ANULADO", async () => {
+    it("debería establecer el estado a ANULADO", async () => {
       const mockAnulled = {
         _id: "replacement123",
         status: "ANULADO",
@@ -252,7 +259,9 @@ describe("Replacement Service - Unit Tests", () => {
   });
 
   describe("sustituir()", () => {
-    it("should finalize old replacement and create new one", async () => {
+    it("debería finalizar (corte anticipado) el reemplazo antiguo y crear uno nuevo", async () => {
+      // Caso Complejo: Sustitución de reemplazo
+      // Esto sucede cuando un reemplazante no puede continuar y otro toma su lugar a mitad del periodo.
       const mockPayload = {
         id_registro_a: "old123",
         fecha_corte_a: "2024-06-15",
@@ -301,6 +310,7 @@ describe("Replacement Service - Unit Tests", () => {
 
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual(mockOldReplacement);
+      // Validamos que se marque el corte anticipado en el registro original
       expect(Reemplazo.findByIdAndUpdate).toHaveBeenCalledWith(
         "old123",
         expect.objectContaining({
@@ -310,7 +320,7 @@ describe("Replacement Service - Unit Tests", () => {
       );
     });
 
-    it("should throw error if old replacement not found", async () => {
+    it("debería lanzar error si el reemplazo antiguo no existe", async () => {
       const mockPayload = {
         id_registro_a: "invalid123",
         fecha_corte_a: "2024-06-15",
@@ -340,7 +350,7 @@ describe("Replacement Service - Unit Tests", () => {
       );
     });
 
-    it("should throw error if missing required fields", async () => {
+    it("debería lanzar error si faltan datos esenciales", async () => {
       await expect(
         replacementService.sustituir({
           id_registro_a: "",
@@ -353,7 +363,9 @@ describe("Replacement Service - Unit Tests", () => {
   });
 
   describe("obtenerHistorialUsuario()", () => {
-    it("should return user history for both entrante and saliente", async () => {
+    it("debería retornar historial unificado (como entrante y como saliente)", async () => {
+      // Vista 360 del usuario: Necesitamos ver todas las veces que ha reemplazado
+      // Y todas las veces que ha sido reemplazado.
       const mockHistory = [
         { _id: "1", id_entrante: "user123" },
         { _id: "2", id_saliente: "user123" },

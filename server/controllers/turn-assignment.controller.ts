@@ -11,8 +11,10 @@ export const createAssignment = async (req: Request, res: Response) => {
   try {
     const { user_id, turn_type, start_date, end_date } = req.body;
 
-    // 1. Snapshot Logic: Fetch current Turn Pattern
-    // Use regex for case-insensitive match just in case, similar to other controllers
+    // 1. Patrón Snapshot (Foto Estática)
+    // Recuperamos la configuración del turno en el momento de la asignación.
+    // Esto es crucial para que cambios futuros en el 'Tipo de Turno' (ej: cambiar colores o secuencia)
+    // NO afecten retroactivamente a las asignaciones pasadas (Historial Inmutable).
     const turnTypeDoc = await TurnType.findOne({
       nombre: { $regex: new RegExp(`^${turn_type}$`, "i") },
       deleted_at: null,
@@ -24,27 +26,25 @@ export const createAssignment = async (req: Request, res: Response) => {
         .json({ message: "Tipo de turno no encontrado o eliminado" });
     }
 
-    // 2. Overlap Validation
-    // Check if user has any assignment that overlaps with the new range
+    // 2. Validación de Traslapes (Overlap)
+    // Regla: Un funcionario no puede tener dos turnos contradictorios en el mismo periodo.
+    // Maneja lógica de rangos finitos e infinitos (fecha fin null).
     const newStart = new Date(start_date);
-    // If end_date is null, treat as indefinitely far future (e.g., year 9999)
+    // Si end_date es null, asumimos futuro indefinido (Año 9999).
     const newEnd = end_date ? new Date(end_date) : new Date(9999, 11, 31);
 
     const overlapQuery: any = {
       user_id: user_id,
-      // Overlap logic: (StartA <= EndB) and (EndA >= StartB)
-      // Where A is existing, B is new.
-      // But since we can have infinite end dates, we need to handle that carefully.
       $or: [
         {
-          // Case 1: Existing assignment also has finite end date
+          // Caso 1: Asignación existente cerrada (fecha fin definida) -> Verificamos intersección simple
           start_date: { $lte: newEnd },
           end_date: { $ne: null, $gte: newStart },
         },
         {
-          // Case 2: Existing assignment is indefinite (end_date is null)
+          // Caso 2: Asignación existente abierta (fecha fin null/indefinida)
           end_date: null,
-          start_date: { $lte: newEnd }, // Only start matters, it goes forever
+          start_date: { $lte: newEnd }, // Solo importa que empiece antes de que termine la nueva
         },
       ],
     };
@@ -59,11 +59,12 @@ export const createAssignment = async (req: Request, res: Response) => {
       });
     }
 
-    // 3. Create with Snapshot
+    // 3. Persistencia con Snapshot
     const assignmentPayload = {
       ...req.body,
-      turn_type: turnTypeDoc._id, // Save Reference ID
-      // IMMUTABLE HISTORY (Exclude color to allow dynamic updates)
+      turn_type: turnTypeDoc._id, // Referencia vinculada
+      // Copia profunda de la secuencia para inmunidad histórica
+      // (Excluimos el color para permitir ciertos updates visuales si se deseara, aunque aquí se guarda la estructura)
       snapshot_secuencia: turnTypeDoc.toObject().secuencia.map((item: any) => {
         const { color, ...rest } = item;
         return rest;
@@ -92,7 +93,8 @@ export const createAssignment = async (req: Request, res: Response) => {
       );
     }
 
-    // 4. Notify User via WhatsApp (Async)
+    // 4. Notificaciones Asíncronas (WhatsApp)
+    // No bloqueamos la respuesta HTTP si el servicio de mensajería falla o demora.
     notificationService
       .notifyShiftAssignment({
         ...assignment.toObject(),

@@ -4,7 +4,8 @@ import User from "../../models/user.model";
 import bcrypt from "bcrypt";
 import { emailQueue } from "../../queues/email.queue";
 
-// Mock dependencies
+// Mock de Dependencias:
+// Mockeamos el modelo User y las colas de trabajo (emailQueue) para aislar la lógica del servicio.
 vi.mock("../../models/user.model", () => ({
   default: Object.assign(
     vi.fn(), // Constructor
@@ -20,6 +21,7 @@ vi.mock("../../models/user.model", () => ({
 }));
 
 vi.mock("bcrypt");
+// Mock de cola de emails para evitar intentos de conexión a Redis/Bull.
 vi.mock("../../queues/email.queue", () => ({
   emailQueue: {
     add: vi.fn(),
@@ -44,7 +46,7 @@ describe("User Service - Unit Tests", () => {
       tipo_cargo: "TENS",
     };
 
-    it("should create a user with TENS role without password", async () => {
+    it("debería crear un usuario TENS sin contraseña (login deshabilitado)", async () => {
       (User.exists as any).mockResolvedValue(false);
       (User.create as any).mockResolvedValue({
         _id: "user123",
@@ -55,6 +57,8 @@ describe("User Service - Unit Tests", () => {
 
       const result = await userService.register(baseUserData, "ADMIN-TI");
 
+      // Verificación de Normalización:
+      // Es importante que los datos se guarden estandarizados (Mayúsculas para nombres).
       expect(User.create).toHaveBeenCalledWith(
         expect.objectContaining({
           rut: "12345678-9",
@@ -66,7 +70,7 @@ describe("User Service - Unit Tests", () => {
       expect(result).toBeDefined();
     });
 
-    it("should create user with ADMIN-TI role and generate password", async () => {
+    it("debería crear un usuario ADMIN-TI con contraseña autogenerada y enviar email", async () => {
       const adminData = { ...baseUserData, tipo_cargo: "ADMIN-TI" };
       (User.exists as any).mockResolvedValue(false);
       (bcrypt.hash as any).mockResolvedValue("hashedPassword123");
@@ -77,6 +81,8 @@ describe("User Service - Unit Tests", () => {
 
       await userService.register(adminData, "ADMIN-TI");
 
+      // Seguridad y Onboarding:
+      // Los administradores DEBEN tener credenciales. Se hashea la pass y se envía al correo.
       expect(bcrypt.hash).toHaveBeenCalled();
       expect(emailQueue.add).toHaveBeenCalledWith(
         "send-welcome-email",
@@ -87,7 +93,7 @@ describe("User Service - Unit Tests", () => {
       );
     });
 
-    it("should throw 403 if RRHH tries to create ADMIN-TI", async () => {
+    it("debería lanzar 403 si RRHH intenta crear un ADMIN-TI (Segregación de funciones)", async () => {
       const adminData = { ...baseUserData, tipo_cargo: "ADMIN-TI" };
 
       await expect(
@@ -98,7 +104,7 @@ describe("User Service - Unit Tests", () => {
       });
     });
 
-    it("should throw 409 if RUT already exists", async () => {
+    it("debería lanzar 409 si el RUT ya existe", async () => {
       (User.exists as any).mockResolvedValueOnce(true);
 
       await expect(
@@ -109,7 +115,7 @@ describe("User Service - Unit Tests", () => {
       });
     });
 
-    it("should throw 409 if email already exists", async () => {
+    it("debería lanzar 409 si el email ya existe", async () => {
       (User.exists as any)
         .mockResolvedValueOnce(false) // RUT check
         .mockResolvedValueOnce(true); // Email check
@@ -122,7 +128,7 @@ describe("User Service - Unit Tests", () => {
       });
     });
 
-    it("should throw 409 if phone already exists", async () => {
+    it("debería lanzar 409 si el teléfono ya existe", async () => {
       (User.exists as any)
         .mockResolvedValueOnce(false) // RUT check
         .mockResolvedValueOnce(false) // Email check
@@ -136,7 +142,9 @@ describe("User Service - Unit Tests", () => {
       });
     });
 
-    it("should add habilitado field for TENS users", async () => {
+    it("debería añadir el campo 'habilitado' automáticamente para usuarios TENS", async () => {
+      // Regla de Negocio: Los TENS deben marcarse explícitamente como habilitados
+      // para aparecer en las listas de selección de turnos.
       const tensData = { ...baseUserData, habilitado: "SI" };
       (User.exists as any).mockResolvedValue(false);
       (User.create as any).mockResolvedValue({ _id: "tens123" });
@@ -150,7 +158,7 @@ describe("User Service - Unit Tests", () => {
       );
     });
 
-    it("should add servicio field for JEFA SERVICIO users", async () => {
+    it("debería añadir el campo 'servicio' para usuarias JEFA SERVICIO", async () => {
       const jefaData = {
         ...baseUserData,
         tipo_cargo: "JEFA SERVICIO",
@@ -170,7 +178,7 @@ describe("User Service - Unit Tests", () => {
   });
 
   describe("obtenerUsuariosTENS()", () => {
-    it("should return users excluding ADMIN-TI and RRHH", async () => {
+    it("debería retornar usuarios excluyendo ADMIN-TI y RRHH", async () => {
       const mockUsers = [
         { _id: "1", tipo_cargo: "TENS" },
         { _id: "2", tipo_cargo: "JEFA SERVICIO" },
@@ -188,7 +196,7 @@ describe("User Service - Unit Tests", () => {
   });
 
   describe("obtenerPorId()", () => {
-    it("should return user by ID", async () => {
+    it("debería retornar un usuario por su ID", async () => {
       const mockUser = { _id: "user123", nombre: "JUAN" };
       (User.findById as any).mockReturnValue({
         lean: vi.fn().mockResolvedValue(mockUser),
@@ -202,7 +210,7 @@ describe("User Service - Unit Tests", () => {
   });
 
   describe("obtenerTodos()", () => {
-    it("should return all non-deleted users", async () => {
+    it("debería retornar todos los usuarios no eliminados", async () => {
       const mockUsers = [{ _id: "1" }, { _id: "2" }];
       (User.find as any).mockResolvedValue(mockUsers);
 
@@ -212,7 +220,7 @@ describe("User Service - Unit Tests", () => {
       expect(result).toEqual(mockUsers);
     });
 
-    it("should filter by allowed cargos", async () => {
+    it("debería filtrar por lista de cargos permitidos", async () => {
       (User.find as any).mockResolvedValue([]);
 
       await userService.obtenerTodos(["TENS", "JEFA SERVICIO"]);
@@ -223,7 +231,7 @@ describe("User Service - Unit Tests", () => {
       });
     });
 
-    it("should search by term", async () => {
+    it("debería buscar por término", async () => {
       (User.find as any).mockResolvedValue([]);
 
       await userService.obtenerTodos(undefined, "JUAN");
@@ -237,7 +245,7 @@ describe("User Service - Unit Tests", () => {
   });
 
   describe("obtenerTodosPaginado()", () => {
-    it("should return paginated users", async () => {
+    it("debería retornar usuarios paginados", async () => {
       const mockUsers = [{ _id: "1" }, { _id: "2" }];
       (User.find as any).mockReturnValue({
         select: vi.fn().mockReturnThis(),
@@ -258,7 +266,7 @@ describe("User Service - Unit Tests", () => {
       expect(result.pagination.totalItems).toBe(10);
     });
 
-    it("should filter by cargo", async () => {
+    it("debería filtrar por cargo", async () => {
       (User.find as any).mockReturnValue({
         select: vi.fn().mockReturnThis(),
         skip: vi.fn().mockReturnThis(),
@@ -280,7 +288,7 @@ describe("User Service - Unit Tests", () => {
       );
     });
 
-    it("should filter by habilitado", async () => {
+    it("debería filtrar por estado de habilitación", async () => {
       (User.find as any).mockReturnValue({
         select: vi.fn().mockReturnThis(),
         skip: vi.fn().mockReturnThis(),
@@ -302,7 +310,7 @@ describe("User Service - Unit Tests", () => {
       );
     });
 
-    it("should search by RUT", async () => {
+    it("debería buscar por RUT", async () => {
       (User.find as any).mockReturnValue({
         select: vi.fn().mockReturnThis(),
         skip: vi.fn().mockReturnThis(),
@@ -326,7 +334,7 @@ describe("User Service - Unit Tests", () => {
   });
 
   describe("actualizar()", () => {
-    it("should update user and return all users", async () => {
+    it("debería actualizar usuario y retornar la lista actualizada", async () => {
       const mockUsers = [{ _id: "1" }, { _id: "2" }];
       (User.findByIdAndUpdate as any).mockResolvedValue({ _id: "user123" });
       (User.find as any).mockResolvedValue(mockUsers);
@@ -345,7 +353,7 @@ describe("User Service - Unit Tests", () => {
   });
 
   describe("eliminar()", () => {
-    it("should soft delete user and return active users", async () => {
+    it("debería realizar borrado lógico (soft delete) y retornar usuarios activos", async () => {
       const mockUsers = [{ _id: "1" }, { _id: "2" }];
       (User.findByIdAndUpdate as any).mockResolvedValue({ _id: "user123" });
       (User.find as any).mockResolvedValue(mockUsers);

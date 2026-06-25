@@ -1,8 +1,14 @@
 import { z } from "zod";
 
-// Base rules reused across schemas
+// --- Validadores Reutilizables ---
+// Estandarizamos la validación de ObjectIDs de MongoDB para consistencia en todos los esquemas.
 const objectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, "ID inválido");
 
+/**
+ * Esquema de Creación de Reemplazos
+ * Define la estructura rigurosa requerida para iniciar un proceso de suplencia.
+ * Se validan tanto los actores (Saliente/Entrante) como la temporalidad del evento.
+ */
 export const createReplacementSchema = z.object({
   body: z.object({
     id_negocio: z.string().optional(),
@@ -15,6 +21,9 @@ export const createReplacementSchema = z.object({
     nombre_entrante: z.string().min(2),
     apellido_entrante: z.string().min(2),
     tipo_turno: z.string().min(1),
+    // Coerción de Fechas:
+    // Zod transforma strings ISO8601 a objetos Date nativos automáticamente.
+    // Esto asegura que el servicio reciba fechas válidas listas para operar.
     fecha_inicio: z.coerce.date(),
     fecha_termino: z.coerce.date(),
     servicio: z.string().min(1),
@@ -39,7 +48,8 @@ export const updateReplacementSchema = z.object({
       status: z
         .enum(["PENDIENTE", "APROBADO", "RECHAZADO", "FINALIZADO", "ANULADO"])
         .optional(),
-      // Allow other fields as optional updates
+      // Flexibilidad para actualizaciones parciales (PATCH)
+      // Permitimos modificar campos específicos sin re-enviar todo el payload.
     })
     .partial(),
 });
@@ -64,8 +74,9 @@ export const substitutionSchema = z.object({
       tipo_turno: z.string().min(1),
       servicio: z.string().min(1),
       fecha_termino_original: z.coerce.date(),
-      // status, creado_por are derived or assumed from context?
-      // service uses 'datos_base_evento.fecha_termino_original'
+      // Contexto Derivado:
+      // Campos como status o creado_por se infieren del contexto de la solicitud o del usuario autenticado,
+      // por lo que no se exigen explícitamente en el payload de este endpoint específico.
     }),
   }),
 });

@@ -2,13 +2,15 @@ import { Queue, Worker, Job } from "bullmq";
 import emailService from "../services/email.service";
 import logger from "../config/logger.config";
 
-// Redis connection details (reuse from env or config)
+// --- Configuración de Redis ---
+// Se estandarizan los detalles de conexión para soportar tanto desarrollo local (host)
+// como despliegues en Docker (service names/URLs).
 const redisConnection: any = {
-  host: "localhost", // Default for dev when running locally
+  host: "localhost", // Default Fallback (DX Local)
   port: 6379,
 };
 
-// Docker environment adjustment
+// Ajuste dinámico para entornos contenerizados (Production/Staging)
 if (process.env.REDIS_URL) {
   const url = new URL(process.env.REDIS_URL);
   redisConnection.host = url.hostname;
@@ -19,53 +21,57 @@ if (process.env.REDIS_URL) {
 
 const QUEUE_NAME = "email-queue";
 
-// 1. Queue Definition (Producer)
+// 1. Definición de la Cola (Producer)
+// Centraliza la configuración de comportamiento de los trabajos encolados.
 export const emailQueue = new Queue(QUEUE_NAME, {
   connection: redisConnection,
   defaultJobOptions: {
-    attempts: 3, // Retry 3 times
+    attempts: 3, // Resiliencia: Reintentar hasta 3 veces ante fallos transitorios (ej: timeout SMTP)
     backoff: {
-      type: "exponential",
-      delay: 1000, // 1s, 2s, 4s...
+      type: "exponential", // Estrategia de espera incremental (1s, 2s, 4s) para no saturar al proveedor
+      delay: 1000,
     },
-    removeOnComplete: 100, // Keep last 100 completed jobs for inspection
-    removeOnFail: 50, // Keep last 50 failed jobs for inspection
+    removeOnComplete: 100, // Mantenimiento: Conservar historial limitado para depuración sin llenar memoria
+    removeOnFail: 50,
   },
 });
 
-// 2. Worker Definition (Consumer)
+// 2. Definición del Worker (Consumer)
+// Proceso en segundo plano que desacopla el envío de correos del ciclo de request/response HTTP principal.
 export const setupEmailWorker = () => {
   const worker = new Worker(
     QUEUE_NAME,
     async (job: Job) => {
-      logger.info(`[EmailWorker] Processing job ${job.id}: ${job.name}`);
+      logger.info(`[EmailWorker] Procesando trabajo ${job.id}: ${job.name}`);
       const { to, nombre, rut, pass } = job.data;
 
-      // Call the actual service
+      // Delegación al servicio de negocio
       await emailService.sendWelcomeEmail(to, nombre, rut, pass);
 
-      // Mask sensitive data in the job log so it's not visible in Dashboard
+      // Seguridad en Logs:
+      // Enmascaramos datos sensibles (Credenciales) en el objeto del trabajo persistido
+      // para evitar fugas de información en paneles de administración (Bull Board/Redis).
       await job.updateData({
         ...job.data,
-        rut: "XX.XXX.XXX-X", // Masked
-        pass: "******", // Masked
+        rut: "XX.XXX.XXX-X",
+        pass: "******",
       });
 
-      logger.info(`[EmailWorker] Job ${job.id} completed successfully`);
+      logger.info(`[EmailWorker] Trabajo ${job.id} completado exitosamente`);
     },
     {
       connection: redisConnection,
-    }
+    },
   );
 
   worker.on("failed", (job, err) => {
     logger.error(
-      `[EmailWorker] Job ${job?.id} failed with error: ${err.message}`
+      `[EmailWorker] Trabajo ${job?.id} falló con error: ${err.message}`,
     );
   });
 
   logger.info(
-    `[EmailWorker] Worker initialized and listening on '${QUEUE_NAME}'`
+    `[EmailWorker] Worker inicializado y escuchando en '${QUEUE_NAME}'`,
   );
   return worker;
 };

@@ -2,6 +2,8 @@ import express from "express";
 import authController from "../../controllers/auth.controller";
 import authMiddleware from "../../middleware/authentication.middleware";
 import { authLimiter } from "../../config/limiter.config";
+import { validateSchema } from "../../middleware/validate.middleware";
+import { loginSchema, changePasswordSchema } from "../../schemas/auth.schema";
 
 const router = express.Router();
 
@@ -12,22 +14,23 @@ const router = express.Router();
  *   description: Autenticación y gestión de sesiones
  */
 
-// Health check endpoint for CI/CD
+// Health check endpoint para CI/CD y Load Balancers
+// Permite verificar rápidamente si el subsistema de auth está respondiendo sin lógica pesada.
 /**
  * @swagger
  * /auth/health:
  *   get:
- *     summary: Health check
+ *     summary: Check de salud del servicio
  *     tags: [Auth]
  *     responses:
  *       200:
- *         description: Server is healthy
+ *         description: Servicio operativo
  */
 router.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-// Rutas públicas
+// --- Rutas Públicas ---
 
 /**
  * @swagger
@@ -72,16 +75,11 @@ router.get("/health", (req, res) => {
  *       401:
  *         description: Credenciales inválidas
  */
-// Rutas públicas
-import { validateSchema } from "../../middleware/validate.middleware";
-import { loginSchema } from "../../schemas/auth.schema";
-
-// Rutas públicas
 router.post(
   "/login",
-  authLimiter,
-  validateSchema(loginSchema),
-  authController.login
+  authLimiter, // Rate Limiting: Prevención de ataques de fuerza bruta
+  validateSchema(loginSchema), // Validación temprana de esquema
+  authController.login,
 );
 
 /**
@@ -108,10 +106,9 @@ router.post(
  */
 router.post("/refresh", authController.refresh);
 
-// Rutas protegidas
+// --- Rutas Protegidas ---
+// Todo lo definido a partir de aquí requiere un JWT válido en el header Authorization.
 router.use(authMiddleware);
-
-import { changePasswordSchema } from "../../schemas/auth.schema";
 
 /**
  * @swagger
@@ -145,7 +142,7 @@ import { changePasswordSchema } from "../../schemas/auth.schema";
 router.post(
   "/change-password",
   validateSchema(changePasswordSchema),
-  authController.changePassword
+  authController.changePassword,
 );
 /**
  * @swagger

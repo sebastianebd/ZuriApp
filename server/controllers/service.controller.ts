@@ -45,10 +45,9 @@ const serviceSchema = z.object({
 
 export const getServices = async (req: Request, res: Response) => {
   try {
-    // Return all non-deleted services.
-    // ?all=true is no longer needed for active/inactive since we want to see both in the table usually,
-    // but filtered by 'eliminado'.
-    // If we want to filter by Active status specifically, we can add query params, but standard view usually shows all non-deleted.
+    // Filtrado de Activos
+    // Por defecto retornamos todo lo que NO esté eliminado (Soft Delete).
+    // La vista de tabla requiere ver inactivos para gestión histórica.
     const query = { deleted_at: null };
 
     const services = await Service.find(query)
@@ -68,26 +67,29 @@ export const createService = async (req: Request, res: Response) => {
     const validatedData = serviceSchema.parse(req.body);
     const existing = await Service.findOne({
       nombre: { $regex: new RegExp(`^${validatedData.nombre}$`, "i") },
-      deleted_at: null, // Check against non-deleted only
+      deleted_at: null, // Solo validamos contra servicios activos/inactivos (no eliminados logicamente)
     });
 
     if (existing) {
       return res.status(409).json({ message: "El servicio ya existe" });
     }
 
-    // SKU Generation Logic
+    // Generación de SKU (Código Único)
+    // Lógica: 3 primeras letras si es una palabra, o iniciales compuestas si son varias.
+    // Esto facilita la búsqueda rápida visual en dropdowns.
     const words = validatedData.nombre.trim().split(/\s+/);
     let prefix = "";
     if (words.length === 1) {
       prefix = words[0].substring(0, 3).toUpperCase();
     } else {
-      // 1st letter of 1st word + 2 letters of 2nd word
+      // 1ra letra de la 1ra palabra + 2 letras de la 2da palabra
       const first = words[0].substring(0, 1);
       const second = words[1].substring(0, 2);
       prefix = (first + second).toUpperCase();
     }
 
-    // Determine sequence (Global)
+    // Determinación de Secuencia Global
+    // Buscamos el máximo correlativo existente para mantener unicidad en formato PRE-00N.
     const allServices = await Service.find({
       codigo: { $exists: true, $ne: null },
     }).select("codigo");
@@ -96,7 +98,7 @@ export const createService = async (req: Request, res: Response) => {
     allServices.forEach((s) => {
       if (s.codigo && s.codigo.includes("-")) {
         const parts = s.codigo.split("-");
-        // Ensure we only look at the numeric part of the format XXX-NNN
+        // Aseguramos parseo seguro del formato XXX-NNN
         if (parts.length === 2) {
           const num = parseInt(parts[1], 10);
           if (!isNaN(num) && num > maxSeq) {
@@ -150,7 +152,7 @@ export const updateService = async (req: Request, res: Response) => {
         .json({ message: "Ya existe un servicio con este nombre" });
     }
 
-    // Fetch current with population to get Old Names
+    // Fetch pre-update para cálculo de diffs
     const currentService = await Service.findById(id)
       .populate("jefe_servicio")
       .populate("supervisor")
@@ -169,24 +171,13 @@ export const updateService = async (req: Request, res: Response) => {
       .populate("coordinadores", "nombre apellido rut email")
       .populate("jefes_turno", "nombre apellido rut email");
 
-    // AUDIT LOGIC (Non-blocking)
+    // Lógica de Auditoría Detallada (Non-blocking)
+    // Comparamos campo por campo para generar un log legible humanamente.
     try {
       if (service && (req as any).user) {
-        // Prepare diff string
         const changes: string[] = [];
-        const fieldsToCheck = [
-          "nombre",
-          "jefe_servicio",
-          "supervisor",
-          "coordinadores",
-          "jefes_turno",
-          "centro_costo",
-          "ubicacion",
-          "anexo",
-          "email",
-          "activo",
-        ];
 
+        // Helper para resolver nombres de Referencias (ObjectId -> String)
         const getName = async (val: any): Promise<string> => {
           if (!val) return "Sin asignar";
           if (typeof val === "object" && val.nombre)
@@ -202,7 +193,7 @@ export const updateService = async (req: Request, res: Response) => {
           return String(val);
         };
 
-        // Check Fields
+        // 1. Campos Simples
         for (const field of [
           "nombre",
           "centro_costo",
@@ -220,7 +211,7 @@ export const updateService = async (req: Request, res: Response) => {
           }
         }
 
-        // Check Relations (Single)
+        // 2. Relaciones Únicas (Jefes/Supervisores)
         for (const field of ["jefe_servicio", "supervisor"]) {
           const oldObj = (currentService as any)[field];
           const oldId = oldObj && oldObj._id ? oldObj._id.toString() : null;
@@ -233,13 +224,14 @@ export const updateService = async (req: Request, res: Response) => {
           }
         }
 
-        // Check Relations (Array)
+        // 3. Relaciones Múltiples (Arrays)
         for (const field of ["coordinadores", "jefes_turno"]) {
           const oldList = ((currentService as any)[field] || []).map(
             (u: any) => (u && u._id ? u._id.toString() : String(u)),
           );
           const newList = (validatedData as any)[field] || [];
 
+          // Verificación de igualdad de conjuntos (sin importar orden)
           const isSame =
             oldList.length === newList.length &&
             oldList.every((oid: string) => newList.includes(oid));
@@ -267,14 +259,10 @@ export const updateService = async (req: Request, res: Response) => {
         if (changes.length > 0) {
           const detailsStr = ` (Cambios: ${changes.join(", ")})`;
 
-          // Ultra-safe sanitized old object
-          // We can rely on toObject() usually if we are not crashing on it.
-          // If previous crash was here, wrapping in try/catch saves us.
-          // But let's use manual just in case toObject is indeed the culprit.
+          // Snapshot manual del estado anterior para máxima seguridad en logs
           const manualOld = {
             _id: currentService._id,
             nombre: currentService.nombre,
-            // store raw IDs or simple strings to be safe
             jefe_servicio: (currentService.jefe_servicio as any)?._id,
             supervisor: (currentService.supervisor as any)?._id,
             coordinadores: (currentService.coordinadores || []).map((u: any) =>
@@ -302,7 +290,7 @@ export const updateService = async (req: Request, res: Response) => {
       }
     } catch (auditError) {
       console.error("FATAL AUDIT ERROR (Swallowed):", auditError);
-      // Do not fail the request
+      // Fallback: No fallamos la request principal si falla la auditoría auxiliar
     }
 
     res.json(service);

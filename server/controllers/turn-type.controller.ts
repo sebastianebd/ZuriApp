@@ -50,19 +50,21 @@ export const createTurnType = async (req: Request, res: Response) => {
       return res.status(409).json({ message: "El tipo de turno ya existe" });
     }
 
-    // SKU Generation Logic
+    // Generación de SKU (Código de Referencia)
+    // Lógica inteligente basada en el nombre para generar códigos memorables (ej: "Largo" -> "LAR", "Cuarto Turno" -> "CTU")
     const words = validatedData.nombre.trim().split(/\s+/);
     let prefix = "";
     if (words.length === 1) {
       prefix = words[0].substring(0, 3).toUpperCase();
     } else {
-      // 1st letter of 1st word + 2 letters of 2nd word
+      // 1ra letra de la 1ra palabra + 2 letras de la 2da palabra (Heurística estándar)
       const first = words[0].substring(0, 1);
       const second = words[1].substring(0, 2);
       prefix = (first + second).toUpperCase();
     }
 
-    // Determine sequence (Global)
+    // Control de Secuencia Global
+    // Consulta optimizada para buscar el último correlativo usado en el formato PREFIX-NNN
     const allTurnTypes = await TurnType.find({
       codigo: { $exists: true, $ne: null },
     }).select("codigo");

@@ -6,15 +6,12 @@ import credentialsMiddleware from "./middleware/credentials.middleware";
 import errorHandlerMiddleware from "./middleware/errorHandler.middleware";
 import { globalLimiter } from "./config/limiter.config";
 
-// Swagger
 import swaggerUi from "swagger-ui-express";
 import swaggerSpecs from "./config/swagger.config";
 
-// Logging
 import morgan from "morgan";
 import logger from "./config/logger.config";
 
-// Bull Board
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
@@ -29,9 +26,9 @@ import cargoRoutes from "./routes/api/cargo.routes";
 import auditRoutes from "./routes/api/audit.routes";
 import profileRoutes from "./routes/api/profile.routes";
 
-import "./jobs/replacement.cron"; // Import execution
-
-// Definir token personalizado para Morgan
+import "./jobs/replacement.cron";
+// Token personalizado de Morgan para incluir el nombre del Usuario autenticado en los logs.
+// Esto mejora la trazabilidad vinculando las solicitudes directamente a usuarios específicos.
 morgan.token("user", (req: Request) => {
   if (req.user) {
     const user = req.user;
@@ -43,13 +40,15 @@ morgan.token("user", (req: Request) => {
 
 const app = express();
 
-// Confiar en el proxy (Nginx) para obtener la IP real
+// Trust Proxy: Requerido cuando se ejecuta detrás de un proxy inverso (como Nginx en Railway/AWS).
+// Asegura que req.ip refleje la IP real del cliente en lugar de la IP del proxy.
 app.set("trust proxy", 1);
 
 app.use(credentialsMiddleware);
 app.use(cors(corsOptions));
 app.use(globalLimiter);
-// Usar formato combinado + usuario
+// Logging: Usar formato combinado + token de usuario personalizado.
+// Omitir logging para el polling del dashboard de BullMQ para reducir ruido.
 app.use(
   morgan(
     ":remote-addr :user :method :url :status :res[content-length] - :response-time ms",
@@ -59,21 +58,19 @@ app.use(
     },
   ),
 );
-// Sentry Tunnel Body Parser (Capturar todo como buffer crudo para evitar corrupción)
+// Tunnel de Sentry: Debe asumir manejo de cuerpo crudo (raw body).
+// Capturamos el cuerpo como buffer ("50mb") para evitar corrupción de análisis antes de reenviar a Sentry.
 app.use("/api/sentry", express.raw({ limit: "50mb", type: () => true }));
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
 
-// Documentación API
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 import calendarRoutes from "./routes/api/calendar.routes";
-
-// ... existing code ...
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -97,9 +94,7 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/turn-types", turnTypeRoutes);
 app.use("/api/turn-siglas", turnSiglaRoutes);
 
-// Sentry Tunnel - Debe ir antes del catch-all *
 import sentryRoutes from "./routes/api/sentry.routes";
-// El envelope de Sentry es text/plain o application/x-sentry-envelope
 app.use(
   "/api/sentry",
   express.text({
@@ -112,7 +107,7 @@ app.use(
 import reportRoutes from "./routes/api/report.routes";
 app.use("/api/reports", reportRoutes);
 
-// --- Bull Board Setup ---
+// --- Configuración de Bull Board ---
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath("/admin/queues");
 
@@ -121,19 +116,18 @@ createBullBoard({
   serverAdapter: serverAdapter,
 });
 
-// Protect Dashboard with Basic Auth
-const dashboardUser = process.env.BULL_BOARD_USER || "admin";
-const dashboardPass = process.env.BULL_BOARD_PASS || "2716xD!";
+// Proteger Dashboard con Basic Auth para prevenir acceso público a datos de trabajos.
+const dashboardUser = process.env.BULL_BOARD_USER;
+const dashboardPass = process.env.BULL_BOARD_PASS;
 
 app.use(
   "/admin/queues",
   basicAuth({
-    users: { [dashboardUser]: dashboardPass },
+    users: { [dashboardUser as string]: dashboardPass as string },
     challenge: true,
   }),
   serverAdapter.getRouter(),
 );
-// ------------------------
 
 import publicRoutes from "./routes/api/public.routes";
 app.use("/api/public", publicRoutes);
@@ -142,7 +136,6 @@ app.all("*", (req: Request, res: Response) => {
   res.status(404).json({ error: "404 Not Found" });
 });
 
-// Sentry Error Handler
 import * as Sentry from "@sentry/node";
 Sentry.setupExpressErrorHandler(app);
 
