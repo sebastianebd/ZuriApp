@@ -1,14 +1,14 @@
 import { defineStore } from 'pinia'
 import * as ReplacementService from '../services/replacement.service'
 import { useAuthStore } from './auth.store'
-import type { RegisterDataReemplazo, SustitucionPayload } from '@/types/models'
+import { type ReplacementRegistration, type SubstitutionPayload } from '@/types/replacement.types'
 import type { AxiosInstance } from 'axios'
 import { getDatesInRange } from '@/utils/date-utils'
 
 export const useReplacementStore = defineStore('replacement', {
   state: () => ({
     // Server-side pagination: only store current page
-    currentPageReplacements: [] as RegisterDataReemplazo[],
+    currentPageReplacements: [] as ReplacementRegistration[],
 
     // Pagination metadata
     currentPage: 1,
@@ -17,7 +17,7 @@ export const useReplacementStore = defineStore('replacement', {
     itemsPerPage: 10,
 
     // NEW: Finalized Replacements (Server-side Pagination)
-    finalizedReplacements: [] as RegisterDataReemplazo[],
+    finalizedReplacements: [] as ReplacementRegistration[],
     finalizedPagination: {
       currentPage: 1,
       totalPages: 1,
@@ -26,7 +26,7 @@ export const useReplacementStore = defineStore('replacement', {
     },
 
     // Legacy: Keep for backward compatibility
-    reemplazosActivos: [] as RegisterDataReemplazo[],
+    reemplazosActivos: [] as ReplacementRegistration[],
 
     cargando: false as boolean,
     error: null as string | null,
@@ -58,7 +58,7 @@ export const useReplacementStore = defineStore('replacement', {
 
     getFechasOcupadas:
       (state) =>
-      (funcionarioId: string, sourceData?: RegisterDataReemplazo[]): string[] => {
+      (funcionarioId: string, sourceData?: ReplacementRegistration[]): string[] => {
         const fechasOcupadasSet = new Set<string>()
         const data = sourceData || state.currentPageReplacements
         const getId = (val: any) => (val && typeof val === 'object' && val._id ? val._id : val)
@@ -83,7 +83,7 @@ export const useReplacementStore = defineStore('replacement', {
     // NEW: Get dates where user is SALIENTE (Absent)
     getFechasAusencia:
       (state) =>
-      (funcionarioId: string, sourceData?: RegisterDataReemplazo[]): string[] => {
+      (funcionarioId: string, sourceData?: ReplacementRegistration[]): string[] => {
         const fechasAusenciaSet = new Set<string>()
         const data = sourceData || state.currentPageReplacements
         const getId = (val: any) => (val && typeof val === 'object' && val._id ? val._id : val)
@@ -149,7 +149,7 @@ export const useReplacementStore = defineStore('replacement', {
         // Check if response has pagination structure
         if (response.reemplazos && response.pagination) {
           // Server-side pagination response
-          this.currentPageReplacements = response.reemplazos.map((r: RegisterDataReemplazo) => ({
+          this.currentPageReplacements = response.reemplazos.map((r: ReplacementRegistration) => ({
             ...r,
             fecha_inicio: String(r.fecha_inicio).slice(0, 10),
             fecha_termino: String(r.fecha_termino).slice(0, 10)
@@ -162,7 +162,7 @@ export const useReplacementStore = defineStore('replacement', {
           this.itemsPerPage = response.pagination.itemsPerPage
         } else {
           // Legacy response (array)
-          this.currentPageReplacements = response.map((r: RegisterDataReemplazo) => ({
+          this.currentPageReplacements = response.map((r: ReplacementRegistration) => ({
             ...r,
             fecha_inicio: String(r.fecha_inicio).slice(0, 10),
             fecha_termino: String(r.fecha_termino).slice(0, 10)
@@ -198,7 +198,7 @@ export const useReplacementStore = defineStore('replacement', {
         // This ensures we find records where the user is 'Entrante', which might be missed by backend search.
         const response = await ReplacementService.mostrarReemplazos(apiPrivate, { limit: 1000 })
 
-        let allReplacements: RegisterDataReemplazo[] = []
+        let allReplacements: ReplacementRegistration[] = []
 
         if (response.reemplazos) {
           allReplacements = response.reemplazos
@@ -256,7 +256,7 @@ export const useReplacementStore = defineStore('replacement', {
           this.finalizedPagination.itemsPerPage
         )
 
-        // Update State
+        // Update AuthState
         this.finalizedReplacements = response.registros || []
         this.finalizedPagination = {
           currentPage: response.paginaActual,
@@ -288,7 +288,7 @@ export const useReplacementStore = defineStore('replacement', {
         // Handle both response formats:
         // 1. New paginated format: { reemplazos: [...], pagination: {...} }
         // 2. Old array format: [...]
-        let reemplazosArray: RegisterDataReemplazo[]
+        let reemplazosArray: ReplacementRegistration[]
 
         if (data && typeof data === 'object' && 'reemplazos' in data) {
           // New paginated response
@@ -301,7 +301,7 @@ export const useReplacementStore = defineStore('replacement', {
           reemplazosArray = []
         }
 
-        this.reemplazosActivos = reemplazosArray.map((r: RegisterDataReemplazo) => ({
+        this.reemplazosActivos = reemplazosArray.map((r: ReplacementRegistration) => ({
           ...r,
           fecha_inicio: String(r.fecha_inicio).slice(0, 10),
           fecha_termino: String(r.fecha_termino).slice(0, 10)
@@ -358,7 +358,7 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
-    async crearReemplazo(payload: RegisterDataReemplazo) {
+    async crearReemplazo(payload: ReplacementRegistration) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       this.cargando = true
@@ -378,7 +378,7 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
-    async actualizarReemplazo(reemplazoId: string, payload: RegisterDataReemplazo) {
+    async actualizarReemplazo(reemplazoId: string, payload: ReplacementRegistration) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       this.cargando = true
@@ -398,7 +398,7 @@ export const useReplacementStore = defineStore('replacement', {
       }
     },
 
-    async procesarSustitucion(payload: SustitucionPayload) {
+    async procesarSustitucion(payload: SubstitutionPayload) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       this.cargando = true

@@ -182,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import type { RegisterDataReemplazo } from '@/types/models'
+import { type ReplacementRegistration } from '@/types/replacement.types'
 import { computed, ref, watch } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
@@ -192,7 +192,7 @@ import 'v-calendar/style.css'
 import { debounce } from 'lodash-es'
 import { useUserStore } from '@/stores/user.store'
 
-interface ReemplazoModalData extends Partial<RegisterDataReemplazo> {
+interface ReemplazoModalData extends Partial<ReplacementRegistration> {
   fecha_inicio?: string
   fecha_termino?: string
 }

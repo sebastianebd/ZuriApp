@@ -2,11 +2,11 @@
 import { ref, watch, computed } from 'vue'
 import { Form, Field, ErrorMessage } from 'vee-validate'
 import * as yup from 'yup'
-import type { ICargo } from '@/types/models'
+import { type JobRole } from '@/types/job-role.types'
 
 const props = defineProps<{
   visible: boolean
-  cargo?: ICargo | null // If null, creating. If present, editing.
+  cargo?: JobRole | null // If null, creating. If present, editing.
   loading?: boolean
 }>()
 

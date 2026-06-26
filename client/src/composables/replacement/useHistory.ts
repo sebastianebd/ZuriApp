@@ -2,7 +2,8 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 // import { useAuthStore } from '@/stores/auth.store' // Unused
 import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
-import type { RegisterDataReemplazo, User } from '@/types/models'
+import { type ReplacementRegistration } from '@/types/replacement.types'
+import { type User } from '@/types/user.types'
 import socket from '@/plugins/socket'
 import { debounce } from 'lodash-es'
 
@@ -88,7 +89,7 @@ export function useHistory() {
     return new Date(fecha).toISOString().split('T')[0].split('-').reverse().join('-')
   }
 
-  const getCreatorName = (reemplazo: RegisterDataReemplazo): string => {
+  const getCreatorName = (reemplazo: ReplacementRegistration): string => {
     const creator = reemplazo.creado_por
     if (typeof creator !== 'string' && creator && 'nombre' in creator && 'apellido' in creator) {
       const user = creator as User

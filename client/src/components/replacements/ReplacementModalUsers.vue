@@ -203,7 +203,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useUserStore } from '@/stores/user.store'
-import type { User } from '@/types/models'
+import { type User } from '@/types/user.types'
 
 // 🏢 ENTERPRISE: Self-contained modal with server-side search
 const props = defineProps<{

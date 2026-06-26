@@ -60,10 +60,8 @@ async function getLogs(
 ) {
   const query: FilterQuery<IAuditLog> = {};
 
-  if (filters.module && filters.module !== "TODOS")
-    query.module = filters.module;
-  if (filters.action && filters.action !== "TODOS")
-    query.action = filters.action;
+  if (filters.module) query.module = filters.module;
+  if (filters.action) query.action = filters.action;
 
   if (filters.userId && mongoose.Types.ObjectId.isValid(filters.userId)) {
     query.user_id = new mongoose.Types.ObjectId(filters.userId);

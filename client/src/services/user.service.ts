@@ -1,10 +1,10 @@
 import { errorHandler } from '@/utils/errorHandler'
 import type { useApiPrivate } from '../composables/useApi'
-import type { registrarUsuario } from '../types/models'
+import { type UserRegistration } from '../types/user.types'
 
 export const crearUsuario = async (
   apiPrivate: ReturnType<typeof useApiPrivate>,
-  payload: registrarUsuario
+  payload: UserRegistration
 ) => {
   try {
     const { data } = await apiPrivate.post('/users/', payload)
@@ -17,7 +17,7 @@ export const crearUsuario = async (
 export const actualizarUsuario = async (
   apiPrivate: ReturnType<typeof useApiPrivate>,
   usuarioId: string,
-  payload: registrarUsuario
+  payload: UserRegistration
 ) => {
   try {
     const { data } = await apiPrivate.put(`/users/${usuarioId}`, payload)

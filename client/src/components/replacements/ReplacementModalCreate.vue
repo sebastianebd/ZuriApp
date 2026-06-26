@@ -331,7 +331,8 @@
 
 <script setup lang="ts">
 import { ref, watch, reactive, computed } from 'vue'
-import type { RegisterDataReemplazo, User } from '@/types/models'
+import { type ReplacementRegistration } from '@/types/replacement.types'
+import { type User } from '@/types/user.types'
 import { useUserStore } from '@/stores/user.store'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
@@ -346,13 +347,13 @@ const props = defineProps<{
   visible: boolean
   listaDeTurnos: string[]
   listaDeServicios: string[]
-  registro: Partial<RegisterDataReemplazo>
+  registro: Partial<ReplacementRegistration>
   fechasBloqueadas: string[]
 }>()
 
 const emit = defineEmits<{
   (e: 'cerrar'): void
-  (e: 'guardar', registro: RegisterDataReemplazo): void
+  (e: 'guardar', registro: ReplacementRegistration): void
 }>()
 
 const userStore = useUserStore()
@@ -441,7 +442,7 @@ const searchEntrante = (query: string, loading: (isLoading: boolean) => void) =>
   }, 300)
 }
 
-// --- Blocking Logic State ---
+// --- Blocking Logic AuthState ---
 const salienteBlockedDates = ref<Date[]>([])
 const entranteBlockedRanges = ref<any[]>([])
 
@@ -726,7 +727,7 @@ function abrirConfirmacion() {
 
 function confirmarGuardar() {
   showConfirmacion.value = false
-  emit('guardar', registroLocal as RegisterDataReemplazo)
+  emit('guardar', registroLocal as ReplacementRegistration)
 }
 
 function cancelarConfirmacion() {

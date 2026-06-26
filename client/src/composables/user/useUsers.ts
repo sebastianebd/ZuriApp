@@ -4,7 +4,7 @@ import { useUserStore } from '@/stores/user.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useReplacementStore } from '@/stores/replacement.store'
-import type { User } from '@/types/models'
+import { type User } from '@/types/user.types'
 import socket from '@/plugins/socket'
 
 export function useUsers() {
@@ -193,7 +193,7 @@ export function useUsers() {
   })
 
   return {
-    // State
+    // AuthState
     loading,
     usuariosFiltrados,
     paginatedUsuarios,

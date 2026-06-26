@@ -237,7 +237,9 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useUserStore } from '@/stores/user.store'
 import { calculateShift, parseAsLocal } from '@/services/turn-pattern.service'
 import { formatTitleCase } from '@/utils/text-formatters'
-import type { RegisterDataReemplazo, TurnAssignment, User } from '@/types/models'
+import { type ReplacementRegistration } from '@/types/replacement.types'
+import { type TurnAssignment } from '@/types/turn.types'
+import { type User } from '@/types/user.types'
 import TurnAssignmentModal from '@/components/shifts/TurnAssignmentModal.vue'
 import ShiftModificationModal from '@/components/shifts/ShiftModificationModal.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
@@ -260,7 +262,7 @@ const props = withDefaults(
   }
 )
 
-// State
+// AuthState
 const currentDate = ref(new Date())
 const loading = ref(false)
 const showModal = ref(false)
@@ -388,7 +390,7 @@ interface GridRow {
   fecha_inicio: string | Date
   fecha_termino?: string | Date
   source: 'REPLACEMENT' | 'ASSIGNMENT' | 'MIXED'
-  original: RegisterDataReemplazo | TurnAssignment | any
+  original: ReplacementRegistration | TurnAssignment | any
   userId: string
 }
 
@@ -456,7 +458,7 @@ const filteredShifts = computed(() => {
   })
 
   // 1. Process Replacements (Grouped by Entrante)
-  const userReplacementsMap = new Map<string, RegisterDataReemplazo[]>()
+  const userReplacementsMap = new Map<string, ReplacementRegistration[]>()
 
   // ✅ ENTERPRISE: Use currentPageReplacements (server-side pagination)
   replacementStore.currentPageReplacements.forEach((r) => {
@@ -586,7 +588,7 @@ const filteredShifts = computed(() => {
       return
     // Note: Shift Type Filter is tricky for multiple assignments.
     // If ANY of user's assignments match, should we show user? Or only show if CURRENT assignment matches?
-    // For simplicity, let's skip strict shift type filtering on the ROW level if we want to show full history,
+    // For simplicity, let's import type strict shift type filtering on the ROW level if we want to show full history,
     // OR filter if *any* assignment overlaps.
 
     // Check if ANY assignment for this user overlaps current view

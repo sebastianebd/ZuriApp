@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { useReplacementModals } from '@/composables/useReplacementModals'
-import type { RegisterDataReemplazo } from '@/types/models'
+import { type ReplacementRegistration } from '@/types/replacement.types'
 
 export function useReplacements() {
   const showAlert = inject<(title: string, message: string) => void>('showAlert')
@@ -95,7 +95,7 @@ export function useReplacements() {
     }
   }
 
-  const openUpdateModal = (reemplazo: RegisterDataReemplazo) => {
+  const openUpdateModal = (reemplazo: ReplacementRegistration) => {
     const reemplazoConCargo = { ...reemplazo, tipo_cargo: reemplazo.tipo_cargo || '' }
     modalLogic.openUpdateModal(reemplazoConCargo)
   }
@@ -108,7 +108,7 @@ export function useReplacements() {
     }
   }
 
-  const guardarNuevoReemplazo = async (nuevoReemplazo: RegisterDataReemplazo) => {
+  const guardarNuevoReemplazo = async (nuevoReemplazo: ReplacementRegistration) => {
     await replacementStore.crearReemplazo(nuevoReemplazo)
     modalLogic.closeCreateModal()
     showAlert?.('Guardado', 'El registro se ha guardado correctamente.')
@@ -123,7 +123,7 @@ export function useReplacements() {
     if (registroActual.value._id) {
       await replacementStore.actualizarReemplazo(
         registroActual.value._id,
-        registroActual.value as RegisterDataReemplazo
+        registroActual.value as ReplacementRegistration
       )
     }
     modalLogic.closeUpdateModal()

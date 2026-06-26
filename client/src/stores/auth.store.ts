@@ -1,14 +1,14 @@
 import { defineStore } from 'pinia'
 import * as AuthService from '../services/auth.service'
 import { useApiPrivate } from '../composables/useApi'
-import type { State, LoginData } from '../types/models'
+import { type AuthState, type LoginData } from '../types/auth.types'
 import type { AxiosInstance } from 'axios'
 import socket from '../plugins/socket'
 
 let privateApiInstance: AxiosInstance | null = null
 
 export const useAuthStore = defineStore('auth', {
-  state: (): State => ({
+  state: (): AuthState => ({
     user: null,
     accessToken: '',
     authReady: false

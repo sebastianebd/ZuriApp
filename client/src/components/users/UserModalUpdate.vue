@@ -223,11 +223,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
-import type { registrarUsuario } from '@/types/models'
+import { type UserRegistration } from '@/types/user.types'
 
 const props = defineProps<{
   visible: boolean
-  usuario: registrarUsuario
+  usuario: UserRegistration
   listaTipoCargo: string[]
   listaTipoContrato: string[]
   listaHabilitado: string[]
@@ -235,7 +235,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['cerrar', 'guardar'])
 
-const editableUsuario = ref<registrarUsuario>({ ...props.usuario })
+const editableUsuario = ref<UserRegistration>({ ...props.usuario })
 
 watch(
   () => props.usuario,
