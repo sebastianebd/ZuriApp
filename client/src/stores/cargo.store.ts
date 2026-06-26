@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
-import type { ICargo } from '@/types/models'
+import { type JobRole } from '@/types/job-role.types'
 import { useAuthStore } from './auth.store'
 
 interface ICargoState {
-  cargos: ICargo[]
+  cargos: JobRole[]
   loading: boolean
   error: string | null
 }
@@ -25,7 +25,7 @@ export const useCargoStore = defineStore('cargo', {
       const api = authStore.usePrivateApi()
 
       try {
-        const response = await api.get<ICargo[]>('/cargos')
+        const response = await api.get<JobRole[]>('/cargos')
         // Check if response.data is the array or response itself
         this.cargos = response.data
       } catch (err: any) {
@@ -36,14 +36,14 @@ export const useCargoStore = defineStore('cargo', {
       }
     },
 
-    async createCargo(cargoData: Partial<ICargo>) {
+    async createCargo(cargoData: Partial<JobRole>) {
       this.loading = true
       this.error = null
       const authStore = useAuthStore()
       const api = authStore.usePrivateApi()
 
       try {
-        const response = await api.post<ICargo>('/cargos', cargoData)
+        const response = await api.post<JobRole>('/cargos', cargoData)
         this.cargos.push(response.data)
         return response.data
       } catch (err: any) {
@@ -55,14 +55,14 @@ export const useCargoStore = defineStore('cargo', {
       }
     },
 
-    async updateCargo(id: string, cargoData: Partial<ICargo>) {
+    async updateCargo(id: string, cargoData: Partial<JobRole>) {
       this.loading = true
       this.error = null
       const authStore = useAuthStore()
       const api = authStore.usePrivateApi()
 
       try {
-        const response = await api.put<ICargo>(`/cargos/${id}`, cargoData)
+        const response = await api.put<JobRole>(`/cargos/${id}`, cargoData)
         const updated = response.data
         const index = this.cargos.findIndex((c) => c._id === id)
         if (index !== -1) {
@@ -87,7 +87,7 @@ export const useCargoStore = defineStore('cargo', {
       try {
         // Assuming soft delete just updates the cargo to inactive, but the API endpoint is DELETE
         // The backend implementation of deleteCargo does findByIdAndUpdate(id, { activo: false }) and returns { message, cargo }
-        await api.delete<ICargo>(`/cargos/${id}`)
+        await api.delete<JobRole>(`/cargos/${id}`)
         // Update local state (mark as inactive or remove?)
         // Since it's soft delete, let's update it in the list if we show inactive ones, or remove it.
         // Usually lists filter only active ones unless "show all" is toggled.

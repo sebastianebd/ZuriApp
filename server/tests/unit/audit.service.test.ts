@@ -272,7 +272,7 @@ describe("Audit Service - getLogs", () => {
     expect(result.totalPages).toBe(10);
   });
 
-  it("debería ignorar filtros con valor 'TODOS'", async () => {
+  it("debería ignorar filtros con valor vacío", async () => {
     (AuditLog.find as any).mockReturnValue({
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -281,7 +281,7 @@ describe("Audit Service - getLogs", () => {
     });
     (AuditLog.countDocuments as any).mockResolvedValue(0);
 
-    await auditService.getLogs({ module: "TODOS", action: "TODOS" });
+    await auditService.getLogs({ module: "", action: "" });
 
     expect(AuditLog.find).toHaveBeenCalledWith({});
   });

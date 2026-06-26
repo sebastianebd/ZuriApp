@@ -202,7 +202,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user.store'
-import type { User } from '@/types/models'
+import { type User } from '@/types/user.types'
 
 const props = defineProps<{
   visible: boolean
@@ -219,7 +219,7 @@ const emit = defineEmits<{
 
 const userStore = useUserStore()
 
-// Local State
+// Local AuthState
 const users = ref<User[]>([])
 const loadingUsers = ref(false)
 const filtroRutLocal = ref('')
@@ -227,7 +227,7 @@ const filtroNombreLocal = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
 
-// Selection State
+// Selection AuthState
 const selectedUsers = ref<User[]>([])
 
 // Init

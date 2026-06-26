@@ -15,3 +15,17 @@ export const getDatesInRange = (startDate: string, endDate: string): string[] =>
   }
   return dates;
 };
+
+export function formatDate(iso: string | Date | null | undefined): string {
+  if (!iso) return '-'
+  return new Date(iso).toLocaleDateString('es-CL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+export function formatTime(iso: string | Date | null | undefined): string {
+  if (!iso) return '-'
+  return new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+}

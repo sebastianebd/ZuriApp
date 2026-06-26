@@ -29,7 +29,12 @@
       <div class="card-body p-4">
         <!-- Filter Section -->
         <div class="">
-          <AuditFilter ref="filterComponent" @filter="handleFilter" />
+          <AuditFilter
+            ref="filterComponent"
+            :moduleOptions="moduleOptions"
+            :actionOptions="actionOptions"
+            @filter="handleFilter"
+          />
         </div>
 
         <!-- Table Container -->
@@ -45,7 +50,7 @@
 
           <!-- Table and Pagination -->
           <div v-else>
-            <AuditTable :logs="logs" />
+            <AuditTable :logs="logs" @view-details="handleViewDetails" />
 
             <!-- Pagination (Reusable Component) -->
             <AppPagination
@@ -64,6 +69,13 @@
       @close="closeExportModal"
       @select="handleExportFormat"
     />
+
+    <!-- Modal Detalles (Raw JSON) -->
+    <AuditDetailModal
+      v-if="selectedLog"
+      :log="selectedLog"
+      @close="selectedLog = null"
+    />
   </div>
 </template>
 
@@ -71,22 +83,31 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuditStore } from '@/stores/audit.store'
+import { useAudit } from '@/composables/audit/useAudit'
 import AuditFilter from '@/components/audit/AuditFilter.vue'
 import AuditTable from '@/components/audit/AuditTable.vue'
+import AuditDetailModal from '@/components/audit/AuditDetailModal.vue'
 import TableLoader from '@/components/common/TableLoader.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
 import ExportFormatModal from '@/components/users/ExportFormatModal.vue'
 import socket from '@/plugins/socket'
 import { useExport } from '@/composables/useExport'
+import type { AuditLog } from '@/types/audit.types'
 
 const auditStore = useAuditStore()
 const { logs, loading, error, currentPage, totalPages, currentFilters } = storeToRefs(auditStore)
+const { moduleOptions, actionOptions } = useAudit()
 const filterComponent = ref<InstanceType<typeof AuditFilter> | null>(null)
+const selectedLog = ref<AuditLog | null>(null)
 
 const { exportAuditToPDF, exportAuditToExcel } = useExport()
 const exportModalVisible = ref(false)
 const openExportModal = () => (exportModalVisible.value = true)
 const closeExportModal = () => (exportModalVisible.value = false)
+
+function handleViewDetails(log: AuditLog) {
+  selectedLog.value = log
+}
 
 const handleExportFormat = async (format: 'pdf' | 'excel') => {
   const allLogs = await auditStore.getLogsForExport(currentFilters.value)

@@ -10,6 +10,10 @@ const router = express.Router();
 // Todas las rutas de auditoría requieren un usuario autenticado y verificado.
 router.use(authMiddleware);
 
+// GET /api/audit/options
+// Devuelve las opciones centralizadas de módulos y acciones para los filtros del frontend.
+router.get("/options", auditController.getAuditOptions);
+
 // GET /api/audit
 // Endpoint protegido para consultar el historial de cambios.
 // Requiere permiso explícito 'audit.view' para evitar filtración de datos sensibles.

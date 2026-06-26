@@ -188,7 +188,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
-import type { RegisterDataReemplazo, User } from '@/types/models'
+import { type ReplacementRegistration } from '@/types/replacement.types'
+import { type User } from '@/types/user.types'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatTitleCase } from '@/utils/text-formatters'
 
@@ -196,12 +197,12 @@ const authStore = useAuthStore()
 
 defineProps({
   reemplazos: {
-    type: Array as () => RegisterDataReemplazo[],
+    type: Array as () => ReplacementRegistration[],
     required: true
   }
 })
 
-function turnoEnCurso(reemplazo: RegisterDataReemplazo) {
+function turnoEnCurso(reemplazo: ReplacementRegistration) {
   if (!reemplazo.status) return false
   const s = String(reemplazo.status).trim().toUpperCase()
   // console.log('DEBUG Status:', s, s === 'EN CURSO')
@@ -209,8 +210,8 @@ function turnoEnCurso(reemplazo: RegisterDataReemplazo) {
 }
 
 const emit = defineEmits<{
-  (e: 'modificar', registro: RegisterDataReemplazo): void
-  (e: 'exportar', registro: RegisterDataReemplazo): void
+  (e: 'modificar', registro: ReplacementRegistration): void
+  (e: 'exportar', registro: ReplacementRegistration): void
   (e: 'finalizar', id: string): void
   (e: 'anular', id: string): void
 }>()
@@ -220,7 +221,7 @@ const idRegistro = ref<string | null>(null)
 const accion = ref<'finalizar' | 'anular' | null>(null)
 const copiedId = ref<string | null>(null)
 
-const getCreatorName = (reemplazo: RegisterDataReemplazo): string => {
+const getCreatorName = (reemplazo: ReplacementRegistration): string => {
   const creator = reemplazo.creado_por
 
   if (typeof creator !== 'string' && creator && 'nombre' in creator && 'apellido' in creator) {

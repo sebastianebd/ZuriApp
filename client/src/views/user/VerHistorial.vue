@@ -210,11 +210,11 @@ import { ref } from 'vue'
 import HistoryFilter from '@/components/historial/HistorialFilter.vue'
 import TableLoader from '@/components/common/TableLoader.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
-import type { User } from '@/types/models'
+import { type User } from '@/types/user.types'
 import { formatTitleCase } from '@/utils/text-formatters'
 
 const {
-  // Data & State
+  // Data & AuthState
   reemplazosHistorico,
   listaDeServicios,
   cargando,

@@ -2,7 +2,6 @@
   <div class="mb-4">
     <div class="row row-cols-1 row-cols-md-4 g-3 align-items-end">
       <!-- Rango de Fechas -->
-      <!-- Rango de Fechas -->
       <div class="col">
         <label class="form-label fw-semibold text-secondary small">Desde:</label>
         <DatePicker
@@ -50,7 +49,6 @@
           :clearable="false"
           class="custom-v-select"
           placeholder="Todos"
-          @update:model-value="emitFilters"
         ></v-select>
       </div>
 
@@ -66,7 +64,6 @@
           :clearable="false"
           class="custom-v-select"
           placeholder="Todos"
-          @update:model-value="emitFilters"
         ></v-select>
       </div>
 
@@ -90,41 +87,30 @@
 import { ref, watch } from 'vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/dist/style.css'
+import type { SelectOption } from '@/types/common.types'
+
+defineProps({
+  moduleOptions: {
+    type: Array as () => SelectOption[],
+    default: () => []
+  },
+  actionOptions: {
+    type: Array as () => SelectOption[],
+    default: () => []
+  }
+})
 
 const emit = defineEmits(['filter'])
 
-// Definimos los filtros basándonos en lo que espera el store (o el componente padre)
 const filters = ref({
   startDate: '',
   endDate: '',
-  module: 'TODOS',
-  action: 'TODOS',
+  module: '',
+  action: '',
   userId: ''
 })
 
-const moduleOptions = [
-  { label: 'Todos', value: 'TODOS' },
-  { label: 'Funcionarios', value: 'Funcionarios' },
-  { label: 'Reemplazos Activos', value: 'Reemplazos Activos' },
-  { label: 'Gestión de Cargos', value: 'Gestión de Cargos' },
-  { label: 'Turnos Actuales', value: 'Turnos Actuales' },
-  { label: 'Excepciones de Turno', value: 'Excepciones de Turno' },
-  { label: 'Servicios', value: 'Servicios' },
-  { label: 'Tipos de Turno', value: 'Tipos de Turno' }
-]
-
-const actionOptions = [
-  { label: 'Todos', value: 'TODOS' },
-  { label: 'Crear', value: 'CREAR' },
-  { label: 'Modificar', value: 'MODIFICAR' },
-  { label: 'Eliminar', value: 'ELIMINAR' },
-  { label: 'Finalizar', value: 'FINALIZAR' },
-  { label: 'Anular', value: 'ANULAR' },
-  { label: 'Sustitución', value: 'SUSTITUCION' }
-]
-
 function emitFilters() {
-  // Convert timestamps/Dates to string format expected by backend if necessary
   emit('filter', { ...filters.value })
 }
 
@@ -148,14 +134,14 @@ const popoverConfig = {
     }
   ]
 }
-// Opcional: limpiar filtros desde el padre si fuera necesario
+
 defineExpose({
   clear() {
     filters.value = {
       startDate: '',
       endDate: '',
-      module: 'TODOS',
-      action: 'TODOS',
+      module: '',
+      action: '',
       userId: ''
     }
   }

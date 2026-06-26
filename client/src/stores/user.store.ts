@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import * as UserService from '../services/user.service'
 import { useAuthStore } from './auth.store'
-import type { registrarUsuario, User } from '../types/models'
+import { type UserRegistration, type User } from '../types/user.types'
 import type { AxiosInstance } from 'axios'
 
 export const useUserStore = defineStore('user', {
@@ -130,7 +130,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    async crearUsuario(usuario: registrarUsuario) {
+    async crearUsuario(usuario: UserRegistration) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       try {

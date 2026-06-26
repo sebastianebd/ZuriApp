@@ -385,7 +385,8 @@
 </template>
 
 <script setup lang="ts">
-import type { RegisterDataReemplazo, User } from '@/types/models'
+import { type ReplacementRegistration } from '@/types/replacement.types'
+import { type User } from '@/types/user.types'
 import { ref, computed, watch } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
@@ -395,7 +396,7 @@ import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
 import { useUserStore } from '@/stores/user.store'
 
-interface ReemplazoModalData extends Partial<RegisterDataReemplazo> {
+interface ReemplazoModalData extends Partial<ReplacementRegistration> {
   fecha_inicio?: string
   fecha_termino?: string
 }

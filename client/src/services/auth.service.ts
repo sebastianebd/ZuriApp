@@ -1,5 +1,5 @@
 import { useApi, useApiPrivate } from '../composables/useApi'
-import type { LoginData } from '../types/models'
+import { type LoginData } from '../types/auth.types'
 import { errorHandler } from '../utils/errorHandler'
 
 const Api = useApi()

@@ -3,6 +3,7 @@ import Cargo from "../models/cargo.model";
 import socketConfig from "../config/socket";
 import auditService from "../services/audit.service";
 import { AuthRequest } from "../middleware/authentication.middleware";
+import { AUDIT_ACTIONS, AUDIT_MODULES } from "../constants/audit.constants";
 
 // GET /api/cargos?activo=true
 export const getCargos = async (req: Request, res: Response) => {
@@ -77,8 +78,8 @@ export const createCargo = async (req: Request, res: Response) => {
     const authReq = req as AuthRequest;
     if (authReq.user) {
       await auditService.logAction(
-        "CREAR",
-        "Gestión de Cargos",
+        AUDIT_ACTIONS.CREAR,
+        AUDIT_MODULES.GESTION_CARGOS,
         authReq.user,
         `Se creó el cargo ${cargo.nombre} (Nivel ${cargo.nivel})`,
         payload,
@@ -129,8 +130,8 @@ export const updateCargo = async (req: Request, res: Response) => {
       if (activo !== undefined && activo !== original.activo) {
         const actionDesc = activo ? "activó" : "desactivó";
         await auditService.logAction(
-          "MODIFICAR",
-          "Gestión de Cargos",
+          AUDIT_ACTIONS.MODIFICAR,
+          AUDIT_MODULES.GESTION_CARGOS,
           authReq.user,
           `Se ${actionDesc} el cargo ${original.nombre}`,
           { old_activo: original.activo, new_activo: activo },
@@ -146,7 +147,7 @@ export const updateCargo = async (req: Request, res: Response) => {
         let diff =
           auditService.generateDiff(originalForDiff, bodyForDiff) || "";
 
-        // Diff específico para permisos (Legible para humanos)
+        // Diff específico para permisos
         if (permisos) {
           const oldPerms: string[] = original.permisos || [];
           const newPerms: string[] = permisos;
@@ -209,8 +210,8 @@ export const updateCargo = async (req: Request, res: Response) => {
 
         if (diff) {
           await auditService.logAction(
-            "MODIFICAR",
-            "Gestión de Cargos",
+            AUDIT_ACTIONS.MODIFICAR,
+            AUDIT_MODULES.GESTION_CARGOS,
             authReq.user,
             `Se modificó el cargo ${original.nombre} (Cambios: ${diff})`,
             { original: original.toObject(), new: cargo.toObject() },
@@ -258,8 +259,8 @@ export const deleteCargo = async (req: Request, res: Response) => {
     const authReq = req as AuthRequest;
     if (authReq.user) {
       await auditService.logAction(
-        "ELIMINAR",
-        "Gestión de Cargos",
+        AUDIT_ACTIONS.ELIMINAR,
+        AUDIT_MODULES.GESTION_CARGOS,
         authReq.user,
         `Se eliminó el cargo ${original.nombre}`,
         null,

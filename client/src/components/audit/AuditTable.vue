@@ -51,7 +51,9 @@
                 <div class="fw-bold text-dark text-truncate">
                   {{ formatTitleCase(log.user_name || 'Desconocido') }}
                 </div>
-                <div class="rut-text" v-if="log.user_id">ID: ...{{ getUserId(log) }}</div>
+                <div class="rut-text" v-if="log.user_id">
+                  ID: ...{{ truncateMongoId(log.user_id) }}
+                </div>
               </div>
             </div>
           </td>
@@ -86,7 +88,7 @@
             <div class="h-100 d-flex align-items-center justify-content-center">
               <button
                 class="btn-glass btn-details"
-                @click="verDetalles(log)"
+                @click="emit('view-details', log)"
                 title="Ver JSON Técnico"
               >
                 <i class="bi bi-file-earmark-code"></i>
@@ -96,135 +98,37 @@
         </tr>
       </tbody>
     </table>
-
-    <!-- Modal Detalles (Raw JSON) -->
-    <div
-      v-if="selectedLog"
-      class="modal fade show d-block"
-      style="background: rgba(0, 0, 0, 0.5); z-index: 1050"
-    >
-      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-          <div class="modal-header border-bottom-0 ps-4 pt-4">
-            <div class="d-flex align-items-center gap-3">
-              <div class="bg-primary bg-opacity-10 p-2 rounded-3 text-primary">
-                <i class="bi bi-braces fs-4"></i>
-              </div>
-              <div>
-                <h5 class="modal-title fw-bold text-dark mb-0">Detalle Técnico</h5>
-                <small class="text-muted">ID Auditoría: {{ selectedLog._id }}</small>
-              </div>
-            </div>
-            <button type="button" class="btn-close me-2 mt-2" @click="selectedLog = null"></button>
-          </div>
-          <div class="modal-body p-4">
-            <div class="bg-dark rounded-3 overflow-hidden shadow-inner">
-              <div
-                class="d-flex align-items-center justify-content-between px-3 py-2 bg-black bg-opacity-25 border-bottom border-secondary border-opacity-25"
-              >
-                <small class="text-light font-monospace opacity-75">Payload JSON</small>
-                <button
-                  class="btn btn-sm btn-link text-decoration-none text-light p-0 opacity-50 hover-opacity-100"
-                  @click="copyJson"
-                >
-                  <i class="bi bi-clipboard"></i>
-                </button>
-              </div>
-              <pre
-                class="m-0 p-3 text-light font-monospace custom-scrollbar"
-                style="max-height: 400px; overflow: auto; font-size: 0.8rem"
-                >{{ JSON.stringify(selectedLog, null, 2) }}</pre
-              >
-            </div>
-          </div>
-          <div class="modal-footer border-top-0 pe-4 pb-4">
-            <button
-              type="button"
-              class="btn btn-light border px-4 rounded-3 fw-medium"
-              @click="selectedLog = null"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { formatTitleCase } from '@/utils/text-formatters'
+import { formatTitleCase, getInitials, truncateMongoId } from '@/utils/text-formatters'
+import { formatDate, formatTime } from '@/utils/date-utils'
+import type { AuditLog } from '@/types/audit.types'
 
 defineProps({
   logs: {
-    type: Array as () => any[],
+    type: Array as () => AuditLog[],
     default: () => []
   }
 })
 
-const selectedLog = ref<any>(null)
+const emit = defineEmits<{
+  (e: 'view-details', log: AuditLog): void
+}>()
 
-function verDetalles(log: any) {
-  selectedLog.value = log
-}
-
-function formatDate(iso: string) {
-  if (!iso) return '-'
-  return new Date(iso).toLocaleDateString('es-CL', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  })
-}
-
-function formatTime(iso: string) {
-  if (!iso) return '-'
-  return new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
-}
-
-function getInitials(name: string) {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .filter((n) => n.length > 0) // filter empty splits
-    .map((n: string) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-}
-
-function getUserId(log: any) {
-  if (!log.user_id) return ''
-  if (typeof log.user_id === 'string') return log.user_id.slice(-6)
-  if (log.user_id._id) return log.user_id._id.slice(-6)
-  return '?'
+const ACTION_GLASS_CLASSES: Record<string, string> = {
+  CREAR: 'glass-success',
+  MODIFICAR: 'glass-primary',
+  SUSTITUCION: 'glass-primary',
+  ELIMINAR: 'glass-danger',
+  ANULAR: 'glass-danger',
+  FINALIZAR: 'glass-dark'
 }
 
 function getActionGlassClass(action: string) {
-  switch (action) {
-    case 'CREAR':
-      return 'glass-success'
-    case 'MODIFICAR':
-    case 'SUSTITUCION':
-      return 'glass-primary'
-    case 'ELIMINAR':
-    case 'ANULAR':
-      return 'glass-danger'
-    case 'FINALIZAR':
-      return 'glass-dark'
-    default:
-      return 'glass-secondary'
-  }
-}
-
-async function copyJson() {
-  if (!selectedLog.value) return
-  try {
-    await navigator.clipboard.writeText(JSON.stringify(selectedLog.value, null, 2))
-  } catch (e) {
-    console.error('Failed to copy JSON', e)
-  }
+  if (!action) return 'glass-secondary'
+  return ACTION_GLASS_CLASSES[action.toUpperCase()] || 'glass-secondary'
 }
 </script>
 

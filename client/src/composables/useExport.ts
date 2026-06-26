@@ -1,6 +1,8 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import type { RegisterDataReemplazo, User, AuditLog } from '@/types/models'
+import { type ReplacementRegistration } from '@/types/replacement.types'
+import { type User } from '@/types/user.types'
+import { type AuditLog } from '@/types/audit.types'
 import * as XLSX from 'xlsx'
 
 export function useExport() {
@@ -16,7 +18,7 @@ export function useExport() {
   }
 
   // --- Export 1: Single Replacement Certificate (Preset) ---
-  const exportReplacementToPDF = (replacement: RegisterDataReemplazo) => {
+  const exportReplacementToPDF = (replacement: ReplacementRegistration) => {
     const doc = new jsPDF()
 
     // Title
@@ -117,7 +119,7 @@ export function useExport() {
   }
 
   // --- Export 2: History Report (Filtered Table) ---
-  const exportHistoryToPDF = (registros: RegisterDataReemplazo[], filtros: any) => {
+  const exportHistoryToPDF = (registros: ReplacementRegistration[], filtros: any) => {
     const doc = new jsPDF()
 
     // Title
