@@ -66,17 +66,17 @@ export const useAuthStore = defineStore('auth', {
 
     async changePassword(currentPassword: string, newPassword: string, confirmPassword: string) {
       try {
-        const privateApi = this.usePrivateApi()
-        const { data } = await privateApi.post('/auth/change-password', {
+        const apiPrivate = this.usePrivateApi()
+        const data = await AuthService.changePassword(apiPrivate, {
           currentPassword,
           newPassword,
           confirmPassword
         })
-        return { success: true, message: data.mensaje }
+        return { success: true, message: data.mensaje || 'Contraseña actualizada exitosamente' }
       } catch (error: any) {
         return {
           success: false,
-          message: error.response?.data?.mensaje || 'Error al cambiar la contraseña'
+          message: error.mensaje || error.message || 'Error al cambiar la contraseña'
         }
       }
     },
@@ -98,8 +98,8 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async fetchLoginHistory() {
-      const privateApi = this.usePrivateApi()
-      const { data } = await privateApi.get('/auth/history')
+      const apiPrivate = this.usePrivateApi()
+      const data = await AuthService.getLoginHistory(apiPrivate)
       return data
     },
 
