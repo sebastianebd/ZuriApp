@@ -149,7 +149,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import logoURL from '../../assets/images/logo-zuri.png'
-import { useAuth } from '../../composables/auth/useAuth'
+import { useAuth } from '../../composables/login/useAuth'
 
 const { can, isAuthenticated } = useAuth()
 

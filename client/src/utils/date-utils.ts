@@ -1,4 +1,7 @@
 
+import { formatDistanceToNow } from 'date-fns'
+import { es } from 'date-fns/locale'
+
 export const getDatesInRange = (startDate: string, endDate: string): string[] => {
   const dates: string[] = [];
   const currentDate = new Date(startDate);
@@ -28,4 +31,18 @@ export function formatDate(iso: string | Date | null | undefined): string {
 export function formatTime(iso: string | Date | null | undefined): string {
   if (!iso) return '-'
   return new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+}
+
+export function formatDateLong(dateString: string | Date | null | undefined) {
+  if (!dateString) return 'N/A'
+  const date = dateString instanceof Date ? dateString : new Date(dateString)
+  return date.toLocaleDateString('es-CL', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+export function formatRelativeTime(dateString: string) {
+  return formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: es })
 }

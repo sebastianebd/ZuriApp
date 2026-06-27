@@ -114,8 +114,8 @@
 </template>
 
 <script setup lang="ts">
-import { useReplacements } from '@/composables/replacement/useReplacements'
-import { useExport } from '@/composables/useExport'
+import { exportReplacementToPDF } from '@/utils/exportHelpers'
+import { useReplacements } from '@/composables/active-replacements/useActiveReplacements'
 import {
   ReplacementFilter,
   ReplacementTable,
@@ -165,8 +165,6 @@ const {
   handleSustitucion,
   confirmarSustitucion
 } = useReplacements()
-
-const { exportReplacementToPDF } = useExport()
 </script>
 
 <style scoped>

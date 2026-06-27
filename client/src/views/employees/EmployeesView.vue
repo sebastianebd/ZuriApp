@@ -116,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { useUsers } from '@/composables/user/useUsers'
+import { useUsers } from '@/composables/employees/useEmployees'
 import {
   UserFilter,
   UserTable,
@@ -125,7 +125,7 @@ import {
   UserModalDetail
 } from '@/components/users'
 import ExportFormatModal from '@/components/users/ExportFormatModal.vue'
-import { useExport } from '@/composables/useExport'
+import { exportUsersToPDF, exportUsersToExcel } from '@/utils/exportHelpers'
 import TableLoader from '@/components/common/TableLoader.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
 import { useAuthStore } from '@/stores/auth.store'
@@ -187,7 +187,6 @@ const {
   closeExportModal
 } = useUsers()
 
-const { exportUsersToPDF, exportUsersToExcel } = useExport()
 
 const handleExportFormat = (format: 'pdf' | 'excel') => {
   if (format === 'pdf') {

@@ -202,8 +202,8 @@
 </template>
 
 <script setup lang="ts">
-import { useHistory } from '@/composables/replacement/useHistory'
-import { useExport } from '@/composables/useExport'
+import { useHistory } from '@/composables/replacement-history/useReplacementHistory'
+import { exportHistoryToPDF } from '@/utils/exportHelpers'
 import { useAuthStore } from '@/stores/auth.store'
 import { obtenerInactivosPaginados } from '@/services/replacement.service'
 import { ref } from 'vue'
@@ -235,7 +235,7 @@ const {
   // getInitials // Using local refined version
 } = useHistory()
 
-const { exportHistoryToPDF } = useExport()
+
 const authStore = useAuthStore()
 const api = authStore.usePrivateApi()
 const copiedId = ref<string | null>(null)
