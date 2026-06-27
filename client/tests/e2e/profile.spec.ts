@@ -7,7 +7,7 @@ test.describe('Profile View', () => {
     await login(page)
 
     // Navigate to profile page
-    await page.goto('/app/user')
+    await page.goto('/app/dashboard')
     await page.waitForLoadState('networkidle')
   })
 
