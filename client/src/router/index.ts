@@ -14,7 +14,7 @@ const router = createRouter({
         {
           path: '',
           name: 'login',
-          component: () => import('@/views/auth/LoginView.vue'),
+          component: () => import('@/views/login/LoginView.vue'),
           meta: { requiresGuest: true }
         }
       ]
@@ -22,7 +22,7 @@ const router = createRouter({
     {
       path: '/mi-calendario',
       name: 'public-calendar',
-      component: () => import('@/views/public/PublicCalendar.vue'),
+      component: () => import('@/views/public-calendar/PublicCalendarView.vue'),
       meta: { requiresAuth: false } // Explicitly public
     },
 
@@ -36,68 +36,68 @@ const router = createRouter({
         {
           path: 'dashboard',
           name: 'dashboard',
-          component: () => import('@/views/user/UserView.vue')
+          component: () => import('@/views/profile/ProfileView.vue')
         },
         {
           path: 'user',
           name: 'user',
-          component: () => import('@/views/user/UserView.vue')
+          component: () => import('@/views/profile/ProfileView.vue')
         },
 
         // ==================== PERSONAL ====================
         {
           path: 'personal/funcionarios',
           name: 'personal-funcionarios',
-          component: () => import('@/views/user/VerUsuarios.vue')
+          component: () => import('@/views/employees/EmployeesView.vue')
         },
         {
           path: 'personal/cargos',
           name: 'personal-cargos',
-          component: () => import('@/views/personal/CargoManagement.vue')
+          component: () => import('@/views/positions/PositionsView.vue')
         },
         {
           path: 'personal/ficha-turnos',
           name: 'personal-ficha-turnos',
-          component: () => import('@/views/personal/FichaTurnosView.vue')
+          component: () => import('@/views/shift-records/ShiftRecordsView.vue')
         },
 
         // ==================== OPERACIONES ====================
         {
           path: 'operaciones/reemplazos',
           name: 'operaciones-reemplazos',
-          component: () => import('@/views/user/ReemplazosView.vue')
+          component: () => import('@/views/active-replacements/ActiveReplacementsView.vue')
         },
         {
           path: 'operaciones/calendario-reemplazos',
           name: 'operaciones-calendario-reemplazos',
-          component: () => import('@/views/user/CalendarioView.vue')
+          component: () => import('@/views/replacement-calendar/ReplacementCalendarView.vue')
         },
         {
           path: 'operaciones/turnos',
           name: 'operaciones-turnos',
-          component: () => import('@/views/shifts/ShiftsView.vue')
+          component: () => import('@/views/current-shifts/CurrentShiftsView.vue')
         },
 
         // ==================== HISTORIAL & REPORTES ====================
         {
           path: 'historial/reemplazos',
           name: 'historial-reemplazos',
-          component: () => import('@/views/user/VerHistorial.vue')
+          component: () => import('@/views/replacement-history/ReplacementHistoryView.vue')
         },
         {
           path: 'historial/turnos',
           name: 'historial-turnos',
-          component: () => import('@/views/historial/TurnosHistorial.vue')
+          component: () => import('@/views/shift-history/ShiftHistoryView.vue')
         },
         {
           path: 'historial/excepciones',
           name: 'historial-excepciones',
-          component: () => import('@/views/historial/ExcepcionesHistorial.vue')
+          component: () => import('@/views/shift-exceptions/ShiftExceptionsView.vue')
         },
         {
           path: 'historial/auditoria',
           name: 'historial-auditoria',
-          component: () => import('@/views/audit/AuditoriaView.vue')
+          component: () => import('@/views/audit/AuditView.vue')
         },
         {
           path: 'reportes',
@@ -109,12 +109,12 @@ const router = createRouter({
         {
           path: 'configuracion/servicios',
           name: 'configuracion-servicios',
-          component: () => import('@/views/configuracion/ServiceManagement.vue')
+          component: () => import('@/views/service-management/ServiceManagementView.vue')
         },
         {
           path: 'configuracion/tipos-turno',
           name: 'configuracion-tipos-turno',
-          component: () => import('@/views/configuracion/ShiftTypeManagement.vue')
+          component: () => import('@/views/shift-type-management/ShiftTypeManagementView.vue')
         },
 
         // ==================== REDIRECTS (Backward Compatibility) ====================

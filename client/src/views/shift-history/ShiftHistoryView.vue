@@ -53,7 +53,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
-import ShiftsView from '@/views/shifts/ShiftsView.vue'
+import ShiftsView from '@/views/current-shifts/CurrentShiftsView.vue'
 import { useOptionStore } from '@/stores/option.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import vSelect from 'vue-select'
