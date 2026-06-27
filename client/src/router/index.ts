@@ -117,14 +117,6 @@ const router = createRouter({
           component: () => import('@/views/shift-type-management/ShiftTypeManagementView.vue')
         },
 
-        // ==================== REDIRECTS (Backward Compatibility) ====================
-        { path: 'user', redirect: { name: 'dashboard' } },
-        { path: 'ver_usuarios', redirect: { name: 'personal-funcionarios' } },
-        { path: 'reemplazos', redirect: { name: 'operaciones-reemplazos' } },
-        { path: 'calendario', redirect: { name: 'operaciones-calendario-reemplazos' } },
-        { path: 'turnos', redirect: { name: 'operaciones-turnos' } },
-        { path: 'ver_historial', redirect: { name: 'historial-reemplazos' } },
-        { path: 'auditoria', redirect: { name: 'historial-auditoria' } }
       ]
     }
   ]
