@@ -39,3 +39,24 @@ export const getUser = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
     throw errorHandler(error)
   }
 }
+
+export const changePassword = async (
+  apiPrivate: ReturnType<typeof useApiPrivate>,
+  payload: { currentPassword: string; newPassword: string; confirmPassword: string }
+) => {
+  try {
+    const { data } = await apiPrivate.post('/auth/change-password', payload)
+    return data
+  } catch (error) {
+    throw errorHandler(error, true)
+  }
+}
+
+export const getLoginHistory = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
+  try {
+    const { data } = await apiPrivate.get('/auth/history')
+    return data
+  } catch (error) {
+    throw errorHandler(error)
+  }
+}

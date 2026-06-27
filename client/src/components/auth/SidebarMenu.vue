@@ -147,15 +147,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import logoURL from '../../assets/images/logo-zuri.png'
-import { useAuthStore } from '../../stores/auth.store'
+import { useAuth } from '../../composables/auth/useAuth'
 
-const authStore = useAuthStore()
-
-const can = (permission: string) => authStore.hasPermission(permission)
-
-const isAuthenticated = computed(() => authStore.isAuthenticated)
+const { can, isAuthenticated } = useAuth()
 
 const is_expanded = ref(sessionStorage.getItem('is_expanded') !== 'false')
 
