@@ -25,7 +25,7 @@
         </button>
         <button
           v-if="authStore.hasPermission('replacement.create')"
-          @click="openCreateModal"
+          @click="initCreateReplacement"
           class="btn btn-primary fw-bold shadow-sm px-4"
         >
           <i class="bi bi-plus-lg me-2"></i>Nuevo Reemplazo
@@ -61,7 +61,7 @@
               :reemplazos="paginatedReplacements"
               @finalizar="handleFinalizar"
               @anular="handleAnular"
-              @modificar="openUpdateModal"
+              @modificar="initUpdateReplacement"
               @exportar="exportReplacementToPDF"
             />
 
@@ -156,8 +156,8 @@ const {
   closeSubstituteModal,
 
   // Actions
-  openCreateModal,
-  openUpdateModal,
+  initCreateReplacement,
+  initUpdateReplacement,
   guardarNuevoReemplazo,
   handleFinalizar,
   handleAnular,

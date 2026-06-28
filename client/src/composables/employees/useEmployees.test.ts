@@ -115,7 +115,7 @@ describe('useUsers Composable', () => {
   })
 
   it('should filter users by RUT', async () => {
-    const { paginatedUsuarios: usuarios, filtroRut, usuariosFiltrados } = mountComposable()
+    const { filtroRut, usuariosFiltrados } = mountComposable()
     await new Promise((r) => setTimeout(r, 0))
 
     filtroRut.value = '123'
