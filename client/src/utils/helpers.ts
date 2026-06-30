@@ -19,14 +19,23 @@ export function getActionClass(action: string) {
 export function getColorByStatus(status: string) {
   switch (status) {
     case 'EN CURSO':
-      return '#10b981' // Esmerald 500
+      return '#10b981'
     case 'PENDIENTE':
-      return '#f59e0b' // Amber 500
+      return '#f59e0b'
     case 'FINALIZADO':
-      return '#64748b' // Slate 500
+      return '#64748b'
     case 'ANULADO':
-      return '#ef4444' // Red 500
+      return '#ef4444'
     default:
-      return '#3b82f6' // Blue 500
+      return '#3b82f6'
   }
+}
+
+/** Retorna el nombre completo del creador de un reemplazo */
+export const getCreatorName = (reemplazo: any): string => {
+  const creator = reemplazo.creado_por
+  if (typeof creator !== 'string' && creator && 'nombre' in creator && 'apellido' in creator) {
+    return `${creator.nombre} ${creator.apellido}`
+  }
+  return String(creator) || 'Usuario no asignado'
 }

@@ -162,13 +162,13 @@
                     <div class="d-flex align-items-center mb-1">
                       <span class="date-dot start me-2"></span>
                       <span class="date-text fw-medium">{{
-                        formatearFecha(reemplazo.fecha_inicio)
+                        formatDateDDMMYYYY(reemplazo.fecha_inicio)
                       }}</span>
                     </div>
                     <div class="d-flex align-items-center">
                       <span class="date-dot end me-2"></span>
                       <span class="date-text text-muted">{{
-                        formatearFecha(reemplazo.fecha_termino)
+                        formatDateDDMMYYYY(reemplazo.fecha_termino)
                       }}</span>
                     </div>
                   </div>
@@ -210,7 +210,6 @@ import { ref } from 'vue'
 import HistoryFilter from '@/components/historial/HistorialFilter.vue'
 import TableLoader from '@/components/common/TableLoader.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
-import { type User } from '@/types/user.types'
 import { formatTitleCase } from '@/utils/text-formatters'
 
 const {
@@ -228,13 +227,12 @@ const {
   currentPage,
   totalPages,
   totalRegistros,
-  changePage,
-
-  // Helpers
-  formatearFecha
-  // getInitials // Using local refined version
+  changePage
 } = useHistory()
 
+import { formatDateDDMMYYYY } from '@/utils/date-utils'
+import { getCreatorName } from '@/utils/helpers'
+import { getInitials } from '@/utils/text-formatters'
 
 const authStore = useAuthStore()
 const api = authStore.usePrivateApi()
@@ -253,18 +251,6 @@ const handleExport = async () => {
   } finally {
     exportLoading.value = false
   }
-}
-
-// Reuse logic from ReplacementTable for consistency
-function getInitials(name: string) {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .filter((n) => n.length > 0)
-    .map((n: string) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
 }
 
 function formatShortName(nombre: string, apellido: string) {
@@ -293,15 +279,6 @@ function getStatusClass(status: string) {
     default:
       return 'glass-secondary'
   }
-}
-
-const getCreatorName = (reemplazo: any): string => {
-  const creator = reemplazo.creado_por
-  if (typeof creator !== 'string' && creator && 'nombre' in creator && 'apellido' in creator) {
-    const user = creator as User
-    return `${user.nombre} ${user.apellido}`
-  }
-  return String(creator) || 'N/A'
 }
 
 async function copyCode(code: string) {
