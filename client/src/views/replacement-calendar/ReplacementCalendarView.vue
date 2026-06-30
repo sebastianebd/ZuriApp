@@ -203,7 +203,7 @@
 
 <script setup lang="ts">
 import FullCalendar from '@fullcalendar/vue3'
-import { useCalendar } from '@/composables/replacement/useCalendar'
+import { useCalendar } from '@/composables/replacement-calendar/useReplacementCalendar'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
 
@@ -218,14 +218,12 @@ const {
 
   // Filters
   selectedService,
-  serviceOptions,
-
-  // Helpers
-  formatDateDDMMYYYY,
-  getColorByStatus
+  serviceOptions
 } = useCalendar()
 
 import { formatTitleCase } from '@/utils/text-formatters'
+import { getColorByStatus } from '@/utils/helpers'
+import { formatDateDDMMYYYY } from '@/utils/date-utils'
 </script>
 
 <style scoped>

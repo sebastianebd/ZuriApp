@@ -91,7 +91,7 @@ import TableLoader from '@/components/common/TableLoader.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
 import ExportFormatModal from '@/components/users/ExportFormatModal.vue'
 import socket from '@/plugins/socket'
-import { useExport } from '@/composables/useExport'
+import { exportAuditToPDF, exportAuditToExcel } from '@/utils/exportHelpers'
 import type { AuditLog } from '@/types/audit.types'
 
 const auditStore = useAuditStore()
@@ -100,7 +100,6 @@ const { moduleOptions, actionOptions } = useAudit()
 const filterComponent = ref<InstanceType<typeof AuditFilter> | null>(null)
 const selectedLog = ref<AuditLog | null>(null)
 
-const { exportAuditToPDF, exportAuditToExcel } = useExport()
 const exportModalVisible = ref(false)
 const openExportModal = () => (exportModalVisible.value = true)
 const closeExportModal = () => (exportModalVisible.value = false)

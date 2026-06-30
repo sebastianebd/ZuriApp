@@ -25,7 +25,7 @@
         </button>
         <button
           v-if="authStore.hasPermission('replacement.create')"
-          @click="openCreateModal"
+          @click="initCreateReplacement"
           class="btn btn-primary fw-bold shadow-sm px-4"
         >
           <i class="bi bi-plus-lg me-2"></i>Nuevo Reemplazo
@@ -61,7 +61,7 @@
               :reemplazos="paginatedReplacements"
               @finalizar="handleFinalizar"
               @anular="handleAnular"
-              @modificar="openUpdateModal"
+              @modificar="initUpdateReplacement"
               @exportar="exportReplacementToPDF"
             />
 
@@ -114,8 +114,8 @@
 </template>
 
 <script setup lang="ts">
-import { useReplacements } from '@/composables/replacement/useReplacements'
-import { useExport } from '@/composables/useExport'
+import { exportReplacementToPDF } from '@/utils/exportHelpers'
+import { useReplacements } from '@/composables/active-replacements/useActiveReplacements'
 import {
   ReplacementFilter,
   ReplacementTable,
@@ -156,8 +156,8 @@ const {
   closeSubstituteModal,
 
   // Actions
-  openCreateModal,
-  openUpdateModal,
+  initCreateReplacement,
+  initUpdateReplacement,
   guardarNuevoReemplazo,
   handleFinalizar,
   handleAnular,
@@ -165,8 +165,6 @@ const {
   handleSustitucion,
   confirmarSustitucion
 } = useReplacements()
-
-const { exportReplacementToPDF } = useExport()
 </script>
 
 <style scoped>

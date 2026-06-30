@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAuth } from '../../composables/auth/useAuth'
+import { useAuth } from '../../composables/login/useAuth'
 
 const { user, authReady, isAuthenticated, logout } = useAuth()
 </script>
