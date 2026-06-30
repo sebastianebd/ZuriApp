@@ -12,8 +12,6 @@ export function useUsers() {
     closeCreateModal: modals.closeCreateModal
   })
 
-  // Retornamos todos los estados y acciones como una fachada unificada
-  // de esta manera la vista EmployeesView no necesita importar 3 archivos distintos.
   return {
     ...state,
     ...modals,

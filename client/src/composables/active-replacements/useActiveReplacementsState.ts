@@ -27,7 +27,6 @@ export function useActiveReplacementsState(deps?: StateDependencies) {
   // Computed: Current page replacements (server-side paginated)
   const paginatedReplacements = computed(() => replacementStore.reemplazosFiltrados)
 
-  // 🏢 ENTERPRISE: Load options data on mount
   onMounted(async () => {
     try {
       // Load Options

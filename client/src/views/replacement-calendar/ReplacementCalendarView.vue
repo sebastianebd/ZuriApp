@@ -218,14 +218,12 @@ const {
 
   // Filters
   selectedService,
-  serviceOptions,
-
-  // Helpers
-  formatDateDDMMYYYY,
-  getColorByStatus
+  serviceOptions
 } = useCalendar()
 
 import { formatTitleCase } from '@/utils/text-formatters'
+import { getColorByStatus } from '@/utils/helpers'
+import { formatDateDDMMYYYY } from '@/utils/date-utils'
 </script>
 
 <style scoped>

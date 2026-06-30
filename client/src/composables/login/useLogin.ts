@@ -15,7 +15,6 @@ export function useLogin() {
     password: yup.string().min(6)
   })
 
-  // We are not using useField here, so errors object is from the form context
   const { errors, validate } = useForm({
     validationSchema: schemaForm
   })
@@ -48,12 +47,11 @@ export function useLogin() {
 
   async function onSubmit() {
     isSubmitting.value = true
-    loginError.value = '' // Clear previous errors
+    loginError.value = ''
     accountInUseError.value = ''
 
     const { valid } = await validate()
 
-    // Manual RUT Validation check
     let manualValid = true
     if (!validateRut(loginData.rut)) {
       rutError.value = 'RUT inválido'
@@ -72,14 +70,12 @@ export function useLogin() {
       return
     }
 
-    // Format RUT before sending
     loginData.rut = formatRut(loginData.rut)
 
     try {
       await authStore.login(loginData)
       router.replace({ name: 'dashboard' })
     } catch (err: any) {
-      // Check for 409 status (injected by errorHandler or raw response)
       const status = err.status || (err.response && err.response.status)
       if (status === 409) {
         accountInUseError.value = 'Cuenta conectada'

@@ -46,10 +46,8 @@ export function useUserProfile() {
     cutout: '70%'
   }
 
-  // Activity
   const recentActivity = ref<any[]>([])
 
-  // Loading State
   const loading = ref(false)
 
   async function loadProfileData() {
@@ -64,7 +62,6 @@ export function useUserProfile() {
 
       stats.value = statsRes
 
-      // Process chart data
       chartData.labels = serviceRes.map((s: any) => s.servicio)
       chartData.datasets[0].data = serviceRes.map((s: any) => s.cantidad)
 

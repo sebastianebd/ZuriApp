@@ -45,4 +45,12 @@ export function formatDateLong(dateString: string | Date | null | undefined) {
 
 export function formatRelativeTime(dateString: string) {
   return formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: es })
+}
+
+/** Formatea una fecha ISO a dd-mm-yyyy mediante manipulación de string,
+ *  evitando bugs de conversión de zona horaria local. */
+export function formatDateDDMMYYYY(fechaIso: string): string {
+  if (!fechaIso) return '-'
+  const [year, month, day] = fechaIso.slice(0, 10).split('-')
+  return `${day}-${month}-${year}`
 }
