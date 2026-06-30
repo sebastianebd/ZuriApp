@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { useLogin } from '../../composables/auth/useLogin'
+import { useLogin } from '../../composables/login/useLogin'
 
 const {
   loginData,

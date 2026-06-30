@@ -494,7 +494,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import { useUserProfile } from '../../composables/user/useUserProfile'
+import { useUserProfile } from '../../composables/profile/useProfile'
+import { formatDateLong as formatDate, formatRelativeTime } from '@/utils/date-utils'
+import { getActionClass } from '@/utils/helpers'
 import { useAuthStore } from '../../stores/auth.store'
 import TableLoader from '@/components/common/TableLoader.vue'
 import { Doughnut } from 'vue-chartjs'
@@ -510,9 +512,6 @@ const {
   chartData,
   chartOptions,
   recentActivity,
-  formatDate,
-  formatRelativeTime,
-  getActionClass,
   loading
 } = useUserProfile()
 
