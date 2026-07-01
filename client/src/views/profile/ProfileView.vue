@@ -493,11 +493,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
 import { useUserProfile } from '../../composables/profile/useProfile'
+import { useProfileSecurity } from '../../composables/profile/useProfileSecurity'
 import { formatDateLong as formatDate, formatRelativeTime } from '@/utils/date-utils'
 import { getActionClass } from '@/utils/helpers'
-import { useAuthStore } from '../../stores/auth.store'
 import TableLoader from '@/components/common/TableLoader.vue'
 import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale } from 'chart.js'
@@ -506,135 +505,25 @@ import AlertMessage from '@/components/common/AlertMessage.vue'
 
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale)
 
+const { user, stats, chartData, chartOptions, recentActivity, loading } = useUserProfile()
+
 const {
-  user,
-  stats,
-  chartData,
-  chartOptions,
-  recentActivity,
-  loading
-} = useUserProfile()
-
-const authStore = useAuthStore()
-
-// Tabs Management
-const activeTab = ref('profile')
-
-// Password Change Logic
-const passwordForm = reactive({
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-
-const showPassword = reactive({
-  current: false,
-  new: false,
-  confirm: false
-})
-
-const isSubmitting = ref(false)
-const showConfirmModal = ref(false)
-const alertComponent = ref<InstanceType<typeof AlertMessage> | null>(null)
-
-// History Logic
-const loginHistory = ref<any[]>([])
-const loadingHistory = ref(false)
-
-const loadHistory = async () => {
-  loadingHistory.value = true
-  try {
-    loginHistory.value = await authStore.fetchLoginHistory()
-  } catch (e) {
-    console.error(e)
-  } finally {
-    loadingHistory.value = false
-  }
-}
-
-// Watch activeTab to load history
-import { watch } from 'vue'
-watch(activeTab, (newTab) => {
-  if (newTab === 'security') {
-    loadHistory()
-  }
-})
-
-// User Agent Parser Helper
-const parseUserAgent = (ua: string) => {
-  if (ua.includes('Windows')) return 'Windows PC'
-  if (ua.includes('Macintosh')) return 'Mac'
-  if (ua.includes('Linux')) return 'Linux PC'
-  if (ua.includes('Android')) return 'Android'
-  if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS'
-  return 'Desconocido'
-}
-
-// Real-time Requirements
-const reqs = reactive({
-  length: false,
-  uppercase: false,
-  lowercase: false,
-  number: false,
-  special: false
-})
-
-const validatePasswordStrength = () => {
-  const p = passwordForm.newPassword
-  reqs.length = p.length >= 6 && p.length <= 8
-  reqs.uppercase = /[A-Z]/.test(p)
-  reqs.lowercase = /[a-z]/.test(p)
-  reqs.number = /[0-9]/.test(p)
-  reqs.special = /[@#$%&*\-_+=!?]/.test(p)
-}
-
-const passwordMismatch = computed(() => {
-  return passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword
-})
-
-const isFormValid = computed(() => {
-  return (
-    reqs.length &&
-    reqs.uppercase &&
-    reqs.lowercase &&
-    reqs.number &&
-    reqs.special &&
-    !passwordMismatch.value &&
-    passwordForm.currentPassword
-  )
-})
-
-// Step 1: Trigger Modal
-const handleChangePassword = () => {
-  if (!isFormValid.value) return
-  showConfirmModal.value = true
-}
-
-// Step 2: Actually Submit
-const confirmChangePassword = async () => {
-  showConfirmModal.value = false
-  isSubmitting.value = true
-
-  const result = await authStore.changePassword(
-    passwordForm.currentPassword,
-    passwordForm.newPassword,
-    passwordForm.confirmPassword
-  )
-
-  isSubmitting.value = false
-
-  if (result.success) {
-    alertComponent.value?.show('¡Éxito!', 'Contraseña actualizada correctamente', 'success')
-
-    // Reset form
-    passwordForm.currentPassword = ''
-    passwordForm.newPassword = ''
-    passwordForm.confirmPassword = ''
-    validatePasswordStrength() // Reset validations
-  } else {
-    alertComponent.value?.show('Error', result.message, 'error')
-  }
-}
+  activeTab,
+  passwordForm,
+  showPassword,
+  isSubmitting,
+  showConfirmModal,
+  loginHistory,
+  loadingHistory,
+  reqs,
+  passwordMismatch,
+  isFormValid,
+  parseUserAgent,
+  validatePasswordStrength,
+  handleChangePassword,
+  confirmChangePassword,
+  alertComponent
+} = useProfileSecurity()
 </script>
 
 <style scoped>
