@@ -37,9 +37,15 @@ export const formatTitleCase = (text: string | null | undefined): string => {
     .join(' ')
 }
 
-export function getInitials(name: string | null | undefined): string {
-  if (!name) return '?'
-  return name
+export function getInitials(nameOrFirst: string | null | undefined, last?: string | null): string {
+  if (!nameOrFirst && !last) return '??'
+  
+  if (nameOrFirst && last) {
+    return `${nameOrFirst.charAt(0)}${last.charAt(0)}`.toUpperCase()
+  }
+
+  const str = nameOrFirst || last || ''
+  return str
     .split(' ')
     .filter((n) => n.length > 0)
     .map((n: string) => n[0])
