@@ -16,7 +16,7 @@ const shiftExceptionSchema = new Schema<IShiftException>(
     assignment_id: {
       type: Schema.Types.ObjectId,
       required: true,
-      refPath: "assignment_model", // Polymorphic reference
+      refPath: "assignment_model",
       index: true,
     },
     assignment_model: {

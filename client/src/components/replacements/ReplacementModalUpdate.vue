@@ -385,6 +385,7 @@
 </template>
 
 <script setup lang="ts">
+import { getInitials } from '@/utils/text-formatters'
 import { type ReplacementRegistration } from '@/types/replacement.types'
 import { type User } from '@/types/user.types'
 import { ref, computed, watch } from 'vue'
@@ -508,18 +509,6 @@ const searchEntrante = (query: string, loading: (isLoading: boolean) => void) =>
 }
 
 // ... rest of script ...
-
-// --- Helper Initials ---
-function getInitials(name: string) {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .filter((n) => n.length > 0)
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-}
 
 // --- Elementos de calendario para control de popover
 const dpInicio = ref<any>(null)

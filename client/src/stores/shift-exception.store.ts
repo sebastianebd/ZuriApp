@@ -1,6 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './auth.store'
+import {
+  fetchExceptions,
+  createShiftException,
+  deleteShiftException,
+  type CreateExceptionPayload
+} from '../services/shift-exception.service'
 
 export interface ShiftException {
   _id: string
@@ -21,15 +27,14 @@ export const useShiftExceptionStore = defineStore('shiftException', () => {
   async function loadExceptions(assignmentId?: string, startDate?: string, endDate?: string) {
     loading.value = true
     try {
-      const params: any = {}
+      const api = authStore.usePrivateApi()
+      const params: { assignment_id?: string; start_date?: string; end_date?: string } = {}
       if (assignmentId) params.assignment_id = assignmentId
       if (startDate) params.start_date = startDate
       if (endDate) params.end_date = endDate
 
-      const privateApi = authStore.usePrivateApi()
-      const response = await privateApi.get('/shift-exceptions', { params })
-      exceptions.value = response.data
-      return response.data
+      exceptions.value = await fetchExceptions(api, params)
+      return exceptions.value
     } catch (error) {
       console.error('Error loading exceptions:', error)
       throw error
@@ -38,19 +43,11 @@ export const useShiftExceptionStore = defineStore('shiftException', () => {
     }
   }
 
-  async function createException(data: {
-    assignment_id: string
-    assignment_model?: 'TurnAssignment' | 'Replacement' // 🏢
-    date: string
-    original_type: string
-    override_type: string
-    reason?: string
-    created_by: string
-  }) {
+  async function createException(data: CreateExceptionPayload) {
     loading.value = true
     try {
-      const privateApi = authStore.usePrivateApi()
-      const response = await privateApi.post('/shift-exceptions', data)
+      const api = authStore.usePrivateApi()
+      const created = await createShiftException(api, data)
 
       // Handle both populated and non-populated assignment_id for comparison
       const datePrefix = data.date.split('T')[0]
@@ -64,20 +61,17 @@ export const useShiftExceptionStore = defineStore('shiftException', () => {
         // Replace entire array to trigger reactivity
         exceptions.value = [
           ...exceptions.value.slice(0, existingIndex),
-          response.data,
+          created,
           ...exceptions.value.slice(existingIndex + 1)
         ]
       } else {
         // Add new
-        exceptions.value.push(response.data)
+        exceptions.value.push(created)
       }
 
-      return response.data
-    } catch (error: any) {
+      return created
+    } catch (error) {
       console.error('Error creating exception:', error)
-      if (error.response?.data) {
-        console.error('Server Validation Details:', error.response.data)
-      }
       throw error
     } finally {
       loading.value = false
@@ -87,8 +81,8 @@ export const useShiftExceptionStore = defineStore('shiftException', () => {
   async function deleteException(id: string) {
     loading.value = true
     try {
-      const privateApi = authStore.usePrivateApi()
-      await privateApi.delete(`/shift-exceptions/${id}`)
+      const api = authStore.usePrivateApi()
+      await deleteShiftException(api, id)
       exceptions.value = exceptions.value.filter((e) => e._id !== id)
     } catch (error) {
       console.error('Error deleting exception:', error)

@@ -3,18 +3,34 @@ import { ShiftExceptionModel } from "../models/shift-exception.model";
 import auditService from "../services/audit.service";
 import socketService from "../services/socket.service";
 import { AuthRequest } from "../middleware/authentication.middleware";
+import { TurnAssignmentModel } from "../models/turn-assignment.model";
+import ReplacementModel from "../models/replacement.model";
 
 export const createException = async (req: Request, res: Response) => {
   try {
     const {
       assignment_id,
-      assignment_model = "TurnAssignment", // Default: Compatibilidad hacia atrás
       date,
       original_type,
       override_type,
       reason,
       created_by,
     } = req.body;
+
+    // Deduce assignment_model dynamically
+    let assignment_model = "TurnAssignment";
+    const [turnAssignment, replacement] = await Promise.all([
+      TurnAssignmentModel.findById(assignment_id),
+      ReplacementModel.findById(assignment_id),
+    ]);
+
+    if (turnAssignment) {
+      assignment_model = "TurnAssignment";
+    } else if (replacement) {
+      assignment_model = "Replacement";
+    } else {
+      return res.status(404).json({ message: "Assignment not found in TurnAssignment or Replacement" });
+    }
 
     // Upsert Logic (Crear o Actualizar)
     // Utilizamos findOneAndUpdate para manejar condiciones de carrera de forma atómica.
