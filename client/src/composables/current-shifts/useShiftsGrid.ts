@@ -262,7 +262,6 @@ export function useShiftsGrid(
           getShift: (date: Date) => {
             const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
 
-            // Re-verify the assignment covers this date (assignments might overlap but we need to check the specific one)
             const start = parseAsLocal(a.start_date)
             const end = a.end_date ? parseAsLocal(a.end_date) : new Date(9999, 11, 31)
             const sDate = new Date(start.getFullYear(), start.getMonth(), start.getDate())
