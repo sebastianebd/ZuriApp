@@ -13,7 +13,7 @@
       </div>
 
       <button
-        v-if="authStore.hasPermission('cargos.create')"
+        v-if="hasPermission('cargos.create')"
         class="btn btn-primary fw-bold shadow-sm px-4"
         @click="openCreateModal"
       >
@@ -67,95 +67,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useCargoStore } from '@/stores/cargo.store'
-import { useAuthStore } from '@/stores/auth.store'
-import { type JobRole } from '@/types/job-role.types'
+import { onMounted } from 'vue'
+import { usePositions } from '@/composables/positions/usePositions'
 import CargoTable from '@/components/personal/CargoTable.vue'
 import CargoModal from '@/components/personal/CargoModal.vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 
-const cargoStore = useCargoStore()
-const authStore = useAuthStore()
-const showModal = ref(false)
-const showDeleteModal = ref(false)
-const showConfirmationModal = ref(false)
-
-const selectedCargo = ref<JobRole | null>(null)
-const cargoToDelete = ref<JobRole | null>(null)
-const pendingCargoData = ref<Partial<JobRole> | null>(null)
-
-const confirmationMessage = computed(() => {
-  return pendingCargoData.value?._id
-    ? '¿Estás seguro de que deseas guardar los cambios de este cargo?'
-    : '¿Estás seguro de que deseas crear este nuevo cargo?'
-})
+const {
+  cargoStore,
+  showModal,
+  showDeleteModal,
+  showConfirmationModal,
+  selectedCargo,
+  cargoToDelete,
+  confirmationMessage,
+  openCreateModal,
+  openEditModal,
+  closeModal,
+  handleSave,
+  closeConfirmationModal,
+  confirmSave,
+  confirmDelete,
+  closeDeleteModal,
+  handleDelete,
+  hasPermission
+} = usePositions()
 
 // Refresh list on mount
 onMounted(() => {
   cargoStore.fetchCargos(true)
 })
-
-function openCreateModal() {
-  selectedCargo.value = null
-  showModal.value = true
-}
-
-function openEditModal(cargo: JobRole) {
-  selectedCargo.value = cargo
-  showModal.value = true
-}
-
-function closeModal() {
-  showModal.value = false
-  selectedCargo.value = null
-}
-
-function handleSave(cargoData: Partial<JobRole>) {
-  pendingCargoData.value = cargoData
-  showConfirmationModal.value = true
-}
-
-function closeConfirmationModal() {
-  showConfirmationModal.value = false
-  pendingCargoData.value = null
-}
-
-async function confirmSave() {
-  if (!pendingCargoData.value) return
-
-  try {
-    if (pendingCargoData.value._id) {
-      await cargoStore.updateCargo(pendingCargoData.value._id, pendingCargoData.value)
-    } else {
-      await cargoStore.createCargo(pendingCargoData.value)
-    }
-    closeConfirmationModal()
-    closeModal()
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-function confirmDelete(cargo: JobRole) {
-  cargoToDelete.value = cargo
-  showDeleteModal.value = true
-}
-
-function closeDeleteModal() {
-  showDeleteModal.value = false
-  cargoToDelete.value = null
-}
-
-async function handleDelete() {
-  if (!cargoToDelete.value?._id) return
-  try {
-    await cargoStore.deleteCargo(cargoToDelete.value._id)
-    closeDeleteModal()
-  } catch (error) {
-    console.error(error)
-  }
-}
 </script>
 
 <style scoped>

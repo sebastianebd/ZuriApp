@@ -18,3 +18,5 @@ export interface TurnAssignment {
   createdAt?: string
   updatedAt?: string
 }
+
+
