@@ -1,159 +1,3 @@
-<script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
-import { useReportStore } from '../../stores/report.store'
-import { useUserStore } from '../../stores/user.store'
-import vSelect from 'vue-select'
-import 'vue-select/dist/vue-select.css'
-import { debounce } from 'lodash-es'
-
-const reportStore = useReportStore()
-const userStore = useUserStore()
-
-const selectedUser = ref<any>(null)
-const userOptions = ref<any[]>([]) // Local options for autocomplete
-const month = ref(1)
-const year = ref(2026)
-
-// 🚀 Debounced Search with Lodash (300ms)
-const performSearch = debounce(async (search: string, loading: (l: boolean) => void) => {
-  try {
-    const results = await userStore.buscarUsuarios(search)
-    userOptions.value = results
-  } catch (e) {
-    console.error(e)
-  } finally {
-    loading(false)
-  }
-}, 300)
-
-const onSearch = (search: string, loading: (l: boolean) => void) => {
-  if (search.length < 1) return
-
-  // 1. Immediate UI Feedback
-  loading(true)
-
-  // 2. Debounced API Call
-  performSearch(search, loading)
-}
-
-const months = [
-  'Enero',
-  'Febrero',
-  'Marzo',
-  'Abril',
-  'Mayo',
-  'Junio',
-  'Julio',
-  'Agosto',
-  'Septiembre',
-  'Octubre',
-  'Noviembre',
-  'Diciembre'
-]
-const monthOptions = months.map((m, i) => ({ label: m, value: i + 1 }))
-
-const years = [2024, 2025, 2026]
-
-// Fetch users for the dropdown (Load default top 20)
-onMounted(async () => {
-  reportStore.error = null // Clear any persistent errors on mount
-  const defaults = await userStore.buscarUsuarios('')
-  userOptions.value = defaults
-})
-
-// Validation: Restrict current/future months
-const isRestricted = computed(() => {
-  const now = new Date()
-  const currentYear = now.getFullYear()
-  const currentMonth = now.getMonth() + 1 // 1-indexed (Jan=1)
-
-  // Block if Future Year OR (Current Year AND Future/Current Month)
-  if (year.value > currentYear) return true
-  if (year.value === currentYear && month.value >= currentMonth) return true
-  return false
-})
-
-// Explicit Report Generation Handler
-// Watchers to clear report when filters change
-watch([month, year, selectedUser], () => {
-  reportStore.reportData = null
-  reportStore.error = null // Also clear errors
-})
-
-const handleGenerateReport = async () => {
-  if (!selectedUser.value) return
-
-  // Validation: Check if month is restricted
-  if (isRestricted.value) {
-    reportStore.error =
-      'El mes seleccionado se encuentra en curso. Solo se pueden emitir reportes de meses cerrados.'
-    reportStore.reportData = null
-    return
-  }
-
-  // Update store filters explicitely
-  reportStore.currentFilters.userId = selectedUser.value._id
-  reportStore.currentFilters.month = month.value
-  reportStore.currentFilters.year = year.value
-
-  await reportStore.fetchReportSummary()
-}
-
-const getServiceBadgeClass = (serviceName: string) => {
-  const lower = serviceName.toLowerCase()
-  if (lower.includes('urgencia')) return 'badge-urgencias'
-  if (lower.includes('uci')) return 'badge-uci'
-  if (lower.includes('pediatria')) return 'badge-pediatria'
-  if (lower.includes('cirugia')) return 'badge-cirugia'
-  return 'badge-default'
-}
-
-const getShiftClass = (sigla: string) => {
-  if (sigla === 'L' || sigla === 'LARGO') return 'shift-diurno'
-  if (sigla === 'N' || sigla === 'NOCHE') return 'shift-nocturno'
-  if (sigla === 'X' || sigla === 'LIBRE') return 'shift-libre'
-  return ''
-}
-
-// Helper to format date dd/mm/yyyy
-const formatDate = (dateStr: string | Date) => {
-  const d = new Date(dateStr)
-  const day = String(d.getDate()).padStart(2, '0')
-  const mn = String(d.getMonth() + 1).padStart(2, '0')
-  const yr = d.getFullYear()
-  return `${day}/${mn}/${yr}`
-}
-
-// Helper specifically for backend dates (UTC) to avoid timezone shift
-const formatReportDate = (dateStr: string | Date) => {
-  const d = new Date(dateStr)
-  const day = String(d.getUTCDate()).padStart(2, '0')
-  const mn = String(d.getUTCMonth() + 1).padStart(2, '0')
-  const yr = d.getUTCFullYear()
-  return `${day}/${mn}/${yr}`
-}
-
-const downloadPDF = () => {
-  const originalTitle = document.title
-
-  if (selectedUser.value && reportStore.reportData) {
-    const monthName = months[month.value - 1]
-    const fullName = `${selectedUser.value.nombre}_${selectedUser.value.apellido}`.replace(
-      /\s+/g,
-      '_'
-    )
-    document.title = `Reporte_${monthName}_${year.value}_${fullName}`
-  }
-
-  window.print()
-  document.title = originalTitle
-}
-
-const getUserLabel = (option: any) => {
-  return `${option.nombre} ${option.apellido}`
-}
-</script>
-
 <template>
   <div class="page-container">
     <!-- Header (Screen Only) -->
@@ -593,19 +437,11 @@ const getUserLabel = (option: any) => {
                   <tr v-for="(item, idx) in day.items" :key="idx">
                     <td>{{ formatReportDate(day.date) }}</td>
                     <td>
-                      <span class="service-badge" :class="getServiceBadgeClass(item.service)">{{
-                        item.service
-                      }}</span>
+                      <span class="service-badge badge-default">{{ item.service }}</span>
                     </td>
                     <td>
-                      <span class="shift-type" :class="getShiftClass(item.sigla)">
-                        {{
-                          item.sigla === 'L'
-                            ? 'Diurno'
-                            : item.sigla === 'N'
-                            ? 'Nocturno'
-                            : item.sigla
-                        }}
+                      <span class="shift-type" :style="{ backgroundColor: getShiftColor(item.sigla), color: '#ffffff', border: 'none' }">
+                        {{ getShiftName(item.sigla) }}
                         <span v-if="item.isReplacement" class="text-xs text-gray-500"
                           >(Reemplazo)</span
                         >
@@ -655,6 +491,31 @@ const getUserLabel = (option: any) => {
   </div>
 </template>
 
+<script setup lang="ts">
+import { useReports } from '../../composables/reports/useReports'
+import vSelect from 'vue-select'
+import 'vue-select/dist/vue-select.css'
+
+const {
+  reportStore,
+  selectedUser,
+  userOptions,
+  month,
+  year,
+  months,
+  monthOptions,
+  years,
+  onSearch,
+  handleGenerateReport,
+  getShiftColor,
+  getShiftName,
+  formatDate,
+  formatReportDate,
+  downloadPDF,
+  getUserLabel
+} = useReports()
+</script>
+
 <style scoped>
 .icon-square {
   width: 48px;
@@ -681,15 +542,11 @@ const getUserLabel = (option: any) => {
   justify-content: space-between;
 }
 
-/* Premium Input Container (v-select) */
-/* Premium Input Container (v-select) - Matched to UserModalCreate */
-/* Premium Input Container (v-select) - Matched to UserModalCreate */
 .user-search {
   flex: 1;
   min-width: 300px;
 }
 
-/* Base Styles for Premium Selects (User Search + Dates) */
 .premium-select :deep(.vs__dropdown-toggle) {
   border: 1px solid #e2e8f0;
   border-radius: 0.375rem;
