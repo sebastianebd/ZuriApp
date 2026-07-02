@@ -6,7 +6,7 @@ import { type JobRole } from '@/types/job-role.types'
 
 const props = defineProps<{
   visible: boolean
-  cargo?: JobRole | null // If null, creating. If present, editing.
+  cargo?: JobRole | null
   loading?: boolean
 }>()
 
