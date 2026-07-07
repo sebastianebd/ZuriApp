@@ -34,7 +34,11 @@ export const useReportStore = defineStore('report', () => {
       }
 
       reportData.value = null
-      error.value = err.response?.data?.message || 'Error al obtener el reporte.'
+      if (err.response?.status === 404) {
+        error.value = 'No se encontraron registros para este usuario en el periodo seleccionado.'
+      } else {
+        error.value = err.response?.data?.message || 'Error al obtener el reporte.'
+      }
     } finally {
       isLoading.value = false
     }

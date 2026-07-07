@@ -7,7 +7,6 @@ import TurnType from "../models/turn-type.model";
 // Este servicio actúa como una fachada para obtener listas de opciones para el frontend.
 // Abstrae la fuente real de los datos:
 // - Algunos vienen de colecciones dedicadas (Cargo, Service, TurnType) para integridad referencial.
-// - Otros vienen de la colección genérica 'Options' (configuración simple clave-valor).
 async function obtener(nombre: string): Promise<string[]> {
   // Estrategia:
   // Interceptamos nombres clave ("TIPO_CARGO", "SERVICIOS", etc.) para delegar a sus modelos principales.

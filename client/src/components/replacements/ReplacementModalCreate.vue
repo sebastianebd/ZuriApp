@@ -207,12 +207,11 @@
                     >Servicio Clínico</label
                   >
                   <v-select
-                    id="servicio"
                     v-model="registroLocal.servicio"
                     :options="listaDeServicios"
-                    :clearable="false"
-                    :filterable="true"
-                    placeholder="Seleccione servicio..."
+                    label="nombre"
+                    :reduce="(s) => s._id"
+                    placeholder="Seleccione servicio"
                     class="custom-v-select"
                   />
                 </div>
@@ -346,7 +345,7 @@ import { useReplacementStore } from '@/stores/replacement.store'
 const props = defineProps<{
   visible: boolean
   listaDeTurnos: string[]
-  listaDeServicios: string[]
+  listaDeServicios: any[]
   registro: Partial<ReplacementRegistration>
   fechasBloqueadas: string[]
 }>()

@@ -11,15 +11,20 @@ export function useReports() {
 
   const selectedUser = ref<any>(null)
   const userOptions = ref<any[]>([])
-  const month = ref(1)
+  const month = ref(new Date().getMonth() + 1)
   const year = ref(new Date().getFullYear())
 
-  const months = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ]
-  const monthOptions = months.map((m, i) => ({ label: m, value: i + 1 }))
-  const years = [2024, 2025, 2026]
+  // Generar meses dinámicamente usando Intl (sin riesgos de typos ortográficos)
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(2000, i, 1)
+    const m = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(d)
+    return m.charAt(0).toUpperCase() + m.slice(1) // Ej: "Enero"
+  })
+
+  // Generar años dinámicamente (desde 2023 hasta el año actual) para que nunca quede obsoleto
+  const currentY = new Date().getFullYear()
+  const startY = 2023
+  const years = Array.from({ length: currentY - startY + 1 }, (_, i) => startY + i)
 
   // Debounced Search with Lodash (300ms)
   const performSearch = debounce(async (search: string, loading: (l: boolean) => void) => {
@@ -44,13 +49,13 @@ export function useReports() {
     reportStore.error = null // Clear any persistent errors on mount
     const defaults = await userStore.buscarUsuarios('')
     userOptions.value = defaults
-    
+
     // Ensure siglas are loaded for colors
     await siglaStore.fetchSiglas()
   })
 
-  // Validation: Restrict current/future months
-  const isRestricted = computed(() => {
+  // Validation: Check if month is current/future (Open Month / Avance)
+  const isOpenMonth = computed(() => {
     const now = new Date()
     const currentYear = now.getFullYear()
     const currentMonth = now.getMonth() + 1 // 1-indexed (Jan=1)
@@ -69,17 +74,17 @@ export function useReports() {
   const handleGenerateReport = async () => {
     if (!selectedUser.value) return
 
-    if (isRestricted.value) {
-      reportStore.error = 'El mes seleccionado se encuentra en curso. Solo se pueden emitir reportes de meses cerrados.'
-      reportStore.reportData = null
-      return
-    }
-
     reportStore.currentFilters.userId = selectedUser.value._id
     reportStore.currentFilters.month = month.value
     reportStore.currentFilters.year = year.value
 
     await reportStore.fetchReportSummary()
+
+    if (reportStore.reportData && !reportStore.error) {
+      setTimeout(() => {
+        downloadPDF()
+      }, 300)
+    }
   }
 
   // Helpers
@@ -112,7 +117,10 @@ export function useReports() {
 
     if (selectedUser.value && reportStore.reportData) {
       const monthName = months[month.value - 1]
-      const fullName = `${selectedUser.value.nombre}_${selectedUser.value.apellido}`.replace(/\s+/g, '_')
+      const fullName = `${selectedUser.value.nombre}_${selectedUser.value.apellido}`.replace(
+        /\s+/g,
+        '_'
+      )
       document.title = `Reporte_${monthName}_${year.value}_${fullName}`
     }
 
@@ -131,8 +139,8 @@ export function useReports() {
     month,
     year,
     months,
-    monthOptions,
     years,
+    isOpenMonth,
     onSearch,
     handleGenerateReport,
     getShiftColor,

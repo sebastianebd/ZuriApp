@@ -3,6 +3,7 @@ import { TurnAssignmentModel } from "../models/turn-assignment.model";
 import auditService from "../services/audit.service";
 import { AuthRequest } from "../middleware/authentication.middleware";
 import socketService from "../services/socket.service";
+import { checkPeriodLock } from "../middleware/period-lock.middleware";
 
 import TurnType from "../models/turn-type.model"; // Ensure this import exists at top
 import notificationService from "../services/notification.service";
@@ -10,6 +11,17 @@ import notificationService from "../services/notification.service";
 export const createAssignment = async (req: Request, res: Response) => {
   try {
     const { user_id, turn_type, start_date, end_date } = req.body;
+
+    // Verificación de Período Cerrado
+    const date = new Date(start_date);
+    const allowed = await checkPeriodLock(
+      req as AuthRequest,
+      res,
+      date.getMonth() + 1,
+      date.getFullYear(),
+      user_id,
+    );
+    if (!allowed) return;
 
     // 1. Patrón Snapshot (Foto Estática)
     // Recuperamos la configuración del turno en el momento de la asignación.

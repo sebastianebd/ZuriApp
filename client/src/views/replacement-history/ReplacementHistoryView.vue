@@ -146,7 +146,7 @@
                 <td>
                   <div class="d-flex flex-column justify-content-center h-100">
                     <span class="badge-modern-context mb-1">
-                      <i class="bi bi-hospital me-1"></i> {{ formatTitleCase(reemplazo.servicio) }}
+                      <i class="bi bi-hospital me-1"></i> {{ formatTitleCase(getServiceName(reemplazo.servicio)) }}
                     </span>
                     <span class="text-secondary x-small ms-1">
                       {{ formatTitleCase(reemplazo.tipo_turno) }}
@@ -211,6 +211,15 @@ import HistoryFilter from '@/components/historial/HistorialFilter.vue'
 import TableLoader from '@/components/common/TableLoader.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
 import { formatTitleCase } from '@/utils/text-formatters'
+import { useServiceStore } from '@/stores/service.store'
+
+const serviceStore = useServiceStore()
+const getServiceName = (id: any) => {
+  if (!id) return '—'
+  const targetId = typeof id === 'object' && id._id ? id._id.toString() : id.toString()
+  const svc = serviceStore.services.find((s) => s._id === targetId)
+  return svc ? svc.nombre : targetId
+}
 
 const {
   // Data & AuthState

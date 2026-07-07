@@ -51,7 +51,10 @@
           @update:model-value="(newValue: any) => updateFilter('service', newValue)"
           :options="[
             { label: 'Todos los servicios', value: '' },
-            ...listaServicios.map((s) => ({ label: s, value: s }))
+            ...listaServicios.map((s: any) => ({ 
+              label: typeof s === 'object' && s.nombre ? s.nombre : s, 
+              value: typeof s === 'object' && s._id ? s._id : s 
+            }))
           ]"
           :reduce="(option: any) => option.value"
           label="label"

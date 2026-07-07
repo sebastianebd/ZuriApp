@@ -15,7 +15,7 @@ export interface IReplacement extends Document {
   turn_type_id?: mongoose.Types.ObjectId;
   fecha_inicio: Date;
   fecha_termino: Date;
-  servicio: string;
+  servicio: mongoose.Types.ObjectId;
   snapshot_secuencia?: Array<{
     dia: number;
     turno_entrada?: string;
@@ -95,9 +95,9 @@ const replacementSchema: Schema = new Schema(
       required: true,
     },
     servicio: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Service",
       required: true,
-      default: "ARO",
     },
     snapshot_secuencia: [
       {

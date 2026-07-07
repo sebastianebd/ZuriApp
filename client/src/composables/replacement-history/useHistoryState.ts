@@ -1,15 +1,15 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { useOptionStore } from '@/stores/option.store'
+import { useServiceStore } from '@/stores/service.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import socket from '@/plugins/socket'
 import { debounce } from 'lodash-es'
 
 export function useHistoryState() {
-  const optionStore = useOptionStore()
+  const serviceStore = useServiceStore()
   const replacementStore = useReplacementStore()
 
   const cargando = ref(true)
-  const listaDeServicios = ref<string[]>([])
+  const listaDeServicios = computed(() => serviceStore.services)
 
   const filtros = ref({
     rutSaliente: '',
@@ -67,8 +67,9 @@ export function useHistoryState() {
 
   onMounted(async () => {
     try {
-      const opciones = await optionStore.mostrarOpciones()
-      listaDeServicios.value = opciones.servicios
+      if (serviceStore.services.length === 0) {
+        await serviceStore.fetchServices()
+      }
 
       await cargarHistorial(currentPage.value)
 

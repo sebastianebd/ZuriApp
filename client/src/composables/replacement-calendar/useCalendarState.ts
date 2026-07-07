@@ -1,19 +1,19 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useReplacementStore } from '@/stores/replacement.store'
-import { useOptionStore } from '@/stores/option.store'
+import { useServiceStore } from '@/stores/service.store'
 import { formatTitleCase } from '@/utils/text-formatters'
 import { getColorByStatus } from '@/utils/helpers'
 
 export function useCalendarState() {
   const replacementStore = useReplacementStore()
-  const optionStore = useOptionStore()
+  const serviceStore = useServiceStore()
 
   const calendarEvents = ref<any[]>([])
   const selectedService = ref<string | null>(null)
   const loading = ref(false)
 
-  // Service Options
-  const serviceOptions = computed(() => optionStore.opciones?.servicios || [])
+  // Service Options from Service Store
+  const serviceOptions = computed(() => serviceStore.services || [])
 
   // Modal State
   const modalVisible = ref(false)
@@ -35,7 +35,7 @@ export function useCalendarState() {
     eventoSeleccionado.value = null
   }
 
-  /** FullCalendar requiere que `end` sea exclusivo (RFC 5545). 
+  /** FullCalendar requiere que `end` sea exclusivo (RFC 5545).
    *  Nuestra BD guarda fecha_termino como inclusivo, por eso sumamos +1 día. */
   function toExclusiveEndDate(fechaIso: string): string {
     if (!fechaIso) return ''
@@ -95,7 +95,7 @@ export function useCalendarState() {
     try {
       // Set default service if available
       if (serviceOptions.value.length > 0) {
-        selectedService.value = serviceOptions.value[0]
+        selectedService.value = serviceOptions.value[0]._id
       }
 
       // Load replacements for default service
@@ -108,9 +108,9 @@ export function useCalendarState() {
   })
 
   // Watch options to set default if initial load was empty
-  watch(serviceOptions, async (newVal) => {
-    if (!selectedService.value && newVal.length > 0) {
-      selectedService.value = newVal[0]
+  watch(serviceOptions, async (newOptions) => {
+    if (!selectedService.value && newOptions.length > 0) {
+      selectedService.value = newOptions[0]._id
       await loadReplacementsByService()
     }
   })
@@ -118,12 +118,15 @@ export function useCalendarState() {
   return {
     calendarEvents,
     selectedService,
-    loading,
     serviceOptions,
     modalVisible,
     eventoSeleccionado,
+    loading,
+    
     handleDateClick,
     handleEventClick,
-    closeModal
+    closeModal,
+    
+    getServiceName: (id: string) => serviceStore.getServiceName(id)
   }
 }

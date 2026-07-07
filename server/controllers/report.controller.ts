@@ -1,6 +1,15 @@
 import { Request, Response, NextFunction } from "express";
+import mongoose from "mongoose";
 import * as ReportService from "../services/report.service";
+import Period from "../models/period.model";
+import ReportSnapshot from "../models/report-snapshot.model";
+import { getSignedDownloadUrl } from "../config/s3.client";
 
+/**
+ * Lazy Evaluation: Si el mes está CLOSED, devuelve el Snapshot guardado (o lo crea).
+ * Si el mes está abierto, calcula en tiempo real.
+ * Dominio: sin excepciones, sin reaperturas. El período cerrado es inmutable.
+ */
 export const getMonthlySummary = async (
   req: Request,
   res: Response,
@@ -15,87 +24,84 @@ export const getMonthlySummary = async (
         .json({ error: "Missing required parameters: month, year, userId" });
     }
 
-    // Regla de Negocio: Integridad de Reportes
-    // No permitimos generar reportes de meses no cerrados (futuro o mes en curso)
-    // para evitar inconsistencias en pagos/auditorías de RRHH, salvo que sea una 'preview' explícita.
-    const isPreview = req.query.preview === "true";
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1; // 1-indexed
-
     const reqMonth = Number(month);
     const reqYear = Number(year);
+    const userIdStr = String(userId);
 
-    if (
-      !isPreview &&
-      (reqYear > currentYear ||
-        (reqYear === currentYear && reqMonth >= currentMonth))
-    ) {
-      return res.status(400).json({
-        error:
-          "No se puede generar el reporte del mes en curso o futuro. Espere al cierre del mes.",
+    // Consulta el estado del período
+    const period = await Period.findOne({ month: reqMonth, year: reqYear });
+    const isPeriodClosed = period?.status === "CLOSED";
+
+    if (isPeriodClosed) {
+      // Período cerrado → Lazy Evaluation desde Snapshot inmutable
+      const existing = await ReportSnapshot.findOne({
+        user_id: new mongoose.Types.ObjectId(userIdStr),
+        period_id: period!._id,
       });
+
+      if (existing) {
+        // Cache hit: devuelve el snapshot inmutable
+        return res.json({ ...existing.snapshot_data, _fromSnapshot: true });
+      }
+
+      // Cache miss: calcula, guarda y devuelve
+      const data = await ReportService.getMonthlyReport({
+        month: reqMonth,
+        year: reqYear,
+        userId: userIdStr,
+      });
+
+      await ReportSnapshot.create({
+        user_id: new mongoose.Types.ObjectId(userIdStr),
+        period_id: period!._id,
+        snapshot_data: data as Record<string, unknown>,
+        generated_at: new Date(),
+      });
+
+      return res.json({ ...data, _fromSnapshot: false });
     }
 
-    console.log(
-      `[ReportController] Requesting statement for: User="${userId}", Month=${month}, Year=${year}`,
-    );
-
+    // Período abierto: cálculo dinámico en tiempo real
     const data = await ReportService.getMonthlyReport({
-      month: Number(month),
-      year: Number(year),
-      userId: String(userId),
+      month: reqMonth,
+      year: reqYear,
+      userId: userIdStr,
     });
-
     res.json(data);
   } catch (error) {
     next(error);
   }
 };
 
-export const exportExcel = async (
+/**
+ * Exportación de Excel por Servicio con Chunking (protección de memoria).
+ * Procesa usuarios en lotes de 10 para mantener RAM plana y estable.
+ */
+export const exportExcelByService = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { month, year, userId } = req.query;
+    const { month, year, serviceId } = req.query;
 
-    if (!month || !year || !userId) {
-      return res.status(400).json({ error: "Missing required parameters" });
+    if (!month || !year || !serviceId) {
+      return res
+        .status(400)
+        .json({ error: "Missing required parameters: month, year, serviceId" });
     }
-
-    // Validación de Tiempo (Misma regla que en Summary)
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1; // 1-indexed
 
     const reqMonth = Number(month);
     const reqYear = Number(year);
 
-    if (
-      reqYear > currentYear ||
-      (reqYear === currentYear && reqMonth >= currentMonth)
-    ) {
-      return res.status(400).json({
-        error:
-          "No se puede generar el reporte del mes en curso o futuro. Espere al cierre del mes.",
-      });
-    }
+    const period = await Period.findOne({ month: reqMonth, year: reqYear });
 
-    const data = await ReportService.getMonthlyReport({
-      month: Number(month),
-      year: Number(year),
-      userId: String(userId),
-    });
-
-    // Generación de Excel vía Streaming
-    // Se escribe directamente al stream de respuesta (res) para minimizar uso de memoria RAM
-    // en reportes grandes.
-    const workbook = await ReportService.generateExcelReport(data, {
-      month: Number(month),
-      year: Number(year),
-      userId: String(userId),
+    // Si el período está cerrado, usa Snapshots; si está abierto, calcula al vuelo
+    const workbook = await ReportService.generateServiceExcelReport({
+      month: reqMonth,
+      year: reqYear,
+      serviceId: String(serviceId),
+      period,
     });
 
     res.setHeader(
@@ -104,11 +110,55 @@ export const exportExcel = async (
     );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=Reporte_Funcionario_${userId}_${month}_${year}.xlsx`,
+      `attachment; filename=Reporte_Servicio_${serviceId}_${month}_${year}.xlsx`,
     );
 
     await workbook.xlsx.write(res);
     res.end();
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Devuelve una URL firmada S3 (5 min) para descargar el PDF oficial de un servicio.
+ * Solo disponible en períodos cerrados (la URL del PDF fue generada por el Worker).
+ */
+export const getServicePDFUrl = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { month, year, serviceId } = req.query;
+
+    if (!month || !year || !serviceId) {
+      return res
+        .status(400)
+        .json({ error: "Missing required parameters: month, year, serviceId" });
+    }
+
+    const period = await Period.findOne({
+      month: Number(month),
+      year: Number(year),
+    });
+
+    if (!period || period.status !== "CLOSED") {
+      return res.status(400).json({
+        error: "El PDF oficial solo está disponible para períodos cerrados.",
+      });
+    }
+
+    // Obtener la clave S3 del PDF generado por el Worker
+    const s3Key = (period as any).pdfUrls?.get?.(String(serviceId));
+    if (!s3Key) {
+      return res.status(404).json({
+        error: "PDF no encontrado para este servicio.",
+      });
+    }
+
+    const signedUrl = await getSignedDownloadUrl(s3Key, 300);
+    res.json({ signedUrl });
   } catch (error) {
     next(error);
   }

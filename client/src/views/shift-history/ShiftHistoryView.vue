@@ -20,6 +20,8 @@
             <v-select
               v-model="filters.service"
               :options="services"
+              label="nombre"
+              :reduce="(s: any) => s._id"
               placeholder="Filtrar Servicio"
               class="bg-white rounded shadow-sm custom-v-select"
               :clearable="true"
@@ -55,11 +57,13 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import ShiftsView from '@/views/current-shifts/CurrentShiftsView.vue'
 import { useOptionStore } from '@/stores/option.store'
+import { useServiceStore } from '@/stores/service.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
 
 const optionStore = useOptionStore()
+const serviceStore = useServiceStore()
 const turnTypeStore = useTurnTypeStore()
 const shiftsViewRef = ref<InstanceType<typeof ShiftsView> | null>(null)
 
@@ -68,14 +72,18 @@ const filters = ref({
   cargo: ''
 })
 
-const services = computed(() => optionStore.opciones?.servicios || [])
+const services = computed(() => serviceStore.services || [])
 const cargos = computed(() => {
   const all = optionStore.opciones?.tipoCargo || []
   return all.filter((c) => !['RECURSOS HUMANOS', 'ADMIN-TI'].includes(c))
 })
 
 onMounted(async () => {
-  await Promise.all([optionStore.mostrarOpciones(), turnTypeStore.fetchTurnTypes(true)])
+  await Promise.all([
+    optionStore.mostrarOpciones(),
+    serviceStore.fetchServices(),
+    turnTypeStore.fetchTurnTypes(true)
+  ])
 
   // Default to previous month
   await nextTick()

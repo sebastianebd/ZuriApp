@@ -4,6 +4,7 @@ import { useReportStore } from '../../stores/report.store'
 import { useUserStore } from '../../stores/user.store'
 import { useTurnSiglaStore } from '../../stores/turn-sigla.store'
 import { useReplacementStore } from '../../stores/replacement.store'
+import { useServiceStore } from '../../stores/service.store'
 import socket from '../../plugins/socket'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
@@ -13,6 +14,7 @@ const reportStore = useReportStore()
 const userStore = useUserStore()
 const turnSiglaStore = useTurnSiglaStore()
 const replacementStore = useReplacementStore()
+const serviceStore = useServiceStore()
 
 // --- State ---
 const selectedUser = ref<any>(null)
@@ -141,6 +143,7 @@ onMounted(async () => {
   const defaults = await userStore.buscarUsuarios('')
   userOptions.value = defaults
   await turnSiglaStore.fetchSiglas()
+  await serviceStore.fetchServices()
 
   // 3. Restore Selection (triggers watcher -> fetchData)
   if (cachedUser) {
@@ -279,7 +282,7 @@ const isToday = (dayNum: number) => {
         <div class="profile-details">
           <div class="detail-row">
             <span>Servicio</span>
-            <strong>{{ reportStore.reportData.serviceStats[0]?.serviceName || 'N/A' }}</strong>
+            <strong>{{ serviceStore.getServiceName(reportStore.reportData.serviceStats[0]?.serviceName) || 'N/A' }}</strong>
           </div>
         </div>
       </div>
@@ -375,7 +378,7 @@ const isToday = (dayNum: number) => {
             class="svc-item"
           >
             <div class="svc-header">
-              <span>{{ svc.serviceName }}</span>
+              <span>{{ serviceStore.getServiceName(svc.serviceName) }}</span>
               <span
                 >{{
                   Math.round((svc.stats.hours / reportStore.reportData.totals.hours) * 100)

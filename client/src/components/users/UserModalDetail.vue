@@ -87,7 +87,9 @@
                   ></span>
                   <v-select
                     v-model="filtroServicio"
-                    :options="['TODOS', ...listaServicios]"
+                    :options="[{ _id: 'TODOS', nombre: 'TODOS' }, ...listaServicios]"
+                    label="nombre"
+                    :reduce="reduceService"
                     placeholder="Todos"
                     class="custom-v-select flex-grow-1"
                     :clearable="true"
@@ -202,7 +204,7 @@
                     <td class="small px-2 py-1">
                       <span
                         class="badge bg-light text-primary border border-primary border-opacity-25"
-                        >{{ rep.servicio }}</span
+                        >{{ getServiceName(rep.servicio) }}</span
                       >
                     </td>
                     <td class="small px-2 py-1">{{ rep.tipo_turno }}</td>
@@ -253,14 +255,22 @@
 import { ref, computed } from 'vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/dist/style.css'
-
 const props = defineProps<{
   visible: boolean
   usuario: any
   reemplazos: any[]
-  listaServicios: string[]
+  listaServicios: any[]
   listaTiposTurno: string[]
 }>()
+
+import { useServiceStore } from '@/stores/service.store'
+const serviceStore = useServiceStore()
+
+const getServiceName = (id: any) => {
+  return serviceStore.getServiceName(id)
+}
+
+const reduceService = (s: any) => s._id
 
 defineEmits(['cerrar'])
 
@@ -284,8 +294,7 @@ const reemplazosFiltrados = computed(() => {
 
     // Filtrar por servicio
     if (filtroServicio.value && filtroServicio.value !== 'TODOS') {
-      const sBusqueda = String(filtroServicio.value).toLowerCase()
-      if (!rep.servicio?.toLowerCase().includes(sBusqueda)) return false
+      if (!serviceStore.isServiceMatch(rep.servicio, filtroServicio.value)) return false
     }
 
     // Filtrar por tipo turno

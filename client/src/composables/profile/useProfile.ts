@@ -1,9 +1,11 @@
 import { computed, onMounted, ref, reactive } from 'vue'
 import { useAuthStore } from '../../stores/auth.store'
 import * as profileService from '../../services/profile.service'
+import { useServiceStore } from '../../stores/service.store'
 
 export function useUserProfile() {
   const authStore = useAuthStore()
+  const serviceStore = useServiceStore()
 
   const user = computed(() => {
     return authStore.userDetail
@@ -62,7 +64,7 @@ export function useUserProfile() {
 
       stats.value = statsRes
 
-      chartData.labels = serviceRes.map((s: any) => s.servicio)
+      chartData.labels = serviceRes.map((s: any) => serviceStore.getServiceName(s.servicio))
       chartData.datasets[0].data = serviceRes.map((s: any) => s.cantidad)
 
       recentActivity.value = activityRes

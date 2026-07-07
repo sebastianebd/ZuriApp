@@ -19,6 +19,8 @@
           <v-select
             v-model="selectedService"
             :options="serviceOptions"
+            label="nombre"
+            :reduce="(s: any) => s._id"
             placeholder="Filtrar por Servicio"
             class="bg-white rounded shadow-sm custom-v-select"
             :clearable="true"
@@ -118,11 +120,11 @@
               </td>
             </tr>
             <tr v-else-if="filteredShifts.length === 0" class="text-center">
-              <td :colspan="daysInMonth.length + 1" class="py-5 text-muted">
+              <td :colspan="daysInMonth.length + 1" class="py-5 text-muted fst-italic fs-5">
                 {{
-                  selectedService
-                    ? `No hay turnos para ${selectedService}`
-                    : 'No hay turnos activos para este mes.'
+                  selectedServiceName && selectedServiceName !== '—'
+                    ? `No hay turnos para ${selectedServiceName}`
+                    : 'Seleccione un servicio'
                 }}
               </td>
             </tr>
@@ -263,7 +265,7 @@ const {
   hasCreatePermission,
   loadingExceptions,
   loadingAssignments,
-  
+
   showModifyModal,
   selectedShiftData,
   handleCellClick,
@@ -272,10 +274,12 @@ const {
 
   showTooltip,
   hideTooltip,
-  
+
   loadData,
   handleSaveAssignment,
-  handleDeleteAssignment
+  handleDeleteAssignment,
+
+  selectedServiceName
 } = useCurrentShifts(props)
 
 onMounted(() => {
