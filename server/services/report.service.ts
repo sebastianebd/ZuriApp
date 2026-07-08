@@ -483,21 +483,22 @@ export const generateIndividualExcelReport = async (month: number, year: number,
   sheet.addRow([`RUT: ${data.user.rut}`]);
   sheet.addRow([]);
 
-  sheet.addRow(["Día", "Fecha", "Servicio", "Turno", "Entrada", "Salida", "Horas Tot.", "Diurnas", "Nocturnas"]);
+  sheet.addRow(["Día", "Fecha", "Servicio", "Entrada", "Salida", "Horas Tot.", "Diurnas", "Nocturnas"]);
   sheet.getRow(5).font = { bold: true };
 
   data.timeline.forEach((dayEntry: any) => {
     if (dayEntry.isOutOfContract || dayEntry.items.length === 0) {
-      sheet.addRow([dayEntry.dayNum, dayjs(dayEntry.date).format("DD/MM/YYYY"), "-", "LIBRE", "-", "-", 0, 0, 0]);
+      sheet.addRow([dayEntry.dayNum, dayjs(dayEntry.date).format("DD/MM/YYYY"), "-", "LIBRE", "-", 0, 0, 0]);
     } else {
       dayEntry.items.forEach((item: any) => {
+        const isFree = item.sigla === "L" || item.sigla === "X" || item.sigla === "-";
+        
         sheet.addRow([
           dayEntry.dayNum,
           dayjs(dayEntry.date).format("DD/MM/YYYY"),
           item.service,
-          item.sigla,
-          item.startTime,
-          item.endTime,
+          isFree ? "LIBRE" : item.startTime,
+          isFree ? "LIBRE" : item.endTime,
           item.hours,
           item.dayHrs,
           item.nightHrs,
@@ -619,7 +620,7 @@ export const generateServiceExcelReport = async ({
         data?.user?.nombre ?? "",
         data?.user?.apellido ?? "",
         data?.user?.cargo ?? "",
-        data?.totals?.totalHours ?? 0,
+        data?.totals?.hours ?? 0,
         data?.totals?.dayHours ?? 0,
         data?.totals?.nightHours ?? 0,
       ]);

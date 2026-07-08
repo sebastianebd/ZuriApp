@@ -53,4 +53,13 @@ export function formatDateDDMMYYYY(fechaIso: string): string {
   if (!fechaIso) return '-'
   const [year, month, day] = fechaIso.slice(0, 10).split('-')
   return `${day}-${month}-${year}`
+}
+
+/** Formatea una fecha asegurando UTC para evitar corrimientos por zona horaria */
+export const formatReportDate = (dateStr: string | Date): string => {
+  const d = new Date(dateStr)
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  const mn = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const yr = d.getUTCFullYear()
+  return `${day}/${mn}/${yr}`
 }
