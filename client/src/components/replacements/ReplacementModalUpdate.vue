@@ -240,7 +240,7 @@
                         "
                     :disabled="turnoEnCurso"
                     label="nombre"
-                    :reduce="(s) => s._id"
+                    :reduce="(s: any) => s._id"
                     placeholder="Seleccione..."
                     :clearable="false"
                     :searchable="true"

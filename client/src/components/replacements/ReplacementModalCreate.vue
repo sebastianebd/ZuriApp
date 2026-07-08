@@ -210,7 +210,7 @@
                     v-model="registroLocal.servicio"
                     :options="listaDeServicios"
                     label="nombre"
-                    :reduce="(s) => s._id"
+                    :reduce="(s: any) => s._id"
                     placeholder="Seleccione servicio"
                     class="custom-v-select"
                   />

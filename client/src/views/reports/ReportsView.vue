@@ -106,7 +106,7 @@
         <!-- Tarjeta: Cartola por Servicio -->
         <div class="action-card">
           <div class="card-header border-0 pb-0">
-            <h5 class="fw-bold mb-1">Cartola por Servicio</h5>
+            <h5 class="fw-bold mb-1">Consulta por Servicio</h5>
             <p class="text-secondary small mb-0">
               Descarga la vista consolidada de todo el personal
             </p>
@@ -135,7 +135,8 @@
                 :disabled="!selectedServiceId || isExporting === 'excel'"
                 @click="downloadExcel"
               >
-                📊
+                <i v-if="isExporting === 'excel'" class="spinner-border spinner-border-sm me-1"></i>
+                <span v-else>📊</span>
                 {{
                   isExporting === 'excel'
                     ? 'Generando...'
@@ -151,7 +152,8 @@
                 :disabled="!selectedServiceId || isExporting === 'pdf'"
                 @click="downloadServicePDF"
               >
-                <i class="bi bi-file-earmark-pdf"></i>
+                <i v-if="isExporting === 'pdf'" class="spinner-border spinner-border-sm me-1"></i>
+                <i v-else class="bi bi-file-earmark-pdf"></i>
                 {{ isExporting === 'pdf' ? 'Obteniendo...' : 'Descargar Cartola (PDF)' }}
               </button>
             </div>
@@ -186,13 +188,42 @@
 
             <div class="d-flex gap-3 justify-content-start">
               <button
+                class="btn-action btn-outline"
+                @click="doDownloadIndividualExcel"
+                :disabled="!selectedUser || isExporting === 'ind-excel'"
+              >
+                <i
+                  v-if="isExporting === 'ind-excel'"
+                  class="spinner-border spinner-border-sm me-1"
+                ></i>
+                <span v-else>📊</span>
+                {{
+                  isExporting === 'ind-excel'
+                    ? 'Generando...'
+                    : periodStore.isClosed
+                    ? 'Descargar Cartola (Excel)'
+                    : 'Descargar Avance (Excel)'
+                }}
+              </button>
+
+              <button
                 class="btn-action"
                 :class="periodStore.isClosed ? 'btn-primary' : 'btn-outline'"
-                @click="handleGenerateReport"
-                :disabled="!selectedUser"
+                @click="doGenerateReport"
+                :disabled="!selectedUser || isExporting === 'ind-pdf'"
               >
-                <i class="bi bi-file-earmark-pdf"></i>
-                {{ periodStore.isClosed ? 'Descargar Cartola (PDF)' : 'Descargar Avance (PDF)' }}
+                <i
+                  v-if="isExporting === 'ind-pdf'"
+                  class="spinner-border spinner-border-sm me-1"
+                ></i>
+                <i v-else class="bi bi-file-earmark-pdf"></i>
+                {{
+                  isExporting === 'ind-pdf'
+                    ? 'Generando...'
+                    : periodStore.isClosed
+                    ? 'Descargar Cartola (PDF)'
+                    : 'Descargar Avance (PDF)'
+                }}
               </button>
             </div>
           </div>
@@ -200,9 +231,11 @@
       </div>
     </div>
 
-    <!-- Error/Warning Alert -->
-    <div v-if="reportStore.error" class="alert-box warning mt-4 hide-print">
-      ⚠️ {{ reportStore.error }}
+    <!-- Error/Warning Alert (Envuelto para evitar Cumulative Layout Shift) -->
+    <div class="position-relative w-50 hide-print mt-4" style="height: 0">
+      <div v-if="reportStore.error" class="alert-box warning position-absolute w-90 m-0">
+        ⚠️ {{ reportStore.error }}
+      </div>
     </div>
 
     <div v-if="reportStore.reportData" class="page">
@@ -537,7 +570,6 @@
               <th>Fecha</th>
               <th>Servicio</th>
               <th>Tipo Turno</th>
-              <th class="center">Sigla</th>
               <th class="center">Entrada</th>
               <th class="center">Salida</th>
               <th class="center">Hrs Diurnas</th>
@@ -555,8 +587,8 @@
                   "
                 >
                   <td>{{ formatReportDate(day.date) }}</td>
-                  <td colspan="8" style="text-align: center; color: #10b981; font-weight: 600">
-                    <span class="shift-type shift-libre">DÍA LIBRE</span>
+                  <td colspan="7" style="text-align: center; color: #10b981; font-weight: 600">
+                    <span>Libre</span>
                   </td>
                 </tr>
 
@@ -567,21 +599,13 @@
                       <span class="service-badge badge-default">{{ item.service }}</span>
                     </td>
                     <td>
-                      <span
-                        class="shift-type"
-                        :style="{
-                          backgroundColor: getShiftColor(item.sigla),
-                          color: '#ffffff',
-                          border: 'none'
-                        }"
-                      >
+                      <span>
                         {{ getShiftName(item.sigla) }}
                         <span v-if="item.isReplacement" class="text-xs text-gray-500"
                           >(Reemplazo)</span
                         >
                       </span>
                     </td>
-                    <td class="center">{{ item.sigla }}</td>
                     <td class="center">{{ item.startTime }}</td>
                     <td class="center">{{ item.endTime }}</td>
                     <td class="center">{{ item.dayHrs }}</td>
@@ -595,7 +619,7 @@
             </template>
 
             <tr style="background: #f0f7ff; font-weight: 600">
-              <td colspan="6" style="text-align: right; padding-right: 15px">
+              <td colspan="5" style="text-align: right; padding-right: 15px">
                 TOTALES DEL PERÍODO:
               </td>
               <td class="center">{{ reportStore.reportData.totals.dayHours }}</td>
@@ -644,7 +668,7 @@ const serviceOptions = computed(() =>
     .map((s) => ({ _id: s._id, nombre: s.nombre, codigo: s.codigo }))
 )
 
-const isExporting = ref<'excel' | 'pdf' | null>(null)
+const isExporting = ref<'excel' | 'pdf' | 'ind-excel' | 'ind-pdf' | null>(null)
 
 async function downloadExcel() {
   if (!selectedServiceId.value) return
@@ -708,13 +732,31 @@ const {
   years,
   onSearch,
   handleGenerateReport,
-  getShiftColor,
   getShiftName,
   formatDate,
   formatReportDate,
+  downloadIndividualExcel,
   getUserLabel,
   isOpenMonth
 } = useReports()
+
+const doDownloadIndividualExcel = async () => {
+  isExporting.value = 'ind-excel'
+  try {
+    await downloadIndividualExcel()
+  } finally {
+    isExporting.value = null
+  }
+}
+
+const doGenerateReport = async () => {
+  isExporting.value = 'ind-pdf'
+  try {
+    await handleGenerateReport()
+  } finally {
+    isExporting.value = null
+  }
+}
 
 // --- LÓGICA DEL CUSTOM MONTH PICKER ---
 const isPickerOpen = ref(false)
@@ -1308,7 +1350,7 @@ td {
 .service-badge {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: 8px;
   font-size: 11px;
   font-weight: 600;
   background: #eaeaea;

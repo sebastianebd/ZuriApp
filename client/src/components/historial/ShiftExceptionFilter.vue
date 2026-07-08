@@ -132,7 +132,7 @@ interface Filters {
 
 const props = withDefaults(
   defineProps<{
-    listaServicios: string[]
+    listaServicios: any[]
     listaCargos?: string[]
     listaTiposTurno?: string[]
     modelValue: Filters

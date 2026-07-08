@@ -128,6 +128,31 @@ export function useReports() {
     document.title = originalTitle
   }
 
+  const downloadIndividualExcel = async () => {
+    if (!selectedUser.value) return
+    reportStore.error = null
+    try {
+      const { axiosPrivateInstance: axios } = await import('@/config/axios')
+      const response = await axios.get('/reports/export/excel/individual', {
+        params: { month: month.value, year: year.value, userId: selectedUser.value._id },
+        responseType: 'blob'
+      })
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute(
+        'download',
+        `Cartola_${selectedUser.value.rut}_${month.value}_${year.value}.xlsx`
+      )
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (error: any) {
+      reportStore.error =
+        'No se encontraron registros para este usuario en el periodo seleccionado.'
+    }
+  }
+
   const getUserLabel = (option: any) => {
     return `${option.nombre} ${option.apellido}`
   }
@@ -148,6 +173,7 @@ export function useReports() {
     formatDate,
     formatReportDate,
     downloadPDF,
+    downloadIndividualExcel,
     getUserLabel
   }
 }

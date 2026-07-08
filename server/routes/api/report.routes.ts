@@ -21,6 +21,13 @@ router.get(
   ReportController.exportExcelByService,
 );
 
+// Exportación Excel Individual (abierto: al vuelo, cerrado: desde Snapshots)
+router.get(
+  "/export/excel/individual",
+  requirePermission("shifts.view"),
+  ReportController.exportIndividualExcel,
+);
+
 // URL firmada S3 para descargar el PDF oficial de un servicio (solo períodos cerrados)
 router.get(
   "/service/pdf",

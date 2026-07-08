@@ -121,6 +121,53 @@ export const exportExcelByService = async (
 };
 
 /**
+ * Exportación de Excel Individual (Cartola)
+ * Permite descargar la cartola tanto de mes abierto como cerrado.
+ */
+export const exportIndividualExcel = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { month, year, userId } = req.query;
+
+    if (!month || !year || !userId) {
+      return res
+        .status(400)
+        .json({ error: "Missing required parameters: month, year, userId" });
+    }
+
+    const reqMonth = Number(month);
+    const reqYear = Number(year);
+    const userIdStr = String(userId);
+
+    const period = await Period.findOne({ month: reqMonth, year: reqYear });
+
+    const workbook = await ReportService.generateIndividualExcelReport(
+      reqMonth,
+      reqYear,
+      userIdStr,
+      period,
+    );
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=Cartola_${userIdStr}_${month}_${year}.xlsx`,
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Devuelve una URL firmada S3 (5 min) para descargar el PDF oficial de un servicio.
  * Solo disponible en períodos cerrados (la URL del PDF fue generada por el Worker).
  */

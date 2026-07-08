@@ -126,7 +126,9 @@ export const setupReportClosureWorker = () => {
         period = await Period.create({ month, year, status: "OPEN" });
       }
       if (period.status === "CLOSED") {
-        logger.info(`[ReportWorker] Período ${month}/${year} ya está cerrado — saltando`);
+        logger.info(
+          `[ReportWorker] Período ${month}/${year} ya está cerrado — saltando`,
+        );
         return;
       }
 
@@ -142,7 +144,9 @@ export const setupReportClosureWorker = () => {
       // Upgrade path: paralelizar en grupos de 5 con Promise.all si el hardware lo permite.
       for (const service of services) {
         const serviceId = service._id.toString();
-        const startOfMonth = dayjs(`${year}-${String(month).padStart(2, "0")}-01`).toDate();
+        const startOfMonth = dayjs(
+          `${year}-${String(month).padStart(2, "0")}-01`,
+        ).toDate();
         const endOfMonth = dayjs(startOfMonth).endOf("month").toDate();
 
         // Obtener todos los usuarios con turnos en este servicio/mes
@@ -153,7 +157,9 @@ export const setupReportClosureWorker = () => {
         }).distinct("user_id");
 
         if (userIds.length === 0) {
-          logger.info(`[ReportWorker] Servicio ${service.nombre}: sin usuarios, saltando`);
+          logger.info(
+            `[ReportWorker] Servicio ${service.nombre}: sin usuarios, saltando`,
+          );
           continue;
         }
 
@@ -216,7 +222,7 @@ export const setupReportClosureWorker = () => {
 
         // Reportar progreso en bull-board
         await job.updateProgress(
-          Math.round((services.indexOf(service) + 1) / services.length * 100),
+          Math.round(((services.indexOf(service) + 1) / services.length) * 100),
         );
       }
 
@@ -244,6 +250,8 @@ export const setupReportClosureWorker = () => {
     logger.info(`[ReportWorker] Job ${job.id} completado exitosamente`);
   });
 
-  logger.info(`[ReportWorker] Worker inicializado en '${REPORT_CLOSURE_QUEUE}'`);
+  logger.info(
+    `[ReportWorker] Worker inicializado en '${REPORT_CLOSURE_QUEUE}'`,
+  );
   return worker;
 };

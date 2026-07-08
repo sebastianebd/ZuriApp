@@ -1,6 +1,7 @@
 import { TurnAssignmentModel } from "../models/turn-assignment.model";
 import User from "../models/user.model";
 import Replacement from "../models/replacement.model";
+import Service from "../models/service.model";
 import { TurnSigla } from "../models/turn-sigla.model";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
@@ -150,8 +151,12 @@ export const getMonthlyReport = async ({
   // 5. Identificar Servicios Involucrados
   // Un usuario puede trabajar en múltiples servicios (ej: UCI y Urgencias) en el mismo mes.
   const serviceSet = new Set<string>();
-  assignments.forEach((a) => serviceSet.add(a.service.toString()));
-  replacements.forEach((r) => serviceSet.add(r.servicio.toString()));
+  assignments.forEach((a) => {
+    if (a.service) serviceSet.add(a.service.toString());
+  });
+  replacements.forEach((r) => {
+    if (r.servicio) serviceSet.add(r.servicio.toString());
+  });
 
   if (serviceSet.size === 0) {
     throw {
@@ -160,6 +165,11 @@ export const getMonthlyReport = async ({
         "No se encontraron registros para este usuario en el periodo seleccionado.",
     };
   }
+
+  // 5.5 Obtener nombres reales de los servicios para la cartola
+  const servicesInDb = await Service.find({ _id: { $in: Array.from(serviceSet) } });
+  const serviceNameMap = new Map<string, string>();
+  servicesInDb.forEach((s) => serviceNameMap.set(s._id.toString(), s.nombre));
 
   // 6. Cálculo de Estadísticas (Por Servicio y Global)
   const servicesData: any[] = [];
@@ -176,10 +186,10 @@ export const getMonthlyReport = async ({
 
     // Filtros Locales
     const svcAssignments = assignments.filter(
-      (a) => a.service.toString() === service,
+      (a) => a.service?.toString() === service,
     );
     const svcReplacements = replacements.filter(
-      (r) => r.servicio.toString() === service,
+      (r) => r.servicio?.toString() === service,
     );
     const svcAssignmentIds = svcAssignments.map((a) => String(a._id));
     const svcReplacementIds = svcReplacements.map((r) => String(r._id));
@@ -285,7 +295,7 @@ export const getMonthlyReport = async ({
         // Agregamos item si es relevante
         if (activeSigla !== "-" || isActive) {
           mergedGrid.get(day).items.push({
-            service: service,
+            service: serviceNameMap.get(service) || service,
             sigla: activeSigla,
             hours,
             dayHrs,
@@ -316,7 +326,7 @@ export const getMonthlyReport = async ({
     }
 
     servicesData.push({
-      serviceName: service,
+      serviceName: serviceNameMap.get(service) || service,
       firstInteraction: earliestDate.valueOf(),
       stats: {
         hours: Number(svcHours.toFixed(2)),
@@ -444,30 +454,67 @@ function calculateDV(rut: string) {
   return "K";
 }
 
-export const generateExcelReport = async (data: any, filters: any) => {
-  // Generación de Excel (Reporte de Asistencia)
-  // Utilizamos streaming o construcción en memoria para generar archivos descargables.
+export const generateIndividualExcelReport = async (month: number, year: number, userId: string, period: any) => {
+  let data: any;
+
+  if (period) {
+    const ReportSnapshotModel = (await import("../models/report-snapshot.model")).default;
+    const snapshot = await ReportSnapshotModel.findOne({ user_id: userId, period_id: period._id });
+    if (snapshot) {
+      data = snapshot.snapshot_data;
+    } else {
+      data = await getMonthlyReport({ month, year, userId });
+      await ReportSnapshotModel.create({
+        user_id: userId,
+        period_id: period._id,
+        snapshot_data: data,
+        generated_at: new Date(),
+      });
+    }
+  } else {
+    data = await getMonthlyReport({ month, year, userId });
+  }
+
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Cartola Funcionario");
 
-  // Header Simple
   sheet.addRow(["Reporte de Asistencia"]);
   sheet.addRow([`Funcionario: ${data.user.nombre} ${data.user.apellido}`]);
   sheet.addRow([`RUT: ${data.user.rut}`]);
   sheet.addRow([]);
 
-  // Detalle por Servicio
-  data.services.forEach((svc: any) => {
-    sheet.addRow([`SERVICIO: ${svc.serviceName}`]);
-    sheet.addRow(["Día", "Turno", "Horas"]);
-    svc.grid.forEach((g: any) => {
-      sheet.addRow([g.day, g.sigla, g.hours]);
-    });
-    sheet.addRow(["Total Servicio", "", svc.stats.hours]);
-    sheet.addRow([]);
+  sheet.addRow(["Día", "Fecha", "Servicio", "Turno", "Entrada", "Salida", "Horas Tot.", "Diurnas", "Nocturnas"]);
+  sheet.getRow(5).font = { bold: true };
+
+  data.timeline.forEach((dayEntry: any) => {
+    if (dayEntry.isOutOfContract || dayEntry.items.length === 0) {
+      sheet.addRow([dayEntry.dayNum, dayjs(dayEntry.date).format("DD/MM/YYYY"), "-", "LIBRE", "-", "-", 0, 0, 0]);
+    } else {
+      dayEntry.items.forEach((item: any) => {
+        sheet.addRow([
+          dayEntry.dayNum,
+          dayjs(dayEntry.date).format("DD/MM/YYYY"),
+          item.service,
+          item.sigla,
+          item.startTime,
+          item.endTime,
+          item.hours,
+          item.dayHrs,
+          item.nightHrs,
+        ]);
+      });
+    }
   });
 
-  sheet.addRow(["TOTAL GENERAL", "", data.totals.hours]);
+  sheet.addRow([]);
+  sheet.addRow(["TOTALES GLOBALES"]);
+  sheet.getRow(sheet.rowCount).font = { bold: true };
+  sheet.addRow(["Días Trabajados", data.totals.daysWorked]);
+  sheet.addRow(["Días Libres", data.totals.freeDays]);
+  sheet.addRow(["Total Horas", data.totals.hours]);
+  sheet.addRow(["Total L", data.totals.L]);
+  sheet.addRow(["Total N", data.totals.N]);
+  sheet.addRow(["Total X", data.totals.X]);
 
   return workbook;
 };
@@ -505,7 +552,8 @@ export const generateServiceExcelReport = async ({
   if (assignments.length === 0) {
     throw {
       status: 404,
-      message: "No se encontraron registros para este servicio en el periodo seleccionado."
+      message:
+        "No se encontraron registros para este servicio en el periodo seleccionado.",
     };
   }
 
