@@ -284,9 +284,9 @@
           <div class="chart-title">📋 Desglose por Tipo de Turno</div>
           <ul class="stats-list" v-if="reportData.totals.siglasCounts">
             <template v-for="(count, sigla) in reportData.totals.siglasCounts" :key="sigla">
-              <li v-if="sigla !== '-' && sigla !== '?'">
-                <span>{{ sigla === 'X' ? 'Días Libres (X)' : `Turnos ${sigla}` }}</span>
-                <span class="stat-value">{{ count }} {{ sigla === 'X' ? 'días' : 'turnos' }}</span>
+              <li v-if="String(sigla) !== '-' && String(sigla) !== '?'">
+                <span>{{ String(sigla) === 'X' ? 'Días Libres (X)' : `Turnos ${String(sigla)}` }}</span>
+                <span class="stat-value">{{ count }} {{ String(sigla) === 'X' ? 'días' : 'turnos' }}</span>
               </li>
             </template>
           </ul>
