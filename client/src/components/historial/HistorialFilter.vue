@@ -81,18 +81,18 @@
           :model-value="modelValue.servicio"
           @update:model-value="(newValue: any) => updateFilter('servicio', newValue)"
           :options="[
-            { label: 'TODOS', value: '' },
-            ...listaServicios.map((s) => ({ label: s, value: s }))
+            { nombre: 'TODOS', _id: '' },
+            ...listaServicios
           ]"
-          :reduce="(option: any) => option.value"
-          label="label"
+          :reduce="(option: any) => option._id"
+          label="nombre"
           :clearable="false"
           :searchable="true"
           placeholder="Seleccione..."
           class="custom-v-select"
         >
-          <template #selected-option="{ label }">
-            <span class="text-secondary small">{{ label }}</span>
+          <template #selected-option="{ nombre }">
+            <span class="text-secondary small">{{ nombre }}</span>
           </template>
         </v-select>
       </div>
@@ -113,7 +113,7 @@ interface HistoryFiltros {
 }
 
 const props = defineProps<{
-  listaServicios: string[]
+  listaServicios: any[]
   modelValue: HistoryFiltros
 }>()
 

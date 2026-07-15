@@ -4,6 +4,7 @@ import { useReplacementStore } from '@/stores/replacement.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
 import { useShiftExceptionStore } from '@/stores/shift-exception.store'
+import { useServiceStore } from '@/stores/service.store'
 import { calculateShift, parseAsLocal } from '@/services/turn-pattern.service'
 import { formatTitleCase } from '@/utils/text-formatters'
 import type { ReplacementRegistration } from '@/types/replacement.types'
@@ -84,6 +85,14 @@ export function useShiftsGrid(
   }
 
   const filteredShifts = computed(() => {
+    const activeServiceFilter = props.historyMode
+      ? props.externalFilters?.service
+      : state.selectedService.value
+
+    if (!activeServiceFilter) {
+      return []
+    }
+
     const startOfMonth = new Date(state.currentYear.value, state.currentMonth.value, 1)
     const endOfMonth = new Date(state.currentYear.value, state.currentMonth.value + 1, 0)
 
@@ -119,8 +128,10 @@ export function useShiftsGrid(
         const activeServiceFilter = props.historyMode
           ? props.externalFilters?.service
           : state.selectedService.value
-        if (activeServiceFilter && r.servicio !== activeServiceFilter) return false
-
+        if (activeServiceFilter) {
+          const serviceStore = useServiceStore()
+          if (!serviceStore.isServiceMatch(r.servicio, activeServiceFilter)) return false
+        }
         if (
           props.historyMode &&
           props.externalFilters?.cargo &&
@@ -232,8 +243,10 @@ export function useShiftsGrid(
       const activeServiceFilter = props.historyMode
         ? props.externalFilters?.service
         : state.selectedService.value
-      if (activeServiceFilter && effectiveService !== activeServiceFilter) return
-
+      if (activeServiceFilter) {
+        const serviceStore = useServiceStore()
+        if (!serviceStore.isServiceMatch(effectiveService, activeServiceFilter)) return
+      }
       if (
         props.historyMode &&
         props.externalFilters?.cargo &&

@@ -16,6 +16,7 @@ import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
 import { emailQueue } from "./queues/email.queue";
+import { reportClosureQueue, setupReportClosureWorker } from "./queues/report.queue";
 import basicAuth from "express-basic-auth";
 
 import authRoutes from "./routes/api/auth.routes";
@@ -27,6 +28,11 @@ import auditRoutes from "./routes/api/audit.routes";
 import profileRoutes from "./routes/api/profile.routes";
 
 import "./jobs/replacement.cron";
+import "./jobs/report-closure.cron";
+
+// Inicializar Worker de cierre mensual (escucha la cola BullMQ)
+setupReportClosureWorker();
+
 // Token personalizado de Morgan para incluir el nombre del Usuario autenticado en los logs.
 // Esto mejora la trazabilidad vinculando las solicitudes directamente a usuarios específicos.
 morgan.token("user", (req: Request) => {
@@ -107,12 +113,18 @@ app.use(
 import reportRoutes from "./routes/api/report.routes";
 app.use("/api/reports", reportRoutes);
 
+import periodRoutes from "./routes/api/period.routes";
+app.use("/api/periods", periodRoutes);
+
 // --- Configuración de Bull Board ---
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath("/admin/queues");
 
 createBullBoard({
-  queues: [new BullMQAdapter(emailQueue)],
+  queues: [
+    new BullMQAdapter(emailQueue),
+    new BullMQAdapter(reportClosureQueue), // Cierre mensual — visible en /admin/queues
+  ],
   serverAdapter: serverAdapter,
 });
 

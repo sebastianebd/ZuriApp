@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import * as ReplacementService from '../services/replacement.service'
 import { useAuthStore } from './auth.store'
+import { useServiceStore } from './service.store'
 import { type ReplacementRegistration, type SubstitutionPayload } from '@/types/replacement.types'
 import type { AxiosInstance } from 'axios'
 import { getDatesInRange } from '@/utils/date-utils'
@@ -123,7 +124,8 @@ export const useReplacementStore = defineStore('replacement', {
       }
 
       if (state.filtroServicio) {
-        filtrados = filtrados.filter((r) => r.servicio === state.filtroServicio)
+        const serviceStore = useServiceStore()
+        filtrados = filtrados.filter((r) => serviceStore.isServiceMatch(r.servicio, state.filtroServicio))
       }
 
       return filtrados

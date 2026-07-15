@@ -5,6 +5,7 @@ import { useShiftsExceptions } from './useShiftsExceptions'
 import { useShiftsTooltip } from './useShiftsTooltip'
 
 import { useAuthStore } from '@/stores/auth.store'
+import { useServiceStore } from '@/stores/service.store'
 import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
@@ -19,6 +20,7 @@ export function useCurrentShifts(props: {
   historyMode?: boolean
   externalFilters?: any
 }) {
+  const serviceStore = useServiceStore()
   const optionStore = useOptionStore()
   const replacementStore = useReplacementStore()
   const turnAssignmentStore = useTurnAssignmentStore()
@@ -46,23 +48,13 @@ export function useCurrentShifts(props: {
       const startOfMonth = new Date(state.currentYear.value, state.currentMonth.value, 1)
       const endOfMonth = new Date(state.currentYear.value, state.currentMonth.value + 1, 0)
 
-      await optionStore.mostrarOpciones()
+      await Promise.all([optionStore.mostrarOpciones(), serviceStore.fetchServices()])
 
-      if (!state.selectedService.value && optionStore.opciones?.servicios?.length) {
-        state.selectedService.value = optionStore.opciones.servicios[0]
-      }
+      const activeServiceFilter = props.historyMode
+        ? props.externalFilters?.service
+        : state.selectedService.value
 
-      await Promise.all([
-        replacementStore.fetchActiveReplacementsPaginated({
-          servicio: state.selectedService.value || undefined,
-          limit: 1000
-        }),
-        turnAssignmentStore.loadAssignments(),
-        exceptionStore.loadExceptions(
-          undefined,
-          startOfMonth.toISOString(),
-          endOfMonth.toISOString()
-        ),
+      const dictPromises = [
         turnTypeStore.fetchTurnTypes(true),
         turnSiglaStore.fetchSiglas(),
         userStore
@@ -71,6 +63,25 @@ export function useCurrentShifts(props: {
             allUsers.value = data
           })
           .catch((err) => console.error('[ShiftsView] Failed to load users:', err))
+      ]
+
+      if (!activeServiceFilter) {
+        await Promise.all(dictPromises)
+        return
+      }
+
+      await Promise.all([
+        replacementStore.fetchActiveReplacementsPaginated({
+          servicio: activeServiceFilter,
+          limit: 1000
+        }),
+        turnAssignmentStore.loadAssignments(),
+        exceptionStore.loadExceptions(
+          undefined,
+          startOfMonth.toISOString(),
+          endOfMonth.toISOString()
+        ),
+        ...dictPromises
       ])
     } finally {
       state.loading.value = false
@@ -85,7 +96,7 @@ export function useCurrentShifts(props: {
       loadData()
     } catch (error) {
       console.error(error)
-      state.alertComponent.value.show('Error', 'No se pudo asignar el turno', 'error')
+      state.alertComponent.value.show('Error', 'No se pudo guardar la asignación', 'error')
     }
   }
 
@@ -105,12 +116,13 @@ export function useCurrentShifts(props: {
     }
   }
 
-  watch(state.selectedService, (newService, oldService) => {
-    if (newService && newService !== oldService) {
-      replacementStore.fetchActiveReplacementsPaginated({
-        servicio: newService,
-        limit: 1000
-      })
+  const activeServiceComputed = computed(() => {
+    return props.historyMode ? props.externalFilters?.service : state.selectedService.value
+  })
+
+  watch(activeServiceComputed, (newService, oldService) => {
+    if (newService !== oldService) {
+      loadData()
     }
   })
 
@@ -121,6 +133,14 @@ export function useCurrentShifts(props: {
 
   onMounted(() => {
     loadData()
+  })
+
+  const selectedServiceName = computed(() => {
+    // In history mode, rely on external filters passed via props, otherwise local state
+    const currentId = props.historyMode && props.externalFilters?.service !== undefined
+      ? props.externalFilters.service
+      : state.selectedService.value
+    return serviceStore.getServiceName(currentId)
   })
 
   return {
@@ -135,6 +155,7 @@ export function useCurrentShifts(props: {
     loadingExceptions,
     loadingAssignments,
     allUsers,
+    selectedServiceName,
     ...tooltip
   }
 }

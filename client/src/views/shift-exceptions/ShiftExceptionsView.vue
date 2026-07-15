@@ -208,12 +208,14 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useShiftExceptionStore } from '@/stores/shift-exception.store'
 import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
 import { useOptionStore } from '@/stores/option.store'
+import { useServiceStore } from '@/stores/service.store'
 import ShiftExceptionFilter from '@/components/historial/ShiftExceptionFilter.vue'
 import { formatTitleCase } from '@/utils/text-formatters'
 
 const exceptionStore = useShiftExceptionStore()
 const turnSiglaStore = useTurnSiglaStore()
 const optionStore = useOptionStore()
+const serviceStore = useServiceStore()
 
 const loading = ref(false)
 const currentPage = ref(1)
@@ -234,7 +236,7 @@ watch(
   }
 )
 
-const services = computed(() => optionStore.opciones?.servicios || [])
+const services = computed(() => serviceStore.services || [])
 const cargos = computed(() => {
   const all = optionStore.opciones?.tipoCargo || []
   return all.filter((c) => !['RECURSOS HUMANOS', 'ADMIN-TI'].includes(c))
@@ -247,8 +249,8 @@ const filteredExceptions = computed(() => {
     result = result.filter((e: any) => {
       const assignment = e.assignment_id
       if (assignment && typeof assignment === 'object') {
-        if (assignment.service === filters.value.service) return true
-        if (assignment.user_id?.servicio === filters.value.service) return true
+        if (serviceStore.isServiceMatch(assignment.service, filters.value.service)) return true
+        if (assignment.user_id && serviceStore.isServiceMatch(assignment.user_id.servicio, filters.value.service)) return true
       }
       return false
     })
@@ -425,21 +427,17 @@ function getAssignmentCargo(exception: any) {
 
 function getAssignmentService(exception: any) {
   const assignment = exception.assignment_id
+  let rawService: any = null
   if (assignment && typeof assignment === 'object') {
-    // Case 1: Explicit service field (Replacement has 'servicio')
-    if (assignment.servicio) return formatTitleCase(assignment.servicio)
-    if (assignment.service) return formatTitleCase(assignment.service)
-
-    // Case 2: Nested user service
-    if (
-      assignment.user_id &&
-      typeof assignment.user_id === 'object' &&
-      assignment.user_id.servicio
-    ) {
-      return formatTitleCase(assignment.user_id.servicio)
+    if (assignment.servicio) rawService = assignment.servicio
+    else if (assignment.service) rawService = assignment.service
+    else if (assignment.user_id && typeof assignment.user_id === 'object' && assignment.user_id.servicio) {
+      rawService = assignment.user_id.servicio
     }
   }
-  return 'N/A'
+  
+  if (!rawService) return 'N/A'
+  return serviceStore.getServiceName(rawService)
 }
 
 function getCreatedByName(exception: any) {

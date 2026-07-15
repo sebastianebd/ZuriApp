@@ -5,22 +5,34 @@ import authMiddleware, {
 } from "../../middleware/authentication.middleware";
 
 const router = Router();
-
-// Middleware Global: Restricción total de acceso a reportes (Información Sensible).
 router.use(authMiddleware);
 
-// Resumen Mensual: Agregación de horas y cumplimiento.
+// Resumen individual (Lazy Evaluation — crea snapshot si período está cerrado)
 router.get(
   "/summary",
-  requirePermission("shifts.view"), // El mismo permiso de ver turnos habilita ver reportes agregados
+  requirePermission("shifts.view"),
   ReportController.getMonthlySummary,
 );
 
-// Exportación de Datos: Generación de Excel para nómina/RRHH.
+// Exportación Excel por Servicio (abierto: al vuelo, cerrado: desde Snapshots)
 router.get(
   "/export/excel",
   requirePermission("shifts.view"),
-  ReportController.exportExcel,
+  ReportController.exportExcelByService,
+);
+
+// Exportación Excel Individual (abierto: al vuelo, cerrado: desde Snapshots)
+router.get(
+  "/export/excel/individual",
+  requirePermission("shifts.view"),
+  ReportController.exportIndividualExcel,
+);
+
+// URL firmada S3 para descargar el PDF oficial de un servicio (solo períodos cerrados)
+router.get(
+  "/service/pdf",
+  requirePermission("shifts.view"),
+  ReportController.getServicePDFUrl,
 );
 
 export default router;

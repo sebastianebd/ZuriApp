@@ -1,5 +1,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useOptionStore } from '@/stores/option.store'
+import { useServiceStore } from '@/stores/service.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 
 interface StateDependencies {
@@ -12,9 +13,10 @@ interface StateDependencies {
 export function useActiveReplacementsState(deps?: StateDependencies) {
   const replacementStore = useReplacementStore()
   const optionStore = useOptionStore()
+  const serviceStore = useServiceStore()
 
   const listaDeTurnos = ref<string[]>([])
-  const listaDeServicios = ref<string[]>([])
+  const listaDeServicios = computed(() => serviceStore.services)
   const listaDeCargos = ref<string[]>([])
 
   // Server-side pagination state
@@ -32,8 +34,11 @@ export function useActiveReplacementsState(deps?: StateDependencies) {
       // Load Options
       const opciones = await optionStore.mostrarOpciones()
       listaDeTurnos.value = opciones.tiposTurno || []
-      listaDeServicios.value = opciones.servicios || []
       listaDeCargos.value = opciones.tipoCargo || []
+      
+      if (serviceStore.services.length === 0) {
+        await serviceStore.fetchServices()
+      }
 
       // Load Initial Data
       await replacementStore.fetchActiveReplacementsPaginated({

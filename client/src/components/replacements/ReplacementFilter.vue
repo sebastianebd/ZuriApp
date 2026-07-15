@@ -76,19 +76,19 @@
           id="filtroServicio"
           v-model="store.filtroServicio"
           :options="[
-            { label: 'Todos', value: '' },
-            ...listaServicios.map((s) => ({ label: s, value: s }))
+            { nombre: 'Todos', _id: '' },
+            ...listaServicios
           ]"
-          :reduce="(option: any) => option.value"
-          label="label"
+          :reduce="(option: any) => option._id"
+          label="nombre"
           :clearable="false"
           :searchable="true"
           placeholder="Seleccione..."
           class="custom-v-select"
         >
           <!-- Personalizamos la opción seleccionada -->
-          <template #selected-option="{ label }">
-            <span class="text-secondary small">{{ label }}</span>
+          <template #selected-option="{ nombre }">
+            <span class="text-secondary small">{{ nombre }}</span>
           </template>
         </v-select>
       </div>
@@ -104,7 +104,7 @@ import 'v-calendar/dist/style.css'
 // 💡 Props: El componente de filtros recibe las opciones para el select
 defineProps({
   listaServicios: {
-    type: Array as () => string[],
+    type: Array as () => any[],
     required: true
   }
 })

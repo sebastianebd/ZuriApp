@@ -45,6 +45,11 @@ vi.mock("../../config/redis.config", () => ({
   // Simular limpieza de caché
 }));
 
+// Mock de la validación de período cerrado para evitar consultas a BD
+vi.mock("../../middleware/period-lock.middleware", () => ({
+  checkPeriodLock: vi.fn().mockResolvedValue(true),
+}));
+
 describe("Replacement Controller - Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();

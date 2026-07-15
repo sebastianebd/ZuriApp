@@ -22,7 +22,7 @@ export interface Service {
   anexo?: string
   email?: string
   activo: boolean
-  deleted_at?: string // Date string from API
+  deleted_at?: string
   createdAt: string
   updatedAt: string
 }
@@ -44,6 +44,43 @@ export const useServiceStore = defineStore('service', () => {
   const services = ref<Service[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  const getServiceName = (idOrName: any): string => {
+    if (!idOrName) return '—'
+    const target =
+      typeof idOrName === 'object' && idOrName !== null && idOrName._id
+        ? String(idOrName._id)
+        : String(idOrName)
+    const svc = services.value.find(
+      (s) =>
+        String(s._id) === target || String((s as any).id) === target || String(s.nombre) === target
+    )
+    return svc ? svc.nombre : target
+  }
+
+  const isServiceMatch = (serviceData: any, filterValue: any): boolean => {
+    if (!filterValue) return true
+    const target =
+      typeof serviceData === 'object' && serviceData !== null && serviceData._id
+        ? String(serviceData._id)
+        : String(serviceData)
+
+    if (target === String(filterValue)) return true
+
+    // Check if filterValue is an ID but target is a name (legacy data)
+    const svc = services.value.find(
+      (s) => String(s._id) === String(filterValue) || String((s as any).id) === String(filterValue)
+    )
+    if (svc && String(svc.nombre) === target) return true
+
+    // Check if filterValue is a name but target is an ID
+    const svc2 = services.value.find(
+      (s) => String(s._id) === target || String((s as any).id) === target
+    )
+    if (svc2 && String(svc2.nombre) === String(filterValue)) return true
+
+    return false
+  }
 
   const fetchServices = async (force = false) => {
     if (services.value.length > 0 && !force) return
@@ -135,6 +172,8 @@ export const useServiceStore = defineStore('service', () => {
     fetchServices,
     createService,
     updateService,
-    deleteService
+    deleteService,
+    getServiceName,
+    isServiceMatch
   }
 })

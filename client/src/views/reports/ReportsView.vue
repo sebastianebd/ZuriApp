@@ -1,497 +1,188 @@
 <template>
   <div class="page-container">
-    <!-- Header (Screen Only) -->
-    <div class="d-flex justify-content-between align-items-center mb-4 w-100 hide-print">
-      <div class="d-flex align-items-center gap-3">
-        <div class="icon-square bg-white shadow-sm text-primary">
-          <i class="bi bi-file-earmark-bar-graph fs-4"></i>
-        </div>
-        <div>
-          <h4 class="fw-bold mb-0 text-dark">Centro de Reportes</h4>
-          <p class="text-secondary small mb-0">Generación y exportación de documentos</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Controls (Screen Only) -->
-    <div class="controls hide-print">
-      <v-select
-        v-model="selectedUser"
-        :options="userOptions"
-        :filterable="false"
-        @search="onSearch"
-        :get-option-label="getUserLabel"
-        placeholder="Buscar Funcionario (Nombre o RUT)..."
-        class="user-search premium-select"
-      >
-        <template #option="{ nombre, apellido, rut, tipo_cargo }">
-          <div class="user-option">
-            <strong>{{ nombre }} {{ apellido }}</strong>
-            <small>{{ rut }} - {{ tipo_cargo }}</small>
+    <div class="split-layout hide-print">
+      <!-- PANEL IZQUIERDO: Contexto -->
+      <div class="panel-left">
+        <div class="header-context">
+          <div class="icon-square bg-white shadow-sm text-primary mb-3">
+            <i class="bi bi-file-earmark-bar-graph fs-4"></i>
           </div>
-        </template>
-      </v-select>
-
-      <!-- Date Filters -->
-      <div class="date-filters">
-        <div class="premium-select" style="min-width: 140px">
-          <v-select
-            v-model="month"
-            :options="monthOptions"
-            :reduce="(opt: any) => opt.value"
-            label="label"
-            :clearable="false"
-            :searchable="false"
-          ></v-select>
+          <h4 class="fw-bold text-dark mb-1">Centro de Reportes</h4>
+          <p class="text-secondary small">Explorador del registro históricos</p>
         </div>
 
-        <div class="premium-select" style="min-width: 100px">
-          <v-select
-            v-model="year"
-            :options="years"
-            :clearable="false"
-            :searchable="false"
-          ></v-select>
-        </div>
-
-        <button
-          v-if="!reportStore.reportData"
-          class="btn-generate"
-          @click="handleGenerateReport"
-          :disabled="!selectedUser"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="btn-icon"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          GENERAR REPORTE
-        </button>
-      </div>
-
-      <button @click="downloadPDF" class="btn-print" v-if="reportStore.reportData">
-        🖨️ Imprimir / PDF
-      </button>
-    </div>
-
-    <!-- Error/Warning Alert -->
-    <div v-if="reportStore.error" class="alert-box warning">⚠️ {{ reportStore.error }}</div>
-
-    <div v-if="reportStore.reportData" class="page">
-      <!-- Header -->
-      <div class="header">
-        <div class="header-top">
-          <div class="hospital-info">
-            <h1>🏥 Hospital Base San Jose de Osorno</h1>
-            <p>Sistema de Gestión de Turnos y Reemplazos</p>
-            <p>Departamento de Recursos Humanos</p>
-          </div>
-          <div class="report-id">
-            <strong
-              >REPORTE #{{ year }}-{{ month }}-{{
-                String(reportStore.reportData.user.rut).slice(-4)
-              }}</strong
-            >
-            <p>Fecha emisión: {{ formatDate(new Date()) }}</p>
-          </div>
-        </div>
-        <div class="header-title">
-          <h2>Informe de Turnos y Horas Trabajadas</h2>
-          <p>Período: {{ months[month - 1] }} {{ year }}</p>
-        </div>
-      </div>
-
-      <!-- Content -->
-      <div class="content">
-        <!-- Employee Info -->
-        <div class="employee-card">
-          <div class="employee-grid">
-            <div class="employee-item">
-              <label>Funcionario</label>
-              <span class="value-text"
-                >{{ reportStore.reportData.user.nombre }}
-                {{ reportStore.reportData.user.apellido }}</span
-              >
+        <div class="period-status mt-4">
+          <label class="small fw-bold text-secondary mb-2 d-block">ESTADO DEL PERÍODO</label>
+          <div class="status-card" :class="periodStore.isClosed ? 'status-closed' : 'status-open'">
+            <div class="status-icon">
+              <i class="bi" :class="periodStore.isClosed ? 'bi-lock-fill' : 'bi-unlock-fill'"></i>
             </div>
-            <div class="employee-item">
-              <label>RUT</label>
-              <span class="value-text">{{ reportStore.reportData.user.rut }}</span>
-            </div>
-            <div class="employee-item">
-              <label>Cargo</label>
-              <span class="value-text">{{ reportStore.reportData.user.cargo }}</span>
-            </div>
-            <div class="employee-item">
-              <label>Servicio Principal</label>
-              <span class="value-text">{{
-                reportStore.reportData.serviceStats[0]?.serviceName || 'N/A'
+            <div class="status-info">
+              <span class="fw-bold">{{
+                periodStore.isClosed ? 'Cerrado' : 'Abierto (En curso)'
               }}</span>
             </div>
-            <div class="employee-item">
-              <label>Antigüedad</label>
-              <span class="value-text">{{ reportStore.reportData.user.antiguedad }}</span>
-            </div>
-            <div class="employee-item">
-              <label>Período Analizado</label>
-              <label>Período Analizado</label>
-              <span class="value-text"
-                >01/{{ String(month).padStart(2, '0') }}/{{ year }} -
-                {{ new Date(year, month, 0).getDate() }}/{{ String(month).padStart(2, '0') }}/{{
-                  year
-                }}</span
-              >
-            </div>
           </div>
         </div>
 
-        <!-- Summary Section -->
-        <div class="summary-section">
-          <div class="section-title">📊 Resumen General del Período</div>
-          <div class="summary-grid">
-            <div class="summary-card">
-              <div class="icon">
-                <!-- Calendar Check (Work Days) -->
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-calendar"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                  <path d="M9 16l2 2 4-4"></path>
-                </svg>
-              </div>
-              <div class="value">{{ reportStore.reportData.totals.daysWorked }}</div>
-              <div class="label">Días Trabajados</div>
-            </div>
-            <div class="summary-card">
-              <div class="icon">
-                <!-- Clock (Total Hours) -->
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-clock"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-              </div>
-              <div class="value">{{ reportStore.reportData.totals.hours }}</div>
-              <div class="label">Horas Totales</div>
-            </div>
-            <div class="summary-card">
-              <div class="icon">
-                <!-- Sun (Day Hours) -->
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-sun"
-                >
-                  <circle cx="12" cy="12" r="5"></circle>
-                  <line x1="12" y1="1" x2="12" y2="3"></line>
-                  <line x1="12" y1="21" x2="12" y2="23"></line>
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                  <line x1="1" y1="12" x2="3" y2="12"></line>
-                  <line x1="21" y1="12" x2="23" y2="12"></line>
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                </svg>
-              </div>
-              <div class="value">{{ reportStore.reportData.totals.dayHours }}</div>
-              <div class="label">Horas Diurnas</div>
-            </div>
-            <div class="summary-card">
-              <div class="icon">
-                <!-- Moon (Night Hours) -->
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-moon"
-                >
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
-              </div>
-              <div class="value">{{ reportStore.reportData.totals.nightHours }}</div>
-              <div class="label">Horas Nocturnas</div>
-            </div>
-          </div>
+        <MonthYearPicker
+          v-model:month="month"
+          v-model:year="year"
+          :months="months"
+          :years="years"
+        />
+      </div>
 
-          <div class="summary-grid">
-            <div class="summary-card">
-              <div class="icon">
-                <!-- Coffee (Free Days) -->
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-coffee"
-                >
-                  <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
-                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
-                  <line x1="6" y1="1" x2="6" y2="4"></line>
-                  <line x1="10" y1="1" x2="10" y2="4"></line>
-                  <line x1="14" y1="1" x2="14" y2="4"></line>
-                </svg>
-              </div>
-              <div class="value">{{ reportStore.reportData.totals.freeDays }}</div>
-              <div class="label">Días Libres</div>
-            </div>
-            <div class="summary-card">
-              <div class="icon">
-                <!-- Repeat/Refresh (Replacements) -->
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-users"
-                >
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-              </div>
-              <div class="value">{{ reportStore.reportData.totals.replacementsCount }}</div>
-              <div class="label">Reemplazos</div>
-            </div>
-            <div class="summary-card">
-              <div class="icon">
-                <!-- Activity/Briefcase (Services) -->
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-activity"
-                >
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-              </div>
-              <div class="value">{{ reportStore.reportData.serviceStats.length }}</div>
-              <div class="label">Servicios</div>
-            </div>
-            <div class="summary-card">
-              <div class="icon">
-                <!-- Percent/Chart (Attendance) -->
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="feather feather-pie-chart"
-                >
-                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                  <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                </svg>
-              </div>
-              <div class="value">
-                {{
-                  Math.round(
-                    (reportStore.reportData.totals.daysWorked /
-                      reportStore.reportData.timeline.length) *
-                      100
-                  )
-                }}%
-              </div>
-              <div class="label">Asistencia</div>
-            </div>
+      <!-- PANEL DERECHO: Acciones (CSS Grid 2 Cards) -->
+      <div class="panel-right">
+        <!-- Tarjeta: Cartola por Servicio -->
+        <div class="action-card">
+          <div class="card-header border-0 pb-0">
+            <h5 class="fw-bold mb-1">Consulta por Servicio</h5>
+            <p class="text-secondary small mb-0">
+              Descarga la vista consolidada de todo el personal
+            </p>
           </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="charts-grid">
-          <div class="chart-card">
-            <div class="chart-title">📈 Distribución de Horas por Servicio</div>
-            <div class="bar-chart">
-              <div
-                v-for="svc in reportStore.reportData.serviceStats"
-                :key="svc.serviceName"
-                class="bar-item"
+          <div class="card-body">
+            <div class="premium-select mb-4">
+              <v-select
+                v-model="selectedService"
+                :options="serviceOptions"
+                label="nombre"
+                :filterable="true"
+                placeholder="Buscar Servicio..."
               >
-                <div class="bar-label">{{ svc.serviceName }}</div>
-                <div class="bar-track">
-                  <div
-                    class="bar-fill"
-                    :style="{
-                      width: (svc.stats.hours / reportStore.reportData.totals.hours) * 100 + '%'
-                    }"
-                  >
-                    {{ svc.stats.hours }} hrs
+                <template #option="{ nombre, codigo }">
+                  <div>
+                    <strong>{{ nombre }}</strong>
+                    <small v-if="codigo" class="text-muted ms-2">({{ codigo }})</small>
                   </div>
-                </div>
-              </div>
+                </template>
+              </v-select>
+            </div>
+
+            <div class="d-flex gap-3 justify-content-start">
+              <button
+                class="btn-action btn-outline"
+                :disabled="!selectedServiceId || isExporting === 'excel'"
+                @click="downloadExcel"
+              >
+                <i v-if="isExporting === 'excel'" class="spinner-border spinner-border-sm me-1"></i>
+                <span v-else>📊</span>
+                {{
+                  isExporting === 'excel'
+                    ? 'Generando...'
+                    : periodStore.isClosed
+                    ? 'Descargar Cartola (Excel)'
+                    : 'Descargar Avance (Excel)'
+                }}
+              </button>
+
+              <button
+                v-if="periodStore.isClosed"
+                class="btn-action btn-primary"
+                :disabled="!selectedServiceId || isExporting === 'pdf'"
+                @click="downloadServicePDF"
+              >
+                <i v-if="isExporting === 'pdf'" class="spinner-border spinner-border-sm me-1"></i>
+                <i v-else class="bi bi-file-earmark-pdf"></i>
+                {{ isExporting === 'pdf' ? 'Obteniendo...' : 'Descargar Cartola (PDF)' }}
+              </button>
             </div>
           </div>
+        </div>
 
-          <div class="chart-card">
-            <div class="chart-title">📋 Desglose por Tipo de Turno</div>
-            <ul class="stats-list">
-              <li>
-                <span>Turnos Largos (L)</span>
-                <span class="stat-value">{{ reportStore.reportData.totals.L }} turnos</span>
-              </li>
-              <li>
-                <span>Turnos Noche (N)</span>
-                <span class="stat-value">{{ reportStore.reportData.totals.N }} turnos</span>
-              </li>
-              <li>
-                <span>Días Libres (X)</span>
-                <span class="stat-value">{{ reportStore.reportData.totals.X }} días</span>
-              </li>
-            </ul>
+        <!-- Tarjeta: Consulta Individual -->
+        <div class="action-card">
+          <div class="card-header border-0 pb-0">
+            <h5 class="fw-bold mb-1">Consulta Individual</h5>
+            <p class="text-secondary small mb-0">
+              Visualiza la cartola detallada de un funcionario
+            </p>
+          </div>
+          <div class="card-body">
+            <v-select
+              v-model="selectedUser"
+              :options="userOptions"
+              :filterable="false"
+              @search="onSearch"
+              :get-option-label="getUserLabel"
+              placeholder="Buscar Funcionario (Nombre o RUT)..."
+              class="user-search premium-select mb-4"
+            >
+              <template #option="{ nombre, apellido, rut, tipo_cargo }">
+                <div class="user-option">
+                  <strong>{{ nombre }} {{ apellido }}</strong>
+                  <small>{{ rut }} - {{ tipo_cargo }}</small>
+                </div>
+              </template>
+            </v-select>
+
+            <div class="d-flex gap-3 justify-content-start">
+              <button
+                class="btn-action btn-outline"
+                @click="downloadIndividualExcel"
+                :disabled="!selectedUser || isExporting === 'ind-excel'"
+              >
+                <i
+                  v-if="isExporting === 'ind-excel'"
+                  class="spinner-border spinner-border-sm me-1"
+                ></i>
+                <span v-else>📊</span>
+                {{
+                  isExporting === 'ind-excel'
+                    ? 'Generando...'
+                    : periodStore.isClosed
+                    ? 'Descargar Cartola (Excel)'
+                    : 'Descargar Avance (Excel)'
+                }}
+              </button>
+
+              <button
+                class="btn-action"
+                :class="periodStore.isClosed ? 'btn-primary' : 'btn-outline'"
+                @click="handleGenerateReport"
+                :disabled="!selectedUser || isExporting === 'ind-pdf'"
+              >
+                <i
+                  v-if="isExporting === 'ind-pdf'"
+                  class="spinner-border spinner-border-sm me-1"
+                ></i>
+                <i v-else class="bi bi-file-earmark-pdf"></i>
+                {{
+                  isExporting === 'ind-pdf'
+                    ? 'Generando...'
+                    : periodStore.isClosed
+                    ? 'Descargar Cartola (PDF)'
+                    : 'Descargar Avance (PDF)'
+                }}
+              </button>
+            </div>
           </div>
         </div>
-
-        <!-- Detailed Table -->
-        <div class="section-title">📋 Detalle de Turnos del Período</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Servicio</th>
-              <th>Tipo Turno</th>
-              <th class="center">Sigla</th>
-              <th class="center">Entrada</th>
-              <th class="center">Salida</th>
-              <th class="center">Hrs Diurnas</th>
-              <th class="center">Hrs Nocturnas</th>
-              <th class="center">Total Hrs</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="day in reportStore.reportData.timeline" :key="day.dayNum">
-              <template v-if="!day.isOutOfContract">
-                <tr
-                  v-if="
-                    day.items.length === 0 ||
-                    (day.items.length === 1 && ['X', 'LIBRE'].includes(day.items[0].sigla))
-                  "
-                >
-                  <td>{{ formatReportDate(day.date) }}</td>
-                  <td colspan="8" style="text-align: center; color: #10b981; font-weight: 600">
-                    <span class="shift-type shift-libre">DÍA LIBRE</span>
-                  </td>
-                </tr>
-
-                <template v-else>
-                  <tr v-for="(item, idx) in day.items" :key="idx">
-                    <td>{{ formatReportDate(day.date) }}</td>
-                    <td>
-                      <span class="service-badge badge-default">{{ item.service }}</span>
-                    </td>
-                    <td>
-                      <span class="shift-type" :style="{ backgroundColor: getShiftColor(item.sigla), color: '#ffffff', border: 'none' }">
-                        {{ getShiftName(item.sigla) }}
-                        <span v-if="item.isReplacement" class="text-xs text-gray-500"
-                          >(Reemplazo)</span
-                        >
-                      </span>
-                    </td>
-                    <td class="center">{{ item.sigla }}</td>
-                    <td class="center">{{ item.startTime }}</td>
-                    <td class="center">{{ item.endTime }}</td>
-                    <td class="center">{{ item.dayHrs }}</td>
-                    <td class="center">{{ item.nightHrs }}</td>
-                    <td class="center">
-                      <strong>{{ item.hours }}</strong>
-                    </td>
-                  </tr>
-                </template>
-              </template>
-            </template>
-
-            <tr style="background: #f0f7ff; font-weight: 600">
-              <td colspan="6" style="text-align: right; padding-right: 15px">
-                TOTALES DEL PERÍODO:
-              </td>
-              <td class="center">{{ reportStore.reportData.totals.dayHours }}</td>
-              <td class="center">{{ reportStore.reportData.totals.nightHours }}</td>
-              <td class="center">
-                <strong>{{ reportStore.reportData.totals.hours }}</strong>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="signature-section"></div>
-      </div>
-
-      <!-- Footer -->
-      <div class="footer">
-        <div>
-          <strong>Hospital Base San Jose de Osorno</strong><br />
-          ZuriApp Sistema de Turnos y Reemplazos | Generado automáticamente
-        </div>
       </div>
     </div>
 
-    <div v-else class="empty-state">
-      <p class="text-secondary">Seleccione un funcionario para generar su cartola.</p>
+    <!-- Error/Warning Alert (Envuelto para evitar Cumulative Layout Shift) -->
+    <div class="position-relative w-50 hide-print mt-4" style="height: 0">
+      <div v-if="reportStore.error" class="alert-box warning position-absolute w-90 m-0">
+        ⚠️ {{ reportStore.error }}
+      </div>
     </div>
+
+    <ReportPrintTemplate
+      :report-data="reportStore.reportData"
+      :month="month"
+      :year="year"
+      :months="months"
+      :is-open-month="isOpenMonth"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import MonthYearPicker from '../../components/reports/MonthYearPicker.vue'
+import ReportPrintTemplate from '../../components/reports/ReportPrintTemplate.vue'
 import { useReports } from '../../composables/reports/useReports'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
@@ -503,43 +194,175 @@ const {
   month,
   year,
   months,
-  monthOptions,
   years,
   onSearch,
   handleGenerateReport,
-  getShiftColor,
-  getShiftName,
-  formatDate,
-  formatReportDate,
-  downloadPDF,
+  downloadIndividualExcel,
+  isOpenMonth,
+  selectedService,
+  selectedServiceId,
+  serviceOptions,
+  isExporting,
+  downloadExcel,
+  downloadServicePDF,
+  periodStore,
   getUserLabel
 } = useReports()
 </script>
 
 <style scoped>
-.icon-square {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .page-container {
-  background: #f8fafc;
-  padding: 20px;
-  min-height: 100vh;
+  padding: 30px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  min-height: calc(80vh - 80px);
 }
 
-.controls {
-  width: 210mm;
-  margin-bottom: 20px;
+.split-layout {
+  width: 100%;
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 40px; /* Whitespace maximization */
+  margin-bottom: 30px;
+}
+
+/* Panel Izquierdo */
+.panel-left {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px; /* Más padding para respirar */
+  box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.04), 0 2px 4px -2px rgba(30, 58, 138, 0.04);
   display: flex;
-  gap: 10px;
-  justify-content: space-between;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Typography Upgrades */
+.header-context h4 {
+  letter-spacing: -0.02em;
+}
+.date-filters label,
+.period-status label {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.icon-square {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff !important;
+}
+
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+/* Status Indicators */
+.status-closed {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+.status-closed .status-icon i {
+  color: #64748b;
+}
+
+.status-open {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+.status-open .status-icon i {
+  color: #22c55e;
+}
+
+/* Panel Derecho */
+.panel-right {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.action-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: visible;
+}
+
+.action-card .card-header {
+  padding: 32px 32px 0;
+}
+
+.action-card .card-header h5 {
+  letter-spacing: -0.03em;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.action-card .card-header p {
+  color: #64748b !important;
+  line-height: 1.5;
+}
+
+.action-card .card-body {
+  padding: 24px 32px 32px;
+}
+
+/* Botones Premium */
+.btn-action {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-action:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: #0f172a;
+  color: white;
+}
+.btn-primary:not(:disabled):hover {
+  background: #1e293b;
+}
+
+.btn-outline {
+  background: white;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
+.btn-outline:not(:disabled):hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
 }
 
 .user-search {
@@ -547,14 +370,18 @@ const {
   min-width: 300px;
 }
 
+.premium-select {
+  font-size: 0.95rem;
+  max-width: 500px;
+}
+
+/* Base style for v-select inner components */
 .premium-select :deep(.vs__dropdown-toggle) {
   border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  padding: 3px;
-  background: white;
-  box-shadow: none;
+  border-radius: 10px;
+  padding: 6px 4px;
   transition: all 0.2s ease;
-  min-height: 42px;
+  background: white;
 }
 
 /* Search Input */
@@ -616,7 +443,8 @@ const {
 
 .date-filters {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .btn-print {
@@ -634,405 +462,6 @@ const {
   background-color: #94a3b8;
   cursor: not-allowed;
   opacity: 0.8;
-}
-
-.page {
-  background: white;
-  width: 210mm;
-  min-height: 297mm;
-  margin: 0 auto;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  position: relative;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  color: #333;
-}
-
-/* Header */
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #4b5ea2 100%);
-  padding: 30px 40px;
-  color: white;
-}
-
-.header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  margin-bottom: 20px;
-}
-
-.hospital-info h1 {
-  font-size: 24px;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.hospital-info p {
-  font-size: 12px;
-  opacity: 0.9;
-  margin: 0;
-}
-
-.report-id {
-  text-align: right;
-  font-size: 11px;
-}
-
-.report-id strong {
-  display: block;
-  font-size: 14px;
-  margin-bottom: 3px;
-}
-.report-id p {
-  margin: 0;
-}
-
-.header-title {
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
-  padding-top: 15px;
-}
-
-.header-title h2 {
-  font-size: 20px;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.header-title p {
-  font-size: 13px;
-  opacity: 0.9;
-}
-
-/* Content */
-.content {
-  padding: 30px 40px;
-}
-
-/* Employee Info Card */
-.employee-card {
-  background: linear-gradient(135deg, #e0e7ff 0%, #a9baf9 100%);
-  border-left: 4px solid #667eea;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 25px;
-}
-
-.employee-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-}
-
-.employee-item label {
-  display: block;
-  font-size: 11px;
-  color: #666;
-  margin-bottom: 3px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.employee-item .value-text {
-  display: block;
-  font-size: 14px;
-  color: #333;
-  font-weight: 600;
-}
-
-/* Summary Cards */
-.summary-section {
-  margin-bottom: 30px;
-}
-
-.section-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #667eea;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.summary-card {
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 15px;
-  text-align: center;
-  transition: all 0.3s;
-}
-
-.summary-card .icon {
-  font-size: 24px;
-  margin-bottom: 8px;
-  color: #667eea;
-}
-
-.summary-card .value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #667eea;
-  margin-bottom: 5px;
-}
-
-.summary-card .label {
-  font-size: 11px;
-  color: #666;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-/* Table */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 0px;
-  font-size: 12px;
-}
-
-thead {
-  background: linear-gradient(135deg, #8194ea 0%, #4b5ea2 100%);
-  color: white;
-}
-
-th {
-  padding: 12px 10px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-}
-
-th.center,
-td.center {
-  text-align: center;
-}
-
-tbody tr {
-  border-bottom: 1px solid #e0e0e0;
-}
-
-td {
-  padding: 12px 10px;
-}
-
-.service-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  background: #eaeaea;
-}
-
-.shift-type {
-  font-weight: 600;
-}
-
-.shift-diurno {
-  color: #f59e0b;
-}
-.shift-nocturno {
-  color: #6366f1;
-}
-.shift-libre {
-  color: #10b981;
-}
-
-/* Charts Section */
-.charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 25px;
-}
-
-.chart-card {
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 20px;
-}
-
-.chart-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 15px;
-  color: #333;
-}
-
-.bar-chart {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.bar-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.bar-label {
-  min-width: 80px;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.bar-track {
-  flex: 1;
-  height: 24px;
-  background: #f0f0f0;
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-}
-
-.bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #6c83eb 0%, #384fa2 100%);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-right: 8px;
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.stats-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.stats-list li {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 13px;
-}
-
-.stats-list li:last-child {
-  border-bottom: none;
-}
-
-.stats-list .stat-value {
-  font-weight: 700;
-  color: #667eea;
-}
-
-/* Footer */
-.footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #f8f9fa;
-  padding: 15px 40px;
-  border-top: 2px solid #e0e0e0;
-  font-size: 10px;
-  color: #666;
-  display: flex;
-  justify-content: space-between;
-}
-
-.signature-section {
-  padding-top: 20px;
-  margin-top: 40px;
-  border-top: 2px solid #e0e0e0;
-}
-
-.signatures {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  margin-top: 60px;
-}
-
-.signature-box {
-  text-align: center;
-}
-
-.signature-line {
-  border-top: 2px solid #333;
-  margin-bottom: 8px;
-}
-
-.signature-label {
-  font-size: 11px;
-  color: #666;
-  font-weight: 600;
-}
-
-.user-option {
-  display: flex;
-  flex-direction: column;
-  padding: 2px 0;
-}
-
-@media print {
-  .hide-print {
-    display: none !important;
-  }
-  .page-container {
-    padding: 0;
-    background: white;
-  }
-  .page {
-    box-shadow: none;
-    margin: 0;
-  }
-}
-
-/* Premium Generate Button */
-.btn-generate {
-  background: linear-gradient(135deg, hsl(222, 47%, 55%) 0%, hsl(222, 47%, 50%) 100%);
-  color: white;
-  border: none;
-  padding: 0.65rem 1.75rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
-  box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.25), 0 2px 4px -1px rgba(102, 126, 234, 0.15);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.btn-generate:hover:not(:disabled) {
-  background: linear-gradient(135deg, hsl(222, 47%, 60%) 0%, hsl(222, 47%, 52%) 100%);
-  box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.35), 0 4px 6px -2px rgba(102, 126, 234, 0.2);
-  transform: translateY(-2px);
-}
-
-.btn-generate:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px -1px rgba(102, 126, 234, 0.2);
-}
-
-.btn-generate:disabled {
-  background: #e2e8f0;
-  color: #94a3b8;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
 }
 
 .btn-icon {
@@ -1067,10 +496,20 @@ td {
     transform: translateY(0);
   }
 }
+@media screen {
+  .page {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
 @media print {
   @page {
-    margin: 5mm; /* Small margin for content */
-    size: auto;
+    size: letter;
+    margin: 1.5cm;
   }
 
   .page-container {
@@ -1137,6 +576,220 @@ td {
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+}
+
+/* === Nuevos Estilos: Períodos, Tabs y Excepciones === */
+
+.period-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.badge-open {
+  background: #dcfce7;
+  color: #15803d;
+}
+.badge-closed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.btn-action {
+  min-width: 220px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-danger-sm {
+  background: #fca5a5;
+  color: #7f1d1d;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-danger-sm:hover {
+  background: #f87171;
+}
+
+.btn-seal {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-seal:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.btn-seal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.tabs-nav {
+  width: 210mm;
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 0;
+}
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 10px 18px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn.active {
+  color: #4b5ea2;
+  border-bottom-color: #4b5ea2;
+}
+.tab-btn:hover:not(.active) {
+  color: #334155;
+}
+
+.badge-count {
+  background: #ef4444;
+  color: white;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+}
+
+.tab-content {
+  width: 210mm;
+  margin-bottom: 16px;
+}
+
+.export-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 24px;
+  margin-top: 12px;
+}
+
+.controls-inner {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 14px 0;
+}
+
+.table-exceptions {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.table-exceptions th,
+.table-exceptions td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+}
+.table-exceptions thead {
+  background: #f8fafc;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-box {
+  background: white;
+  border-radius: 12px;
+  padding: 28px;
+  width: 380px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+.form-input {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  margin-top: 12px;
+}
+.btn-outline-primary {
+  background: transparent;
+  color: #4b5ea2;
+  border: 1.5px solid #4b5ea2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-outline-primary:hover:not(:disabled) {
+  background: #4b5ea2;
+  color: white;
+}
+.btn-outline-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media print {
+  .hide-print {
+    display: none !important;
   }
 }
 </style>

@@ -6,9 +6,18 @@ import Reemplazo from "../models/replacement.model";
 import { AuthRequest } from "../middleware/authentication.middleware";
 import { get, set, delPattern } from "../config/redis.config";
 import socketService from "../services/socket.service";
+import { checkPeriodLock } from "../middleware/period-lock.middleware";
 
 async function registerReemplazo(req: AuthRequest, res: Response) {
   try {
+    // Verificación de Período Cerrado
+    const { fecha_inicio, id_entrante } = req.body;
+    if (fecha_inicio && id_entrante) {
+      const d = new Date(fecha_inicio);
+      const allowed = await checkPeriodLock(req, res, d.getMonth() + 1, d.getFullYear(), String(id_entrante));
+      if (!allowed) return;
+    }
+
     const nuevoReemplazo = await replacementService.registrar(req.body);
 
     // Auditoría Transaccional: Creación

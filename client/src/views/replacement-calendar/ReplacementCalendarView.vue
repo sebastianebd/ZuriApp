@@ -17,6 +17,8 @@
           <v-select
             v-model="selectedService"
             :options="serviceOptions"
+            label="nombre"
+            :reduce="(s: any) => s._id"
             placeholder="Seleccione Servicio"
             class="bg-white rounded shadow-sm custom-v-select"
             :clearable="false"
@@ -156,7 +158,7 @@
                       <i class="bi bi-building me-1"></i>Servicio
                     </label>
                     <span class="badge bg-info text-dark w-100 py-2">{{
-                      formatTitleCase(eventoSeleccionado.servicio)
+                      formatTitleCase(getServiceName(eventoSeleccionado.servicio))
                     }}</span>
                   </div>
                 </div>
@@ -218,7 +220,9 @@ const {
 
   // Filters
   selectedService,
-  serviceOptions
+  serviceOptions,
+  
+  getServiceName
 } = useCalendar()
 
 import { formatTitleCase } from '@/utils/text-formatters'

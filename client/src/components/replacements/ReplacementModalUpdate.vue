@@ -239,6 +239,8 @@
                           }
                         "
                     :disabled="turnoEnCurso"
+                    label="nombre"
+                    :reduce="(s: any) => s._id"
                     placeholder="Seleccione..."
                     :clearable="false"
                     :searchable="true"
@@ -406,7 +408,7 @@ const props = defineProps<{
   visible: boolean
   registro: ReemplazoModalData
   listaDeTurnos: string[]
-  listaDeServicios: string[]
+  listaDeServicios: any[]
   fechasBloqueadas: string[]
 }>()
 

@@ -101,6 +101,8 @@
                   <v-select
                     v-model="form.service"
                     :options="serviceOptions"
+                    label="nombre"
+                    :reduce="(s: any) => s._id"
                     placeholder="Seleccione servicio"
                     class="custom-v-select"
                     :class="{ 'is-invalid': errors.service }"
@@ -245,7 +247,7 @@ import 'vue-select/dist/vue-select.css'
 import { useUserStore } from '@/stores/user.store'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useReplacementStore } from '@/stores/replacement.store'
-import { useOptionStore } from '@/stores/option.store'
+import { useServiceStore } from '@/stores/service.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import { type User } from '@/types/user.types'
 
@@ -261,7 +263,7 @@ const emit = defineEmits<{
 
 const usersStore = useUserStore()
 const turnAssignmentStore = useTurnAssignmentStore()
-const optionStore = useOptionStore()
+const serviceStore = useServiceStore()
 const turnTypeStore = useTurnTypeStore()
 const replacementStore = useReplacementStore()
 
@@ -330,7 +332,7 @@ const turnTypeOptions = computed(() => {
 })
 
 const serviceOptions = computed(() => {
-  return optionStore.opciones?.servicios || []
+  return serviceStore.services || []
 })
 
 // Form AuthState
@@ -351,7 +353,7 @@ watch(
       resetForm()
       // Fetch options only (users loaded via search)
       try {
-        await Promise.all([optionStore.mostrarOpciones(), turnTypeStore.fetchTurnTypes(true)])
+        await Promise.all([serviceStore.fetchServices(), turnTypeStore.fetchTurnTypes(true)])
       } catch (e) {
         console.error('Error fetching data', e)
       }

@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface ITurnAssignment extends Document {
   user_id: mongoose.Types.ObjectId;
-  service: string;
+  service: mongoose.Types.ObjectId;
   turn_type: string;
   start_date: Date;
   end_date?: Date;
@@ -22,10 +22,12 @@ const turnAssignmentSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
     service: {
-      type: String,
-      required: true, // Making it required as per user implication
+      type: Schema.Types.ObjectId,
+      ref: "Service",
+      required: true,
     },
     turn_type: {
       type: Schema.Types.ObjectId,
