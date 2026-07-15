@@ -102,12 +102,25 @@ async function generateServicePDF(
     </html>
   `;
 
-  // html-pdf-node genera el PDF a partir del HTML
-  const htmlPdf = await import("html-pdf-node");
-  const file = { content: html };
-  const options = { format: "A4", landscape: false };
-  const pdfBuffer = await htmlPdf.generatePdf(file, options);
-  return pdfBuffer;
+  // Reemplazamos html-pdf-node por puppeteer puro para tener control total del ejecutable
+  const puppeteer = await import("puppeteer");
+  const browser = await puppeteer.launch({
+    executablePath:
+      process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium-browser",
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+    ],
+  });
+
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: "domcontentloaded" });
+  const pdfBuffer = await page.pdf({ format: "a4", landscape: false });
+
+  await browser.close();
+  // page.pdf returns a Uint8Array in newer puppeteer, convert to Buffer
+  return Buffer.from(pdfBuffer);
 }
 
 // 2. Definición del Worker de Cierre Mensual (Consumer)
@@ -215,8 +228,9 @@ export const setupReportClosureWorker = () => {
           );
         } catch (err: any) {
           logger.error(
-            `[ReportWorker] ❌ Error generando PDF para ${service.nombre}: ${err.message}`,
+            `[ReportWorker] ❌ Error generando PDF para ${service.nombre}: ${err.message || err.name || JSON.stringify(err)}`,
           );
+          console.error(err);
           // Continuar con el siguiente servicio — no abortar todo el Job
         }
 

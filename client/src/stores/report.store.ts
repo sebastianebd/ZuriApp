@@ -119,8 +119,8 @@ export const useReportStore = defineStore('report', () => {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       const data = await ReportService.fetchServicePdf(apiPrivate, { month, year, serviceId })
-      if (data.url) {
-        window.open(data.url, '_blank')
+      if (data.signedUrl) {
+        window.open(data.signedUrl, '_blank')
       }
     } catch (err: any) {
       error.value = err.response?.data?.error || 'El PDF no se encuentra disponible.'

@@ -599,6 +599,13 @@ const {
   color: #b91c1c;
 }
 
+.btn-action {
+  min-width: 220px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn-danger {
   background: #ef4444;
   color: white;
@@ -778,5 +785,11 @@ const {
 .btn-outline-primary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+@media print {
+  .hide-print {
+    display: none !important;
+  }
 }
 </style>

@@ -81,6 +81,7 @@
       @close="closeModal"
       @save="handleSave"
     />
+    <AlertMessage ref="alertMessage" />
 
     <ConfirmationModal
       v-if="showDeleteModal"
@@ -94,12 +95,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useTurnSiglaStore, type TurnSigla } from '@/stores/turn-sigla.store'
+import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
+import type { TurnSigla } from '@/stores/turn-sigla.store'
 import TurnSiglaModal from './TurnSiglaModal.vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
+import AlertMessage from '@/components/common/AlertMessage.vue'
 
 const store = useTurnSiglaStore()
 const showModal = ref(false)
+const showDeleteModal = ref(false)
+const selectedItem = ref<TurnSigla | null>(null)
+const itemToDelete = ref<TurnSigla | null>(null)
+const alertMessage = ref<InstanceType<typeof AlertMessage> | null>(null)
 
 defineProps<{
   hideActionHeader?: boolean
@@ -108,10 +115,6 @@ defineProps<{
 defineExpose({
   openCreateModal
 })
-const showDeleteModal = ref(false)
-
-const selectedItem = ref<TurnSigla | null>(null)
-const itemToDelete = ref<TurnSigla | null>(null)
 
 onMounted(() => {
   store.fetchSiglas()
@@ -142,6 +145,7 @@ async function handleSave(data: Partial<TurnSigla>) {
     closeModal()
   } catch (error) {
     console.error(error)
+    alertMessage.value?.show('Error al guardar', store.error || 'Ocurrió un error inesperado', 'error')
   }
 }
 

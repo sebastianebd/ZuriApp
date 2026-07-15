@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { axiosPrivateInstance as axios } from '@/config/axios'
+import { useAuthStore } from './auth.store'
 
 export interface Period {
   _id?: string
@@ -16,6 +16,9 @@ export const usePeriodStore = defineStore('period', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
+  const authStore = useAuthStore()
+  const api = authStore.usePrivateApi()
+
   const isClosed = computed(() => period.value?.status === 'CLOSED')
   const isUserUnlocked = (userId: string) =>
     period.value?.unlockedUsers.includes(userId) ?? false
@@ -25,7 +28,7 @@ export const usePeriodStore = defineStore('period', () => {
     try {
       isLoading.value = true
       error.value = null
-      const { data } = await axios.get('/periods', { params: { month, year } })
+      const { data } = await api.get('/periods', { params: { month, year } })
       period.value = data
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Error al obtener el período'
@@ -39,7 +42,7 @@ export const usePeriodStore = defineStore('period', () => {
     isLoading.value = true
     error.value = null
     try {
-      const { data } = await axios.put('/periods/close', { month, year })
+      const { data } = await api.put('/periods/close', { month, year })
       period.value = data
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Error al cerrar período'
@@ -51,14 +54,14 @@ export const usePeriodStore = defineStore('period', () => {
 
   /** Agrega un usuario a las excepciones del período */
   async function addException(periodId: string, userId: string) {
-    const { data } = await axios.post(`/periods/${periodId}/exceptions`, { userId })
+    const { data } = await api.post(`/periods/${periodId}/exceptions`, { userId })
     period.value = data
     return data
   }
 
   /** Revoca la excepción de un usuario */
   async function removeException(periodId: string, userId: string) {
-    const { data } = await axios.delete(`/periods/${periodId}/exceptions/${userId}`)
+    const { data } = await api.delete(`/periods/${periodId}/exceptions/${userId}`)
     period.value = data
     return data
   }
@@ -70,7 +73,7 @@ export const usePeriodStore = defineStore('period', () => {
     userId: string
     periodId: string
   }) {
-    const { data } = await axios.post('/reports/seal-exception', payload)
+    const { data } = await api.post('/reports/seal-exception', payload)
     // Refresca el período para actualizar unlockedUsers en UI
     if (period.value) {
       await fetchPeriod(payload.month, payload.year)
