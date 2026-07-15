@@ -3,23 +3,32 @@ import { debounce } from 'lodash-es'
 import { useReportStore } from '@/stores/report.store'
 import { useUserStore } from '@/stores/user.store'
 import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
+import { usePeriodStore } from '@/stores/period.store'
+import { useServiceStore } from '@/stores/service.store'
 
 export function useReports() {
   const reportStore = useReportStore()
   const userStore = useUserStore()
   const siglaStore = useTurnSiglaStore()
+  const serviceStore = useServiceStore()
+  const periodStore = usePeriodStore()
 
   const selectedUser = ref<any>(null)
   const userOptions = ref<any[]>([])
-  const month = ref(1)
+  const month = ref(new Date().getMonth() + 1)
   const year = ref(new Date().getFullYear())
 
-  const months = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ]
-  const monthOptions = months.map((m, i) => ({ label: m, value: i + 1 }))
-  const years = [2024, 2025, 2026]
+  // Generar meses dinámicamente usando Intl (sin riesgos de typos ortográficos)
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(2000, i, 1)
+    const m = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(d)
+    return m.charAt(0).toUpperCase() + m.slice(1) // Ej: "Enero"
+  })
+
+  // Generar años dinámicamente (desde 2023 hasta el año actual) para que nunca quede obsoleto
+  const currentY = new Date().getFullYear()
+  const startY = 2023
+  const years = Array.from({ length: currentY - startY + 1 }, (_, i) => startY + i)
 
   // Debounced Search with Lodash (300ms)
   const performSearch = debounce(async (search: string, loading: (l: boolean) => void) => {
@@ -44,13 +53,14 @@ export function useReports() {
     reportStore.error = null // Clear any persistent errors on mount
     const defaults = await userStore.buscarUsuarios('')
     userOptions.value = defaults
-    
+
     // Ensure siglas are loaded for colors
     await siglaStore.fetchSiglas()
+    await serviceStore.fetchServices()
   })
 
-  // Validation: Restrict current/future months
-  const isRestricted = computed(() => {
+  // Validation: Check if month is current/future (Open Month / Avance)
+  const isOpenMonth = computed(() => {
     const now = new Date()
     const currentYear = now.getFullYear()
     const currentMonth = now.getMonth() + 1 // 1-indexed (Jan=1)
@@ -60,59 +70,65 @@ export function useReports() {
     return false
   })
 
-  // Watchers to clear report when filters change
-  watch([month, year, selectedUser], () => {
+  const selectedService = ref<{ _id: string; nombre: string; codigo?: string } | null>(null)
+  const selectedServiceId = computed(() => selectedService.value?._id ?? '')
+  
+  const serviceOptions = computed(() =>
+    serviceStore.services
+      .filter((s) => s.activo)
+      .map((s) => ({ _id: s._id, nombre: s.nombre, codigo: s.codigo }))
+  )
+
+  const isExporting = ref<'excel' | 'pdf' | 'ind-excel' | 'ind-pdf' | null>(null)
+
+  // Watchers to clear report when filters change and fetch period state
+  watch([month, year], ([m, y]) => {
+    periodStore.fetchPeriod(m, y)
+    reportStore.reportData = null
+    reportStore.error = null
+  }, { immediate: true })
+
+  watch([selectedUser], () => {
     reportStore.reportData = null
     reportStore.error = null
   })
 
+  const getUserLabel = (option: any) => {
+    if (!option) return ''
+    return `${option.nombre} ${option.apellido} (${option.rut})`
+  }
+
   const handleGenerateReport = async () => {
     if (!selectedUser.value) return
+    isExporting.value = 'ind-pdf'
+    try {
+      reportStore.currentFilters.userId = selectedUser.value._id
+      reportStore.currentFilters.month = month.value
+      reportStore.currentFilters.year = year.value
 
-    if (isRestricted.value) {
-      reportStore.error = 'El mes seleccionado se encuentra en curso. Solo se pueden emitir reportes de meses cerrados.'
-      reportStore.reportData = null
-      return
+      await reportStore.fetchReportSummary()
+
+      if (reportStore.reportData && !reportStore.error) {
+        setTimeout(() => {
+          downloadPDF()
+        }, 300)
+      }
+    } finally {
+      isExporting.value = null
     }
-
-    reportStore.currentFilters.userId = selectedUser.value._id
-    reportStore.currentFilters.month = month.value
-    reportStore.currentFilters.year = year.value
-
-    await reportStore.fetchReportSummary()
   }
 
-  // Helpers
-  const getShiftColor = (sigla: string) => {
-    return siglaStore.mapSiglaToColor(sigla) || '#94a3b8' // fallback to slate-400
-  }
-
-  const getShiftName = (sigla: string) => {
-    return siglaStore.mapSiglaToNombre(sigla)
-  }
-
-  const formatDate = (dateStr: string | Date) => {
-    const d = new Date(dateStr)
-    const day = String(d.getDate()).padStart(2, '0')
-    const mn = String(d.getMonth() + 1).padStart(2, '0')
-    const yr = d.getFullYear()
-    return `${day}/${mn}/${yr}`
-  }
-
-  const formatReportDate = (dateStr: string | Date) => {
-    const d = new Date(dateStr)
-    const day = String(d.getUTCDate()).padStart(2, '0')
-    const mn = String(d.getUTCMonth() + 1).padStart(2, '0')
-    const yr = d.getUTCFullYear()
-    return `${day}/${mn}/${yr}`
-  }
+  // Formateadores movidos a utils/date-utils.ts y manejados por los subcomponentes
 
   const downloadPDF = () => {
     const originalTitle = document.title
 
     if (selectedUser.value && reportStore.reportData) {
       const monthName = months[month.value - 1]
-      const fullName = `${selectedUser.value.nombre}_${selectedUser.value.apellido}`.replace(/\s+/g, '_')
+      const fullName = `${selectedUser.value.nombre}_${selectedUser.value.apellido}`.replace(
+        /\s+/g,
+        '_'
+      )
       document.title = `Reporte_${monthName}_${year.value}_${fullName}`
     }
 
@@ -120,8 +136,35 @@ export function useReports() {
     document.title = originalTitle
   }
 
-  const getUserLabel = (option: any) => {
-    return `${option.nombre} ${option.apellido}`
+  const downloadIndividualExcel = async () => {
+    if (!selectedUser.value) return
+    isExporting.value = 'ind-excel'
+    try {
+      await reportStore.downloadIndividualExcel(month.value, year.value, selectedUser.value._id)
+    } finally {
+      isExporting.value = null
+    }
+  }
+
+  async function downloadExcel() {
+    if (!selectedServiceId.value) return
+    isExporting.value = 'excel'
+    try {
+      await reportStore.downloadServiceExcel(month.value, year.value, selectedServiceId.value)
+    } finally {
+      isExporting.value = null
+    }
+  }
+
+  // Nueva función E2: Descarga PDF firmado desde S3
+  async function downloadServicePDF() {
+    if (!selectedServiceId.value) return
+    isExporting.value = 'pdf'
+    try {
+      await reportStore.downloadServicePDF(month.value, year.value, selectedServiceId.value)
+    } finally {
+      isExporting.value = null
+    }
   }
 
   return {
@@ -131,15 +174,19 @@ export function useReports() {
     month,
     year,
     months,
-    monthOptions,
     years,
+    isOpenMonth,
     onSearch,
     handleGenerateReport,
-    getShiftColor,
-    getShiftName,
-    formatDate,
-    formatReportDate,
     downloadPDF,
+    downloadIndividualExcel,
+    selectedService,
+    selectedServiceId,
+    serviceOptions,
+    isExporting,
+    downloadExcel,
+    downloadServicePDF,
+    periodStore,
     getUserLabel
   }
 }

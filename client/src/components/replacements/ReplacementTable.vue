@@ -85,7 +85,7 @@
           <td>
             <div class="d-flex flex-column justify-content-center h-100">
               <span class="badge-modern-context mb-1">
-                <i class="bi bi-hospital me-1"></i> {{ formatTitleCase(reemplazo.servicio) }}
+                <i class="bi bi-hospital me-1"></i> {{ formatTitleCase(getServiceName(reemplazo.servicio)) }}
               </span>
               <span class="text-secondary x-small ms-1">
                 {{ formatTitleCase(reemplazo.tipo_turno) }}
@@ -192,6 +192,12 @@ import { type ReplacementRegistration } from '@/types/replacement.types'
 import { type User } from '@/types/user.types'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatTitleCase } from '@/utils/text-formatters'
+import { useServiceStore } from '@/stores/service.store'
+
+const serviceStore = useServiceStore()
+const getServiceName = (id: any) => {
+  return serviceStore.getServiceName(id)
+}
 
 const authStore = useAuthStore()
 

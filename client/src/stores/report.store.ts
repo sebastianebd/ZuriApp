@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { axiosPrivateInstance as axios } from '@/config/axios'
+import * as ReportService from '@/services/report.service'
+import { useAuthStore } from './auth.store'
+import type { AxiosInstance } from 'axios'
 
 export const useReportStore = defineStore('report', () => {
   const isLoading = ref(false)
@@ -23,9 +25,9 @@ export const useReportStore = defineStore('report', () => {
 
       const params = { ...currentFilters.value, ...options, _t: Date.now() }
 
-      const { data } = await axios.get('/reports/summary', {
-        params
-      })
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      const data = await ReportService.fetchReportSummary(apiPrivate, params)
       reportData.value = data
     } catch (err: any) {
       // Only log unexpected errors (non-404)
@@ -34,7 +36,11 @@ export const useReportStore = defineStore('report', () => {
       }
 
       reportData.value = null
-      error.value = err.response?.data?.message || 'Error al obtener el reporte.'
+      if (err.response?.status === 404) {
+        error.value = 'No se encontraron registros para este usuario en el periodo seleccionado.'
+      } else {
+        error.value = err.response?.data?.message || 'Error al obtener el reporte.'
+      }
     } finally {
       isLoading.value = false
     }
@@ -45,10 +51,10 @@ export const useReportStore = defineStore('report', () => {
     if (!currentFilters.value.userId) return
 
     try {
-      const response = await axios.get('/reports/export/excel', {
-        params: currentFilters.value,
-        responseType: 'blob' // Important for binary files
-      })
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      const data = await ReportService.downloadServiceExcelService(apiPrivate, currentFilters.value);
+      const response = { data };
 
       // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]))
@@ -64,12 +70,73 @@ export const useReportStore = defineStore('report', () => {
     }
   }
 
+
+  const downloadIndividualExcel = async (month: number, year: number, userId: string) => {
+    try {
+      error.value = null
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      const data = await ReportService.downloadIndividualExcelService(apiPrivate, { month, year, userId })
+      const url = window.URL.createObjectURL(new Blob([data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `Cartola_${userId}_${month}_${year}.xlsx`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (err: any) {
+      error.value = 'No se encontraron registros para este usuario en el periodo seleccionado.'
+      throw err
+    }
+  }
+
+  const downloadServiceExcel = async (month: number, year: number, serviceId: string) => {
+    try {
+      error.value = null
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      const data = await ReportService.downloadServiceExcelService(apiPrivate, { month, year, serviceId })
+      const url = window.URL.createObjectURL(new Blob([data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `Reporte_Servicio_${serviceId}_${month}_${year}.xlsx`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        error.value = 'No se encontraron registros para este servicio en el periodo seleccionado.'
+      } else {
+        error.value = 'Error al descargar avance.'
+      }
+      throw err
+    }
+  }
+
+  const downloadServicePDF = async (month: number, year: number, serviceId: string) => {
+    try {
+      error.value = null
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      const data = await ReportService.fetchServicePdf(apiPrivate, { month, year, serviceId })
+      if (data.signedUrl) {
+        window.open(data.signedUrl, '_blank')
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.error || 'El PDF no se encuentra disponible.'
+      throw err
+    }
+  }
+
   return {
     isLoading,
     reportData,
     error,
     currentFilters,
     fetchReportSummary,
-    downloadExcel
+    downloadExcel,
+    downloadIndividualExcel,
+    downloadServiceExcel,
+    downloadServicePDF
   }
 })

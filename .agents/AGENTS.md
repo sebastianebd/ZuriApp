@@ -32,4 +32,15 @@ Not lazy about: understanding the problem (read it fully and trace the real flow
 (Yes, this file also applies to agents working on the ponytail repo itself. Especially to them.)
 
 # Regla Estricta: Codebase Memory MCP
-NUNCA utilices herramientas como `grep_search`, `find` o comandos de texto plano para analizar el proyecto. SIEMPRE debes utilizar la CLI del MCP (ejecutando comandos como `codebase-memory-mcp cli search_graph {...}`, `trace_path`, etc.) o sus herramientas equivalentes en el IDE. Si necesitas buscar referencias, usa el grafo de conocimiento en lugar de grep. Incluso si otra regla dice "grep", debes usar el MCP en su lugar.
+
+NUNCA utilices herramientas como `grep_search`, `find` o comandos de texto plano para analizar el proyecto. SIEMPRE debes utilizar primero las herramientas nativas del MCP integradas en el IDE (las listadas en tu contexto). Si necesitas buscar referencias, usa el grafo de conocimiento en lugar de grep. Incluso si otra regla dice "grep", debes usar el MCP en su lugar.
+
+Si por alguna razón (error de configuración o fallo del IDE) las herramientas nativas no están disponibles, **DEBES usar como Plan de Respaldo la CLI del MCP en la terminal**.
+
+**IMPORTANTE SOBRE POWERSHELL Y MCP:**
+Para ejecutar la CLI de codebase-memory-mcp en Windows, DEBES seguir estas reglas estrictas para evitar errores de permisos, de parseo en PowerShell, y el bug de "project not found" (causado por la sensibilidad a mayúsculas/minúsculas de la unidad C:\ al inferir el directorio):
+
+1. Usa siempre `cmd /c` y envuelve **todo el comando interno** en **comillas simples** (`'`) para evitar errores de PowerShell.
+2. Pasa los argumentos **SIEMPRE como un string JSON**, y asegúrate de incluir la propiedad `"project"` con el nombre exacto del proyecto (usualmente `C-Users-sebas-workspace-Proyecto_ZuriApp`) para sobreescribir la inferencia de directorio que está fallando.
+   ✅ CORRECTO: `cmd /c 'codebase-memory-mcp cli search_graph "{\"name_pattern\":\".*TurnAssignment.*\",\"project\":\"C-Users-sebas-workspace-Proyecto_ZuriApp\"}"'`
+   ❌ INCORRECTO: `cmd /c 'codebase-memory-mcp cli search_graph --name_pattern ".*TurnAssignment.*"'`

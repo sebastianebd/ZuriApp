@@ -14,7 +14,7 @@ export interface IUser extends Document {
   tipo_cargo: string;
   eliminado: boolean;
   password?: string;
-  servicio?: string;
+  servicio?: mongoose.Types.ObjectId;
   habilitado?: string;
   tipo_contrato?: string;
   refresh_token?: string;
@@ -93,11 +93,11 @@ const userSchema: Schema = new Schema(
       select: false,
     },
     servicio: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Service",
       required: function (this: any) {
         return this.tipo_cargo === "JEFA SERVICIO";
       },
-      uppercase: true,
     },
     habilitado: {
       type: String,

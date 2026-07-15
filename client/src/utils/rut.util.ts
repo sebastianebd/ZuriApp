@@ -39,7 +39,7 @@ export function formatRut(value: string): string {
  * Ideal para guardar en BD.
  */
 export function cleanRutForStorage(value: string): string {
-  let val = value.replace(/[^0-9kK]/g, '').toUpperCase()
+  const val = value.replace(/[^0-9kK]/g, '').toUpperCase()
   if (val.length < 2) return val
 
   const cuerpo = val.slice(0, -1)

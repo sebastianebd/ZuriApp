@@ -327,7 +327,7 @@ const props = defineProps<{
   visible: boolean
   listaTipoCargo: string[]
   listaHabilitado: string[]
-  listaServicios: string[]
+  listaServicios: any[]
 }>()
 
 const emit = defineEmits<{

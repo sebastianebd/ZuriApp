@@ -42,7 +42,11 @@ export const createTurnSigla = async (req: Request, res: Response) => {
   try {
     const validation = turnSiglaSchema.safeParse(req.body);
     if (!validation.success) {
-      return res.status(400).json({ errors: validation.error.format() });
+      const firstError = validation.error.issues[0];
+      return res.status(400).json({ 
+        message: `Error de validación (${firstError.path.join('.')}): ${firstError.message}`, 
+        errors: validation.error.format() 
+      });
     }
 
     const { sigla } = validation.data;
@@ -83,7 +87,11 @@ export const updateTurnSigla = async (req: Request, res: Response) => {
     const validation = schema.safeParse(req.body);
 
     if (!validation.success) {
-      return res.status(400).json({ errors: validation.error.format() });
+      const firstError = validation.error.issues[0];
+      return res.status(400).json({ 
+        message: `Error de validación (${firstError.path.join('.')}): ${firstError.message}`, 
+        errors: validation.error.format() 
+      });
     }
 
     const existing = await TurnSigla.findById(id);

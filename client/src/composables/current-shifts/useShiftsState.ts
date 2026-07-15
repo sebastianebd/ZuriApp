@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { useOptionStore } from '@/stores/option.store'
+import { useServiceStore } from '@/stores/service.store'
 
 export function useShiftsState() {
   const currentDate = ref(new Date())
@@ -7,10 +7,10 @@ export function useShiftsState() {
   const showModal = ref(false)
   const selectedService = ref<string | null>(null)
   const alertComponent = ref()
-  const optionStore = useOptionStore()
+  const serviceStore = useServiceStore()
 
   const serviceOptions = computed(() => {
-    return optionStore.opciones?.servicios || []
+    return serviceStore.services || []
   })
 
   // Computeds for Date Navigation

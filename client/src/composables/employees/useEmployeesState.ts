@@ -2,12 +2,14 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { debounce } from 'lodash-es'
 import { useUserStore } from '@/stores/user.store'
 import { useOptionStore } from '@/stores/option.store'
+import { useServiceStore } from '@/stores/service.store'
 import { useAuthStore } from '@/stores/auth.store'
 import socket from '@/plugins/socket'
 
 export function useEmployeesState() {
   const userStore = useUserStore()
   const optionStore = useOptionStore()
+  const serviceStore = useServiceStore()
   const authStore = useAuthStore()
 
   // --- REFS
@@ -23,7 +25,7 @@ export function useEmployeesState() {
   const listaTipoCargo = ref<string[]>([])
   const listaTipoContrato = ref<string[]>(['PLANTA', 'REEMPLAZO'])
   const listaHabilitado = ref<string[]>([])
-  const listaServicios = ref<string[]>([])
+  const listaServicios = computed(() => serviceStore.services)
   const listaTiposTurno = ref<string[]>([])
 
   // --- SERVER-SIDE PAGINATION
@@ -69,8 +71,10 @@ export function useEmployeesState() {
         const opciones = await optionStore.mostrarOpciones()
         listaTipoCargo.value = opciones.tipoCargo
         listaHabilitado.value = opciones.habilitado
-        listaServicios.value = opciones.servicios
         listaTiposTurno.value = opciones.tiposTurno
+      }
+      if (serviceStore.services.length === 0) {
+        await serviceStore.fetchServices()
       }
     } finally {
       loading.value = false
