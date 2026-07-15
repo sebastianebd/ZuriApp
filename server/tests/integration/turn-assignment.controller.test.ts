@@ -25,6 +25,11 @@ vi.mock("../../models/turn-type.model");
 vi.mock("../../services/audit.service");
 vi.mock("../../services/notification.service");
 
+// Mock de la validación de período cerrado para evitar consultas a BD
+vi.mock("../../middleware/period-lock.middleware", () => ({
+  checkPeriodLock: vi.fn().mockResolvedValue(true),
+}));
+
 describe("Turn Assignment Controller - Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
