@@ -44,10 +44,17 @@ describe("Audit Controller - Integration", () => {
       (redisConfig.get as any).mockResolvedValue(null);
       (redisConfig.set as any).mockResolvedValue(undefined);
 
-      // Simulamos la respuesta exitosa de la paginación de Mongoose.
-      (AuditLog as any).paginate = vi
-        .fn()
-        .mockResolvedValue(mockPaginateResult);
+      // Simulamos la respuesta exitosa de la consulta de Mongoose.
+      (AuditLog as any).find = vi.fn().mockReturnValue({
+        sort: vi.fn().mockReturnValue({
+          skip: vi.fn().mockReturnValue({
+            limit: vi.fn().mockReturnValue({
+              lean: vi.fn().mockResolvedValue(mockLogs)
+            })
+          })
+        })
+      });
+      (AuditLog as any).countDocuments = vi.fn().mockResolvedValue(2);
 
       const response = await request(app).get("/api/audit");
 
@@ -71,7 +78,7 @@ describe("Audit Controller - Integration", () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual(cachedData);
       // Prueba crítica: Asegurar que la BD no se toca si Redis responde.
-      expect(AuditLog.paginate).not.toHaveBeenCalled();
+      expect(AuditLog.find).not.toHaveBeenCalled();
     });
 
     it("debería filtrar correctamente por módulo", async () => {
@@ -84,15 +91,21 @@ describe("Audit Controller - Integration", () => {
 
       (redisConfig.get as any).mockResolvedValue(null);
       (redisConfig.set as any).mockResolvedValue(undefined);
-      (AuditLog as any).paginate = vi
-        .fn()
-        .mockResolvedValue(mockPaginateResult);
+      (AuditLog as any).find = vi.fn().mockReturnValue({
+        sort: vi.fn().mockReturnValue({
+          skip: vi.fn().mockReturnValue({
+            limit: vi.fn().mockReturnValue({
+              lean: vi.fn().mockResolvedValue([])
+            })
+          })
+        })
+      });
+      (AuditLog as any).countDocuments = vi.fn().mockResolvedValue(0);
 
       await request(app).get("/api/audit?module=Users");
 
-      expect(AuditLog.paginate).toHaveBeenCalledWith(
-        { module: "Users" },
-        expect.any(Object),
+      expect(AuditLog.find).toHaveBeenCalledWith(
+        { module: "Users" }
       );
     });
 
@@ -106,32 +119,38 @@ describe("Audit Controller - Integration", () => {
 
       (redisConfig.get as any).mockResolvedValue(null);
       (redisConfig.set as any).mockResolvedValue(undefined);
-      (AuditLog as any).paginate = vi
-        .fn()
-        .mockResolvedValue(mockPaginateResult);
+      (AuditLog as any).find = vi.fn().mockReturnValue({
+        sort: vi.fn().mockReturnValue({
+          skip: vi.fn().mockReturnValue({
+            limit: vi.fn().mockReturnValue({
+              lean: vi.fn().mockResolvedValue([])
+            })
+          })
+        })
+      });
+      (AuditLog as any).countDocuments = vi.fn().mockResolvedValue(0);
 
       await request(app).get(
         "/api/audit?startDate=2024-01-01&endDate=2024-12-31",
       );
 
       // Verificamos que se construya correctamente la query de MongoDB ($gte, $lte)
-      expect(AuditLog.paginate).toHaveBeenCalledWith(
+      expect(AuditLog.find).toHaveBeenCalledWith(
         expect.objectContaining({
           created_at: expect.objectContaining({
             $gte: expect.any(Date),
             $lte: expect.any(Date),
           }),
-        }),
-        expect.any(Object),
+        })
       );
     });
 
     it("debería manejar errores de base de datos agraciadamente (Graceful Degredation)", async () => {
       (redisConfig.get as any).mockResolvedValue(null);
       // Simulamos un fallo catastrófico en la BD.
-      (AuditLog as any).paginate = vi
-        .fn()
-        .mockRejectedValue(new Error("Database error"));
+      (AuditLog as any).find = vi.fn().mockImplementation(() => {
+        throw new Error("Database error");
+      });
 
       const response = await request(app).get("/api/audit");
 
