@@ -43,15 +43,20 @@ async function getAuditLogs(req: Request, res: Response) {
       lean: true, // Optimización: Devuelve objetos planos JS en lugar de documentos Mongoose pesados
     };
 
-    // Casting a 'any' necesario porque la definición de tipos de mongoose-paginate-v2
-    // a veces entra en conflicto con la compilación estricta de TS en modelos extendidos.
-    const result = await (AuditLog as any).paginate(query, options);
+    const skip = (options.page - 1) * options.limit;
+    
+    const [docs, totalDocs] = await Promise.all([
+      AuditLog.find(query).sort(options.sort as any).skip(skip).limit(options.limit).lean(),
+      AuditLog.countDocuments(query)
+    ]);
+
+    const totalPages = Math.ceil(totalDocs / options.limit) || 1;
 
     const response = {
-      logs: result.docs,
-      totalDocs: result.totalDocs,
-      totalPages: result.totalPages,
-      currentPage: result.page,
+      logs: docs,
+      totalDocs,
+      totalPages,
+      currentPage: options.page,
     };
 
     await set(cacheKey, response, 300); // TTL: 300 segundos (5 minutos)

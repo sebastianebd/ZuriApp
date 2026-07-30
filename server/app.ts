@@ -77,9 +77,6 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 import calendarRoutes from "./routes/api/calendar.routes";
-
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
 app.use("/api/reemplazos", replacementRoutes);
 app.use("/api/options", optionRoutes);
 app.use("/api/cargos", cargoRoutes);
@@ -87,7 +84,6 @@ app.use("/api/audit", auditRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/calendar", calendarRoutes);
 import turnAssignmentRoutes from "./routes/api/turn-assignment.routes";
-app.use("/api/assignments", turnAssignmentRoutes);
 app.use("/api/assignments", turnAssignmentRoutes);
 import shiftExceptionRoutes from "./routes/api/shift-exception.routes";
 app.use("/api/shift-exceptions", shiftExceptionRoutes);

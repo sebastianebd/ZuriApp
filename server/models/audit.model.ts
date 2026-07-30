@@ -1,5 +1,4 @@
-import mongoose, { Schema, Document, Model, PaginateModel } from "mongoose";
-import mongoosePaginate from "mongoose-paginate-v2";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IAuditLog extends Document {
   action: string;
@@ -54,11 +53,4 @@ const auditLogSchema: Schema = new Schema(
   }
 );
 
-auditLogSchema.plugin(mongoosePaginate);
-
-interface AuditLogModel extends PaginateModel<IAuditLog> {}
-
-export default mongoose.model<IAuditLog, AuditLogModel>(
-  "AuditLog",
-  auditLogSchema
-);
+export default mongoose.model<IAuditLog>("AuditLog", auditLogSchema);

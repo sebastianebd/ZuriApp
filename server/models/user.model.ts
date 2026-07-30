@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import validator from "validator";
+
 import bcrypt from "bcrypt";
 
 export interface IUser extends Document {
@@ -71,7 +71,10 @@ const userSchema: Schema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      validate: [validator.isEmail, "Email no válido"],
+      validate: {
+        validator: (v: string) => /^\S+@\S+\.\S+$/.test(v),
+        message: "Email no válido",
+      },
     },
     ciudad: {
       type: String,
