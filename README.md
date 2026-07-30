@@ -2,24 +2,25 @@
   <h1>🏥 ZuriApp</h1>
   <p><strong>Plataforma integral para la gestión, asignación y auditoría de reemplazos de personal en entornos hospitalarios.</strong></p>
 
-  ![Node.js](https://img.shields.io/badge/Node.js-v22-green?style=for-the-badge&logo=node.js)
-  ![Vue.js](https://img.shields.io/badge/Vue.js-3-4FC08D?style=for-the-badge&logo=vuedotjs)
-  ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript)
-  ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb)
-  ![Docker](https://img.shields.io/badge/Docker-Ready-blue?style=for-the-badge&logo=docker)
+![Node.js](https://img.shields.io/badge/Node.js-v22-green?style=for-the-badge&logo=node.js)
+![Vue.js](https://img.shields.io/badge/Vue.js-3-4FC08D?style=for-the-badge&logo=vuedotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript)
+![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue?style=for-the-badge&logo=docker)
+
 </div>
 
 ---
 
-## 📖 Acerca del Proyecto
+## Acerca del Proyecto
 
-La gestión de reemplazos y turnos en entornos de salud suele ser un desafío logístico propenso a errores, cruces de horarios y falta de trazabilidad. 
+La gestión de reemplazos y turnos en entornos de salud suele ser un desafío logístico propenso a errores, cruces de horarios y falta de trazabilidad.
 
 **ZuriApp** nace como una solución moderna para optimizar estos flujos operativos. Es una plataforma full-stack que automatiza la asignación de turnos, maneja excepciones de horarios, mantiene informados a los usuarios mediante notificaciones en tiempo real (Socket.io) y correos electrónicos procesados en segundo plano (BullMQ + Redis), y asegura la trazabilidad total mediante un módulo robusto de auditoría.
 
 ---
 
-## ✨ Características Principales
+## Características Principales
 
 - **Gestión Avanzada de Turnos:** Asignación dinámica de reemplazos y manejo de excepciones de turnos integrados con un calendario interactivo (FullCalendar).
 - **Notificaciones y Eventos en Tiempo Real:** Actualizaciones instantáneas en los dashboards para todos los clientes conectados usando **Socket.io**.
@@ -31,12 +32,14 @@ La gestión de reemplazos y turnos en entornos de salud suele ser un desafío lo
 
 ---
 
-## 🏗 Arquitectura y Stack Tecnológico
+## Arquitectura y Stack Tecnológico
 
 El proyecto está diseñado usando una arquitectura orientada a servicios en el backend, y un patrón composable altamente modular en el frontend.
 
 ### Frontend (Cliente)
+
 Construido para ser reactivo, rápido y mantenible.
+
 - **Framework:** Vue 3 (Composition API) con Vite
 - **Gestión de Estado:** Pinia
 - **Estilos y UI:** Bootstrap 5, SASS
@@ -45,7 +48,9 @@ Construido para ser reactivo, rápido y mantenible.
 - **Testing:** Vitest y Playwright (E2E)
 
 ### Backend (Servidor)
+
 API RESTful robusta y escalable.
+
 - **Runtime & Framework:** Node.js, Express.js
 - **Lenguaje:** TypeScript
 - **Base de Datos:** MongoDB (Mongoose) + Redis (Manejo de Colas/Caché)
@@ -55,9 +60,7 @@ API RESTful robusta y escalable.
 
 ---
 
-## 📸 Galería del Proyecto
-
-*(NOTA PARA EL PORTFOLIO: Reemplaza estas imágenes con capturas reales de tu aplicación)*
+## Galería del Proyecto
 
 <div align="center">
   <img src="[URL_DE_TU_IMAGEN_DEL_DASHBOARD]" alt="Dashboard de ZuriApp" width="800">
@@ -73,28 +76,35 @@ API RESTful robusta y escalable.
 
 ---
 
-## 🚀 Instalación y Despliegue Local
+## Instalación y Despliegue Local
 
 ### Opción Rápida con Docker (Recomendado)
+
 Levanta la base de datos (MongoDB/Redis), el backend y el frontend con un solo comando:
+
 ```bash
 docker-compose up
 ```
+
 > 🌐 La app estará disponible en `http://localhost:5173`
 
 ### Opción Manual
+
 Requisitos: Node.js v22+ y acceso a MongoDB/Redis.
 
 **1. Backend:**
+
 ```bash
 cd server
 npm install
 npm run seed # Poblar base de datos inicial
 npm run dev
 ```
+
 > El servidor corre en `http://localhost:3500`
 
 **2. Frontend:**
+
 ```bash
 cd client
 npm install
@@ -110,6 +120,7 @@ Para conocer nuestro flujo de trabajo completo, revisiones de código y pautas, 
 👉 **[Guía de Contribución (CONTRIBUTING.md)](CONTRIBUTING.md)**
 
 ---
+
 <div align="center">
   <em>Desarrollado con ❤️ para transformar la gestión hospitalaria</em>
 </div>
