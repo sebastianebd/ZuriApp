@@ -309,7 +309,7 @@ describe("Replacement Service - Unit Tests", () => {
       const result = await replacementService.sustituir(mockPayload);
 
       expect(result).toHaveLength(2);
-      expect(result[0]).toEqual(mockOldReplacement);
+      expect(result![0]).toEqual(mockOldReplacement);
       // Validamos que se marque el corte anticipado en el registro original
       expect(Reemplazo.findByIdAndUpdate).toHaveBeenCalledWith(
         "old123",

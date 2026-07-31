@@ -3,6 +3,8 @@ import crypto from "crypto";
 import User, { IUser } from "../models/user.model";
 import logger from "../config/logger.config";
 import { emailQueue } from "../queues/email.queue";
+import { AppError } from "../errors/app-error";
+import { escapeRegex } from "../utils/regex";
 
 interface RegisterData {
   rut: string;
@@ -37,11 +39,10 @@ async function register(data: RegisterData, creatorRole: string) {
     creatorRole === "RECURSOS HUMANOS" &&
     ["ADMIN-TI", "RECURSOS HUMANOS"].includes(tipo_cargo)
   ) {
-    throw {
-      status: 403,
-      message:
-        "No tienes permisos para crear usuarios con acceso al sistema (ADMIN-TI o RRHH)",
-    };
+    throw new AppError(
+      403,
+      "No tienes permisos para crear usuarios con acceso al sistema (ADMIN-TI o RRHH)",
+    );
   }
 
   // Normalización de Datos
@@ -52,13 +53,13 @@ async function register(data: RegisterData, creatorRole: string) {
   // 2. Verificaciones Unicidad
   // Chequeos explícitos antes de intentar guardar para dar mensajes de error amigables.
   if (await User.exists({ rut: normalizedRut })) {
-    throw { status: 409, message: "El RUT ya está registrado." };
+    throw new AppError(409, "El RUT ya está registrado.");
   }
   if (await User.exists({ email: normalizedEmail })) {
-    throw { status: 409, message: "Ya existe un usuario con ese email." };
+    throw new AppError(409, "Ya existe un usuario con ese email.");
   }
   if (await User.exists({ telefono: normalizedTelef })) {
-    throw { status: 409, message: "Ya existe un usuario con ese teléfono." };
+    throw new AppError(409, "Ya existe un usuario con ese teléfono.");
   }
 
   // 3. Generación Condicional de Credenciales
@@ -68,7 +69,8 @@ async function register(data: RegisterData, creatorRole: string) {
   const rolesWithPassword = ["ADMIN-TI", "RECURSOS HUMANOS"];
 
   if (rolesWithPassword.includes(tipo_cargo)) {
-    const generarPassword = crypto.randomBytes(3).toString("hex");
+    // ponytail: 12 bytes = 24 hex chars = 96 bits of entropy (was 3 bytes/24 bits, too weak)
+    const generarPassword = crypto.randomBytes(12).toString("hex");
     hashedPassword = await bcrypt.hash(generarPassword, 10);
 
     // Job Queue (Email): Fire-and-forget para no bloquear el registro si el mail server está lento.
@@ -110,14 +112,11 @@ async function register(data: RegisterData, creatorRole: string) {
     // Manejo de Race Conditions: Si dos requests pasaron la validación previa simultáneamente.
     if (error.code === 11000) {
       if (error.keyPattern.rut)
-        throw { status: 409, message: "El RUT ya está registrado." };
+        throw new AppError(409, "El RUT ya está registrado.");
       if (error.keyPattern.email)
-        throw { status: 409, message: "Ya existe un usuario con ese email." };
+        throw new AppError(409, "Ya existe un usuario con ese email.");
       if (error.keyPattern.telefono)
-        throw {
-          status: 409,
-          message: "Ya existe un usuario con ese teléfono.",
-        };
+        throw new AppError(409, "Ya existe un usuario con ese teléfono.");
     }
     throw error;
   }
@@ -217,7 +216,8 @@ async function obtenerTodosPaginado(options: {
   }
 
   if (options.rut && options.rut.trim() !== "") {
-    query.rut = { $regex: options.rut.toUpperCase(), $options: "i" };
+    // C1 ReDoS fix: escape user input before using in RegExp
+    query.rut = { $regex: new RegExp(escapeRegex(options.rut.toUpperCase()), "i") };
   }
 
   const skip = (page - 1) * limit;

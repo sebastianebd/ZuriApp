@@ -80,13 +80,15 @@ async function getLogs(
     if (Object.keys(dateQuery).length > 0) query.created_at = dateQuery;
   }
 
-  const logs = await AuditLog.find(query)
-    .sort({ created_at: -1 })
-    .skip((page - 1) * limit)
-    .limit(limit)
-    .populate("user_id", "nombre apellido rut");
-
-  const total = await AuditLog.countDocuments(query);
+  // C5: Ejecutar find y count en paralelo (consistente con user.service.ts)
+  const [logs, total] = await Promise.all([
+    AuditLog.find(query)
+      .sort({ created_at: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate("user_id", "nombre apellido rut"),
+    AuditLog.countDocuments(query),
+  ]);
 
   return {
     logs,

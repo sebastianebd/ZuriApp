@@ -1,4 +1,6 @@
 import Reemplazo, { IReplacement } from "../models/replacement.model";
+import mongoose from "mongoose";
+import { escapeRegex } from "../utils/regex";
 
 // --- Helpers de Estado ---
 // Determinamos el estado inicial basado puramente en fecha vs ahora.
@@ -143,15 +145,17 @@ async function obtenerInactivosPaginados(
   }
 
   if (filtros.rutSaliente) {
+    // C1 ReDoS fix: escape user input before building RegExp
     query.rut_saliente = {
-      $regex: new RegExp(`^${filtros.rutSaliente}`),
+      $regex: new RegExp(`^${escapeRegex(filtros.rutSaliente)}`),
       $options: "i",
     };
   }
 
   if (filtros.rutEntrante) {
+    // C1 ReDoS fix: escape user input before building RegExp
     query.rut_entrante = {
-      $regex: new RegExp(`^${filtros.rutEntrante}`),
+      $regex: new RegExp(`^${escapeRegex(filtros.rutEntrante)}`),
       $options: "i",
     };
   }
@@ -210,16 +214,12 @@ async function actualizar(id: string, data: any) {
 }
 
 async function finalizarReemplazo(id: string) {
-  // Ajuste Horario Chile:
-  // Forzamos la fecha de término al "ahora" local para cerrar el ciclo correctamente
-  // según la zona horaria del negocio, evitando problemas de cierre en horas UTC vs Local.
-  const now = new Date();
-  const chileOffset = 3 * 60 * 60 * 1000;
-  const fechaCierre = new Date(now.getTime() - chileOffset);
-
+  // C4 Timezone fix: store plain UTC (new Date()). The hardcoded Chile offset
+  // was wrong — Chile switches between UTC-3 and UTC-4 seasonally.
+  // The frontend already formats dates with { timeZone: "America/Santiago" }.
   await Reemplazo.findByIdAndUpdate(
     id,
-    { status: "FINALIZADO", fecha_termino: fechaCierre },
+    { status: "FINALIZADO", fecha_termino: new Date() },
     { new: true },
   );
   return await Reemplazo.findById(id);
@@ -255,9 +255,8 @@ interface SustitucionPayload {
 }
 
 // Lógica de Negocio: Sustitución de Reemplazo
-// Maneja el caso complejo donde un reemplazo en curso (Usuario A) debe ser interrumpido
-// y continuado por otro usuario (Usuario B) desde el día siguiente.
-// Esto implica una transacción lógica: Cerrar A con estado "Interrumpido" y crear B.
+// C3 Transaction fix: ambas escrituras (cerrar A, crear B) se ejecutan dentro de una
+// transacción Mongoose. Si B falla, el cierre de A se revierte automáticamente.
 async function sustituir(payload: SustitucionPayload) {
   const { id_registro_a, fecha_corte_a, nuevo_entrante, datos_base_evento } =
     payload;
@@ -270,54 +269,68 @@ async function sustituir(payload: SustitucionPayload) {
   ) {
     throw new Error("Faltan datos esenciales para la sustitución.");
   }
+
   const fechaCorteDate = new Date(fecha_corte_a);
-
-  // 1. Cerrar Registro A
-  const registroA_actualizado = await Reemplazo.findByIdAndUpdate(
-    id_registro_a,
-    {
-      fecha_termino: fechaCorteDate,
-      status: determineStatusCorte(fecha_corte_a),
-      corte_anticipado: true,
-      updated_at: new Date(),
-    },
-    { new: true },
-  );
-  if (!registroA_actualizado) {
-    throw new Error(
-      `Registro de reemplazo con ID ${id_registro_a} no encontrado.`,
-    );
-  }
-
-  // 2. Crear Registro B (Continuidad)
-  // El nuevo reemplazo comienza al día siguiente del corte.
   const fechaInicioB = getNextDay(fecha_corte_a);
-  const datosNuevoReemplazo = {
-    id_negocio: datos_base_evento.id_evento_principal, // Mantenemos link al parental si existe
-    id_saliente: datos_base_evento.id_saliente,
-    rut_saliente: datos_base_evento.rut_saliente,
-    nombre_saliente: datos_base_evento.nombre_saliente,
-    apellido_saliente: datos_base_evento.apellido_saliente,
-    tipo_cargo: datos_base_evento.tipo_cargo,
-    tipo_turno: datos_base_evento.tipo_turno,
-    servicio: datos_base_evento.servicio,
-    id_entrante: nuevo_entrante.id_entrante,
-    rut_entrante: nuevo_entrante.rut_entrante,
-    nombre_entrante: nuevo_entrante.nombre_entrante,
-    apellido_entrante: nuevo_entrante.apellido_entrante,
-    fecha_inicio: new Date(fechaInicioB),
-    fecha_termino: new Date(datos_base_evento.fecha_termino_original),
-    status: determineStatus(fechaInicioB),
-    creado_por: registroA_actualizado.creado_por,
-  };
-  if (!datosNuevoReemplazo.id_entrante) {
-    throw new Error("El nuevo funcionario entrante es requerido.");
+
+  // ponytail: capture results in outer scope — withTransaction() return type
+  // is undefined in Mongoose typings so we can't rely on its return value.
+  let registroA: any;
+  let registroB: any;
+
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      // 1. Cerrar Registro A
+      registroA = await Reemplazo.findByIdAndUpdate(
+        id_registro_a,
+        {
+          fecha_termino: fechaCorteDate,
+          status: determineStatusCorte(fecha_corte_a),
+          corte_anticipado: true,
+          updated_at: new Date(),
+        },
+        { new: true, session },
+      );
+      if (!registroA) {
+        throw new Error(
+          `Registro de reemplazo con ID ${id_registro_a} no encontrado.`,
+        );
+      }
+
+      // 2. Crear Registro B (Continuidad)
+      // El nuevo reemplazo comienza al día siguiente del corte.
+      if (!nuevo_entrante.id_entrante) {
+        throw new Error("El nuevo funcionario entrante es requerido.");
+      }
+
+      const datosNuevoReemplazo = {
+        id_negocio: datos_base_evento.id_evento_principal,
+        id_saliente: datos_base_evento.id_saliente,
+        rut_saliente: datos_base_evento.rut_saliente,
+        nombre_saliente: datos_base_evento.nombre_saliente,
+        apellido_saliente: datos_base_evento.apellido_saliente,
+        tipo_cargo: datos_base_evento.tipo_cargo,
+        tipo_turno: datos_base_evento.tipo_turno,
+        servicio: datos_base_evento.servicio,
+        id_entrante: nuevo_entrante.id_entrante,
+        rut_entrante: nuevo_entrante.rut_entrante,
+        nombre_entrante: nuevo_entrante.nombre_entrante,
+        apellido_entrante: nuevo_entrante.apellido_entrante,
+        fecha_inicio: new Date(fechaInicioB),
+        fecha_termino: new Date(datos_base_evento.fecha_termino_original),
+        status: determineStatus(fechaInicioB),
+        creado_por: registroA.creado_por,
+      };
+
+      const nuevoReemplazoDoc = new Reemplazo(datosNuevoReemplazo);
+      registroB = await nuevoReemplazoDoc.save({ session });
+    });
+  } finally {
+    await session.endSession();
   }
 
-  const nuevoReemplazoB = new Reemplazo(datosNuevoReemplazo);
-  const registroB_guardado = await nuevoReemplazoB.save();
-
-  return [registroA_actualizado, registroB_guardado];
+  return [registroA, registroB];
 }
 
 export default {

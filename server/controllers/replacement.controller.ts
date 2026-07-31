@@ -234,8 +234,11 @@ async function obtenerHistorialUsuario(req: Request, res: Response) {
 
 async function procesarSustitucion(req: AuthRequest, res: Response) {
   try {
-    const [registroA_cortado, nuevoRegistroB] =
-      await replacementService.sustituir(req.body);
+    const resultado = await replacementService.sustituir(req.body);
+    if (!resultado || !resultado[0] || !resultado[1]) {
+      throw new Error("La sustitución no pudo completarse.");
+    }
+    const [registroA_cortado, nuevoRegistroB] = resultado;
 
     // Auditoría de Transacción Compleja
     // Registramos la sustitución después de que la operación de BD fue exitosa.

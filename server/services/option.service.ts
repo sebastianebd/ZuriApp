@@ -2,6 +2,7 @@ import Option, { IOption } from "../models/option.model";
 import Cargo from "../models/cargo.model";
 import Service from "../models/service.model";
 import TurnType from "../models/turn-type.model";
+import { AppError } from "../errors/app-error";
 
 // Servicio Centralizado de Opciones (Dropdowns):
 // Este servicio actúa como una fachada para obtener listas de opciones para el frontend.
@@ -41,7 +42,7 @@ async function obtener(nombre: string): Promise<string[]> {
   // Fallback: Colección Genérica 'Options'
   // Para listas simples que no requieren modelo propio (ej: "EstadoReemplazo", "MotivoRechazo").
   const option = await Option.findOne({ nombre }, "opciones");
-  if (!option) throw { status: 404, message: `No se encontraron ${nombre}` };
+  if (!option) throw new AppError(404, `No se encontraron ${nombre}`);
   return option.opciones;
 }
 

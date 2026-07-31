@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import ExcelJS from "exceljs";
+import { AppError } from "../errors/app-error";
 
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
@@ -382,7 +383,7 @@ export const getMonthlyReport = async ({
 
   // 0. Obtener Usuario
   const user = await User.findById(userId);
-  if (!user) throw { status: 404, message: "Funcionario no encontrado" };
+  if (!user) throw new AppError(404, "Funcionario no encontrado");
 
   // 1. Cargar Definiciones de Siglas (Metadata de Turnos)
   const siglasDocs = await TurnSigla.find({});
@@ -435,11 +436,10 @@ export const getMonthlyReport = async ({
   });
 
   if (serviceSet.size === 0) {
-    throw {
-      status: 404,
-      message:
-        "No se encontraron registros para este usuario en el periodo seleccionado.",
-    };
+    throw new AppError(
+      404,
+      "No se encontraron registros para este usuario en el periodo seleccionado.",
+    );
   }
 
   // 5.5 Obtener nombres reales de los servicios para la cartola
@@ -762,7 +762,7 @@ export const generateServiceExcelReport = async ({
   const ServiceModel = (await import("../models/service.model")).default;
   const serviceDoc = await ServiceModel.findById(serviceId);
   if (!serviceDoc) {
-    throw { status: 404, message: "Servicio no encontrado" };
+    throw new AppError(404, "Servicio no encontrado");
   }
 
   const assignments = await (
@@ -774,11 +774,10 @@ export const generateServiceExcelReport = async ({
   }).distinct("user_id");
 
   if (assignments.length === 0) {
-    throw {
-      status: 404,
-      message:
-        "No se encontraron registros para este servicio en el periodo seleccionado.",
-    };
+    throw new AppError(
+      404,
+      "No se encontraron registros para este servicio en el periodo seleccionado.",
+    );
   }
 
   const workbook = new ExcelJS.Workbook();
