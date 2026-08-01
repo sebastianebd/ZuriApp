@@ -18,6 +18,8 @@ export interface IUser extends Document {
   habilitado?: string;
   tipo_contrato?: string;
   refresh_token?: string;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
   created_at: Date;
   updated_at: Date;
 
@@ -123,6 +125,14 @@ const userSchema: Schema = new Schema(
       type: String,
       select: false,
     },
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpire: {
+      type: Date,
+      select: false,
+    },
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
@@ -155,3 +165,18 @@ userSchema.pre("save", async function (next) {
 });
 
 export default mongoose.model<IUser>("User", userSchema);
+
+export const USER_AUDIT_FIELDS = [
+  "rut",
+  "nombre",
+  "apellido",
+  "email",
+  "telefono",
+  "direccion",
+  "ciudad",
+  "tipo_cargo",
+  "habilitado",
+  "tipo_contrato",
+  "servicio",
+  "eliminado",
+];

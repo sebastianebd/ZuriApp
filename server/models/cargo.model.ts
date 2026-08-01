@@ -58,3 +58,12 @@ const CargoSchema = new Schema(
 );
 
 export default mongoose.model<ICargo>("Cargo", CargoSchema);
+
+export const CARGO_AUDIT_FIELDS = [
+  "nombre",
+  "codigo",
+  "nivel",
+  "permisos",
+  "descripcion",
+  "activo",
+];

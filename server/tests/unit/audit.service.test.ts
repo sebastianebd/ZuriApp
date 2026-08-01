@@ -25,45 +25,61 @@ describe("Audit Service - generateDiff", () => {
   it("debería retornar un string vacío si no hay cambios", () => {
     const oldData = { nombre: "JUAN", apellido: "PEREZ" };
     const newData = { nombre: "JUAN", apellido: "PEREZ" };
-    expect(auditService.generateDiff(oldData, newData)).toBe("");
+    // @ts-ignore - probando TDD RED, el 3er parámetro aún no existe en los tipos
+    expect(auditService.generateDiff(oldData, newData, "User")).toBe("");
   });
 
-  it("debería detectar cambios en campos de tipo string", () => {
+  it("debería detectar cambios en campos de tipo string listados en la lista blanca", () => {
     const oldData = { nombre: "JUAN", apellido: "PEREZ" };
     const newData = { nombre: "JUAN", apellido: "SOTO" };
-    expect(auditService.generateDiff(oldData, newData)).toBe(
+    // @ts-ignore
+    expect(auditService.generateDiff(oldData, newData, "User")).toBe(
       "apellido: PEREZ -> SOTO",
     );
+  });
+
+  it("debería ignorar campos que NO estén en la lista blanca del modelo (fail-safe)", () => {
+    // Si agregamos un campo 'tarjeta_credito' o 'secret_token', por defecto se ignora
+    const oldData = { nombre: "JUAN", tarjeta_credito: "1234" };
+    const newData = { nombre: "JUAN", tarjeta_credito: "5678" };
+    // @ts-ignore
+    expect(auditService.generateDiff(oldData, newData, "User")).toBe("");
   });
 
   it("debería ignorar claves restringidas como _id, password, etc.", () => {
     // Seguridad y Limpieza: No queremos exponer datos sensibles o técnicos en los logs de auditoría.
     const oldData = { _id: "123", password: "old", nombre: "JUAN" };
     const newData = { _id: "123", password: "new", nombre: "JUAN" };
-    expect(auditService.generateDiff(oldData, newData)).toBe("");
+    // @ts-ignore
+    expect(auditService.generateDiff(oldData, newData, "User")).toBe("");
   });
 
   it("debería detectar cambios en fechas", () => {
     const oldDate = new Date("2023-01-01T10:00:00Z");
     const newDate = new Date("2023-01-02T10:00:00Z");
-    const oldData = { fecha: oldDate };
-    const newData = { fecha: newDate };
+    // 'fecha' isn't a standard field in User, we use TurnType which has 'createdAt' or mock a custom
+    // Assuming 'fecha_inicio' in Replacement is auditable
+    const oldData = { fecha_inicio: oldDate };
+    const newData = { fecha_inicio: newDate };
 
-    const result = auditService.generateDiff(oldData, newData);
-    expect(result).toContain("fecha:");
+    // @ts-ignore
+    const result = auditService.generateDiff(oldData, newData, "Replacement");
+    expect(result).toContain("fecha_inicio:");
     expect(result).toContain("->");
   });
 
   it("debería manejar valores nulos o indefinidos vs cadenas vacías", () => {
     const oldData = { direccion: null };
     const newData = { direccion: "" };
-    expect(auditService.generateDiff(oldData, newData)).toBe("");
+    // @ts-ignore
+    expect(auditService.generateDiff(oldData, newData, "User")).toBe("");
   });
 
   it("debería manejar múltiples cambios simultáneamente", () => {
     const oldData = { nombre: "JUAN", ciudad: "SANTIAGO" };
     const newData = { nombre: "PEDRO", ciudad: "VALPARAISO" };
-    const result = auditService.generateDiff(oldData, newData);
+    // @ts-ignore
+    const result = auditService.generateDiff(oldData, newData, "User");
     expect(result).toBe(
       "nombre: JUAN -> PEDRO, ciudad: SANTIAGO -> VALPARAISO",
     );
@@ -289,10 +305,13 @@ describe("Audit Service - getLogs", () => {
 
 describe("Audit Service - generateDiff (Casos Adicionales)", () => {
   it("debería manejar cambios en objetos anidados", () => {
-    const oldData = { config: { theme: "dark", lang: "es" } };
-    const newData = { config: { theme: "light", lang: "es" } };
-    const result = auditService.generateDiff(oldData, newData);
-    expect(result).toContain("config:");
+    // Si agregamos un mock model para probar fields
+    const oldData = { detalles: { theme: "dark", lang: "es" } };
+    const newData = { detalles: { theme: "light", lang: "es" } };
+    // @ts-ignore (We will add 'detalles' to User white-list temporarily for the test, or 'config' if exists)
+    // We will just use 'secuencia' which is an object/array in TurnType
+    const result = auditService.generateDiff({ descripcion: oldData.detalles }, { descripcion: newData.detalles }, "TurnType");
+    expect(result).toContain("descripcion:");
   });
 
   it("debería manejar cambios en arrays (secuencia)", () => {
@@ -318,13 +337,16 @@ describe("Audit Service - generateDiff (Casos Adicionales)", () => {
         },
       ],
     };
-    const result = auditService.generateDiff(oldData, newData);
+    // @ts-ignore
+    const result = auditService.generateDiff(oldData, newData, "TurnType");
     expect(result).toContain("Día 1:");
     expect(result).toContain("Sigla:");
   });
 
   it("debería retornar string vacío para inputs nulos/indefinidos", () => {
-    expect(auditService.generateDiff(null, { name: "test" })).toBe("");
-    expect(auditService.generateDiff({ name: "test" }, null)).toBe("");
+    // @ts-ignore
+    expect(auditService.generateDiff(null, { nombre: "test" }, "User")).toBe("");
+    // @ts-ignore
+    expect(auditService.generateDiff({ nombre: "test" }, null, "User")).toBe("");
   });
 });

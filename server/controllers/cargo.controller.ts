@@ -145,7 +145,7 @@ export const updateCargo = async (req: Request, res: Response) => {
         delete bodyForDiff.permisos;
 
         let diff =
-          auditService.generateDiff(originalForDiff, bodyForDiff) || "";
+          auditService.generateDiff(originalForDiff, bodyForDiff, "Cargo") || "";
 
         // Diff específico para permisos
         if (permisos) {

@@ -136,6 +136,7 @@ export const updateTurnType = async (req: Request, res: Response) => {
       const diff = AuditService.generateDiff(
         oldTurnType?.toObject(),
         turnType.toObject(),
+        "TurnType"
       );
 
       if (diff) {

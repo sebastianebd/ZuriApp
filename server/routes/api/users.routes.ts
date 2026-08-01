@@ -81,4 +81,11 @@ router.delete(
   userController.eliminarUsuario,
 );
 
+// Disparar One-Time Link de reseteo (RBAC granular: solo quien puede resetear passwords)
+router.post(
+  "/:id/send-reset-link",
+  requirePermission("users.reset_password"),
+  userController.sendResetLink,
+);
+
 export default router;

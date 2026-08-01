@@ -62,29 +62,13 @@ async function register(data: RegisterData, creatorRole: string) {
     throw new AppError(409, "Ya existe un usuario con ese teléfono.");
   }
 
-  // 3. Generación Condicional de Credenciales
-  // Solo los cargos administrativos requieren login con password.
-  // El resto (operativos) solo requieren existencia como entidad para asignación de turnos.
-  let hashedPassword = undefined;
+  // 3. Generación del One-Time Link de Activación (Item 1)
+  // Los cargos administrativos reciben un link seguro en lugar de una contraseña en plano.
+  // El link expira en 24h. La cuenta queda inactiva hasta que el usuario fije su propia clave.
   const rolesWithPassword = ["ADMIN-TI", "RECURSOS HUMANOS"];
 
-  if (rolesWithPassword.includes(tipo_cargo)) {
-    // ponytail: 12 bytes = 24 hex chars = 96 bits of entropy (was 3 bytes/24 bits, too weak)
-    const generarPassword = crypto.randomBytes(12).toString("hex");
-    hashedPassword = await bcrypt.hash(generarPassword, 10);
-
-    // Job Queue (Email): Fire-and-forget para no bloquear el registro si el mail server está lento.
-    await emailQueue.add("send-welcome-email", {
-      to: normalizedEmail,
-      nombre: `${nombre} ${apellido}`,
-      rut: normalizedRut,
-      pass: generarPassword,
-    });
-
-    logger.info(`Generated password for ${normalizedRut} (${tipo_cargo})`);
-  }
-
-  const nuevoUsuario: any = {
+  // Objeto base del usuario (sin password — el token de activación es la credencial inicial)
+  const nuevoUsuarioBase: any = {
     rut: normalizedRut,
     nombre: nombre.toUpperCase(),
     apellido: apellido.toUpperCase(),
@@ -94,16 +78,31 @@ async function register(data: RegisterData, creatorRole: string) {
     email: normalizedEmail,
     ciudad: ciudad.toUpperCase(),
     tipo_cargo,
-    password: hashedPassword,
   };
 
-  if (tipo_cargo === "TENS") nuevoUsuario.habilitado = data.habilitado;
-  if (tipo_cargo === "JEFA SERVICIO") nuevoUsuario.servicio = data.servicio;
+  if (tipo_cargo === "TENS") nuevoUsuarioBase.habilitado = data.habilitado;
+  if (tipo_cargo === "JEFA SERVICIO") nuevoUsuarioBase.servicio = data.servicio;
 
-  // Limpieza final de objeto
-  if (nuevoUsuario.password === undefined) {
-    delete nuevoUsuario.password;
+  if (rolesWithPassword.includes(tipo_cargo)) {
+    // Generación del token — el rawToken va al correo, el hash a la BD (según el plan)
+    const { generateResetToken } = await import("./auth.service");
+    const tempUser = await User.create({ ...nuevoUsuarioBase });
+    const { rawToken } = await generateResetToken(tempUser._id.toString());
+    const resetLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/setup-password?token=${rawToken}`;
+
+    await emailQueue.add("send-welcome-email", {
+      to: normalizedEmail,
+      nombre: `${nombre} ${apellido}`,
+      rut: normalizedRut,
+      resetLink,
+    });
+
+    logger.info(`One-Time Link generado para ${normalizedRut} (${tipo_cargo})`);
+    return tempUser;
   }
+
+  // Usuarios operativos (sin acceso al sistema): se crean directamente sin password
+  const nuevoUsuario = { ...nuevoUsuarioBase };
 
   let userCreated;
   try {
@@ -255,6 +254,37 @@ async function eliminar(id: string) {
   return await User.find({ eliminado: { $ne: true } });
 }
 
+/**
+ * Disparado por el Admin (botones del perfil): Genera un nuevo One-Time Link
+ * para un usuario existente e invalida cualquier link anterior.
+ * Permíso requerido: users.reset_password (RBAC granular).
+ */
+async function sendResetLink(userId: string): Promise<void> {
+  const user = await User.findById(userId).select("email nombre apellido rut tipo_cargo");
+  if (!user) {
+    throw new AppError(404, "Usuario no encontrado");
+  }
+
+  const rolesWithPassword = ["ADMIN-TI", "RECURSOS HUMANOS"];
+  if (!rolesWithPassword.includes(user.tipo_cargo)) {
+    throw new AppError(400, "Este usuario no tiene acceso al sistema");
+  }
+
+  const { generateResetToken } = await import("./auth.service");
+  const { rawToken } = await generateResetToken(user._id.toString());
+  const resetLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/setup-password?token=${rawToken}`;
+
+  await emailQueue.add("send-welcome-email", {
+    to: user.email,
+    nombre: `${user.nombre} ${user.apellido}`,
+    rut: user.rut,
+    resetLink,
+    isReset: true,
+  });
+
+  logger.info(`Reset link enviado por Admin para ${user.rut}`);
+}
+
 export default {
   register,
   obtenerUsuariosTENS,
@@ -263,4 +293,5 @@ export default {
   actualizar,
   eliminar,
   obtenerPorId,
+  sendResetLink,
 };

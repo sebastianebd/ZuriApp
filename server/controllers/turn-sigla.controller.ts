@@ -108,6 +108,7 @@ export const updateTurnSigla = async (req: Request, res: Response) => {
       const diff = AuditService.generateDiff(
         (existing as any)?.toObject(),
         updated.toObject(),
+        "TurnSigla"
       );
 
       // Solo registramos auditoría si hubo cambios reales

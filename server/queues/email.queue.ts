@@ -43,18 +43,15 @@ export const setupEmailWorker = () => {
     QUEUE_NAME,
     async (job: Job) => {
       logger.info(`[EmailWorker] Procesando trabajo ${job.id}: ${job.name}`);
-      const { to, nombre, rut, pass } = job.data;
+      const { to, nombre, rut, resetLink, isReset } = job.data;
 
       // Delegación al servicio de negocio
-      await emailService.sendWelcomeEmail(to, nombre, rut, pass);
+      await emailService.sendWelcomeEmail(to, nombre, rut, resetLink, isReset);
 
-      // Seguridad en Logs:
-      // Enmascaramos datos sensibles (Credenciales) en el objeto del trabajo persistido
-      // para evitar fugas de información en paneles de administración (Bull Board/Redis).
+      // Seguridad en Logs: no loguear el link (contiene el token)
       await job.updateData({
         ...job.data,
-        rut: "XX.XXX.XXX-X",
-        pass: "******",
+        resetLink: "[REDACTED]",
       });
 
       logger.info(`[EmailWorker] Trabajo ${job.id} completado exitosamente`);

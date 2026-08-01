@@ -120,4 +120,37 @@ async function getHistory(req: AuthRequest, res: Response) {
   }
 }
 
-export default { login, logout, refresh, user, changePassword, getHistory };
+/**
+ * PUT /api/auth/reset-password/:token
+ * Permite al funcionario establecer una contraseña nueva a través del One-Time Link.
+ * El token se invalida una vez que la contraseña es guardada con éxito.
+ */
+async function resetPassword(req: Request, res: Response) {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({ mensaje: "La contraseña debe tener al menos 8 caracteres" });
+    }
+
+    // Importación nombrada (no default) para validar el token
+    const { validateResetToken } = await import("../services/auth.service");
+    const user = await validateResetToken(token);
+
+    user.password = password;
+    // Invalida el token borrándolo de la BD — el link queda inutilizable tras este punto
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    res.status(200).json({ mensaje: "Contraseña restablecida exitosamente" });
+  } catch (error: any) {
+    const status = error.statusCode ?? error.status ?? 500;
+    res.status(status).json({ mensaje: error.message });
+  }
+}
+
+export default { login, logout, refresh, user, changePassword, getHistory, resetPassword };
+

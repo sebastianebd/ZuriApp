@@ -88,3 +88,14 @@ TurnTypeSchema.index(
 );
 
 export default mongoose.model<ITurnType>("TurnType", TurnTypeSchema);
+
+export const TURN_TYPE_AUDIT_FIELDS = [
+  "nombre",
+  "codigo",
+  "alias",
+  "jornada",
+  "descripcion",
+  "cantidad_dias",
+  "secuencia",
+  "activo",
+];

@@ -136,7 +136,7 @@ async function actualizarReemplazo(req: AuthRequest, res: Response) {
       }
     });
 
-    const diff = auditService.generateDiff(original, cleanBody);
+    const diff = auditService.generateDiff(original, cleanBody, "Replacement");
     const nombreReemplazo = original
       ? `${original.id_negocio} de ${original.nombre_saliente} ${original.apellido_saliente}`
       : `ID ${req.params.id}`;

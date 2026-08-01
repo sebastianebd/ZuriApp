@@ -2,8 +2,8 @@ import mongoose, { FilterQuery } from "mongoose";
 import AuditLog, { IAuditLog } from "../models/audit.model";
 import "../models/user.model";
 import logger from "../config/logger.config";
-import { delPattern } from "../config/redis.config";
 import socketIO from "../config/socket";
+import { AuditModelName, AUDIT_WHITELISTS } from "../config/audit.registry";
 
 async function logAction(
   action: string,
@@ -25,10 +25,11 @@ async function logAction(
     });
 
     await logEntry.save();
-    // Cache Invalidation Strategy:
-    // Invalidamos todo el patrón audit:* para asegurar consistencia inmediata en listados.
-    // Aunque agresivo, garantiza que el admin siempre vea la última acción.
-    await delPattern("audit:*");
+
+    // Cache Invalidation Eliminada (Item 4):
+    // La auditoría se escribe frecuentemente y su lectura no requiere invalidación en tiempo real.
+    // Un TTL corto en el get es suficiente. Eliminar delPattern('audit:*') mejora el rendimiento y previene fallos por Redis.
+
 
     // Notificaciones en Tiempo Real (Fire-and-Forget):
     // Emitimos el evento vía Socket.IO para actualizar dashboards de administradores activos.
@@ -98,27 +99,18 @@ async function getLogs(
   };
 }
 
-function generateDiff(oldData: any, newData: any): string {
+function generateDiff(oldData: any, newData: any, modelName: AuditModelName): string {
   if (!oldData || !newData) return "";
 
   const changes: string[] = [];
-  // Lista Negra de Campos:
-  // Excluimos campos técnicos o sensibles que no aportan valor semántico al historial de cambios visible por el usuario.
-  const ignoredKeys = [
-    "_id",
-    "created_at",
-    "updated_at",
-    "__v",
-    "password",
-    "refresh_token",
-    "id",
-    "full_name",
-    "creado_por",
-    "updatedAt",
-  ];
+  
+  // Lista Blanca de Campos por Modelo (Item 3 - Registry Pattern):
+  // Solo los campos explícitamente listados en el registry (model.ts) serán auditados.
+  // Cualquier campo nuevo, técnico o sensible se ignora por defecto.
+  const allowedKeys = AUDIT_WHITELISTS[modelName] || [];
 
   Object.keys(newData).forEach((key) => {
-    if (ignoredKeys.includes(key)) return;
+    if (!allowedKeys.includes(key)) return;
 
     let oldVal = oldData[key];
     let newVal = newData[key];

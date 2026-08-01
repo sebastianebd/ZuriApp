@@ -200,4 +200,39 @@ router.get("/user", authController.user);
  */
 router.get("/history", authController.getHistory);
 
+/**
+ * @swagger
+ * /auth/reset-password/{token}:
+ *   put:
+ *     summary: Establece una nueva contraseña usando el One-Time Link
+ *     tags: [Auth]
+ *     description: |
+ *       Endpoint público (el token es la credencial).
+ *       El token se invalida tras el primer uso exitoso.
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [password]
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Contraseña restablecida exitosamente
+ *       400:
+ *         description: Token inválido, expirado o contraseña muy corta
+ */
+router.put("/reset-password/:token", authController.resetPassword);
+
 export default router;
+

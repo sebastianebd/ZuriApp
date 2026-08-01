@@ -116,7 +116,7 @@ async function actualizarUsuario(req: AuthRequest, res: Response) {
     const original: any = await userService.obtenerPorId(req.params.id);
     const usuarios = await userService.actualizar(req.params.id, req.body);
 
-    const diff = auditService.generateDiff(original, req.body);
+    const diff = auditService.generateDiff(original, req.body, "User");
     const nombreUsuario = original
       ? `${original.nombre} ${original.apellido}`
       : `ID ${req.params.id}`;
@@ -173,10 +173,26 @@ async function eliminarUsuario(req: AuthRequest, res: Response) {
   }
 }
 
+/**
+ * POST /api/users/:id/send-reset-link
+ * Dispara el flujo de One-Time Link para un usuario existente.
+ * Solo accesible con permiso RBAC granular: users.reset_password
+ */
+async function sendResetLink(req: AuthRequest, res: Response) {
+  try {
+    await userService.sendResetLink(req.params.id);
+    res.status(200).json({ mensaje: "Enlace de restablecimiento enviado exitosamente" });
+  } catch (error: any) {
+    res.status(error.status || 500).json({ mensaje: error.message });
+  }
+}
+
 export default {
   register,
   mostrarUsuarios,
   mostrarTodos,
   actualizarUsuario,
   eliminarUsuario,
+  sendResetLink,
 };
+

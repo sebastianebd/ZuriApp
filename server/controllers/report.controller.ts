@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import * as ReportService from "../services/report.service";
+import * as ExcelReportService from "../services/excel-report.service";
 import Period from "../models/period.model";
 import ReportSnapshot from "../models/report-snapshot.model";
 import { getSignedDownloadUrl } from "../config/s3.client";
@@ -97,7 +98,7 @@ export const exportExcelByService = async (
     const period = await Period.findOne({ month: reqMonth, year: reqYear });
 
     // Si el período está cerrado, usa Snapshots; si está abierto, calcula al vuelo
-    const workbook = await ReportService.generateServiceExcelReport({
+    const workbook = await ExcelReportService.generateServiceExcelReport({
       month: reqMonth,
       year: reqYear,
       serviceId: String(serviceId),
@@ -144,7 +145,7 @@ export const exportIndividualExcel = async (
 
     const period = await Period.findOne({ month: reqMonth, year: reqYear });
 
-    const workbook = await ReportService.generateIndividualExcelReport(
+    const workbook = await ExcelReportService.generateIndividualExcelReport(
       reqMonth,
       reqYear,
       userIdStr,

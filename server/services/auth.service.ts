@@ -1,7 +1,9 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import User, { IUser } from "../models/user.model";
 import Cargo from "../models/cargo.model";
+import { AppError } from "../errors/app-error";
 
 export class AuthError extends Error {
   status: number;
@@ -251,4 +253,43 @@ async function changePassword(
   await user.save();
 }
 
+/**
+ * Genera un token de un solo uso (One-Time Link) para activación o reseteo de contraseña.
+ * - rawToken: se envía en la URL del correo.
+ * - hashedToken: solo este se guarda en la BD (protección ante brechas).
+ */
+export async function generateResetToken(userId: string): Promise<{ rawToken: string }> {
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  await User.findByIdAndUpdate(userId, {
+    $set: {
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    },
+  });
+
+  return { rawToken };
+}
+
+/**
+ * Valida un One-Time Link: hashea el token recibido de la URL y lo busca en la BD.
+ * Solo es válido si existe y no ha expirado. El token se invalida al cambiar la clave (no al abrirlo).
+ */
+export async function validateResetToken(rawToken: string): Promise<IUser> {
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpire: { $gt: new Date() },
+  });
+
+  if (!user) {
+    throw new AppError(400, "El enlace de restablecimiento es inválido o ha expirado");
+  }
+
+  return user;
+}
+
 export default { login, logout, refresh, changePassword, getLoginHistory };
+

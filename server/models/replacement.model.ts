@@ -164,3 +164,18 @@ export default mongoose.model<IReplacement>(
   replacementSchema,
   "replacements",
 );
+
+export const REPLACEMENT_AUDIT_FIELDS = [
+  "rut_saliente",
+  "nombre_saliente",
+  "apellido_saliente",
+  "rut_entrante",
+  "nombre_entrante",
+  "apellido_entrante",
+  "tipo_turno",
+  "fecha_inicio",
+  "fecha_termino",
+  "servicio",
+  "status",
+  "corte_anticipado",
+];

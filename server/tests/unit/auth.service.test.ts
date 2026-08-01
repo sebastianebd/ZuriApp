@@ -395,4 +395,82 @@ describe("Auth Service - Unit Tests", () => {
       expect(LoginHistory.find).toHaveBeenCalledWith({ user: "user123" });
     });
   });
+
+  // RED: One-Time Link
+  // Estas funciones aún no existen en auth.service.ts
+  describe("generateResetToken()", () => {
+    it("debería devolver un token en texto plano (para la URL del correo)", async () => {
+      (User.findByIdAndUpdate as any).mockResolvedValue({});
+
+      const { generateResetToken } = await import("../../services/auth.service");
+      const { rawToken } = await generateResetToken("someUserId");
+
+      expect(typeof rawToken).toBe("string");
+      expect(rawToken.length).toBeGreaterThan(0);
+    });
+
+    it("debería guardar en la BD el HASH del token, nunca el token en plano", async () => {
+      let savedData: any = null;
+      (User.findByIdAndUpdate as any).mockImplementation((_id: any, data: any) => {
+        savedData = data;
+        return Promise.resolve({});
+      });
+
+      const { generateResetToken } = await import("../../services/auth.service");
+      const { rawToken } = await generateResetToken("someUserId");
+
+      expect(savedData.$set.resetPasswordToken).toBeDefined();
+      expect(savedData.$set.resetPasswordToken).not.toBe(rawToken);
+    });
+
+    it("debería guardar una fecha de expiración de 24 horas en la BD", async () => {
+      let savedData: any = null;
+      (User.findByIdAndUpdate as any).mockImplementation((_id: any, data: any) => {
+        savedData = data;
+        return Promise.resolve({});
+      });
+
+      const { generateResetToken } = await import("../../services/auth.service");
+      const before = Date.now();
+      await generateResetToken("someUserId");
+      const after = Date.now();
+
+      const expire = new Date(savedData.$set.resetPasswordExpire).getTime();
+      const in24h = 24 * 60 * 60 * 1000;
+
+      expect(expire).toBeGreaterThanOrEqual(before + in24h - 1000);
+      expect(expire).toBeLessThanOrEqual(after + in24h + 1000);
+    });
+  });
+
+  describe("validateResetToken()", () => {
+    it("debería devolver el usuario si el token es válido y no ha expirado", async () => {
+      const cryptoLib = await import("crypto");
+      const rawToken = cryptoLib.randomBytes(32).toString("hex");
+      const hashedToken = cryptoLib.createHash("sha256").update(rawToken).digest("hex");
+
+      (User.findOne as any).mockResolvedValue({ _id: "user123", email: "test@test.com" });
+
+      const { validateResetToken } = await import("../../services/auth.service");
+      const user = await validateResetToken(rawToken);
+
+      expect(User.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resetPasswordToken: hashedToken,
+          resetPasswordExpire: expect.objectContaining({ $gt: expect.any(Date) }),
+        })
+      );
+      expect(user).toMatchObject({ _id: "user123" });
+    });
+
+    it("debería lanzar AppError si el token no existe o está expirado", async () => {
+      (User.findOne as any).mockResolvedValue(null);
+
+      const { validateResetToken } = await import("../../services/auth.service");
+      const { AppError } = await import("../../errors/app-error");
+
+      await expect(validateResetToken("token-invalido")).rejects.toThrow(AppError);
+    });
+  });
 });
+
