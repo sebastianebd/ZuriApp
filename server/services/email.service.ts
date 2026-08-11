@@ -77,7 +77,7 @@ const getWelcomeTemplate = (nombre: string, rut: string, resetLink: string, isRe
 
 // --- Métodos del Servicio ---
 
-export const sendWelcomeEmail = async (
+const sendWelcomeEmail = async (
   to: string,
   nombre: string,
   rut: string,

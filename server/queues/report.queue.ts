@@ -7,26 +7,14 @@ import Period from "../models/period.model";
 import Service from "../models/service.model";
 import { TurnAssignmentModel } from "../models/turn-assignment.model";
 import { uploadToS3 } from "../config/s3.client";
-
-// --- Configuración de Redis (misma que email.queue) ---
-const redisConnection: any = {
-  host: "localhost",
-  port: 6379,
-};
-
-if (process.env.REDIS_URL) {
-  const url = new URL(process.env.REDIS_URL);
-  redisConnection.host = url.hostname;
-  redisConnection.port = Number(url.port);
-  redisConnection.password = url.password;
-  redisConnection.username = url.username;
-}
+import bullmqConnection from "../config/bullmq-connection";
+import * as Sentry from "@sentry/node";
 
 export const REPORT_CLOSURE_QUEUE = "report-closure-queue";
 
 // 1. Definición de la Cola de Cierre Mensual (Producer)
 export const reportClosureQueue = new Queue(REPORT_CLOSURE_QUEUE, {
-  connection: redisConnection,
+  connection: bullmqConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
@@ -163,13 +151,13 @@ export const setupReportClosureWorker = () => {
         const endOfMonth = dayjs(startOfMonth).endOf("month").toDate();
 
         // Obtener todos los usuarios con turnos en este servicio/mes
-        const userIds = await TurnAssignmentModel.find({
+        const staffIds = await TurnAssignmentModel.find({
           service: service._id,
           start_date: { $lte: endOfMonth },
           $or: [{ end_date: { $gte: startOfMonth } }, { end_date: null }],
-        }).distinct("user_id");
+        }).distinct("staffId");
 
-        if (userIds.length === 0) {
+        if (staffIds.length === 0) {
           logger.info(
             `[ReportWorker] Servicio ${service.nombre}: sin usuarios, saltando`,
           );
@@ -179,12 +167,12 @@ export const setupReportClosureWorker = () => {
         const usersData: any[] = [];
 
         // 4. Calcular y guardar Snapshot por usuario
-        for (const userId of userIds) {
-          const userIdStr = userId.toString();
+        for (const staffId of staffIds) {
+          const staffIdStr = staffId.toString();
           try {
             // Reutilizar snapshot existente si ya fue creado
             const existing = await ReportSnapshot.findOne({
-              user_id: userId,
+              staffId: staffId,
               period_id: period._id,
             });
 
@@ -192,9 +180,9 @@ export const setupReportClosureWorker = () => {
             if (existing) {
               data = existing.snapshot_data;
             } else {
-              data = await getMonthlyReport({ month, year, userId: userIdStr });
+              data = await getMonthlyReport({ month, year, staffId: staffIdStr });
               await ReportSnapshot.create({
-                user_id: userId,
+                staffId: staffId,
                 period_id: period._id,
                 snapshot_data: data as Record<string, unknown>,
                 generated_at: new Date(),
@@ -203,7 +191,7 @@ export const setupReportClosureWorker = () => {
             usersData.push(data);
           } catch (err: any) {
             logger.warn(
-              `[ReportWorker] Error procesando usuario ${userIdStr} en ${service.nombre}: ${err.message}`,
+              `[ReportWorker] Error procesando usuario ${staffIdStr} en ${service.nombre}: ${err.message}`,
             );
           }
         }
@@ -230,7 +218,6 @@ export const setupReportClosureWorker = () => {
           logger.error(
             `[ReportWorker] ❌ Error generando PDF para ${service.nombre}: ${err.message || err.name || JSON.stringify(err)}`,
           );
-          console.error(err);
           // Continuar con el siguiente servicio — no abortar todo el Job
         }
 
@@ -251,13 +238,14 @@ export const setupReportClosureWorker = () => {
         `[ReportWorker] ✅ Cierre mensual ${month}/${year} completado. ${pdfUrls.size} PDFs generados.`,
       );
     },
-    { connection: redisConnection },
+    { connection: bullmqConnection },
   );
 
   worker.on("failed", (job, err) => {
     logger.error(
       `[ReportWorker] Job ${job?.id} falló tras reintentos: ${err.message}`,
     );
+    Sentry.captureException(err);
   });
 
   worker.on("completed", (job) => {

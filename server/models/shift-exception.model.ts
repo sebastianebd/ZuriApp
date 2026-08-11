@@ -44,7 +44,7 @@ const shiftExceptionSchema = new Schema<IShiftException>(
     },
     created_by: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Staff",
       required: true,
     },
     created_at: {

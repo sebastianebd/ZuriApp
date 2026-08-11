@@ -3,7 +3,7 @@ import authController from "../../controllers/auth.controller";
 import authMiddleware from "../../middleware/authentication.middleware";
 import { authLimiter } from "../../config/limiter.config";
 import { validateSchema } from "../../middleware/validate.middleware";
-import { loginSchema, changePasswordSchema } from "../../schemas/auth.schema";
+import { loginSchema, changePasswordSchema, resetPasswordSchema } from "../../schemas/auth.schema";
 
 const router = express.Router();
 
@@ -106,6 +106,43 @@ router.post(
  */
 router.post("/refresh", authController.refresh);
 
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Establece una nueva contraseña usando el One-Time Link
+ *     tags: [Auth]
+ *     description: |
+ *       Endpoint público (el token es la credencial).
+ *       El token se invalida tras el primer uso exitoso.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, password]
+ *             properties:
+ *               token:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Contraseña restablecida exitosamente
+ *       400:
+ *         description: Token inválido, expirado o contraseña muy corta
+ *       429:
+ *         description: Demasiados intentos
+ */
+router.post(
+  "/reset-password",
+  authLimiter,
+  validateSchema(resetPasswordSchema),
+  authController.resetPassword,
+);
+
 // --- Rutas Protegidas ---
 // Todo lo definido a partir de aquí requiere un JWT válido en el header Authorization.
 router.use(authMiddleware);
@@ -160,7 +197,7 @@ router.post("/logout", authController.logout);
 
 /**
  * @swagger
- * /auth/user:
+ * /auth/me:
  *   get:
  *     summary: Obtener usuario actual
  *     tags: [Auth]
@@ -172,11 +209,11 @@ router.post("/logout", authController.logout);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               $ref: '#/components/schemas/Staff'
  *       401:
  *         description: No autorizado
  */
-router.get("/user", authController.user);
+router.get("/me", authController.me);
 
 /**
  * @swagger
@@ -200,39 +237,4 @@ router.get("/user", authController.user);
  */
 router.get("/history", authController.getHistory);
 
-/**
- * @swagger
- * /auth/reset-password/{token}:
- *   put:
- *     summary: Establece una nueva contraseña usando el One-Time Link
- *     tags: [Auth]
- *     description: |
- *       Endpoint público (el token es la credencial).
- *       El token se invalida tras el primer uso exitoso.
- *     parameters:
- *       - in: path
- *         name: token
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [password]
- *             properties:
- *               password:
- *                 type: string
- *                 minLength: 8
- *     responses:
- *       200:
- *         description: Contraseña restablecida exitosamente
- *       400:
- *         description: Token inválido, expirado o contraseña muy corta
- */
-router.put("/reset-password/:token", authController.resetPassword);
-
 export default router;
-

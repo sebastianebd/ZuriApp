@@ -26,16 +26,21 @@ const options: swaggerJsdoc.Options = {
     components: {
       // Definición de Esquemas de Seguridad Reutilizables
       securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
         cookieAuth: {
           type: "apiKey",
           in: "cookie",
-          name: "jwt", // Nombre de la cookie que contiene el token
+          name: "refresh_token", // Nombre de la cookie para renovar sesión
         },
       },
     },
     // Seguridad Global
-    // Aplica cookieAuth a todos los endpoints por defecto, salvo que se sobrescriba.
-    security: [{ cookieAuth: [] }],
+    // Aplica bearerAuth a todos los endpoints por defecto.
+    security: [{ bearerAuth: [] }],
   },
   // Descubrimiento de Documentación
   // Escanea rutas y modelos buscando anotaciones @swagger / @openapi

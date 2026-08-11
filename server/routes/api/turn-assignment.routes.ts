@@ -15,6 +15,7 @@ import {
 import authMiddleware, {
   requirePermission,
 } from "../../middleware/authentication.middleware";
+import { validateObjectId } from "../../middleware/validate-object-id.middleware";
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.use(authMiddleware);
 // de alterar la planificación operativa.
 
 router.get("/", requirePermission("shifts.view"), getAssignments);
-router.get("/:id", requirePermission("shifts.view"), getAssignmentById);
+router.get("/:id", requirePermission("shifts.view"), validateObjectId(), getAssignmentById);
 
 router.post(
   "/",
@@ -37,10 +38,11 @@ router.post(
 router.put(
   "/:id",
   requirePermission("shifts.update"),
+  validateObjectId(),
   validateSchema(updateTurnAssignmentSchema),
   updateAssignment,
 );
 
-router.delete("/:id", requirePermission("shifts.delete"), deleteAssignment);
+router.delete("/:id", requirePermission("shifts.delete"), validateObjectId(), deleteAssignment);
 
 export default router;

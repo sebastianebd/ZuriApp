@@ -1,8 +1,9 @@
 import Redis from "ioredis";
+import env from "./env.config";
 
 // Cliente Redis Singleton
 // Utilizamos 'ioredis' por su soporte robusto para Promesas y Cluster.
-const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+const redisUrl = env.REDIS_URL;
 
 const redis = new Redis(redisUrl);
 

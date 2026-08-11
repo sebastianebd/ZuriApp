@@ -1,14 +1,15 @@
 import mongoose, { FilterQuery } from "mongoose";
 import AuditLog, { IAuditLog } from "../models/audit.model";
-import "../models/user.model";
+import "../models/staff.model";
 import logger from "../config/logger.config";
 import socketIO from "../config/socket";
+import { get, set } from "../config/redis.config";
 import { AuditModelName, AUDIT_WHITELISTS } from "../config/audit.registry";
 
 async function logAction(
   action: string,
   module: string,
-  user: any,
+  account: { id: string; name: string },
   description: string,
   details: any = null,
   entityId: string | null = null,
@@ -17,8 +18,8 @@ async function logAction(
     const logEntry = new AuditLog({
       action,
       module,
-      user_id: user.id || user._id,
-      user_name: `${user.nombre} ${user.apellido}`,
+      accountId: account.id,
+      accountName: account.name,
       resource_id: entityId,
       description,
       details,
@@ -26,7 +27,7 @@ async function logAction(
 
     await logEntry.save();
 
-    // Cache Invalidation Eliminada (Item 4):
+    // Cache Invalidation Eliminada:
     // La auditoría se escribe frecuentemente y su lectura no requiere invalidación en tiempo real.
     // Un TTL corto en el get es suficiente. Eliminar delPattern('audit:*') mejora el rendimiento y previene fallos por Redis.
 
@@ -40,7 +41,7 @@ async function logAction(
       io.emit("audit:update", {
         action,
         module,
-        user: user.nombre,
+        account: account.name,
         description,
       });
     } catch (err) {
@@ -54,18 +55,30 @@ async function logAction(
   }
 }
 
+interface AuditFilters {
+  module?: string;
+  action?: string;
+  accountId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 async function getLogs(
-  filters: any = {},
+  filters: AuditFilters = {},
   page: number = 1,
   limit: number = 20,
 ) {
+  const cacheKey = `audit:${JSON.stringify({ filters, page, limit })}`;
+  const cachedData = await get(cacheKey);
+  if (cachedData) return cachedData;
+
   const query: FilterQuery<IAuditLog> = {};
 
   if (filters.module) query.module = filters.module;
   if (filters.action) query.action = filters.action;
 
-  if (filters.userId && mongoose.Types.ObjectId.isValid(filters.userId)) {
-    query.user_id = new mongoose.Types.ObjectId(filters.userId);
+  if (filters.accountId && mongoose.Types.ObjectId.isValid(filters.accountId)) {
+    query.accountId = new mongoose.Types.ObjectId(filters.accountId);
   }
 
   if (filters.startDate || filters.endDate) {
@@ -81,22 +94,27 @@ async function getLogs(
     if (Object.keys(dateQuery).length > 0) query.created_at = dateQuery;
   }
 
-  // C5: Ejecutar find y count en paralelo (consistente con user.service.ts)
-  const [logs, total] = await Promise.all([
+  // Ejecutar find y count en paralelo para evitar ejecución secuencial
+  const [logs, totalDocs] = await Promise.all([
     AuditLog.find(query)
       .sort({ created_at: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate("user_id", "nombre apellido rut"),
+      .lean(),
     AuditLog.countDocuments(query),
   ]);
 
-  return {
+  const totalPages = Math.ceil(totalDocs / limit) || 1;
+
+  const response = {
     logs,
-    total,
-    page: Number(page),
-    totalPages: Math.ceil(total / limit),
+    totalDocs,
+    totalPages,
+    currentPage: Number(page),
   };
+
+  await set(cacheKey, response, 300); // TTL: 300 segundos (5 minutos)
+  return response;
 }
 
 function generateDiff(oldData: any, newData: any, modelName: AuditModelName): string {
@@ -104,7 +122,7 @@ function generateDiff(oldData: any, newData: any, modelName: AuditModelName): st
 
   const changes: string[] = [];
   
-  // Lista Blanca de Campos por Modelo (Item 3 - Registry Pattern):
+  // Lista Blanca de Campos por Modelo (Registry Pattern):
   // Solo los campos explícitamente listados en el registry (model.ts) serán auditados.
   // Cualquier campo nuevo, técnico o sensible se ignora por defecto.
   const allowedKeys = AUDIT_WHITELISTS[modelName] || [];
@@ -144,7 +162,7 @@ function generateDiff(oldData: any, newData: any, modelName: AuditModelName): st
         if (!oldDay) {
           seqChanges.push(`Día ${newDay.dia}: Nuevo`);
         } else {
-          // Compare fields within the day
+          // Comparar campos dentro del día
           const dayUpdates: string[] = [];
 
           // Sigla

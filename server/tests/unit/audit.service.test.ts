@@ -16,6 +16,7 @@ vi.mock("../../models/audit.model", () => {
       {
         find: vi.fn(),
         countDocuments: vi.fn(),
+        create: vi.fn().mockResolvedValue({ _id: "log123" }),
       },
     ),
   };
@@ -23,35 +24,35 @@ vi.mock("../../models/audit.model", () => {
 
 describe("Audit Service - generateDiff", () => {
   it("debería retornar un string vacío si no hay cambios", () => {
-    const oldData = { nombre: "JUAN", apellido: "PEREZ" };
-    const newData = { nombre: "JUAN", apellido: "PEREZ" };
+    const oldData = { firstName: "JUAN", lastName: "PEREZ" };
+    const newData = { firstName: "JUAN", lastName: "PEREZ" };
     // @ts-ignore - probando TDD RED, el 3er parámetro aún no existe en los tipos
-    expect(auditService.generateDiff(oldData, newData, "User")).toBe("");
+    expect(auditService.generateDiff(oldData, newData, "Staff")).toBe("");
   });
 
   it("debería detectar cambios en campos de tipo string listados en la lista blanca", () => {
-    const oldData = { nombre: "JUAN", apellido: "PEREZ" };
-    const newData = { nombre: "JUAN", apellido: "SOTO" };
+    const oldData = { firstName: "JUAN", lastName: "PEREZ" };
+    const newData = { firstName: "JUAN", lastName: "SOTO" };
     // @ts-ignore
-    expect(auditService.generateDiff(oldData, newData, "User")).toBe(
-      "apellido: PEREZ -> SOTO",
+    expect(auditService.generateDiff(oldData, newData, "Staff")).toBe(
+      "lastName: PEREZ -> SOTO",
     );
   });
 
   it("debería ignorar campos que NO estén en la lista blanca del modelo (fail-safe)", () => {
     // Si agregamos un campo 'tarjeta_credito' o 'secret_token', por defecto se ignora
-    const oldData = { nombre: "JUAN", tarjeta_credito: "1234" };
-    const newData = { nombre: "JUAN", tarjeta_credito: "5678" };
+    const oldData = { firstName: "JUAN", tarjeta_credito: "1234" };
+    const newData = { firstName: "JUAN", tarjeta_credito: "5678" };
     // @ts-ignore
-    expect(auditService.generateDiff(oldData, newData, "User")).toBe("");
+    expect(auditService.generateDiff(oldData, newData, "Staff")).toBe("");
   });
 
   it("debería ignorar claves restringidas como _id, password, etc.", () => {
     // Seguridad y Limpieza: No queremos exponer datos sensibles o técnicos en los logs de auditoría.
-    const oldData = { _id: "123", password: "old", nombre: "JUAN" };
-    const newData = { _id: "123", password: "new", nombre: "JUAN" };
+    const oldData = { _id: "123", password: "old", firstName: "JUAN" };
+    const newData = { _id: "123", password: "new", firstName: "JUAN" };
     // @ts-ignore
-    expect(auditService.generateDiff(oldData, newData, "User")).toBe("");
+    expect(auditService.generateDiff(oldData, newData, "Staff")).toBe("");
   });
 
   it("debería detectar cambios en fechas", () => {
@@ -72,16 +73,16 @@ describe("Audit Service - generateDiff", () => {
     const oldData = { direccion: null };
     const newData = { direccion: "" };
     // @ts-ignore
-    expect(auditService.generateDiff(oldData, newData, "User")).toBe("");
+    expect(auditService.generateDiff(oldData, newData, "Staff")).toBe("");
   });
 
   it("debería manejar múltiples cambios simultáneamente", () => {
-    const oldData = { nombre: "JUAN", ciudad: "SANTIAGO" };
-    const newData = { nombre: "PEDRO", ciudad: "VALPARAISO" };
+    const oldData = { firstName: "JUAN", phone: "SANTIAGO" };
+    const newData = { firstName: "PEDRO", phone: "VALPARAISO" };
     // @ts-ignore
-    const result = auditService.generateDiff(oldData, newData, "User");
+    const result = auditService.generateDiff(oldData, newData, "Staff");
     expect(result).toBe(
-      "nombre: JUAN -> PEDRO, ciudad: SANTIAGO -> VALPARAISO",
+      "firstName: JUAN -> PEDRO, phone: SANTIAGO -> VALPARAISO",
     );
   });
 });
@@ -95,8 +96,7 @@ describe("Audit Service - logAction", () => {
     const mockUser = {
       _id: "user123",
       id: "user123",
-      nombre: "Juan",
-      apellido: "Pérez",
+      name: "Juan Pérez",
     };
 
     await auditService.logAction(
@@ -112,8 +112,8 @@ describe("Audit Service - logAction", () => {
       expect.objectContaining({
         action: "CREATE",
         module: "Users",
-        user_id: "user123",
-        user_name: "Juan Pérez",
+        accountId: "user123",
+        accountName: "Juan Pérez",
         description: "Created new user",
         details: { userId: "user456" },
         resource_id: "record123",
@@ -125,8 +125,7 @@ describe("Audit Service - logAction", () => {
     const mockUser = {
       _id: "user123",
       id: "user123",
-      nombre: "Juan",
-      apellido: "Pérez",
+      name: "Juan Pérez",
     };
 
     await auditService.logAction("READ", "Reports", mockUser, "Read report");
@@ -138,8 +137,7 @@ describe("Audit Service - logAction", () => {
     const mockUser = {
       _id: "user123",
       id: "user123",
-      nombre: "Test",
-      apellido: "User",
+      name: "Test User",
     };
 
     const longDetails = "A".repeat(10000);
@@ -153,8 +151,7 @@ describe("Audit Service - logAction", () => {
     const mockUser = {
       _id: "user123",
       id: "user123",
-      nombre: "Test",
-      apellido: "User",
+      name: "Test User",
     };
 
     const specialDetails = 'Details with "quotes" and <tags> and & symbols';
@@ -174,18 +171,16 @@ describe("Audit Service - logAction", () => {
     const mockUser = {
       _id: "user123",
       id: "user123",
-      nombre: "Test",
-      apellido: "User",
+      name: "Test User",
     };
 
     // Simular fallo en save
-    const mockFailingSave = vi
-      .fn()
-      .mockRejectedValue(new Error("Database error"));
-    (AuditLog as any).mockImplementationOnce(function (this: any, data: any) {
+    // Para simular el fallo, necesitamos alterar el mock de la instancia
+    vi.mocked(AuditLog).mockImplementationOnce(function(this: any, data: any) {
       Object.assign(this, data);
-      this.save = mockFailingSave;
-    });
+      this.save = vi.fn().mockRejectedValueOnce(new Error("Database error"));
+      return this;
+    } as any);
 
     await expect(
       auditService.logAction("CREATE", "Test", mockUser, "Test action"),
@@ -208,15 +203,16 @@ describe("Audit Service - getLogs", () => {
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
-      populate: vi.fn().mockResolvedValue(mockLogs),
+      populate: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue(mockLogs),
     });
     (AuditLog.countDocuments as any).mockResolvedValue(2);
 
     const result = await auditService.getLogs();
 
     expect(result.logs).toEqual(mockLogs);
-    expect(result.total).toBe(2);
-    expect(result.page).toBe(1);
+    expect(result.totalDocs).toBe(2);
+    expect(result.currentPage).toBe(1);
     expect(result.totalPages).toBe(1);
   });
 
@@ -225,7 +221,8 @@ describe("Audit Service - getLogs", () => {
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
-      populate: vi.fn().mockResolvedValue([]),
+      populate: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([]),
     });
     (AuditLog.countDocuments as any).mockResolvedValue(0);
 
@@ -241,7 +238,8 @@ describe("Audit Service - getLogs", () => {
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
-      populate: vi.fn().mockResolvedValue([]),
+      populate: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([]),
     });
     (AuditLog.countDocuments as any).mockResolvedValue(0);
 
@@ -257,7 +255,8 @@ describe("Audit Service - getLogs", () => {
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
-      populate: vi.fn().mockResolvedValue([]),
+      populate: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([]),
     });
     (AuditLog.countDocuments as any).mockResolvedValue(0);
 
@@ -278,13 +277,14 @@ describe("Audit Service - getLogs", () => {
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
-      populate: vi.fn().mockResolvedValue([]),
+      populate: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([]),
     });
     (AuditLog.countDocuments as any).mockResolvedValue(100);
 
     const result = await auditService.getLogs({}, 2, 10);
 
-    expect(result.page).toBe(2);
+    expect(result.currentPage).toBe(2);
     expect(result.totalPages).toBe(10);
   });
 
@@ -293,7 +293,8 @@ describe("Audit Service - getLogs", () => {
       sort: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
-      populate: vi.fn().mockResolvedValue([]),
+      populate: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([]),
     });
     (AuditLog.countDocuments as any).mockResolvedValue(0);
 
@@ -345,8 +346,8 @@ describe("Audit Service - generateDiff (Casos Adicionales)", () => {
 
   it("debería retornar string vacío para inputs nulos/indefinidos", () => {
     // @ts-ignore
-    expect(auditService.generateDiff(null, { nombre: "test" }, "User")).toBe("");
+    expect(auditService.generateDiff(null, { firstName: "test" }, "Staff")).toBe("");
     // @ts-ignore
-    expect(auditService.generateDiff({ nombre: "test" }, null, "User")).toBe("");
+    expect(auditService.generateDiff({ firstName: "test" }, null, "Staff")).toBe("");
   });
 });

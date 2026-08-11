@@ -2,13 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import replacementService from "../../services/replacement.service";
 import auditService from "../../services/audit.service";
+import socketService from "../../services/socket.service";
 import app from "../../app";
 
 // Mock del middleware de autenticación:
 // Simulamos un usuario admin autenticado para saltar la validación de JWT y permisos en estas pruebas de integración.
 vi.mock("../../middleware/authentication.middleware", () => ({
   default: (req: any, res: any, next: any) => {
-    req.user = { _id: "admin_id", nombre: "TEST", apellido: "ADMIN" };
+    req.staff = { _id: "admin_id", firstName: "TEST", lastName: "ADMIN", roleId: { level: 100 } };
+    req.account = { id: "admin_id", name: "TEST ADMIN" };
     next();
   },
   requirePermission: () => (req: any, res: any, next: any) => next(),
@@ -99,6 +101,8 @@ describe("Replacement Controller - Integration", () => {
         expect.anything(),
         mockCreated._id,
       );
+
+
     });
   });
 
@@ -299,7 +303,7 @@ describe("Replacement Controller - Integration", () => {
       // aunque en la práctica el servicio determina como buscarlo.
       const userId = "507f1f77bcf86cd799439099";
 
-      (replacementService.obtenerHistorialUsuario as any).mockResolvedValue(
+      (replacementService.obtenerHistorialStaff as any).mockResolvedValue(
         mockResult,
       );
 

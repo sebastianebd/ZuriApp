@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import logger from "../config/logger.config";
+import { AppError } from "../errors/app-error";
 
 /**
  * Manejador Global de Errores
@@ -15,7 +16,11 @@ function errorHandlerMiddleware(
   logger.error(`❌ Error: ${err.message}`, { stack: err.stack });
 
   const status = err.status || 500;
-  const message = err.message || "Error interno del servidor";
+  
+  const isOperational = err instanceof AppError;
+  const message = isOperational
+    ? err.message
+    : (process.env.NODE_ENV === "development" ? err.message : "Error interno del servidor");
 
   // Encolamos la respuesta segura.
   // En Desarrollo exponemos el stack para debugging rápido.

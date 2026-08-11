@@ -1,6 +1,8 @@
-import Reemplazo, { IReplacement } from "../models/replacement.model";
+import Replacement, { IReplacement } from "../models/replacement.model";
 import mongoose from "mongoose";
 import { escapeRegex } from "../utils/regex";
+import { get, set, delPattern } from "../config/redis.config";
+import socketService from "../services/socket.service";
 
 // --- Helpers de Estado ---
 // Determinamos el estado inicial basado puramente en fecha vs ahora.
@@ -34,8 +36,8 @@ const determineStatusCorte = (fecha_corte: Date | string): string => {
   return "EN CURSO";
 };
 
-async function registrar(data: any) {
-  const initialStatus = determineStatus(data.fecha_inicio);
+async function registrar(data: Partial<IReplacement>) {
+  const initialStatus = determineStatus(data.fecha_inicio as Date | string);
 
   /* 
    Resolución de Tipo de Turno:
@@ -46,11 +48,11 @@ async function registrar(data: any) {
   */
   const { default: TurnTypeModel } = await import("../models/turn-type.model");
   const turnTypeDoc = await TurnTypeModel.findOne({
-    nombre: { $regex: new RegExp(`^${data.tipo_turno}$`, "i") },
+    nombre: { $regex: new RegExp(`^${escapeRegex(data.tipo_turno || "")}$`, "i") },
     deleted_at: null,
   });
 
-  const nuevoReemplazo = new Reemplazo({
+  const nuevoReemplazo = new Replacement({
     ...data,
     turn_type_id: turnTypeDoc ? turnTypeDoc._id : undefined,
     snapshot_secuencia: turnTypeDoc
@@ -59,20 +61,25 @@ async function registrar(data: any) {
           return rest; // Solo guardamos la lógica de turnos, el color puede ser cosmético
         })
       : [],
-    fecha_inicio: new Date(data.fecha_inicio),
-    fecha_termino: new Date(data.fecha_termino),
+    fecha_inicio: new Date(data.fecha_inicio!),
+    fecha_termino: new Date(data.fecha_termino!),
     status: initialStatus,
   });
 
-  return await nuevoReemplazo.save();
+  const saved = await nuevoReemplazo.save();
+  await delPattern("replacements:*");
+  if (saved.id_entrante) {
+    socketService.emitTurnUpdate(saved.id_entrante.toString());
+  }
+  return saved;
 }
 
 async function obtenerActivos() {
-  return await Reemplazo.find({
+  return await Replacement.find({
     status: { $in: ["EN CURSO", "PENDIENTE"] },
   })
-    .populate("creado_por", "nombre apellido")
-    .populate("id_entrante", "tipo_cargo");
+    .populate("creado_por", "firstName lastName")
+    .populate("id_entrante", "positionId");
 }
 
 async function obtenerActivosPaginado(options: {
@@ -107,20 +114,24 @@ async function obtenerActivosPaginado(options: {
     ];
   }
 
+  const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}`;
+  const cachedData = await get(cacheKey);
+  if (cachedData) return cachedData;
+
   const skip = (page - 1) * limit;
 
   // Ejecución Paralela: Data + Conteo Total
   const [reemplazos, total] = await Promise.all([
-    Reemplazo.find(query)
-      .populate("creado_por", "nombre apellido")
-      .populate("id_entrante", "_id tipo_cargo")
+    Replacement.find(query)
+      .populate("creado_por", "firstName lastName")
+      .populate("id_entrante", "_id positionId")
       .skip(skip)
       .limit(limit)
       .lean(),
-    Reemplazo.countDocuments(query),
+    Replacement.countDocuments(query),
   ]);
 
-  return {
+  const result = {
     reemplazos,
     pagination: {
       currentPage: page,
@@ -129,6 +140,8 @@ async function obtenerActivosPaginado(options: {
       itemsPerPage: limit,
     },
   };
+  await set(cacheKey, result, 60);
+  return result;
 }
 
 async function obtenerInactivosPaginados(
@@ -145,7 +158,7 @@ async function obtenerInactivosPaginados(
   }
 
   if (filtros.rutSaliente) {
-    // C1 ReDoS fix: escape user input before building RegExp
+    // C1 ReDoS fix: escape staff input before building RegExp
     query.rut_saliente = {
       $regex: new RegExp(`^${escapeRegex(filtros.rutSaliente)}`),
       $options: "i",
@@ -153,7 +166,7 @@ async function obtenerInactivosPaginados(
   }
 
   if (filtros.rutEntrante) {
-    // C1 ReDoS fix: escape user input before building RegExp
+    // C1 ReDoS fix: escape staff input before building RegExp
     query.rut_entrante = {
       $regex: new RegExp(`^${escapeRegex(filtros.rutEntrante)}`),
       $options: "i",
@@ -182,58 +195,87 @@ async function obtenerInactivosPaginados(
     };
   }
 
+  const sortedQuery = { ...filtros };
+  const cacheKey = `replacements:history:paginated:${JSON.stringify(sortedQuery)}`;
+  const cachedData = await get(cacheKey);
+  if (cachedData) return cachedData;
+
   const skip = (pagina - 1) * limite;
 
   const [registros, totalRegistros] = await Promise.all([
-    Reemplazo.find(query)
-      .populate("creado_por", "nombre apellido")
+    Replacement.find(query)
+      .populate("creado_por", "firstName lastName")
       .sort({ fecha_inicio: -1 })
       .skip(skip)
       .limit(limite)
       .exec(),
 
-    Reemplazo.countDocuments(query),
+    Replacement.countDocuments(query),
   ]);
 
-  return {
+  const result = {
     registros,
     totalRegistros,
     paginaActual: Number(pagina),
     limite,
     totalPages: Math.ceil(totalRegistros / limite),
   };
+  await set(cacheKey, result, 60);
+  return result;
 }
 
 async function obtenerPorId(id: string) {
-  return await Reemplazo.findById(id).lean();
+  return await Replacement.findById(id).lean();
 }
 
-async function actualizar(id: string, data: any) {
-  await Reemplazo.findByIdAndUpdate(id, data, { new: true });
-  return await Reemplazo.findById(id);
+async function actualizar(id: string, data: Partial<IReplacement>) {
+  await Replacement.findByIdAndUpdate(id, data, { new: true });
+  await delPattern("replacements:*");
+  return await Replacement.findById(id);
 }
 
 async function finalizarReemplazo(id: string) {
   // C4 Timezone fix: store plain UTC (new Date()). The hardcoded Chile offset
   // was wrong — Chile switches between UTC-3 and UTC-4 seasonally.
   // The frontend already formats dates with { timeZone: "America/Santiago" }.
-  await Reemplazo.findByIdAndUpdate(
+  await Replacement.findByIdAndUpdate(
     id,
     { status: "FINALIZADO", fecha_termino: new Date() },
     { new: true },
   );
-  return await Reemplazo.findById(id);
+  await delPattern("replacements:*");
+  socketService.emitHistoryUpdate("finalize", id);
+  return await Replacement.findById(id);
 }
 
 async function anularReemplazo(id: string) {
-  await Reemplazo.findByIdAndUpdate(id, { status: "ANULADO" });
-  return await Reemplazo.findById(id);
+  await Replacement.findByIdAndUpdate(id, { status: "ANULADO" });
+  await delPattern("replacements:*");
+  socketService.emitHistoryUpdate("annul", id);
+  return await Replacement.findById(id);
 }
 
-async function obtenerHistorialUsuario(id: string) {
-  return await Reemplazo.find({
+async function obtenerHistorialStaff(id: string) {
+  const cacheKey = `replacements:user_history:${id}`;
+  const cachedData = await get(cacheKey);
+  if (cachedData) return cachedData;
+
+  const data = await Replacement.find({
     $or: [{ id_entrante: id }, { id_saliente: id }],
   });
+  await set(cacheKey, data, 300);
+  return data;
+}
+
+export function getCleanBodyForDiff(body: any) {
+  const validFields = Object.keys(Replacement.schema.paths);
+  const cleanBody: any = {};
+  Object.keys(body).forEach((key) => {
+    if (validFields.includes(key)) {
+      cleanBody[key] = body[key];
+    }
+  });
+  return cleanBody;
 }
 
 const getNextDay = (dateString: string | Date) => {
@@ -282,7 +324,7 @@ async function sustituir(payload: SustitucionPayload) {
   try {
     await session.withTransaction(async () => {
       // 1. Cerrar Registro A
-      registroA = await Reemplazo.findByIdAndUpdate(
+      registroA = await Replacement.findByIdAndUpdate(
         id_registro_a,
         {
           fecha_termino: fechaCorteDate,
@@ -323,11 +365,16 @@ async function sustituir(payload: SustitucionPayload) {
         creado_por: registroA.creado_por,
       };
 
-      const nuevoReemplazoDoc = new Reemplazo(datosNuevoReemplazo);
+      const nuevoReemplazoDoc = new Replacement(datosNuevoReemplazo);
       registroB = await nuevoReemplazoDoc.save({ session });
     });
   } finally {
     await session.endSession();
+  }
+
+  if (registroA && registroB) {
+    await delPattern("replacements:*");
+    socketService.emitHistoryUpdate("substitute", registroA._id);
   }
 
   return [registroA, registroB];
@@ -340,8 +387,9 @@ export default {
   actualizar,
   finalizarReemplazo,
   anularReemplazo,
-  obtenerHistorialUsuario,
+  obtenerHistorialStaff,
   sustituir,
   obtenerInactivosPaginados,
   obtenerPorId,
+  getCleanBodyForDiff,
 };

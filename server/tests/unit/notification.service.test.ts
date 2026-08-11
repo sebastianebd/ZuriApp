@@ -1,13 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import notificationService from "../../services/notification.service";
 import axios from "axios";
-import userService from "../../services/user.service";
+import StaffService from "../../services/staff.service";
 import logger from "../../config/logger.config";
 
-// Mock de Dependencias:
-// Mockeamos servicios internos y librerías externas (axios, logger) para probar aisladamente
-// la lógica de construcción y envío de notificaciones.
-vi.mock("../../services/user.service");
+vi.mock("../../services/staff.service");
 vi.mock("../../config/logger.config", () => ({
   default: {
     info: vi.fn(),
@@ -24,14 +21,13 @@ describe("Notification Service", () => {
 
   it("debería enviar un mensaje de WhatsApp con link al calendario cuando el reemplazo es válido", async () => {
     // Mock datos del usuario
-    const mockUser = {
+    const mockStaff = {
       _id: "123",
-      nombre: "Juan",
-      apellido: "Perez",
-      telefono: "+56912345678",
+      firstName: "Juan",
+      lastName: "Perez",
+      phone: "+56912345678",
     };
-    // @ts-ignore
-    userService.obtenerPorId.mockResolvedValue(mockUser);
+    (StaffService.getStaffById as any).mockResolvedValue(mockStaff);
 
     // Mock datos del reemplazo
     const mockReplacement: any = {
@@ -56,13 +52,8 @@ describe("Notification Service", () => {
 
     await notificationService.notifyReplacement(mockReplacement);
 
-    // Verificación de Orquestación:
-    // Aseguramos que se obtenga la info del usuario destinatario antes de enviar.
-    expect(userService.obtenerPorId).toHaveBeenCalledWith("123");
+    expect(StaffService.getStaffById).toHaveBeenCalledWith("123");
 
-    // Verificación de Payload Externo:
-    // Es crítico validar que el cuerpo del mensaje enviado a WhatsApp cumpla con el formato esperado por la API de Meta
-    // y contenga la información de negocio correcta (nombre, servicio, etc).
     expect(axiosPostMock).toHaveBeenCalled();
     const callArgs = axiosPostMock.mock.calls[0];
     const payload: any = callArgs[1];
@@ -74,21 +65,17 @@ describe("Notification Service", () => {
   });
 
   it("debería loguear un warning si el usuario no tiene teléfono", async () => {
-    const mockUser = {
+    const mockStaff = {
       _id: "123",
-      nombre: "Juan",
+      firstName: "Juan",
       // Sin teléfono
     };
-    // @ts-ignore
-    userService.obtenerPorId.mockResolvedValue(mockUser);
+    (StaffService.getStaffById as any).mockResolvedValue(mockStaff);
 
     const mockReplacement: any = { id_entrante: "123" };
 
     await notificationService.notifyReplacement(mockReplacement);
 
-    // Manejo de Errores de Negocio:
-    // No tener teléfono no es un error de sistema (500), pero es una condición que requiere atención (Warning),
-    // ya que la notificación no se enviará.
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining("Omitiendo notificación"),
     );

@@ -51,7 +51,7 @@
               <div class="d-none d-sm-block">
                 <p class="mb-0 user-name-text">{{ user.nombre }} {{ user.apellido }}</p>
                 <p class="mb-0 user-role-text text-muted smaller text-uppercase">
-                  {{ user.tipo_cargo }}
+                  {{ user.positionId?.name || 'Usuario' }}
                 </p>
               </div>
               <i class="bi bi-chevron-down ms-2 small opacity-50"></i>

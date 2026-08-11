@@ -10,7 +10,8 @@ import notificationService from "../../services/notification.service";
 // Necesario para que las rutas protegidas no rechacen las peticiones. Simulamos un ADMIN.
 vi.mock("../../middleware/authentication.middleware", () => ({
   default: (req: any, res: any, next: any) => {
-    req.user = { _id: "admin_id", nombre: "TEST", apellido: "ADMIN" };
+    req.staff = { _id: "admin_id", firstName: "TEST", lastName: "ADMIN", roleId: { level: 100 } };
+    req.account = { id: "admin_id", name: "TEST ADMIN" };
     next();
   },
   requirePermission: () => (req: any, res: any, next: any) => next(),
@@ -46,12 +47,12 @@ describe("Turn Assignment Controller - Integration", () => {
       };
 
       const mockAssignment: any = {
-        _id: "assignment123",
-        user_id: { _id: "user123", nombre: "Juan", apellido: "Pérez" },
+        _id: "60c72b2f9b1d8b001c8e4a50",
+        staffId: { _id: "user123", firstName: "Juan", lastName: "Pérez" },
         turn_type: "turntype123",
         start_date: "2024-01-01",
         end_date: "2024-12-31",
-        toObject: () => ({ _id: "assignment123" }),
+        toObject: () => ({ _id: "60c72b2f9b1d8b001c8e4a50" }),
       };
 
       mockAssignment.populate = vi.fn().mockResolvedValue(mockAssignment);
@@ -65,7 +66,7 @@ describe("Turn Assignment Controller - Integration", () => {
       );
 
       const response = await request(app).post("/api/assignments").send({
-        user_id: "user123",
+        staffId: "user123",
         turn_type: "DIURNO",
         start_date: "2024-01-01T00:00:00.000Z",
         end_date: "2024-12-31T23:59:59.999Z",
@@ -81,7 +82,7 @@ describe("Turn Assignment Controller - Integration", () => {
       (TurnType.findOne as any).mockResolvedValue(null);
 
       const response = await request(app).post("/api/assignments").send({
-        user_id: "user123",
+        staffId: "user123",
         turn_type: "INVALID",
         start_date: "2024-01-01T00:00:00.000Z",
         service: "UCI",
@@ -111,7 +112,7 @@ describe("Turn Assignment Controller - Integration", () => {
       );
 
       const response = await request(app).post("/api/assignments").send({
-        user_id: "user123",
+        staffId: "user123",
         turn_type: "DIURNO",
         start_date: "2024-03-01T00:00:00.000Z",
         end_date: "2024-09-30T23:59:59.999Z",
@@ -126,8 +127,8 @@ describe("Turn Assignment Controller - Integration", () => {
   describe("GET /api/assignments", () => {
     it("debería retornar todas las asignaciones", async () => {
       const mockAssignments = [
-        { _id: "1", user_id: "user1", service: "UCI" },
-        { _id: "2", user_id: "user2", service: "Urgencias" },
+        { _id: "1", staffId: "user1", service: "UCI" },
+        { _id: "2", staffId: "user2", service: "Urgencias" },
       ];
 
       const mockQuery = {
@@ -151,10 +152,10 @@ describe("Turn Assignment Controller - Integration", () => {
 
       (TurnAssignmentModel.find as any).mockReturnValue(mockQuery);
 
-      await request(app).get("/api/assignments?user_id=user123");
+      await request(app).get("/api/assignments?staffId=user123");
 
       expect(TurnAssignmentModel.find).toHaveBeenCalledWith({
-        user_id: "user123",
+        staffId: "user123",
       });
     });
   });
@@ -162,8 +163,8 @@ describe("Turn Assignment Controller - Integration", () => {
   describe("GET /api/assignments/:id", () => {
     it("debería retornar una asignación por ID", async () => {
       const mockAssignment = {
-        _id: "assignment123",
-        user_id: "user123",
+        _id: "60c72b2f9b1d8b001c8e4a50",
+        staffId: "user123",
       };
 
       const mockQuery = {
@@ -172,7 +173,7 @@ describe("Turn Assignment Controller - Integration", () => {
 
       (TurnAssignmentModel.findById as any).mockReturnValue(mockQuery);
 
-      const response = await request(app).get("/api/assignments/assignment123");
+      const response = await request(app).get("/api/assignments/60c72b2f9b1d8b001c8e4a50");
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockAssignment);
@@ -185,7 +186,7 @@ describe("Turn Assignment Controller - Integration", () => {
 
       (TurnAssignmentModel.findById as any).mockReturnValue(mockQuery);
 
-      const response = await request(app).get("/api/assignments/invalid123");
+      const response = await request(app).get("/api/assignments/60c72b2f9b1d8b001c8e4a51");
 
       expect(response.status).toBe(404);
       expect(response.body.message).toBe("Assignment not found");
@@ -195,7 +196,7 @@ describe("Turn Assignment Controller - Integration", () => {
   describe("PUT /api/assignments/:id", () => {
     it("debería actualizar una asignación existente", async () => {
       const updatedAssignment = {
-        _id: "assignment123",
+        _id: "60c72b2f9b1d8b001c8e4a50",
         end_date: "2024-12-31",
       };
 
@@ -206,7 +207,7 @@ describe("Turn Assignment Controller - Integration", () => {
       (TurnAssignmentModel.findByIdAndUpdate as any).mockReturnValue(mockQuery);
 
       const response = await request(app)
-        .put("/api/assignments/assignment123")
+        .put("/api/assignments/60c72b2f9b1d8b001c8e4a50")
         .send({ end_date: "2024-12-31T23:59:59.999Z" });
 
       expect(response.status).toBe(200);
@@ -221,7 +222,7 @@ describe("Turn Assignment Controller - Integration", () => {
       (TurnAssignmentModel.findByIdAndUpdate as any).mockReturnValue(mockQuery);
 
       const response = await request(app)
-        .put("/api/assignments/invalid123")
+        .put("/api/assignments/60c72b2f9b1d8b001c8e4a51")
         .send({ end_date: "2024-12-31T23:59:59.999Z" });
 
       expect(response.status).toBe(404);
@@ -230,14 +231,14 @@ describe("Turn Assignment Controller - Integration", () => {
 
   describe("DELETE /api/assignments/:id", () => {
     it("debería eliminar una asignación", async () => {
-      const deletedAssignment = { _id: "assignment123" };
+      const deletedAssignment = { _id: "60c72b2f9b1d8b001c8e4a50" };
 
       (TurnAssignmentModel.findByIdAndDelete as any).mockResolvedValue(
         deletedAssignment,
       );
 
       const response = await request(app).delete(
-        "/api/assignments/assignment123",
+        "/api/assignments/60c72b2f9b1d8b001c8e4a50",
       );
 
       expect(response.status).toBe(200);
@@ -247,7 +248,7 @@ describe("Turn Assignment Controller - Integration", () => {
     it("debería retornar 404 si intenta eliminar algo que no existe", async () => {
       (TurnAssignmentModel.findByIdAndDelete as any).mockResolvedValue(null);
 
-      const response = await request(app).delete("/api/assignments/invalid123");
+      const response = await request(app).delete("/api/assignments/60c72b2f9b1d8b001c8e4a51");
 
       expect(response.status).toBe(404);
     });

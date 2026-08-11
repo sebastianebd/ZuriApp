@@ -1,10 +1,13 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import User, { IUser } from "../models/user.model";
-import Cargo from "../models/cargo.model";
+import Account, { IAccount } from "../models/account.model";
+import Staff from "../models/staff.model";
 import { AppError } from "../errors/app-error";
-
+import socketConfig from "../config/socket";
+import redis from "../config/redis.config";
+import LoginHistory from "../models/login-history.model";
+import logger from "../config/logger.config";
 export class AuthError extends Error {
   status: number;
   constructor(message: string = "Rut o contraseña incorrecta") {
@@ -23,23 +26,17 @@ export class ValidationError extends Error {
   }
 }
 
-const generateAccessToken = (userId: string) => {
-  return jwt.sign({ id: userId }, process.env.ACCESS_TOKEN_SECRET as string, {
+const generateAccessToken = (accountId: string) => {
+  return jwt.sign({ id: accountId }, process.env.ACCESS_TOKEN_SECRET as string, {
     expiresIn: "1800s",
   });
 };
 
-const generateRefreshToken = (userId: string) => {
-  return jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET as string, {
+const generateRefreshToken = (accountId: string) => {
+  return jwt.sign({ id: accountId }, process.env.REFRESH_TOKEN_SECRET as string, {
     expiresIn: "1d",
   });
 };
-
-// Import Dependencies for Concurrent Login Check
-import socketConfig from "../config/socket";
-import redis from "../config/redis.config";
-
-import LoginHistory from "../models/login-history.model";
 
 async function login({
   rut,
@@ -56,28 +53,28 @@ async function login({
     throw new ValidationError("Campos de autenticación requeridos.");
   }
 
-  const user = await User.findOne({ rut }).select("+password").exec();
+  const account = await Account.findOne({ rut }).select("+password").exec();
 
-  if (!user) {
+  if (!account) {
     // Audit Log Failure:
     // Logueamos intento fallido registrando "Usuario no encontrado" pero sin dar feedback específico
     // al frontend para evitar enumeración de usuarios.
-    console.warn(`[Login Failed] User not found for rut: ${rut}`);
+    logger.warn(`[Login Failed] User not found for rut: ${rut}`);
     throw new AuthError("Rut o contraseña incorrecta.");
   }
 
-  const match = await bcrypt.compare(password, user.password as string);
+  const match = await bcrypt.compare(password, account.password as string);
   if (!match) {
     // Seguridad: Registro de Fallo
     await LoginHistory.create({
-      user: user._id,
+      accountId: account._id,
       ip: ip || "Unknown",
       userAgent: userAgent || "Unknown",
       status: "FAILED",
     });
     // Decisión de Diseño: Solo registramos historial para usuarios existentes para evitar
     // llenar la BD con spam de intentos a RUTs aleatorios.
-    console.warn(`[Login Failed] Password mismatch for user: ${rut}`);
+    logger.warn(`[Login Failed] Password mismatch for rut: ${rut}`);
     throw new AuthError("Rut o contraseña incorrecta.");
   }
 
@@ -86,7 +83,7 @@ async function login({
   // Verificamos si existe una sesión activa en Redis antes de otorgar un nuevo token.
   // Flag Feature: Permitimos deshabilitar esto en CI/Test para facilitar pruebas paralelas.
   if (process.env.DISABLE_CONCURRENT_SESSION !== "true") {
-    const activeSession = await redis.get(`active_session:${user._id}`);
+    const activeSession = await redis.get(`active_session:${account.staffId}`);
 
     if (activeSession) {
       const sessionData = JSON.parse(activeSession);
@@ -98,8 +95,8 @@ async function login({
       if (connectedSockets.has(sessionData.socket_id)) {
         // Usuario conectado activamente -> Rechazar Login.
         // Retornamos 409 Conflict para que el frontend pueda mostrar un mensaje específico ("Cuenta en uso").
-        console.warn(
-          `[Security] Login bloqueado para usuario ${user.rut}. Ya tiene sesión activa en ${sessionData.device}`,
+        logger.warn(
+          `[Security] Login bloqueado para rut ${account.rut}. Ya tiene sesión activa en ${sessionData.device}`,
         );
 
         const error = new Error("Cuenta conectada");
@@ -109,8 +106,8 @@ async function login({
         // Sesión Stale:
         // El registro existía en Redis pero el socket ya no está.
         // (Ej: Reinicio de servidor o desconexión no limpia). Limpiamos y permitimos proceder.
-        console.log(`[Info] Limpiando sesión stale para usuario ${user.rut}`);
-        await redis.del(`active_session:${user._id}`);
+        logger.info(`Limpiando sesión stale para rut ${account.rut}`);
+        await redis.del(`active_session:${account.staffId}`);
       }
     }
   }
@@ -118,45 +115,48 @@ async function login({
 
   // Audit Log Success
   await LoginHistory.create({
-    user: user._id,
+    accountId: account._id,
     ip: ip || "Unknown",
     userAgent: userAgent || "Unknown",
     status: "SUCCESS",
   });
 
-  const accessToken = generateAccessToken(user.id);
-  const refreshToken = generateRefreshToken(user.id);
+  const accessToken = generateAccessToken(account._id.toString());
+  const refreshToken = generateRefreshToken(account._id.toString());
 
   // Seguridad Token:
   // Almacenamos el refresh token hasheado en la base de datos (como si fuera una password)
   // para prevenir robo de sesiones en caso de dump de base de datos.
   const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-  user.refresh_token = hashedRefreshToken;
-  await user.save();
+  account.refresh_token = hashedRefreshToken;
+  await account.save();
 
   // Resolución de Permisos:
-  // Buscamos el cargo ya sea por nombre (Regex case-insensitive) o código exacto.
-  const cargo = await Cargo.findOne({
-    $or: [
-      { nombre: { $regex: new RegExp(`^${user.tipo_cargo}$`, "i") } },
-      { codigo: user.tipo_cargo.toUpperCase() },
-    ],
-  }).lean();
+  const staff = await Staff.findById(account.staffId).populate("roleId").exec();
 
-  // Construcción de Payload:
-  // Inyectamos niveles y permisos calculados al objeto usuario para uso inmediato en frontend.
-  const userPayload = {
-    ...user.toObject(),
-    nivel: cargo?.nivel || 10,
-    permisos: cargo?.permisos || [],
+  if (!staff) {
+    throw new AuthError("Personal asociado a la cuenta no encontrado.");
+  }
+
+  // Construcción del Payload de Staff con permisos del Rol
+  const role = staff.roleId as any;
+  const staffPayload = {
+    ...staff.toObject(),
+    nivel: role?.level || 0,
+    permisos: role?.permissions || [],
   };
 
-  return { accessToken, refreshToken, user: userPayload };
+  return { 
+    accessToken, 
+    refreshToken, 
+    account: { id: account._id, name: account.rut }, 
+    staff: staffPayload 
+  };
 }
 
-async function getLoginHistory(userId: string) {
-  return await LoginHistory.find({ user: userId })
+async function getLoginHistory(accountId: string) {
+  return await LoginHistory.find({ accountId })
     .sort({ timestamp: -1 })
     .limit(20)
     .exec();
@@ -178,20 +178,20 @@ async function logout(refreshToken: string) {
     return;
   }
 
-  const userId = decoded?.id;
-  if (!userId) return;
+  const accountId = decoded?.id;
+  if (!accountId) return;
 
-  const user = await User.findById(userId).select("+refresh_token").exec();
-  if (!user || !user.refresh_token) return;
+  const account = await Account.findById(accountId).select("+refresh_token").exec();
+  if (!account || !account.refresh_token) return;
 
-  const match = await bcrypt.compare(refreshToken, user.refresh_token);
+  const match = await bcrypt.compare(refreshToken, account.refresh_token);
 
   if (!match) return;
 
   // Revocación de Sesión:
   // Al hacer logout, limpiamos el refresh token de la BD, invalidando efectivamente la sesión persistente.
-  user.refresh_token = undefined;
-  await user.save();
+  account.refresh_token = undefined;
+  await account.save();
 }
 
 async function refresh(refreshToken: string) {
@@ -209,48 +209,48 @@ async function refresh(refreshToken: string) {
     throw new AuthError("Token de actualización inválido o expirado.");
   }
 
-  const userId = decoded?.id;
-  if (!userId) {
+  const accountId = decoded?.id;
+  if (!accountId) {
     throw new AuthError("Token de actualización inválido.");
   }
 
-  const user = await User.findById(userId).select("+refresh_token").exec();
-  if (!user || !user.refresh_token) {
+  const account = await Account.findById(accountId).select("+refresh_token").exec();
+  if (!account || !account.refresh_token) {
     throw new AuthError("Sesión no válida o usuario no encontrado.");
   }
 
   // Rotación/Verificación:
   // Validamos contra el hash en BD. Esto permite invalidar tokens remotamente simplemente cambiando el hash en BD.
-  const match = await bcrypt.compare(refreshToken, user.refresh_token);
+  const match = await bcrypt.compare(refreshToken, account.refresh_token);
   if (!match) {
     throw new AuthError(
       "Token de actualización no coincide. Re-autenticación requerida.",
     );
   }
 
-  const accessToken = generateAccessToken(user.id);
+  const accessToken = generateAccessToken(account._id.toString());
 
   return accessToken;
 }
 
 async function changePassword(
-  userId: string,
+  accountId: string,
   current: string,
   newPass: string,
 ) {
-  const user = await User.findById(userId).select("+password");
-  if (!user) {
+  const account = await Account.findById(accountId).select("+password");
+  if (!account) {
     throw new AuthError("Usuario no encontrado");
   }
 
-  const match = await bcrypt.compare(current, user.password as string);
+  const match = await bcrypt.compare(current, account.password as string);
   if (!match) {
     throw new AuthError("La contraseña actual es incorrecta");
   }
 
-  user.password = newPass;
+  account.password = newPass;
 
-  await user.save();
+  await account.save();
 }
 
 /**
@@ -258,11 +258,11 @@ async function changePassword(
  * - rawToken: se envía en la URL del correo.
  * - hashedToken: solo este se guarda en la BD (protección ante brechas).
  */
-export async function generateResetToken(userId: string): Promise<{ rawToken: string }> {
+export async function generateResetToken(accountId: string): Promise<{ rawToken: string }> {
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
 
-  await User.findByIdAndUpdate(userId, {
+  await Account.findByIdAndUpdate(accountId, {
     $set: {
       resetPasswordToken: hashedToken,
       resetPasswordExpire: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -276,19 +276,19 @@ export async function generateResetToken(userId: string): Promise<{ rawToken: st
  * Valida un One-Time Link: hashea el token recibido de la URL y lo busca en la BD.
  * Solo es válido si existe y no ha expirado. El token se invalida al cambiar la clave (no al abrirlo).
  */
-export async function validateResetToken(rawToken: string): Promise<IUser> {
+export async function validateResetToken(rawToken: string): Promise<IAccount> {
   const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
 
-  const user = await User.findOne({
+  const account = await Account.findOne({
     resetPasswordToken: hashedToken,
     resetPasswordExpire: { $gt: new Date() },
   });
 
-  if (!user) {
+  if (!account) {
     throw new AppError(400, "El enlace de restablecimiento es inválido o ha expirado");
   }
 
-  return user;
+  return account;
 }
 
 export default { login, logout, refresh, changePassword, getLoginHistory };

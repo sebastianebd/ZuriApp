@@ -1,22 +1,21 @@
-import { TurnAssignmentModel } from "../models/turn-assignment.model";
-import User from "../models/user.model";
-import Replacement from "../models/replacement.model";
+import mongoose from "mongoose";
+import {
+  TurnAssignmentModel,
+  ITurnAssignment,
+} from "../models/turn-assignment.model";
+import Staff, { IStaff } from "../models/staff.model";
+import Replacement, { IReplacement } from "../models/replacement.model";
 import Service from "../models/service.model";
 import { TurnSigla } from "../models/turn-sigla.model";
+import Period from "../models/period.model";
+import ReportSnapshot from "../models/report-snapshot.model";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-import ExcelJS from "exceljs";
 import { AppError } from "../errors/app-error";
 
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
-
-interface ReportFilters {
-  month: number;
-  year: number;
-  service: string;
-}
 
 // Helper: Parsea HH:mm a minutos totales desde inicio del día (00:00)
 const parseTime = (time: string): number => {
@@ -90,21 +89,21 @@ export const calculateDayNightMetrics = (
 };
 
 export interface CalculateParams {
-  user: any;
+  staff: IStaff;
   month: number;
   year: number;
   startDate: dayjs.Dayjs;
   endDate: dayjs.Dayjs;
   daysInMonth: number;
-  assignments: any[];
-  replacements: any[];
+  assignments: ITurnAssignment[];
+  replacements: IReplacement[];
   siglaMap: Map<string, any>;
   serviceSet: Set<string>;
   serviceNameMap: Map<string, string>;
 }
 
 export const calculateMonthlyReportSync = ({
-  user,
+  staff,
   month,
   year,
   startDate,
@@ -341,12 +340,15 @@ export const calculateMonthlyReportSync = ({
   ).length;
 
   return {
-    user: {
-      _id: user._id,
-      nombre: user.nombre,
-      apellido: user.apellido,
-      rut: user.rut,
-      cargo: user.tipo_cargo,
+    staff: {
+      _id: staff._id,
+      nombre: staff.firstName,
+      apellido: staff.lastName,
+      rut: staff.rut,
+      cargo:
+        (staff.positionId as any)?.name ||
+        (staff.roleId as any)?.name ||
+        "Sin Cargo",
       antiguedad: "N/A", // Placeholder
     },
     metadata: {
@@ -368,11 +370,11 @@ export const calculateMonthlyReportSync = ({
 export const getMonthlyReport = async ({
   month,
   year,
-  userId,
+  staffId,
 }: {
   month: number;
   year: number;
-  userId: string;
+  staffId: string;
 }) => {
   const startDate = dayjs()
     .year(year)
@@ -381,9 +383,9 @@ export const getMonthlyReport = async ({
   const endDate = startDate.endOf("month");
   const daysInMonth = endDate.date();
 
-  // 0. Obtener Usuario
-  const user = await User.findById(userId);
-  if (!user) throw new AppError(404, "Funcionario no encontrado");
+  // 0. Obtener Funcionario
+  const staff = await Staff.findById(staffId).populate("roleId positionId");
+  if (!staff) throw new AppError(404, "Funcionario no encontrado");
 
   // 1. Cargar Definiciones de Siglas (Metadata de Turnos)
   const siglasDocs = await TurnSigla.find({});
@@ -413,20 +415,20 @@ export const getMonthlyReport = async ({
 
   // 2. Fetch de Asignaciones (Roles base)
   const assignments = await TurnAssignmentModel.find({
-    user_id: userId,
+    staffId: staffId,
     start_date: { $lte: endDate.toDate() },
     $or: [{ end_date: { $gte: startDate.toDate() } }, { end_date: null }],
   }).populate("turn_type");
 
   // 4. Fetch de Reemplazos (Como Funcionario Entrante)
   const replacements = await Replacement.find({
-    id_entrante: userId,
+    id_entrante: staffId,
     fecha_inicio: { $lte: endDate.toDate() },
     fecha_termino: { $gte: startDate.toDate() },
   }).populate("turn_type_id");
 
   // 5. Identificar Servicios Involucrados
-  // Un usuario puede trabajar en múltiples servicios (ej: UCI y Urgencias) en el mismo mes.
+  // Un funcionario puede trabajar en múltiples servicios (ej: UCI y Urgencias) en el mismo mes.
   const serviceSet = new Set<string>();
   assignments.forEach((a) => {
     if (a.service) serviceSet.add(a.service.toString());
@@ -438,7 +440,7 @@ export const getMonthlyReport = async ({
   if (serviceSet.size === 0) {
     throw new AppError(
       404,
-      "No se encontraron registros para este usuario en el periodo seleccionado.",
+      "No se encontraron registros para este funcionario en el periodo seleccionado.",
     );
   }
 
@@ -451,7 +453,7 @@ export const getMonthlyReport = async ({
 
   // 6. Ejecutar Lógica de Cálculo Pura Síncrona
   return calculateMonthlyReportSync({
-    user,
+    staff,
     month,
     year,
     startDate,
@@ -463,4 +465,46 @@ export const getMonthlyReport = async ({
     serviceSet,
     serviceNameMap,
   });
+};
+
+export const getMonthlySummaryWithSnapshot = async (month: number, year: number, userId: string) => {
+  const period = await Period.findOne({ month, year });
+  const isPeriodClosed = period?.status === "CLOSED";
+
+  if (isPeriodClosed) {
+    const existing = await ReportSnapshot.findOne({
+      user_id: new mongoose.Types.ObjectId(userId),
+      period_id: period!._id,
+    });
+
+    if (existing) {
+      return { ...existing.snapshot_data, _fromSnapshot: true };
+    }
+
+    const data = await getMonthlyReport({
+      month,
+      year,
+      staffId: userId,
+    });
+
+    await ReportSnapshot.create({
+      user_id: new mongoose.Types.ObjectId(userId),
+      period_id: period!._id,
+      snapshot_data: data as Record<string, unknown>,
+      generated_at: new Date(),
+    });
+
+    return { ...data, _fromSnapshot: false };
+  }
+
+  const data = await getMonthlyReport({
+    month,
+    year,
+    staffId: userId,
+  });
+  return data;
+};
+
+export const getPeriod = async (month: number, year: number) => {
+  return Period.findOne({ month, year });
 };

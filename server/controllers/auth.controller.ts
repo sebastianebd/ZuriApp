@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import authService from "../services/auth.service";
 import logger from "../config/logger.config";
 import { AuthRequest } from "../middleware/authentication.middleware";
-import Cargo from "../models/cargo.model";
-
 async function login(req: Request, res: Response) {
   try {
     // Captura de metadatos de conexión para auditoría de seguridad
@@ -13,7 +11,7 @@ async function login(req: Request, res: Response) {
       "Unknown";
     const userAgent = req.headers["user-agent"] || "Unknown";
 
-    const { accessToken, refreshToken, user } = await authService.login({
+    const { accessToken, refreshToken, account, staff } = await authService.login({
       ...req.body,
       ip,
       userAgent,
@@ -24,13 +22,14 @@ async function login(req: Request, res: Response) {
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 'None' necesario para Cross-Site en Prod (si front y back están en dominios distintos)
         secure: process.env.NODE_ENV === "production", // Solo HTTPS en Prod
       })
-      .json({ access_token: accessToken, user });
+      .json({ access_token: accessToken, account, staff });
 
     logger.info(
-      `✅ Login exitoso: ${user.rut} ${user.nombre} ${user.apellido}`,
+      `✅ Login exitoso: ${account.name} ${staff.firstName} ${staff.lastName}`,
     );
   } catch (error: any) {
-    res.status(error.status || 500).json({ mensaje: error.message });
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({ message: error.message || "Error en login" });
   }
 }
 
@@ -44,14 +43,15 @@ async function logout(req: AuthRequest, res: Response) {
       secure: process.env.NODE_ENV === "production",
     });
 
-    if (req.user) {
+    if (req.staff) {
       logger.info(
-        `👋 Logout realizado: User ${req.user.rut} ${req.user.nombre} ${req.user.apellido}`,
+        `👋 Logout realizado: User ${req.account?.name} ${req.staff.firstName} ${req.staff.lastName}`,
       );
     }
     res.sendStatus(204);
   } catch (error: any) {
-    res.status(error.status || 500).json({ mensaje: error.message });
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({ message: error.message || "Error en logout" });
   }
 }
 
@@ -60,30 +60,21 @@ async function refresh(req: Request, res: Response) {
     const token = await authService.refresh(req.cookies.refresh_token);
     res.json({ access_token: token });
   } catch (error: any) {
-    res.status(error.status || 401).json({ mensaje: error.message });
+    const statusCode = error.statusCode || error.status || 401;
+    res.status(statusCode).json({ message: error.message || "Error al refrescar token" });
   }
 }
 
-async function user(req: AuthRequest, res: Response) {
-  if (!req.user) {
-    return res.status(401).json({ mensaje: "Usuario no autenticado" });
+async function me(req: AuthRequest, res: Response) {
+  if (!req.staff) {
+    return res.status(401).json({ message: "Usuario no autenticado" });
   }
 
-  // Resolución Dinámica de Rol/Cargo
-  // Buscamos por nombre (insensible a mayúsculas) o código para máxima compatibilidad con datos legacy.
-  const cargo = await Cargo.findOne({
-    $or: [
-      { nombre: { $regex: new RegExp(`^${req.user.tipo_cargo}$`, "i") } },
-      { codigo: req.user.tipo_cargo.toUpperCase() },
-    ],
-  }).lean();
-
-  // Composición del Payload de Usuario
-  // Inyectamos nivel y permisos calculados para la UI.
+  // Composición del Payload de Usuario (Staff + Role)
   const userPayload = {
-    ...req.user.toObject(),
-    nivel: cargo?.nivel || 10,
-    permisos: cargo?.permisos || [],
+    ...req.staff,
+    nivel: req.staff.roleId?.level || 0,
+    permisos: req.staff.roleId?.permissions || [],
   };
 
   res.status(200).json(userPayload);
@@ -92,46 +83,47 @@ async function user(req: AuthRequest, res: Response) {
 async function changePassword(req: AuthRequest, res: Response) {
   try {
     const { currentPassword, newPassword } = req.body;
-    // authMiddleware garantiza req.user, pero validamos defensivamente.
-    if (!req.user) {
-      return res.status(401).json({ mensaje: "Usuario no autenticado" });
+    // authMiddleware garantiza req.staff y req.account, pero validamos defensivamente.
+    if (!req.account) {
+      return res.status(401).json({ message: "Usuario no autenticado" });
     }
 
-    await authService.changePassword(req.user.id, currentPassword, newPassword);
+    await authService.changePassword(req.account.id, currentPassword, newPassword);
 
     logger.info(
-      `🔐 Contraseña cambiada exitosamente para usuario ${req.user.id}`,
+      `🔐 Contraseña cambiada exitosamente para usuario ${req.account.id}`,
     );
-    res.status(200).json({ mensaje: "Contraseña actualizada exitosamente" });
+    res.status(200).json({ message: "Contraseña actualizada exitosamente" });
   } catch (error: any) {
-    res.status(error.status || 500).json({ mensaje: error.message });
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({ message: error.message || "Error al cambiar contraseña" });
   }
 }
 
 async function getHistory(req: AuthRequest, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ mensaje: "Usuario no autenticado" });
+    if (!req.account) {
+      return res.status(401).json({ message: "Usuario no autenticado" });
     }
-    const history = await authService.getLoginHistory(req.user.id);
+    const history = await authService.getLoginHistory(req.account.id);
     res.status(200).json(history);
   } catch (error: any) {
-    res.status(500).json({ mensaje: error.message });
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({ message: error.message || "Error al obtener historial" });
   }
 }
 
 /**
- * PUT /api/auth/reset-password/:token
+ * POST /api/auth/reset-password
  * Permite al funcionario establecer una contraseña nueva a través del One-Time Link.
  * El token se invalida una vez que la contraseña es guardada con éxito.
  */
 async function resetPassword(req: Request, res: Response) {
   try {
-    const { token } = req.params;
-    const { password } = req.body;
+    const { token, password } = req.body;
 
     if (!password || password.length < 8) {
-      return res.status(400).json({ mensaje: "La contraseña debe tener al menos 8 caracteres" });
+      return res.status(400).json({ message: "La contraseña debe tener al menos 8 caracteres" });
     }
 
     // Importación nombrada (no default) para validar el token
@@ -145,12 +137,12 @@ async function resetPassword(req: Request, res: Response) {
 
     await user.save();
 
-    res.status(200).json({ mensaje: "Contraseña restablecida exitosamente" });
+    res.status(200).json({ message: "Contraseña restablecida exitosamente" });
   } catch (error: any) {
-    const status = error.statusCode ?? error.status ?? 500;
-    res.status(status).json({ mensaje: error.message });
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({ message: error.message || "Error al restablecer contraseña" });
   }
 }
 
-export default { login, logout, refresh, user, changePassword, getHistory, resetPassword };
+export default { login, logout, refresh, me, changePassword, getHistory, resetPassword };
 

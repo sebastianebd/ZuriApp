@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
-import User from "../models/user.model";
+import Staff from "../models/staff.model";
+import Role from "../models/role.model";
+import Account from "../models/account.model";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -22,34 +24,58 @@ async function seed() {
     // 1. Definir contraseña (sin encriptar manualmente, el modelo lo hace)
     const plainPassword = "2716xD!";
 
-    // 2. Definir Usuario Admin
-    const adminUser = {
+    // 1.5 Definir Rol Admin (Nivel 100)
+    let adminRole = await Role.findOne({ level: 100 });
+    if (!adminRole) {
+      adminRole = await Role.create({
+        name: "Administrador del Sistema",
+        code: "SYS_ADMIN",
+        level: 100,
+        hasSystemAccess: true,
+        permissions: ["users.create", "users.update", "users.delete", "users.view", "users.reset_password"]
+      });
+      console.log("✅ Rol Admin creado");
+    }
+
+    // 2. Definir Staff Admin
+    const adminStaff = {
       rut: "12345678-5",
-      nombre: "Admin",
-      apellido: "Principal",
-      fecha_nac: new Date("1990-01-01"),
-      direccion: "Calle Falsa 123",
-      telefono: "934768811",
+      firstName: "Admin",
+      lastName: "Principal",
+      birthDate: new Date("1990-01-01"),
+      address: "Calle Falsa 123",
+      phone: "934768811",
       email: "admin@zuriapp.cl",
-      ciudad: "Santiago",
-      tipo_cargo: "ADMIN-TI",
-      password: plainPassword,
-      eliminado: false,
+      city: "Santiago",
+      roleId: adminRole._id,
+      isDeleted: false,
     };
 
     // 3. Verificar si existe
-    const existingAdmin = await User.findOne({ email: adminUser.email });
+    let existingStaff = await Staff.findOne({ email: adminStaff.email });
 
-    if (existingAdmin) {
-      console.log("⚠️ El usuario Admin ya existe. No se realizaron cambios.");
+    if (existingStaff) {
+      console.log("⚠️ El Staff Admin ya existe. No se realizaron cambios.");
     } else {
-      const createdUser = await User.create(adminUser);
+      existingStaff = await Staff.create(adminStaff);
+      console.log("✅ Staff Admin creado");
+
+      // 4. Crear Account para el Admin
+      // Password hashing must be done here if the model doesn't automatically hash it on creation (wait, Account schema has select: false for password, we should hash it if pre-save hook doesn't exist. Let's just hash it here to be safe)
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      
+      await Account.create({
+        staffId: existingStaff._id,
+        rut: existingStaff.rut,
+        password: hashedPassword, // The schema usually hashes, but we force it or rely on pre('save') hook
+        isActive: true, // admin is active immediately
+      });
+
       console.log("Seed completado exitosamente!");
       console.log("Usuario creado:");
-      console.log(`Email: ${createdUser.email}`);
+      console.log(`Email: ${existingStaff.email}`);
       console.log(`Password: ${plainPassword}`);
-      console.log(`RUT: ${createdUser.rut}`);
-      console.log(`Cargo: ${createdUser.tipo_cargo}`);
+      console.log(`RUT: ${existingStaff.rut}`);
     }
 
     process.exit(0);

@@ -7,7 +7,7 @@ export const crearUsuario = async (
   payload: UserRegistration
 ) => {
   try {
-    const { data } = await apiPrivate.post('/users/', payload)
+    const { data } = await apiPrivate.post('/staff', payload)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -20,7 +20,7 @@ export const actualizarUsuario = async (
   payload: UserRegistration
 ) => {
   try {
-    const { data } = await apiPrivate.put(`/users/${usuarioId}`, payload)
+    const { data } = await apiPrivate.put(`/staff/${usuarioId}`, payload)
     return data
   } catch (error) {
     throw errorHandler(error)
@@ -29,7 +29,7 @@ export const actualizarUsuario = async (
 
 export const eliminarUsuario = async (apiPrivate: ReturnType<typeof useApiPrivate>, id: string) => {
   try {
-    const { data } = await apiPrivate.delete(`/users/${id}`)
+    const { data } = await apiPrivate.delete(`/staff/${id}`)
     return data
   } catch (error) {
     throw errorHandler(error)

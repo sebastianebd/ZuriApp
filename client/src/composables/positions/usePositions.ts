@@ -1,58 +1,58 @@
 import { ref, computed } from 'vue'
-import { useCargoStore } from '@/stores/cargo.store'
+import { usePositionStore } from '@/stores/position.store'
 import { useAuthStore } from '@/stores/auth.store'
-import { type JobRole } from '@/types/job-role.types'
+import { type Position } from '@/stores/position.store'
 
 export function usePositions() {
-  const cargoStore = useCargoStore()
+  const positionStore = usePositionStore()
   const authStore = useAuthStore()
   const showModal = ref(false)
   const showDeleteModal = ref(false)
   const showConfirmationModal = ref(false)
 
-  const selectedCargo = ref<JobRole | null>(null)
-  const cargoToDelete = ref<JobRole | null>(null)
-  const pendingCargoData = ref<Partial<JobRole> | null>(null)
+  const selectedPosition = ref<Position | null>(null)
+  const positionToDelete = ref<Position | null>(null)
+  const pendingPositionData = ref<Partial<Position> | null>(null)
 
   const confirmationMessage = computed(() => {
-    return pendingCargoData.value?._id
-      ? '¿Estás seguro de que deseas guardar los cambios de este cargo?'
-      : '¿Estás seguro de que deseas crear este nuevo cargo?'
+    return pendingPositionData.value?._id
+      ? '¿Estás seguro de que deseas guardar los cambios de este cargo físico?'
+      : '¿Estás seguro de que deseas crear este nuevo cargo físico?'
   })
 
   function openCreateModal() {
-    selectedCargo.value = null
+    selectedPosition.value = null
     showModal.value = true
   }
 
-  function openEditModal(cargo: JobRole) {
-    selectedCargo.value = cargo
+  function openEditModal(position: Position) {
+    selectedPosition.value = position
     showModal.value = true
   }
 
   function closeModal() {
     showModal.value = false
-    selectedCargo.value = null
+    selectedPosition.value = null
   }
 
-  function handleSave(cargoData: Partial<JobRole>) {
-    pendingCargoData.value = cargoData
+  function handleSave(positionData: Partial<Position>) {
+    pendingPositionData.value = positionData
     showConfirmationModal.value = true
   }
 
   function closeConfirmationModal() {
     showConfirmationModal.value = false
-    pendingCargoData.value = null
+    pendingPositionData.value = null
   }
 
   async function confirmSave() {
-    if (!pendingCargoData.value) return
+    if (!pendingPositionData.value) return
 
     try {
-      if (pendingCargoData.value._id) {
-        await cargoStore.updateCargo(pendingCargoData.value._id, pendingCargoData.value)
+      if (pendingPositionData.value._id) {
+        await positionStore.updatePosition(pendingPositionData.value._id, pendingPositionData.value)
       } else {
-        await cargoStore.createCargo(pendingCargoData.value)
+        await positionStore.createPosition(pendingPositionData.value)
       }
       closeConfirmationModal()
       closeModal()
@@ -61,20 +61,20 @@ export function usePositions() {
     }
   }
 
-  function confirmDelete(cargo: JobRole) {
-    cargoToDelete.value = cargo
+  function confirmDelete(position: Position) {
+    positionToDelete.value = position
     showDeleteModal.value = true
   }
 
   function closeDeleteModal() {
     showDeleteModal.value = false
-    cargoToDelete.value = null
+    positionToDelete.value = null
   }
 
   async function handleDelete() {
-    if (!cargoToDelete.value?._id) return
+    if (!positionToDelete.value?._id) return
     try {
-      await cargoStore.deleteCargo(cargoToDelete.value._id)
+      await positionStore.deletePosition(positionToDelete.value._id)
       closeDeleteModal()
     } catch (error) {
       console.error(error)
@@ -82,13 +82,13 @@ export function usePositions() {
   }
 
   return {
-    cargoStore,
+    positionStore,
     showModal,
     showDeleteModal,
     showConfirmationModal,
-    selectedCargo,
-    cargoToDelete,
-    pendingCargoData,
+    selectedPosition,
+    positionToDelete,
+    pendingPositionData,
     confirmationMessage,
     openCreateModal,
     openEditModal,

@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import dayjs from "dayjs";
-import User from "../models/user.model";
+import Staff from "../models/staff.model";
 import Replacement from "../models/replacement.model";
 import { AppError } from "../errors/app-error";
 import {
@@ -9,10 +9,11 @@ import {
   calculateDayNightMetrics,
 } from "./report.service";
 
+// ponytail: exception - Mantener export const en lugar de export default debido al gran tamaño y acoplamiento interno
 export const generateIndividualExcelReport = async (
   month: number,
   year: number,
-  userId: string,
+  staffId: string,
   period: any,
 ) => {
   let data: any;
@@ -23,27 +24,27 @@ export const generateIndividualExcelReport = async (
       await import("../models/report-snapshot.model")
     ).default;
     const snapshot = await ReportSnapshotModel.findOne({
-      user_id: userId,
+      staffId: staffId,
       period_id: period._id,
     });
     if (snapshot) {
       data = snapshot.snapshot_data;
     } else {
-      data = await getMonthlyReport({ month, year, userId });
+      data = await getMonthlyReport({ month, year, staffId });
       await ReportSnapshotModel.create({
-        user_id: userId,
+        staffId: staffId,
         period_id: period._id,
         snapshot_data: data,
         generated_at: new Date(),
       });
     }
   } else {
-    data = await getMonthlyReport({ month, year, userId });
+    data = await getMonthlyReport({ month, year, staffId });
   }
 
-  if (!data.user.email) {
-    const userDoc = await User.findById(userId).select("email");
-    if (userDoc) data.user.email = userDoc.email;
+  if (!data.staff.email) {
+    const staffDoc = await Staff.findById(staffId).select("email");
+    if (staffDoc) data.staff.email = staffDoc.email;
   }
 
   const workbook = new ExcelJS.Workbook();
@@ -112,21 +113,21 @@ export const generateIndividualExcelReport = async (
 
   sheet.getCell("A3").value = "Sr(a)";
   sheet.getCell("A3").font = boldFont;
-  sheet.getCell("B3").value = `${data.user.nombre} ${data.user.apellido}`;
+  sheet.getCell("B3").value = `${data.staff.firstName} ${data.staff.lastName}`;
   sheet.getCell("G3").value = "Desde";
   sheet.getCell("G3").font = boldFont;
   sheet.getCell("H3").value = startD.format("DD/MM/YYYY");
 
   sheet.getCell("A4").value = "Rut";
   sheet.getCell("A4").font = boldFont;
-  sheet.getCell("B4").value = `${data.user.rut}-${data.user.dv}`;
+  sheet.getCell("B4").value = `${data.staff.rut}-${data.staff.dv}`;
   sheet.getCell("G4").value = "Hasta";
   sheet.getCell("G4").font = boldFont;
   sheet.getCell("H4").value = endD.format("DD/MM/YYYY");
 
   sheet.getCell("A5").value = "E-mail";
   sheet.getCell("A5").font = boldFont;
-  sheet.getCell("B5").value = `${data.user.email}` || "N/A";
+  sheet.getCell("B5").value = `${data.staff.email}` || "N/A";
 
   // 4. Cabeceras de Tabla (Fila 8)
   sheet.mergeCells("A8:B8");
@@ -315,7 +316,7 @@ export const generateServiceExcelReport = async ({
     service: serviceId,
     start_date: { $lte: endOfMonth },
     $or: [{ end_date: { $gte: startOfMonth } }, { end_date: null }],
-  }).distinct("user_id");
+  }).distinct("staffId");
 
   if (assignments.length === 0) {
     throw new AppError(
@@ -340,7 +341,7 @@ export const generateServiceExcelReport = async ({
     { width: 29.29 }, // 4. CARGO
     { width: 30.29 }, // 5. TIPO CONTRATO
     { width: 24.29 }, // 6. HORAS DIURNAS
-    { width: 24.29 }, // 7. HORAS NOCTURAS
+    { width: 24.29 }, // 7. HORAS NOCTURNAS
     { width: 24.29 }, // 8. TOTAL HORAS
     { width: 24.71 }, // 9. DIAS TRABAJADOS
     { width: 24.71 }, // 10. DIAS LIBRES
@@ -401,7 +402,7 @@ export const generateServiceExcelReport = async ({
     "CARGO",
     "TIPO CONTRATO",
     "HORAS DIURNAS",
-    "HORAS NOCTURAS",
+    "HORAS NOCTURNAS",
     "TOTAL HORAS",
     "DIAS TRABAJADOS",
     "DIAS LIBRES",
@@ -428,9 +429,9 @@ export const generateServiceExcelReport = async ({
     cell.border = thinBorder;
   });
 
-  const missingUserIds: string[] = [];
+  const missingStaffIds: string[] = [];
   const dataMap = new Map<string, any>();
-  const userIdsStr = assignments.map((id: any) => id.toString());
+  const staffIdsStr = assignments.map((id: any) => id.toString());
 
   if (isClosed) {
     const ReportSnapshotModel = (
@@ -438,29 +439,29 @@ export const generateServiceExcelReport = async ({
     ).default;
     const snapshots = await ReportSnapshotModel.find({
       period_id: period._id,
-      user_id: { $in: assignments },
+      staffId: { $in: assignments },
     });
 
     snapshots.forEach((s: any) =>
-      dataMap.set(s.user_id.toString(), s.snapshot_data),
+      dataMap.set(s.staffId.toString(), s.snapshot_data),
     );
 
-    for (const id of userIdsStr) {
-      if (!dataMap.has(id)) missingUserIds.push(id);
+    for (const id of staffIdsStr) {
+      if (!dataMap.has(id)) missingStaffIds.push(id);
     }
   } else {
-    missingUserIds.push(...userIdsStr);
+    missingStaffIds.push(...staffIdsStr);
   }
 
-  // Fetch all assigned users to read their native fields (tipo_contrato, servicio)
-  const allUsersInDb = await User.find({ _id: { $in: userIdsStr } });
-  const userDbMap = new Map<string, any>();
-  allUsersInDb.forEach((u) => userDbMap.set(u._id.toString(), u));
+  // Obtener datos nativos de Staff asignados (tipo_contrato, servicio)
+  const allStaffInDb = await Staff.find({ _id: { $in: staffIdsStr } });
+  const staffDbMap = new Map<string, any>();
+  allStaffInDb.forEach((u) => staffDbMap.set(u._id.toString(), u));
 
-  if (missingUserIds.length > 0) {
-    // BATCH FETCHING
-    const users = allUsersInDb.filter((u) =>
-      missingUserIds.includes(u._id.toString()),
+  if (missingStaffIds.length > 0) {
+    // Carga en lote: filtrar los staff sin snapshot aún
+    const staffList = allStaffInDb.filter((u) =>
+      missingStaffIds.includes(u._id.toString()),
     );
     const TurnSigla = (await import("../models/turn-sigla.model")).TurnSigla;
     const siglasDocs = await TurnSigla.find({});
@@ -481,13 +482,13 @@ export const generateServiceExcelReport = async ({
       await import("../models/turn-assignment.model")
     ).TurnAssignmentModel;
     const allAssignments = await TurnAssignmentModel.find({
-      user_id: { $in: missingUserIds },
+      staffId: { $in: missingStaffIds },
       start_date: { $lte: endOfMonth },
       $or: [{ end_date: { $gte: startOfMonth } }, { end_date: null }],
     }).populate("turn_type");
 
     const allReplacements = await Replacement.find({
-      id_entrante: { $in: missingUserIds },
+      id_entrante: { $in: missingStaffIds },
       fecha_inicio: { $lte: endOfMonth },
       fecha_termino: { $gte: startOfMonth },
     }).populate("turn_type_id");
@@ -514,33 +515,33 @@ export const generateServiceExcelReport = async ({
       ? (await import("../models/report-snapshot.model")).default
       : null;
 
-    for (const user of users) {
-      const userIdStr = user._id.toString();
-      const userAssignments = allAssignments.filter(
-        (a: any) => a.user_id.toString() === userIdStr,
+    for (const staff of staffList) {
+      const staffIdStr = staff._id.toString();
+      const staffAssignments = allAssignments.filter(
+        (a: any) => a.staffId.toString() === staffIdStr,
       );
-      const userReplacements = allReplacements.filter(
-        (r: any) => r.id_entrante.toString() === userIdStr,
+      const staffReplacements = allReplacements.filter(
+        (r: any) => r.id_entrante.toString() === staffIdStr,
       );
 
       const serviceSet = new Set<string>();
-      userAssignments.forEach((a: any) => {
+      staffAssignments.forEach((a: any) => {
         if (a.service) serviceSet.add(a.service.toString());
       });
-      userReplacements.forEach((r: any) => {
+      staffReplacements.forEach((r: any) => {
         if (r.servicio) serviceSet.add(r.servicio.toString());
       });
 
       if (serviceSet.size > 0) {
         const data = calculateMonthlyReportSync({
-          user,
+          staff,
           month,
           year,
           startDate,
           endDate,
           daysInMonth,
-          assignments: userAssignments,
-          replacements: userReplacements,
+          assignments: staffAssignments,
+          replacements: staffReplacements,
           siglaMap,
           serviceSet,
           serviceNameMap,
@@ -548,18 +549,18 @@ export const generateServiceExcelReport = async ({
 
         // Save flags for Replacements purely to fallback if tipo_contrato is missing
         (data as any)._isReplacementOnly =
-          userAssignments.filter(
+          staffAssignments.filter(
             (a) => a.service?.toString() === serviceId.toString(),
           ).length === 0 &&
-          userReplacements.filter(
+          staffReplacements.filter(
             (r) => r.servicio?.toString() === serviceId.toString(),
           ).length > 0;
 
-        dataMap.set(userIdStr, data);
+        dataMap.set(staffIdStr, data);
 
         if (ReportSnapshotModel && isClosed) {
           await ReportSnapshotModel.create({
-            user_id: user._id,
+            staffId: staff._id,
             period_id: period._id,
             snapshot_data: data as Record<string, unknown>,
             generated_at: new Date(),
@@ -570,9 +571,9 @@ export const generateServiceExcelReport = async ({
   }
 
   // Ordenar por Nombre Alfabéticamente
-  userIdsStr.sort((idA: string, idB: string) => {
-    const nameA = dataMap.get(idA)?.user?.nombre || "";
-    const nameB = dataMap.get(idB)?.user?.nombre || "";
+  staffIdsStr.sort((idA: string, idB: string) => {
+    const nameA = dataMap.get(idA)?.staff?.firstName || "";
+    const nameB = dataMap.get(idB)?.staff?.firstName || "";
     return nameA.localeCompare(nameB, "es");
   });
 
@@ -580,19 +581,19 @@ export const generateServiceExcelReport = async ({
   let currentRow = 9;
   const daysInMonthTotal = dayjs(endOfMonth).date();
 
-  for (const id of userIdsStr) {
+  for (const id of staffIdsStr) {
     const data = dataMap.get(id);
     if (!data) continue;
 
     const row = sheet.getRow(currentRow++);
 
-    const dbUser = userDbMap.get(id);
-    let tipoContrato = dbUser?.tipo_contrato || "PLANTA";
+    const dbStaff = staffDbMap.get(id);
+    let tipoContrato = dbStaff?.contractType || "PLANTA";
 
     // Fallback if missing
     if (
       (data as any)._isReplacementOnly &&
-      (!dbUser?.tipo_contrato || dbUser?.tipo_contrato === "")
+      (!dbStaff?.contractType || dbStaff?.contractType === "")
     ) {
       tipoContrato = "REEMPLAZO";
     }
@@ -600,10 +601,10 @@ export const generateServiceExcelReport = async ({
     const unassignedDays =
       daysInMonthTotal - (data.totals.daysWorked + data.totals.freeDays);
 
-    row.getCell(1).value = data.user.rut;
-    row.getCell(2).value = data.user.nombre;
-    row.getCell(3).value = data.user.apellido;
-    row.getCell(4).value = data.user.cargo;
+    row.getCell(1).value = data.staff.rut;
+    row.getCell(2).value = data.staff.firstName;
+    row.getCell(3).value = data.staff.lastName;
+    row.getCell(4).value = data.staff.cargo;
     row.getCell(5).value = tipoContrato;
     row.getCell(6).value = data.totals.dayHours;
     row.getCell(7).value = data.totals.nightHours;

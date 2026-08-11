@@ -1,12 +1,16 @@
-import Reemplazo from "../models/replacement.model";
+import Replacement from "../models/replacement.model";
 import AuditLog from "../models/audit.model";
 import mongoose from "mongoose";
 
-// Servicio de Perfil de Usuario:
-// Agrega estadísticas y actividades recientes para el dashboard personal del usuario.
-// Se separa del user.service para mantener alta cohesión en lógica de reporting/stats.
+// Servicio de Perfil (Staff/Account):
+// Agrega estadísticas y actividades recientes para el dashboard personal del funcionario.
+// Separado de staff.service para mantener alta cohesión en lógica de reporting/stats.
 
-async function getUserReplacementStats(userId: string) {
+/**
+ * Devuelve conteos de reemplazos creados por el staff dado (total y del mes actual).
+ * @param staffId - ID del documento Staff (no Account) del funcionario.
+ */
+async function getStaffReplacementStats(staffId: string) {
   const now = new Date();
   // Cálculo de Rango Mensual: Inicio y Fin del mes actual
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -22,9 +26,9 @@ async function getUserReplacementStats(userId: string) {
   // Ejecución Paralela:
   // Lanzamos ambas queries de conteo simultáneamente para reducir latencia de respuesta.
   const [total, monthly] = await Promise.all([
-    Reemplazo.countDocuments({ creado_por: userId }),
-    Reemplazo.countDocuments({
-      creado_por: userId,
+    Replacement.countDocuments({ creado_por: staffId }),
+    Replacement.countDocuments({
+      creado_por: staffId,
       created_at: { $gte: startOfMonth, $lte: endOfMonth },
     }),
   ]);
@@ -35,13 +39,13 @@ async function getUserReplacementStats(userId: string) {
   };
 }
 
-async function getUserServiceStats(userId: string) {
+async function getStaffServiceStats(staffId: string) {
   // Aggregation Pipeline:
   // Agrupamos reemplazos creados por el usuario según 'servicio' y contamos ocurrencias.
   // Esto permite al usuario ver dónde está asignando más recursos.
-  const stats = await Reemplazo.aggregate([
+  const stats = await Replacement.aggregate([
     {
-      $match: { creado_por: new mongoose.Types.ObjectId(userId) },
+      $match: { creado_por: new mongoose.Types.ObjectId(staffId) },
     },
     {
       $group: {
@@ -60,17 +64,17 @@ async function getUserServiceStats(userId: string) {
   }));
 }
 
-async function getUserRecentActivity(userId: string, limit: number = 5) {
+async function getAccountRecentActivity(accountId: string, limit: number = 5) {
   // Auditoría Personal:
   // Permite al usuario ver sus propias acciones recientes en el sistema.
-  return await AuditLog.find({ user_id: userId })
+  return await AuditLog.find({ accountId })
     .sort({ created_at: -1 })
     .limit(limit)
     .select("action module description created_at");
 }
 
 export default {
-  getUserReplacementStats,
-  getUserServiceStats,
-  getUserRecentActivity,
+  getStaffReplacementStats,
+  getStaffServiceStats,
+  getAccountRecentActivity,
 };

@@ -9,7 +9,9 @@ export interface User {
   email: string
   ciudad: string
   habilitado: string
-  tipo_cargo: string
+  roleId: any
+  positionId: any
+  tipo_cargo?: string
   servicio?: string
   tipo_contrato?: string
   nivel?: number
@@ -25,7 +27,9 @@ export interface UserRegistration {
   telefono: string
   email: string
   ciudad: string
-  tipo_cargo: string
+  roleId: any
+  positionId: any
+  tipo_cargo?: string
   tipo_contrato?: string
   habilitado?: string
   servicio?: string

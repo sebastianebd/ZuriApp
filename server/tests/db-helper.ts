@@ -1,14 +1,15 @@
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 
-let mongod: MongoMemoryServer;
+let replSet: MongoMemoryReplSet;
 
 /**
- * Conecta a la base de datos en memoria
+ * Conecta a la base de datos en memoria (Replica Set requerido para Transacciones)
  */
 export const connect = async () => {
-  mongod = await MongoMemoryServer.create();
-  const uri = mongod.getUri();
+  // MongoDB Transactions require a replica set.
+  replSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
+  const uri = replSet.getUri();
   await mongoose.disconnect(); // Asegurar que no hay conexiones previas
   await mongoose.connect(uri);
 };
@@ -19,7 +20,7 @@ export const connect = async () => {
 export const closeDatabase = async () => {
   await mongoose.connection.dropDatabase();
   await mongoose.connection.close();
-  await mongod.stop();
+  await replSet.stop();
 };
 
 /**

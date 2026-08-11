@@ -23,6 +23,8 @@ export function useEmployeesState() {
 
   // Lists
   const listaTipoCargo = ref<string[]>([])
+  const listaRoles = ref<any[]>([])
+  const listaPositions = ref<any[]>([])
   const listaTipoContrato = ref<string[]>(['PLANTA', 'REEMPLAZO'])
   const listaHabilitado = ref<string[]>([])
   const listaServicios = computed(() => serviceStore.services)
@@ -76,6 +78,13 @@ export function useEmployeesState() {
       if (serviceStore.services.length === 0) {
         await serviceStore.fetchServices()
       }
+      if (listaRoles.value.length === 0) {
+        const api = authStore.usePrivateApi()
+        const rolesRes = await api.get('/roles')
+        listaRoles.value = rolesRes.data
+        const posRes = await api.get('/positions')
+        listaPositions.value = posRes.data
+      }
     } finally {
       loading.value = false
     }
@@ -122,6 +131,8 @@ export function useEmployeesState() {
     tipoCargo,
     filtroHabilitado,
     listaTipoCargo,
+    listaRoles,
+    listaPositions,
     listaTipoContrato,
     rolesDisponiblesCreacion,
     listaHabilitado,

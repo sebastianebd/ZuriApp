@@ -33,24 +33,24 @@ const ServiceSchema: Schema = new Schema(
     },
     jefe_servicio: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Staff",
       default: null,
     },
     supervisor: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Staff",
       default: null,
     },
     coordinadores: [
       {
         type: Schema.Types.ObjectId,
-        ref: "User",
+        ref: "Staff",
       },
     ],
     jefes_turno: [
       {
         type: Schema.Types.ObjectId,
-        ref: "User",
+        ref: "Staff",
       },
     ],
     centro_costo: {

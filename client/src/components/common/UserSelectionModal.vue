@@ -118,7 +118,7 @@
                         <span
                           class="badge bg-light text-secondary border px-2 py-1 rounded-pill x-small fw-bold w-auto align-self-start mb-1"
                         >
-                          {{ usuario.tipo_cargo || 'Sin Cargo' }}
+                          {{ usuario.positionId?.name || 'Sin Cargo' }}
                         </span>
                         <span class="x-small text-muted">{{ usuario.email }}</span>
                       </div>

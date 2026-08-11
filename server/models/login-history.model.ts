@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface ILoginHistory extends Document {
-  user: mongoose.Types.ObjectId;
+  accountId: mongoose.Types.ObjectId;
   ip: string;
   userAgent: string;
   status: "SUCCESS" | "FAILED";
@@ -9,9 +9,9 @@ export interface ILoginHistory extends Document {
 }
 
 const loginHistorySchema: Schema = new Schema({
-  user: {
+  accountId: {
     type: Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Account",
     required: true,
   },
   ip: {

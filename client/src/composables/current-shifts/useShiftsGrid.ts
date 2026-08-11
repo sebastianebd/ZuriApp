@@ -167,12 +167,12 @@ export function useShiftsGrid(
 
           if (foundUserAssignment && typeof foundUserAssignment.user_id !== 'string') {
             const u = foundUserAssignment.user_id as unknown as User
-            cargo = u?.tipo_cargo
+            cargo = u?.tipo_cargo || ''
           }
 
           if (!cargo && Array.isArray(allUsers.value) && allUsers.value.length > 0) {
             const foundUser = allUsers.value.find((u) => u._id === userId)
-            if (foundUser) cargo = foundUser.tipo_cargo
+            if (foundUser) cargo = foundUser.tipo_cargo || ''
           }
         }
 
@@ -268,8 +268,8 @@ export function useShiftsGrid(
           userId: user._id,
           nombre: user.nombre,
           apellido: user.apellido,
-          cargo: user.tipo_cargo,
-          servicio: effectiveService,
+          cargo: user.tipo_cargo || '',
+          servicio: effectiveService || '',
           tipo_turno: a.turn_type,
           fecha_inicio: a.start_date,
           getShift: (date: Date) => {

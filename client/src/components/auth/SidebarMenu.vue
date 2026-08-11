@@ -27,11 +27,11 @@
         <router-link
           :to="{ name: 'personal-cargos' }"
           class="menu-item"
-          title="Gestión de Cargos"
+          title="Roles y Cargos"
           v-if="can('cargos.view')"
         >
           <i class="bi bi-briefcase"></i>
-          <span class="text">Gestión de Cargos</span>
+          <span class="text">Roles y Cargos</span>
         </router-link>
         <router-link
           :to="{ name: 'personal-ficha-turnos' }"

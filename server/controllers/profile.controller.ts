@@ -4,39 +4,42 @@ import { AuthRequest } from "../middleware/authentication.middleware";
 
 async function getReplacementStats(req: AuthRequest, res: Response) {
   try {
-    // Extracción segura del ID de usuario desde el token JWT decodificado (req.user)
+    // Extracción segura del ID de usuario desde el token JWT decodificado (req.staff)
     // Se soporta tanto la propiedad 'id' (virtual) como '_id' (bson) para robustez.
-    const userId = req.user?.id || (req.user as any)?._id;
+    const staffId = req.staff?.id || (req.staff as any)?._id;
 
-    const stats = await profileService.getUserReplacementStats(userId);
+    const stats = await profileService.getStaffReplacementStats(staffId);
     res.json(stats);
   } catch (error: any) {
-    res.status(500).json({
-      mensaje: error.message || "Error al obtener estadísticas de reemplazos",
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({
+      message: error.message || "Error al obtener estadísticas de reemplazos", error
     });
   }
 }
 
 async function getServiceStats(req: AuthRequest, res: Response) {
   try {
-    const userId = req.user?.id || (req.user as any)?._id;
-    const stats = await profileService.getUserServiceStats(userId);
+    const staffId = req.staff?.id || (req.staff as any)?._id;
+    const stats = await profileService.getStaffServiceStats(staffId);
     res.json(stats);
   } catch (error: any) {
-    res.status(500).json({
-      mensaje: error.message || "Error al obtener estadísticas de servicios",
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({
+      message: error.message || "Error al obtener estadísticas de servicios", error
     });
   }
 }
 
 async function getRecentActivity(req: AuthRequest, res: Response) {
   try {
-    const userId = req.user?.id || (req.user as any)?._id;
-    const activities = await profileService.getUserRecentActivity(userId);
+    const accountId = req.account?.id || (req.account as any)?._id;
+    const activities = await profileService.getAccountRecentActivity(accountId);
     res.json(activities);
   } catch (error: any) {
-    res.status(500).json({
-      mensaje: error.message || "Error al obtener actividad reciente",
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({
+      message: error.message || "Error al obtener actividad reciente", error
     });
   }
 }

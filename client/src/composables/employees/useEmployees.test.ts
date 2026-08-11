@@ -11,7 +11,8 @@ const mocks = vi.hoisted(() => ({
   eliminarUsuario: vi.fn(),
   mostrarOpciones: vi.fn(),
   mostrarHistorialUsuario: vi.fn(),
-  showAlert: vi.fn()
+  showAlert: vi.fn(),
+  apiGet: vi.fn()
 }))
 
 const mockUsersState: any[] = []
@@ -37,6 +38,14 @@ vi.mock('@/stores/option.store', () => ({
 vi.mock('@/stores/replacement.store', () => ({
   useReplacementStore: () => ({
     mostrarHistorialUsuario: mocks.mostrarHistorialUsuario
+  })
+}))
+
+vi.mock('@/stores/auth.store', () => ({
+  useAuthStore: () => ({
+    usePrivateApi: () => ({
+      get: mocks.apiGet
+    })
   })
 }))
 
@@ -87,6 +96,7 @@ describe('useUsers Composable', () => {
       habilitado: ['SI', 'NO'],
       servicios: ['URGENCIA']
     })
+    mocks.apiGet.mockResolvedValue({ data: [] })
   })
 
   // Helper to mount composable

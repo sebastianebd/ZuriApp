@@ -137,14 +137,37 @@
                       </div>
                     </div>
 
-                    <!-- Cargo -->
+                    <!-- Rol -->
                     <div class="mb-4 position-relative">
                       <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                        >Cargo</label
+                        >Rol (Perfil de Acceso)</label
                       >
                       <v-select
-                        v-model="editableUsuario.tipo_cargo"
-                        :options="listaTipoCargo"
+                        v-model="editableUsuario.roleId"
+                        :options="listaRoles"
+                        label="name"
+                        :reduce="(role: any) => role._id"
+                        placeholder="Seleccione rol"
+                        class="custom-v-select"
+                        :clearable="false"
+                        :searchable="true"
+                      >
+                        <template #option="option">
+                          {{ option.name }} <small class="text-muted">({{ option.code }})</small>
+                        </template>
+                      </v-select>
+                    </div>
+
+                    <!-- Cargo Físico -->
+                    <div class="mb-4 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Cargo Físico (Position)</label
+                      >
+                      <v-select
+                        v-model="editableUsuario.positionId"
+                        :options="listaPositions"
+                        label="name"
+                        :reduce="(pos: any) => pos._id"
                         placeholder="Seleccione cargo"
                         class="custom-v-select"
                         :clearable="false"
@@ -228,7 +251,8 @@ import { type UserRegistration } from '@/types/user.types'
 const props = defineProps<{
   visible: boolean
   usuario: UserRegistration
-  listaTipoCargo: string[]
+  listaRoles: any[]
+  listaPositions: any[]
   listaTipoContrato: string[]
   listaHabilitado: string[]
 }>()

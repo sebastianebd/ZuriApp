@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import replacementService from "../../services/replacement.service";
 import Reemplazo from "../../models/replacement.model";
+import mongoose from "mongoose";
 
 // Mock de Dependencias:
 // Mockeamos totalmente el modelo Mongoose 'Reemplazo' y 'TurnType' para que las pruebas unitarias
@@ -32,7 +33,7 @@ describe("Replacement Service - Unit Tests", () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 10);
 
-      const mockData = {
+      const mockData: any = {
         fecha_inicio: futureDate.toISOString(),
         fecha_termino: new Date(
           futureDate.getTime() + 86400000 * 30,
@@ -50,7 +51,7 @@ describe("Replacement Service - Unit Tests", () => {
       };
 
       const mockSavedReplacement = {
-        ...mockData,
+        id_entrante: new mongoose.Types.ObjectId("507f1f77bcf86cd799439011"),
         status: "PENDIENTE",
         _id: "replacement123",
       };
@@ -74,7 +75,7 @@ describe("Replacement Service - Unit Tests", () => {
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 5);
 
-      const mockData = {
+      const mockData: any = {
         fecha_inicio: pastDate.toISOString(),
         fecha_termino: new Date().toISOString(),
         tipo_turno: "NOCTURNO",
@@ -105,10 +106,10 @@ describe("Replacement Service - Unit Tests", () => {
     });
 
     it("debería manejar gracefully si TurnType no existe (aunque idealmente debería validarse antes)", async () => {
-      const mockData = {
-        fecha_inicio: new Date().toISOString(),
-        fecha_termino: new Date().toISOString(),
-        tipo_turno: "INVALID",
+      const mockData: any = {
+        fecha_inicio: new Date("2024-05-01"),
+        fecha_termino: new Date("2024-05-10"),
+        tipo_turno: "N",
       };
 
       const TurnTypeModel = await import("../../models/turn-type.model");
@@ -197,7 +198,7 @@ describe("Replacement Service - Unit Tests", () => {
   describe("actualizar()", () => {
     it("debería actualizar campos de un reemplazo", async () => {
       const mockUpdated = {
-        _id: "replacement123",
+        _id: new mongoose.Types.ObjectId("507f1f77bcf86cd799439011"),
         status: "EN CURSO",
         servicio: "Urgencias",
       };
@@ -206,13 +207,13 @@ describe("Replacement Service - Unit Tests", () => {
       (Reemplazo.findById as any).mockResolvedValue(mockUpdated);
 
       const result = await replacementService.actualizar("replacement123", {
-        servicio: "Urgencias",
+        servicio: new mongoose.Types.ObjectId("507f1f77bcf86cd799439011") as any,
       });
 
       expect(result).toEqual(mockUpdated);
       expect(Reemplazo.findByIdAndUpdate).toHaveBeenCalledWith(
         "replacement123",
-        { servicio: "Urgencias" },
+        { servicio: new mongoose.Types.ObjectId("507f1f77bcf86cd799439011") },
         { new: true },
       );
     });
@@ -288,6 +289,7 @@ describe("Replacement Service - Unit Tests", () => {
         _id: "old123",
         status: "INTERRUMPIDO",
         creado_por: "admin123",
+        save: vi.fn().mockResolvedValue(true)
       };
 
       const mockNewReplacement = {
@@ -306,6 +308,18 @@ describe("Replacement Service - Unit Tests", () => {
           .mockResolvedValue({ _id: "new123", status: "EN CURSO" });
       });
 
+      const mongoose = require("mongoose");
+      const sessionMock = { 
+        startTransaction: vi.fn(), 
+        commitTransaction: vi.fn(), 
+        abortTransaction: vi.fn(), 
+        endSession: vi.fn(),
+        withTransaction: vi.fn().mockImplementation((cb) => cb())
+      };
+      mongoose.startSession = vi.fn().mockResolvedValue(sessionMock);
+      
+      (Reemplazo.findById as any) = vi.fn().mockReturnValue({ session: vi.fn().mockResolvedValue(mockOldReplacement) });
+
       const result = await replacementService.sustituir(mockPayload);
 
       expect(result).toHaveLength(2);
@@ -316,7 +330,7 @@ describe("Replacement Service - Unit Tests", () => {
         expect.objectContaining({
           corte_anticipado: true,
         }),
-        { new: true },
+        { new: true, session: expect.any(Object) },
       );
     });
 
@@ -343,6 +357,16 @@ describe("Replacement Service - Unit Tests", () => {
         },
       };
 
+      const mongoose = require("mongoose");
+      const sessionMock = { 
+        startTransaction: vi.fn(), 
+        commitTransaction: vi.fn(), 
+        abortTransaction: vi.fn(), 
+        endSession: vi.fn(),
+        withTransaction: vi.fn().mockImplementation((cb) => cb())
+      };
+      mongoose.startSession = vi.fn().mockResolvedValue(sessionMock);
+      
       (Reemplazo.findByIdAndUpdate as any).mockResolvedValue(null);
 
       await expect(replacementService.sustituir(mockPayload)).rejects.toThrow(
@@ -374,7 +398,7 @@ describe("Replacement Service - Unit Tests", () => {
       (Reemplazo.find as any).mockResolvedValue(mockHistory);
 
       const result =
-        await replacementService.obtenerHistorialUsuario("user123");
+        await replacementService.obtenerHistorialStaff("user123");
 
       expect(result).toEqual(mockHistory);
       expect(Reemplazo.find).toHaveBeenCalledWith({

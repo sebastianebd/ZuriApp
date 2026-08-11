@@ -1,30 +1,15 @@
 import { Queue, Worker, Job } from "bullmq";
 import emailService from "../services/email.service";
 import logger from "../config/logger.config";
-
-// --- Configuración de Redis ---
-// Se estandarizan los detalles de conexión para soportar tanto desarrollo local (host)
-// como despliegues en Docker (service names/URLs).
-const redisConnection: any = {
-  host: "localhost", // Default Fallback (DX Local)
-  port: 6379,
-};
-
-// Ajuste dinámico para entornos contenerizados (Production/Staging)
-if (process.env.REDIS_URL) {
-  const url = new URL(process.env.REDIS_URL);
-  redisConnection.host = url.hostname;
-  redisConnection.port = Number(url.port);
-  redisConnection.password = url.password;
-  redisConnection.username = url.username;
-}
+import bullmqConnection from "../config/bullmq-connection";
+import * as Sentry from "@sentry/node";
 
 const QUEUE_NAME = "email-queue";
 
 // 1. Definición de la Cola (Producer)
 // Centraliza la configuración de comportamiento de los trabajos encolados.
 export const emailQueue = new Queue(QUEUE_NAME, {
-  connection: redisConnection,
+  connection: bullmqConnection,
   defaultJobOptions: {
     attempts: 3, // Resiliencia: Reintentar hasta 3 veces ante fallos transitorios (ej: timeout SMTP)
     backoff: {
@@ -57,7 +42,7 @@ export const setupEmailWorker = () => {
       logger.info(`[EmailWorker] Trabajo ${job.id} completado exitosamente`);
     },
     {
-      connection: redisConnection,
+      connection: bullmqConnection,
     },
   );
 
@@ -65,6 +50,7 @@ export const setupEmailWorker = () => {
     logger.error(
       `[EmailWorker] Trabajo ${job?.id} falló con error: ${err.message}`,
     );
+    Sentry.captureException(err);
   });
 
   logger.info(

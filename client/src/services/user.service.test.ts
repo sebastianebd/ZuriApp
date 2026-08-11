@@ -24,32 +24,32 @@ describe('UserService', () => {
     const mockResponse = { data: { id: 'new' } }
     mockApi.post.mockResolvedValue(mockResponse)
 
-    const result = await UserService.crearUsuario(mockApi as any, payload)
+    const result = await UserService.crearUsuario(mockApi as any, payload as any)
 
-    expect(mockApi.post).toHaveBeenCalledWith('/users/', payload)
+    expect(mockApi.post).toHaveBeenCalledWith('/staff', payload)
     expect(result).toEqual(mockResponse.data)
   })
 
-  it('actualizarUsuario should PUT to /users/:id', async () => {
+  it('actualizarUsuario should PUT to /staff/:id', async () => {
     const id = '123'
-    const payload = { nombre: 'Updated' } as any
-    const mockResponse = { data: { success: true } }
+    const payload = { nombre: 'Updated' }
+    const mockResponse = { data: { id, ...payload } }
     mockApi.put.mockResolvedValue(mockResponse)
 
     const result = await UserService.actualizarUsuario(mockApi as any, id, payload)
 
-    expect(mockApi.put).toHaveBeenCalledWith(`/users/${id}`, payload)
+    expect(mockApi.put).toHaveBeenCalledWith(`/staff/${id}`, payload)
     expect(result).toEqual(mockResponse.data)
   })
 
-  it('eliminarUsuario should DELETE /users/:id', async () => {
+  it('eliminarUsuario should DELETE /staff/:id', async () => {
     const id = '123'
     const mockResponse = { data: { success: true } }
     mockApi.delete.mockResolvedValue(mockResponse)
 
     const result = await UserService.eliminarUsuario(mockApi as any, id)
 
-    expect(mockApi.delete).toHaveBeenCalledWith(`/users/${id}`)
+    expect(mockApi.delete).toHaveBeenCalledWith(`/staff/${id}`)
     expect(result).toEqual(mockResponse.data)
   })
 

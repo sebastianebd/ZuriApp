@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface ITurnAssignment extends Document {
-  user_id: mongoose.Types.ObjectId;
+  staffId: mongoose.Types.ObjectId;
   service: mongoose.Types.ObjectId;
   turn_type: string;
   start_date: Date;
@@ -18,9 +18,9 @@ export interface ITurnAssignment extends Document {
 
 const turnAssignmentSchema = new Schema(
   {
-    user_id: {
+    staffId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Staff",
       required: true,
       index: true,
     },

@@ -27,7 +27,8 @@ const VSelectStub = {
 describe('UserModalCreate.vue', () => {
   const defaultProps = {
     visible: true,
-    listaTipoCargo: ['MEDICO', 'ENFERMERA'],
+    listaRoles: [{ _id: '1', name: 'Admin', code: 'ADMIN', hasSystemAccess: true }],
+    listaPositions: [{ _id: '1', name: 'Developer', position_code: 'DEV' }],
     listaHabilitado: ['SI', 'NO'],
     listaServicios: ['UCI', 'URGENCIA']
   }

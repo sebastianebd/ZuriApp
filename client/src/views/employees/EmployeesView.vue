@@ -83,7 +83,8 @@
     <UserModalUpdate
       :visible="updateModalVisible"
       :usuario="usuarioActual"
-      :lista-tipo-cargo="listaTipoCargo"
+      :lista-roles="listaRoles"
+      :lista-positions="listaPositions"
       :lista-tipo-contrato="listaTipoContrato"
       :lista-habilitado="listaHabilitado"
       @cerrar="closeUpdateModal"
@@ -92,7 +93,8 @@
 
     <UserModalCreate
       :visible="createModalVisible"
-      :lista-tipo-cargo="rolesDisponiblesCreacion"
+      :lista-roles="listaRoles"
+      :lista-positions="listaPositions"
       :lista-habilitado="listaHabilitado"
       :lista-servicios="listaServicios"
       @cerrar="closeCreateModal"
@@ -147,6 +149,8 @@ const {
 
   // Lists
   listaTipoCargo,
+  listaRoles,
+  listaPositions,
   listaTipoContrato,
   rolesDisponiblesCreacion,
   listaHabilitado,

@@ -38,7 +38,7 @@ const replacementSchema: Schema = new Schema(
     },
     id_saliente: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Staff",
       required: true,
     },
     rut_saliente: {
@@ -58,7 +58,7 @@ const replacementSchema: Schema = new Schema(
     },
     id_entrante: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Staff",
       required: true,
       index: true,
     },
@@ -124,7 +124,7 @@ const replacementSchema: Schema = new Schema(
     },
     creado_por: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Staff",
       required: true,
     },
     corte_anticipado: {

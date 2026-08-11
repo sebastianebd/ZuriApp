@@ -210,25 +210,55 @@
                       </div>
                     </div>
 
-                    <!-- Cargo -->
+                    <!-- Rol -->
                     <div class="mb-4 position-relative">
                       <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                        >Cargo</label
+                        >Rol (Perfil de Acceso)</label
                       >
                       <v-select
-                        v-model="form.tipo_cargo"
-                        :options="listaTipoCargo"
+                        v-model="form.roleId"
+                        :options="listaRoles"
+                        label="name"
+                        :reduce="(role: any) => role._id"
+                        placeholder="Seleccione rol"
+                        class="custom-v-select"
+                        :class="{ 'is-invalid': errors.roleId }"
+                        :clearable="false"
+                        :searchable="true"
+                      >
+                        <template #option="option">
+                          {{ option.name }} <small class="text-muted">({{ option.code }})</small>
+                        </template>
+                      </v-select>
+                      <div
+                        v-if="errors.roleId"
+                        class="text-danger x-small fw-bold floating-error"
+                      >
+                        {{ errors.roleId }}
+                      </div>
+                    </div>
+
+                    <!-- Cargo Físico -->
+                    <div class="mb-4 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Cargo Físico (Position)</label
+                      >
+                      <v-select
+                        v-model="form.positionId"
+                        :options="listaPositions"
+                        label="name"
+                        :reduce="(pos: any) => pos._id"
                         placeholder="Seleccione cargo"
                         class="custom-v-select"
-                        :class="{ 'is-invalid': errors.tipo_cargo }"
+                        :class="{ 'is-invalid': errors.positionId }"
                         :clearable="false"
                         :searchable="true"
                       />
                       <div
-                        v-if="errors.tipo_cargo"
+                        v-if="errors.positionId"
                         class="text-danger x-small fw-bold floating-error"
                       >
-                        {{ errors.tipo_cargo }}
+                        {{ errors.positionId }}
                       </div>
                     </div>
 
@@ -325,7 +355,8 @@ import 'v-calendar/dist/style.css'
 
 const props = defineProps<{
   visible: boolean
-  listaTipoCargo: string[]
+  listaRoles: any[]
+  listaPositions: any[]
   listaHabilitado: string[]
   listaServicios: any[]
 }>()
@@ -344,7 +375,8 @@ const initialForm = {
   ciudad: '',
   telefono: '',
   email: '',
-  tipo_cargo: '',
+  roleId: '',
+  positionId: '',
   servicio: '',
   tipo_contrato: '',
   habilitado: ''
@@ -366,9 +398,10 @@ const popoverConfig = {
 
 // Logic to conditionally show "Habilitado"
 const shouldShowHabilitado = computed(() => {
-  const cargo = form.value.tipo_cargo
-  if (!cargo) return false
-  return !['RECURSOS HUMANOS', 'ADMIN-TI'].includes(cargo)
+  const role = props.listaRoles.find(r => r._id === form.value.roleId)
+  if (!role) return false
+  // Roles with system access don't need manual Habilitado since they are automatically enabled after OTL
+  return !role.hasSystemAccess
 })
 
 // Watchers
@@ -381,9 +414,9 @@ watch(
   }
 )
 
-// Watch for cargo changes to reset hidden fields
+// Watch for role changes to reset hidden fields
 watch(
-  () => form.value.tipo_cargo,
+  () => form.value.roleId,
   () => {
     if (!shouldShowHabilitado.value) {
       form.value.habilitado = ''
@@ -458,9 +491,14 @@ const validateForm = () => {
     newErrors.email = 'Email inválido'
   }
 
-  // Validar Cargo
-  if (!form.value.tipo_cargo) {
-    newErrors.tipo_cargo = 'Debe seleccionar un cargo'
+  // Validar Role
+  if (!form.value.roleId) {
+    newErrors.roleId = 'Debe seleccionar un rol'
+  }
+
+  // Validar Position
+  if (!form.value.positionId) {
+    newErrors.positionId = 'Debe seleccionar un cargo físico'
   }
 
   // Validar Tipo Contrato

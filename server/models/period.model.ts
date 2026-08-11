@@ -6,7 +6,6 @@ export interface IPeriod extends Document {
   status: "OPEN" | "CLOSED";
   closedAt?: Date;
   closedBy?: mongoose.Types.ObjectId;
-  unlockedUsers: mongoose.Types.ObjectId[];
   // Mapa serviceId → S3 key del PDF generado por el Worker en el cierre mensual
   pdfUrls: Map<string, string>;
 }
@@ -17,8 +16,7 @@ const PeriodSchema = new Schema(
     year: { type: Number, required: true },
     status: { type: String, enum: ["OPEN", "CLOSED"], default: "OPEN" },
     closedAt: { type: Date },
-    closedBy: { type: Schema.Types.ObjectId, ref: "User" },
-    unlockedUsers: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }],
+    closedBy: { type: Schema.Types.ObjectId, ref: "Staff" },
     // Non-breaking: campo nuevo con default vacío
     pdfUrls: { type: Map, of: String, default: () => new Map() },
   },
