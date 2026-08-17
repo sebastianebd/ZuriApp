@@ -70,7 +70,7 @@ describe('ReplacementService', () => {
 
     const result = await ReplacementService.finalizarReemplazo(mockApi as any, id)
 
-    expect(mockApi.put).toHaveBeenCalledWith(`/reemplazos/finalizar/${id}`)
+    expect(mockApi.put).toHaveBeenCalledWith(`/reemplazos/finalizar/${id}`, {})
     expect(result).toEqual(mockResponse.data)
   })
 

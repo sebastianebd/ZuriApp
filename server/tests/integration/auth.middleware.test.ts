@@ -5,6 +5,7 @@ import { connect, closeDatabase } from '../db-helper';
 import Account from '../../models/account.model';
 import Staff from '../../models/staff.model';
 import Role from '../../models/role.model';
+import Position from '../../models/position.model';
 import jwt from 'jsonwebtoken';
 
 // Mock BullBoard
@@ -39,12 +40,21 @@ describe('Integration - AC-4: Auth Middleware Security', () => {
       hasSystemAccess: true,
     });
 
+    const position = await Position.create({ name: 'Pos', position_code: 'POS' });
+    
     // 2. Create Staff
     const staff = await Staff.create({
       rut: '66666666-6',
       firstName: 'Zombie',
       lastName: 'User',
       roleId: role._id,
+      positionId: position._id,
+      email: 'test@test.com',
+      contractType: 'CONTRATA',
+      birthDate: new Date('1990-01-01'),
+      address: 'Test Address',
+      phone: '123456789',
+      city: 'Santiago'
     });
 
     // 3. Generate a VALID JWT for this user

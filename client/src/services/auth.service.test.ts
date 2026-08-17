@@ -67,7 +67,7 @@ describe('AuthService', () => {
 
     const result = await AuthService.getUser(mockApi as any)
 
-    expect(mockApi.get).toHaveBeenCalledWith('/auth/IStaff')
+    expect(mockApi.get).toHaveBeenCalledWith('/auth/me')
     expect(result).toEqual(mockResponse.data)
   })
 })

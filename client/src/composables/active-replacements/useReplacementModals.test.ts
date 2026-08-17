@@ -85,7 +85,7 @@ describe('useReplacementModals', () => {
     const payload = modals.createSustitucionPayload()
 
     expect(payload.id_registro_a).toBe('reg-1')
-    expect(payload.fecha_corte_a).toBe('2023-06-01')
+    expect(payload.fecha_corte_a).toBe('2023-06-01T00:00:00.000Z')
     expect(payload.nuevo_entrante).toEqual({ id_entrante: 'ent-1' })
     expect(payload.datos_base_evento.id_evento_principal).toBe('neg-1')
   })

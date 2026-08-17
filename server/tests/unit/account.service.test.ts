@@ -82,7 +82,9 @@ describe("Account Service - Unit Tests", () => {
         populate: vi.fn().mockResolvedValue(mockStaff)
       });
       const mockAccount = { _id: "acc1", isActive: true, save: vi.fn().mockResolvedValue(true) };
-      (Account.findOne as any).mockResolvedValue(mockAccount);
+      (Account.findOne as any).mockReturnValue({
+        select: vi.fn().mockResolvedValue(mockAccount)
+      });
       (auditService.generateDiff as any).mockReturnValue("changed");
 
       const reqAccount = { id: "admin", name: "admin" };

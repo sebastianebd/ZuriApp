@@ -25,6 +25,17 @@ vi.mock("../../models/turn-assignment.model");
 vi.mock("../../models/turn-type.model");
 vi.mock("../../services/audit.service");
 vi.mock("../../services/notification.service");
+vi.mock("../../models/staff.model", async (importOriginal) => {
+  const actual: any = await importOriginal();
+  return {
+    ...actual,
+    default: {
+      findById: vi.fn().mockReturnValue({
+        populate: vi.fn().mockResolvedValue({ _id: "user123", roleId: { level: 1 } })
+      })
+    }
+  };
+});
 
 // Mock de la validación de período cerrado para evitar consultas a BD
 vi.mock("../../middleware/period-lock.middleware", () => ({
@@ -204,6 +215,9 @@ describe("Turn Assignment Controller - Integration", () => {
         populate: vi.fn().mockResolvedValue(updatedAssignment),
       };
 
+      (TurnAssignmentModel.findById as any).mockReturnValue({
+        populate: vi.fn().mockResolvedValue({ _id: "60c72b2f9b1d8b001c8e4a50", staffId: { roleId: { level: 1 } } })
+      });
       (TurnAssignmentModel.findByIdAndUpdate as any).mockReturnValue(mockQuery);
 
       const response = await request(app)
@@ -219,6 +233,9 @@ describe("Turn Assignment Controller - Integration", () => {
         populate: vi.fn().mockResolvedValue(null),
       };
 
+      (TurnAssignmentModel.findById as any).mockReturnValue({
+        populate: vi.fn().mockResolvedValue(null)
+      });
       (TurnAssignmentModel.findByIdAndUpdate as any).mockReturnValue(mockQuery);
 
       const response = await request(app)
@@ -233,6 +250,9 @@ describe("Turn Assignment Controller - Integration", () => {
     it("debería eliminar una asignación", async () => {
       const deletedAssignment = { _id: "60c72b2f9b1d8b001c8e4a50" };
 
+      (TurnAssignmentModel.findById as any).mockReturnValue({
+        populate: vi.fn().mockResolvedValue({ _id: "60c72b2f9b1d8b001c8e4a50", staffId: { roleId: { level: 1 } } })
+      });
       (TurnAssignmentModel.findByIdAndDelete as any).mockResolvedValue(
         deletedAssignment,
       );
@@ -246,6 +266,9 @@ describe("Turn Assignment Controller - Integration", () => {
     });
 
     it("debería retornar 404 si intenta eliminar algo que no existe", async () => {
+      (TurnAssignmentModel.findById as any).mockReturnValue({
+        populate: vi.fn().mockResolvedValue(null)
+      });
       (TurnAssignmentModel.findByIdAndDelete as any).mockResolvedValue(null);
 
       const response = await request(app).delete("/api/assignments/60c72b2f9b1d8b001c8e4a51");

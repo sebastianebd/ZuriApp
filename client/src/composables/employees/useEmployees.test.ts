@@ -5,11 +5,12 @@ import { mount } from '@vue/test-utils'
 
 const mocks = vi.hoisted(() => ({
   fetchPaginated: vi.fn(),
-  mostrarTodos: vi.fn(),
-  crearUsuario: vi.fn(),
-  actualizarUsuario: vi.fn(),
-  eliminarUsuario: vi.fn(),
-  mostrarOpciones: vi.fn(),
+  fetchServices: vi.fn(),
+  fetchRoles: vi.fn(),
+  fetchPositions: vi.fn(),
+  createStaff: vi.fn(),
+  updateStaff: vi.fn(),
+  deleteStaff: vi.fn(),
   mostrarHistorialUsuario: vi.fn(),
   showAlert: vi.fn(),
   apiGet: vi.fn()
@@ -20,18 +21,32 @@ const mockUsersState: any[] = []
 vi.mock('@/stores/staff.store', () => ({
   useStaffStore: () => ({
     fetchPaginated: mocks.fetchPaginated,
-    mostrarTodos: mocks.mostrarTodos,
-    crearUsuario: mocks.crearUsuario,
-    actualizarUsuario: mocks.actualizarUsuario,
-    eliminarUsuario: mocks.eliminarUsuario,
-    currentPageUsers: mockUsersState,
-    paginationInfo: { totalPages: 1 }
+    createStaff: mocks.createStaff,
+    updateStaff: mocks.updateStaff,
+    deleteStaff: mocks.deleteStaff,
+    currentPageStaff: mockUsersState,
+    pagination: { totalPages: 1 }
   })
 }))
 
-vi.mock('@/stores/option.store', () => ({
-  useOptionStore: () => ({
-    mostrarOpciones: mocks.mostrarOpciones
+vi.mock('@/stores/service.store', () => ({
+  useServiceStore: () => ({
+    fetchServices: mocks.fetchServices,
+    services: []
+  })
+}))
+
+vi.mock('@/stores/role.store', () => ({
+  useRoleStore: () => ({
+    fetchRoles: mocks.fetchRoles,
+    roles: []
+  })
+}))
+
+vi.mock('@/stores/position.store', () => ({
+  usePositionStore: () => ({
+    fetchPositions: mocks.fetchPositions,
+    positions: []
   })
 }))
 
@@ -45,7 +60,8 @@ vi.mock('@/stores/auth.store', () => ({
   useAuthStore: () => ({
     usePrivateApi: () => ({
       get: mocks.apiGet
-    })
+    }),
+    IStaff: { role: { level: 999 } }
   })
 }))
 
@@ -69,37 +85,29 @@ describe('useUsers Composable', () => {
     const users = [
       {
         _id: '1',
-        nombre: 'Test',
-        apellido: 'IStaff',
+        firstName: 'Test',
+        lastName: 'IStaff',
         rut: '12345678-9',
-        tipo_cargo: 'TENS',
-        habilitado: 'SI'
+        positionId: 'pos1',
+        isActive: true
       },
       {
         _id: '2',
-        nombre: 'Jane',
-        apellido: 'Doe',
+        firstName: 'Jane',
+        lastName: 'Doe',
         rut: '98765432-1',
-        tipo_cargo: 'ENFERMERA',
-        habilitado: 'NO'
+        positionId: 'pos2',
+        isActive: false
       }
     ]
 
-    // Update state directly as store action would
     mockUsersState.length = 0
     mockUsersState.push(...users)
 
-    // Setup mocks
-    mocks.fetchPaginated.mockResolvedValue({ total: 2, users })
-    mocks.mostrarOpciones.mockResolvedValue({
-      tipoCargo: ['TENS', 'ENFERMERA'],
-      habilitado: ['SI', 'NO'],
-      servicios: ['URGENCIA']
-    })
+    mocks.fetchPaginated.mockResolvedValue(undefined)
     mocks.apiGet.mockResolvedValue({ data: [] })
   })
 
-  // Helper to mount composable
   function mountComposable() {
     let result: any
     const Comp = {
@@ -114,14 +122,16 @@ describe('useUsers Composable', () => {
   }
 
   it('should load users and options on mount', async () => {
-    const { paginatedUsuarios: usuarios, listaTipoCargo } = mountComposable()
+    const { paginatedUsuarios, listaTipoContrato } = mountComposable()
 
     await new Promise((r) => setTimeout(r, 0))
 
     expect(mocks.fetchPaginated).toHaveBeenCalled()
-    expect(mocks.mostrarOpciones).toHaveBeenCalled()
-    expect(usuarios.value).toHaveLength(2)
-    expect(listaTipoCargo.value).toContain('TENS')
+    expect(mocks.fetchServices).toHaveBeenCalled()
+    expect(mocks.fetchRoles).toHaveBeenCalled()
+    expect(mocks.fetchPositions).toHaveBeenCalled()
+    expect(paginatedUsuarios.value).toHaveLength(2)
+    expect(listaTipoContrato.value).toContain('CONTRATA')
   })
 
   it('should filter users by RUT', async () => {
@@ -130,29 +140,27 @@ describe('useUsers Composable', () => {
 
     filtroRut.value = '123'
 
-    // Simulate server-side filtering updating the store
     const filtered = mockUsersState.filter((u) => u.rut.includes('123'))
     mockUsersState.length = 0
     mockUsersState.push(...filtered)
 
     expect(usuariosFiltrados.value).toHaveLength(1)
-    expect(usuariosFiltrados.value[0].nombre).toBe('Test')
+    expect(usuariosFiltrados.value[0].firstName).toBe('Test')
   })
 
   it('should handle IStaff creation (CRUD)', async () => {
     const { handleCreate, paginatedUsuarios: usuarios } = mountComposable()
     await new Promise((r) => setTimeout(r, 0))
 
-    const newUser = { nombre: 'New', apellido: 'IStaff', rut: '11111111-1' }
-    mocks.crearUsuario.mockResolvedValue({ ...newUser, _id: '3' })
+    const newUser = { firstName: 'New', lastName: 'IStaff', rut: '11111111-1' }
+    mocks.createStaff.mockResolvedValue({ ...newUser, _id: '3' })
 
-    // Simulate store update
     mockUsersState.push({ ...newUser, _id: '3' })
 
     await handleCreate(newUser as any)
 
-    expect(mocks.crearUsuario).toHaveBeenCalledWith(newUser)
-    expect(usuarios.value).toHaveLength(3) // 2 loaded + 1 created
+    expect(mocks.createStaff).toHaveBeenCalledWith(newUser)
+    expect(usuarios.value).toHaveLength(3)
     expect(mocks.showAlert).toHaveBeenCalledWith('Guardado', expect.stringContaining('creado'))
   })
 
@@ -162,13 +170,12 @@ describe('useUsers Composable', () => {
 
     expect(usuarios.value).toHaveLength(2)
 
-    // Simulate store update
     const idx = mockUsersState.findIndex((u) => u._id === '1')
     if (idx !== -1) mockUsersState.splice(idx, 1)
 
     await handleDelete('1')
 
-    expect(mocks.eliminarUsuario).toHaveBeenCalledWith('1')
+    expect(mocks.deleteStaff).toHaveBeenCalledWith('1')
     expect(usuarios.value).toHaveLength(1)
     expect(usuarios.value[0]._id).toBe('2')
     expect(mocks.showAlert).toHaveBeenCalledWith('Eliminado', expect.stringContaining('eliminado'))

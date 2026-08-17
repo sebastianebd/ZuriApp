@@ -57,6 +57,7 @@ vi.mock('../../middleware/authentication.middleware', () => {
 describe('Integration - AC-2: Onboarding Workflow', () => {
   let roleWithAccess: any;
   let roleNoAccess: any;
+  let position: any;
 
   beforeAll(async () => {
     await connect();
@@ -71,6 +72,9 @@ describe('Integration - AC-2: Onboarding Workflow', () => {
     vi.clearAllMocks();
 
     // Create Base Roles
+    const Position = (await import('../../models/position.model')).default;
+    position = await Position.create({ name: 'Pos', position_code: 'POS' });
+
     roleWithAccess = await Role.create({
       name: 'Admin',
       code: 'ADMIN',
@@ -94,6 +98,12 @@ describe('Integration - AC-2: Onboarding Workflow', () => {
         lastName: 'Gomez',
         email: 'roberto@example.com',
         roleId: roleNoAccess._id,
+        positionId: position._id,
+        contractType: 'CONTRATA',
+        birthDate: new Date('1990-01-01'),
+        address: 'Test',
+        phone: '12345678',
+        city: 'City'
       };
 
       const res = await request(app).post('/api/staff').send(payload);
@@ -117,6 +127,12 @@ describe('Integration - AC-2: Onboarding Workflow', () => {
         lastName: 'Perez',
         email: 'laura@example.com',
         roleId: roleWithAccess._id,
+        positionId: position._id,
+        contractType: 'CONTRATA',
+        birthDate: new Date('1990-01-01'),
+        address: 'Test',
+        phone: '12345678',
+        city: 'City'
       };
 
       const res = await request(app).post('/api/staff').send(payload);
@@ -140,7 +156,14 @@ describe('Integration - AC-2: Onboarding Workflow', () => {
         rut: '11111111-1',
         firstName: 'Old',
         lastName: 'Name',
+        email: 'old@example.com',
         roleId: roleNoAccess._id,
+        positionId: position._id,
+        contractType: 'CONTRATA',
+        birthDate: new Date('1990-01-01'),
+        address: 'Test',
+        phone: '12345678',
+        city: 'City',
         isDeleted: true,
       });
 
@@ -150,6 +173,12 @@ describe('Integration - AC-2: Onboarding Workflow', () => {
         lastName: 'Name',
         email: 'new@example.com',
         roleId: roleWithAccess._id,
+        positionId: position._id,
+        contractType: 'CONTRATA',
+        birthDate: new Date('1990-01-01'),
+        address: 'Test',
+        phone: '12345678',
+        city: 'City'
       };
 
       const res = await request(app).post('/api/staff').send(payload);
@@ -177,6 +206,12 @@ describe('Integration - AC-2: Onboarding Workflow', () => {
         lastName: 'User',
         email: 'error@example.com',
         roleId: roleWithAccess._id,
+        positionId: position._id,
+        contractType: 'CONTRATA',
+        birthDate: new Date('1990-01-01'),
+        address: 'Test',
+        phone: '12345678',
+        city: 'City'
       };
 
       const res = await request(app).post('/api/staff').send(payload);
@@ -197,6 +232,12 @@ describe('Integration - AC-2: Onboarding Workflow', () => {
         lastName: 'Dev',
         email: 'junior@example.com',
         roleId: roleNoAccess._id,
+        positionId: position._id,
+        contractType: 'CONTRATA',
+        birthDate: new Date('1990-01-01'),
+        address: 'Test',
+        phone: '12345678',
+        city: 'City'
       });
 
       // 2. Promote to Role with access
@@ -224,6 +265,12 @@ describe('Integration - AC-2: Onboarding Workflow', () => {
         lastName: 'Dev',
         email: 'senior@example.com',
         roleId: roleWithAccess._id,
+        positionId: position._id,
+        contractType: 'CONTRATA',
+        birthDate: new Date('1990-01-01'),
+        address: 'Test',
+        phone: '12345678',
+        city: 'City'
       });
 
       await Account.create({
@@ -258,6 +305,12 @@ describe('Integration - AC-2: Onboarding Workflow', () => {
         lastName: 'Employee',
         email: 'leaving@example.com',
         roleId: roleWithAccess._id,
+        positionId: position._id,
+        contractType: 'CONTRATA',
+        birthDate: new Date('1990-01-01'),
+        address: 'Test',
+        phone: '123',
+        city: 'City'
       });
 
       await Account.create({
