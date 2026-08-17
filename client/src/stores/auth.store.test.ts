@@ -25,12 +25,12 @@ describe('Auth Store', () => {
     setActivePinia(createPinia())
   })
 
-  it('login should update state and fetch user', async () => {
+  it('login should update state and fetch IStaff', async () => {
     const store = useAuthStore()
 
     // Mocks responses
     const mockTokenResp = { access_token: 'fake-token' }
-    const mockUserResp = { id: 1, nombre: 'Test', apellido: 'User' }
+    const mockUserResp = { id: 1, nombre: 'Test', apellido: 'IStaff' }
 
     vi.mocked(AuthService.login).mockResolvedValue(mockTokenResp as any)
     vi.mocked(AuthService.getUser).mockResolvedValue(mockUserResp as any)
@@ -41,7 +41,7 @@ describe('Auth Store', () => {
     // Assertions
     expect(store.accessToken).toBe('fake-token')
     expect(store.isAuthenticated).toBe(true)
-    expect(store.user).toEqual(mockUserResp)
+    expect(store.IStaff).toEqual(mockUserResp)
     expect(store.authReady).toBe(true)
 
     expect(AuthService.login).toHaveBeenCalledTimes(1)
@@ -51,13 +51,13 @@ describe('Auth Store', () => {
   it('logout should clear state', async () => {
     const store = useAuthStore()
     store.accessToken = 'some-token'
-    store.user = { id: 1 } as any
+    store.IStaff = { id: 1 } as any
 
     vi.mocked(AuthService.logout).mockResolvedValue({} as any)
 
     await store.logout()
 
     expect(store.accessToken).toBe('')
-    expect(store.user).toBeNull()
+    expect(store.IStaff).toBeNull()
   })
 })

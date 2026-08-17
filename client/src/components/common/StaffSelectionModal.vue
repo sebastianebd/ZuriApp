@@ -111,7 +111,7 @@
                       <span class="fw-bold text-dark x-small">{{ usuario.rut }}</span>
                     </td>
                     <td class="px-2 py-2 text-dark x-small">
-                      {{ usuario.nombre }} {{ usuario.apellido }}
+                      {{ usuario.firstName }} {{ usuario.lastName }}
                     </td>
                     <td class="px-2 py-2">
                       <div class="d-flex flex-column">
@@ -127,12 +127,12 @@
                       <span
                         class="badge px-2 py-1 rounded-pill x-small fw-bold shadow-xs"
                         :class="
-                          usuario.habilitado
+                          usuario.isActive
                             ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
                             : 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25'
                         "
                       >
-                        {{ usuario.habilitado ? 'Activo' : 'Inactivo' }}
+                        {{ usuario.isActive ? 'Activo' : 'Inactivo' }}
                       </span>
                     </td>
                   </tr>
@@ -201,26 +201,26 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useUserStore } from '@/stores/user.store'
-import { type User } from '@/types/user.types'
+import { useStaffStore } from '@/stores/staff.store'
+import { type IStaff } from '@/types/staff.types'
 
 const props = defineProps<{
   visible: boolean
   title?: string
   multiple?: boolean
   max?: number // for multiple
-  initialSelected?: User[] // For pre-selecting
+  initialSelected?: IStaff[] // For pre-selecting
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'select', users: User | User[]): void // Returns single User or Array
+  (e: 'select', users: IStaff | IStaff[]): void // Returns single IStaff or Array
 }>()
 
-const userStore = useUserStore()
+const staffStore = useStaffStore()
 
 // Local AuthState
-const users = ref<User[]>([])
+const users = ref<IStaff[]>([])
 const loadingUsers = ref(false)
 const filtroRutLocal = ref('')
 const filtroNombreLocal = ref('')
@@ -228,17 +228,17 @@ const currentPage = ref(1)
 const itemsPerPage = 10
 
 // Selection AuthState
-const selectedUsers = ref<User[]>([])
+const selectedUsers = ref<IStaff[]>([])
 
 // Init
 onMounted(async () => {
   loadingUsers.value = true
   try {
-    const response = await userStore.mostrarTodos()
-    if (Array.isArray(response)) {
-      users.value = response
+    const response = await staffStore.fetchPaginated({ page: 1, limit: 500 })
+    if (response && response.staff) {
+      users.value = response.staff
     } else {
-      // Fallback if response structure is wrapped
+      // Fallback
       users.value = []
     }
   } catch (error) {
@@ -265,7 +265,7 @@ watch(
 // Filter Users
 const filteredUsers = computed(() => {
   if (!users.value) return []
-  let list = users.value.filter((u) => u.habilitado) // Only active users
+  let list = users.value.filter((u) => u.isActive) // Only active users
 
   if (filtroRutLocal.value) {
     list = list.filter((u) => u.rut.toLowerCase().includes(filtroRutLocal.value.toLowerCase()))
@@ -273,11 +273,11 @@ const filteredUsers = computed(() => {
   if (filtroNombreLocal.value) {
     const term = filtroNombreLocal.value.toLowerCase()
     list = list.filter((u) => {
-      const full = `${u.nombre} ${u.apellido}`.toLowerCase()
+      const full = `${u.firstName} ${u.lastName}`.toLowerCase()
       return full.includes(term)
     })
   }
-  return list.sort((a, b) => a.nombre.localeCompare(b.nombre))
+  return list.sort((a, b) => a.firstName.localeCompare(b.firstName))
 })
 
 // Pagination
@@ -293,13 +293,13 @@ function changePage(p: number) {
 }
 
 // Selection Logic
-function isSelected(user: User) {
-  return selectedUsers.value.some((u) => u._id === user._id)
+function isSelected(IStaff: IStaff) {
+  return selectedUsers.value.some((u) => u._id === IStaff._id)
 }
 
-function handleSelect(user: User) {
+function handleSelect(IStaff: IStaff) {
   if (props.multiple) {
-    const index = selectedUsers.value.findIndex((u) => u._id === user._id)
+    const index = selectedUsers.value.findIndex((u) => u._id === IStaff._id)
     if (index >= 0) {
       selectedUsers.value.splice(index, 1)
     } else {
@@ -307,10 +307,10 @@ function handleSelect(user: User) {
         // Max limit reached, maybe toast?
         return
       }
-      selectedUsers.value.push(user)
+      selectedUsers.value.push(IStaff)
     }
   } else {
-    selectedUsers.value = [user]
+    selectedUsers.value = [IStaff]
     // If single, maybe auto confirm? Or wait for button?
     // Let's wait for button for consistency, or double click.
   }

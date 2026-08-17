@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import * as UserService from './user.service'
+import * as UserService from './staff.service'
 import { errorHandler } from '../utils/errorHandler'
 
 // Mocks
@@ -19,57 +19,49 @@ describe('UserService', () => {
     vi.clearAllMocks()
   })
 
-  it('crearUsuario should POST to /users/', async () => {
-    const payload = { rut: '1', nombre: 'Test' } as any
+  it('createStaff should POST to /staff', async () => {
+    const payload = { rut: '1', firstName: 'Test' } as any
     const mockResponse = { data: { id: 'new' } }
     mockApi.post.mockResolvedValue(mockResponse)
 
-    const result = await UserService.crearUsuario(mockApi as any, payload as any)
+    const result = await UserService.createStaff(mockApi as any, payload as any)
 
     expect(mockApi.post).toHaveBeenCalledWith('/staff', payload)
     expect(result).toEqual(mockResponse.data)
   })
 
-  it('actualizarUsuario should PUT to /staff/:id', async () => {
+  it('updateStaff should PUT to /staff/:id', async () => {
     const id = '123'
-    const payload = { nombre: 'Updated' }
+    const payload = { firstName: 'Updated' }
     const mockResponse = { data: { id, ...payload } }
     mockApi.put.mockResolvedValue(mockResponse)
 
-    const result = await UserService.actualizarUsuario(mockApi as any, id, payload)
+    const result = await UserService.updateStaff(mockApi as any, id, payload)
 
     expect(mockApi.put).toHaveBeenCalledWith(`/staff/${id}`, payload)
     expect(result).toEqual(mockResponse.data)
   })
 
-  it('eliminarUsuario should DELETE /staff/:id', async () => {
+  it('deleteStaff should DELETE /staff/:id', async () => {
     const id = '123'
     const mockResponse = { data: { success: true } }
     mockApi.delete.mockResolvedValue(mockResponse)
 
-    const result = await UserService.eliminarUsuario(mockApi as any, id)
+    const result = await UserService.deleteStaff(mockApi as any, id)
 
     expect(mockApi.delete).toHaveBeenCalledWith(`/staff/${id}`)
     expect(result).toEqual(mockResponse.data)
   })
 
-  it('mostrarUsersCargoTens should GET /users/tens', async () => {
-    const mockResponse = { data: ['tens1', 'tens2'] }
-    mockApi.get.mockResolvedValue(mockResponse)
 
-    const result = await UserService.mostrarUsersCargoTens(mockApi as any)
 
-    expect(mockApi.get).toHaveBeenCalledWith('/users/tens')
-    expect(result).toEqual(mockResponse.data)
-  })
-
-  it('mostrarTodosUsuarios should GET /users/', async () => {
+  it('getAllStaff should GET /staff', async () => {
     const mockResponse = { data: ['user1', 'user2'] }
     mockApi.get.mockResolvedValue(mockResponse)
 
-    const result = await UserService.mostrarTodosUsuarios(mockApi as any)
+    const result = await UserService.getAllStaff(mockApi as any)
 
-    expect(mockApi.get).toHaveBeenCalledWith('/users/', { params: { search: undefined } })
+    expect(mockApi.get).toHaveBeenCalledWith('/staff', { params: undefined })
     expect(result).toEqual(mockResponse.data)
   })
 
@@ -77,7 +69,7 @@ describe('UserService', () => {
     const error = new Error('API Error')
     mockApi.get.mockRejectedValue(error)
 
-    await expect(UserService.mostrarTodosUsuarios(mockApi as any)).rejects.toThrow()
+    await expect(UserService.getAllStaff(mockApi as any)).rejects.toThrow()
     expect(errorHandler).toHaveBeenCalledWith(error)
   })
 })

@@ -41,7 +41,7 @@ vi.mock('@/stores/option.store', () => ({
 vi.mock('@/stores/replacement.store', () => ({
   useReplacementStore: () => mockReplacementStore
 }))
-vi.mock('@/services/user.service', () => ({
+vi.mock('@/services/IStaff.service', () => ({
   mostrarTodosUsuarios: vi.fn().mockResolvedValue([{ _id: 'u1', nombre: 'Test' }])
 }))
 vi.mock('@/plugins/socket', () => ({

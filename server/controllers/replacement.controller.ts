@@ -67,10 +67,14 @@ async function mostrarReemplazos(req: Request, res: Response) {
       parseInt(req.query.limit as string) || (hasPaginationParams ? 10 : 1000);
     const search = (req.query.search as string) || "";
     const servicio = (req.query.servicio as string) || "";
+    const fechaInicio = req.query.fechaInicio as string;
+    const fechaFin = req.query.fechaFin as string;
 
     const result = await replacementService.obtenerActivosPaginado({
       search,
       servicio,
+      fechaInicio,
+      fechaFin,
       page,
       limit,
     });
@@ -126,7 +130,8 @@ async function actualizarReemplazo(req: AuthRequest, res: Response) {
 async function finalizarReemplazo(req: AuthRequest, res: Response) {
   try {
     const original: any = await replacementService.obtenerPorId(req.params.id);
-    const data = await replacementService.finalizarReemplazo(req.params.id);
+    const fechaTermino = req.body.fecha_termino;
+    const data = await replacementService.finalizarReemplazo(req.params.id, fechaTermino);
 
     const nombreReemplazo = original
       ? `${original.id_negocio} para ${original.nombre_saliente} ${original.apellido_saliente}`

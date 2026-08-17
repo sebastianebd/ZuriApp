@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createStaff, updateStaff, deleteStaff, getAllStaff, getStaffById, sendResetLink } from '../../controllers/staff.controller';
+import { createStaff, updateStaff, deleteStaff, getAllStaff, getStaffById } from '../../controllers/staff.controller';
 import authMiddleware, { requirePermission } from '../../middleware/authentication.middleware';
 import { validateSchema } from "../../middleware/validate.middleware";
 import { createStaffSchema, updateStaffSchema } from "../../schemas/staff.schema";
@@ -14,6 +14,5 @@ router.put('/:id', requirePermission("users.update"), validateObjectId(), valida
 router.delete('/:id', requirePermission("users.delete"), validateObjectId(), deleteStaff);
 router.get('/', requirePermission("users.view"), getAllStaff);
 router.get('/:id', requirePermission("users.view"), validateObjectId(), getStaffById);
-router.post('/:id/send-reset-link', requirePermission("users.reset_password"), validateObjectId(), sendResetLink);
 
 export default router;

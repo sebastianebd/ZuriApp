@@ -97,8 +97,8 @@ describe("Auth Service - Unit Tests", () => {
       expect(result).toHaveProperty("refreshToken", "refreshToken");
       expect(result).toHaveProperty("account");
       expect(result).toHaveProperty("staff");
-      expect(result.staff).toHaveProperty("roleId");
-      expect((result.staff.roleId as any).level).toBe(1);
+      expect(result.staff).toHaveProperty("role");
+      expect((result.staff.role as any).level).toBe(1);
       expect(LoginHistory.create).toHaveBeenCalledWith(
         expect.objectContaining({ status: "SUCCESS" }),
       );

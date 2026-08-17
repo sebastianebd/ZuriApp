@@ -50,7 +50,7 @@
           <td class="pe-4 text-end last-cell">
             <div class="actions-wrapper h-100 d-flex align-items-center justify-content-end gap-2">
               <button
-                v-if="authStore.hasPermission('cargos.update')"
+                v-if="authStore.hasPermission('position.update')"
                 @click="$emit('edit', position)"
                 class="btn-glass btn-edit"
                 title="Editar"
@@ -59,7 +59,7 @@
               </button>
 
               <button
-                v-if="authStore.hasPermission('cargos.delete')"
+                v-if="authStore.hasPermission('position.delete')"
                 @click="$emit('delete', position)"
                 class="btn-glass btn-delete"
                 title="Eliminar"

@@ -73,10 +73,12 @@ export const actualizarReemplazo = async (
 
 export const finalizarReemplazo = async (
   apiPrivate: ReturnType<typeof useApiPrivate>,
-  id: string
+  id: string,
+  fechaTermino?: string
 ) => {
   try {
-    const { data } = await apiPrivate.put(`/reemplazos/finalizar/${id}`)
+    const payload = fechaTermino ? { fecha_termino: fechaTermino } : {}
+    const { data } = await apiPrivate.put(`/reemplazos/finalizar/${id}`, payload)
     return data
   } catch (error) {
     throw errorHandler(error)

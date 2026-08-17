@@ -5,6 +5,7 @@ export interface IPosition extends Document {
   position_code: string;
   description?: string;
   isActive: boolean;
+  deleted_at?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,6 +31,10 @@ const PositionSchema: Schema = new Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    deleted_at: {
+      type: Date,
+      default: null,
     },
   },
   {

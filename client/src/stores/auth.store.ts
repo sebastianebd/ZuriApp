@@ -5,17 +5,16 @@ import { type AuthState, type LoginData } from '../types/auth.types'
 import type { AxiosInstance } from 'axios'
 import socket from '../plugins/socket'
 
-let privateApiInstance: AxiosInstance | null = null
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
-    user: null,
+    IStaff: null,
     accessToken: '',
     authReady: false
   }),
 
   getters: {
-    userDetail: (state) => state.user,
+    userDetail: (state) => state.IStaff,
     isAuthenticated: (state) => !!state.accessToken
   },
 
@@ -31,14 +30,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     usePrivateApi(): AxiosInstance {
-      if (!privateApiInstance) {
-        privateApiInstance = useApiPrivate(
-          () => this.getAccessToken(),
-          () => this.refreshToken(),
-          () => this.logout()
-        )
-      }
-      return privateApiInstance
+      return useApiPrivate()
     },
 
     async login(payload: LoginData) {
@@ -47,10 +39,10 @@ export const useAuthStore = defineStore('auth', {
       await this.getUser()
       this.authReady = true
 
-      // Connect Socket with User ID
-      if (this.user && this.user._id) {
+      // Connect Socket with Token
+      if (this.accessToken) {
         if (socket.connected) socket.disconnect() // Reset connection to apply new auth
-        socket.auth = { userId: this.user._id }
+        socket.auth = { token: this.accessToken }
         socket.connect()
       }
 
@@ -60,7 +52,7 @@ export const useAuthStore = defineStore('auth', {
     async getUser() {
       const apiPrivate = this.usePrivateApi()
       const data = await AuthService.getUser(apiPrivate)
-      this.user = data
+      this.IStaff = data
       return data
     },
 
@@ -72,11 +64,11 @@ export const useAuthStore = defineStore('auth', {
           newPassword,
           confirmPassword
         })
-        return { success: true, message: data.mensaje || 'Contraseña actualizada exitosamente' }
+        return { success: true, message: data.message || 'Contraseña actualizada exitosamente' }
       } catch (error: any) {
         return {
           success: false,
-          message: error.mensaje || error.message || 'Error al cambiar la contraseña'
+          message: error.message || 'Error al cambiar la contraseña'
         }
       }
     },
@@ -89,7 +81,7 @@ export const useAuthStore = defineStore('auth', {
         console.error('Logout API failed, forcing local cleanup', error)
       } finally {
         this.accessToken = ''
-        this.user = null
+        this.IStaff = null
         socket.disconnect() // Disconnect socket
         sessionStorage.clear()
         localStorage.clear() // Safety cleanup for migrated users
@@ -103,21 +95,19 @@ export const useAuthStore = defineStore('auth', {
       return data
     },
 
-    /**
-     * Verifica si el usuario tiene un permiso específico o es SuperAdmin (Nivel 100)
-     */
     hasPermission(permission: string): boolean {
-      if (!this.user) return false
+      if (!this.IStaff || !this.IStaff.role) return false
+      const perms = this.IStaff.role.permissions || []
+      if (perms.includes('*')) return true
+      return perms.includes(permission)
+    },
 
-      // Super Admin Override
-      if (this.user.nivel === 100) return true
-
-      // Check permissions array
-      if (this.user.permisos && this.user.permisos.includes(permission)) {
-        return true
-      }
-
-      return false
+    /**
+     * Verifica si el usuario actual tiene jurisdicción sobre un nivel objetivo
+     */
+    canManageUser(targetLevel: number): boolean {
+      const myLevel = this.IStaff?.role?.level || 0
+      return myLevel > targetLevel || myLevel >= 100
     },
 
     bindSocketEvents() {
@@ -125,10 +115,10 @@ export const useAuthStore = defineStore('auth', {
       if (socket.hasListeners('cargo_updated')) return
 
       socket.on('cargo_updated', async (data: { cargoNombre: string; action: string }) => {
-        // If the updated cargo matches current user's cargo, refresh permissions
-        if (this.user && this.user.tipo_cargo === data.cargoNombre) {
+        // If the updated cargo matches current IStaff's cargo, refresh permissions
+        if (this.IStaff?.role?.code === data.cargoNombre) {
           console.log(
-            `[AuthStore] Cargo '${data.cargoNombre}' updated. Refreshing user permissions...`
+            `[AuthStore] Cargo '${data.cargoNombre}' updated. Refreshing IStaff permissions...`
           )
           await this.getUser()
         }

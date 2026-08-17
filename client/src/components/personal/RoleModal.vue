@@ -41,8 +41,28 @@ const permissionModules = [
     capabilities: ['view', 'create', 'update', 'delete']
   },
   {
-    key: 'cargos',
+    key: 'role',
+    label: 'Roles',
+    capabilities: ['view', 'create', 'update', 'delete']
+  },
+  {
+    key: 'position',
     label: 'Cargos',
+    capabilities: ['view', 'create', 'update', 'delete']
+  },
+  {
+    key: 'service',
+    label: 'Servicios',
+    capabilities: ['view', 'create', 'update', 'delete']
+  },
+  {
+    key: 'turn-type',
+    label: 'Tipos de Turno',
+    capabilities: ['view', 'create', 'update', 'delete']
+  },
+  {
+    key: 'turn-sigla',
+    label: 'Siglas de Turno',
     capabilities: ['view', 'create', 'update', 'delete']
   },
   {
@@ -53,11 +73,6 @@ const permissionModules = [
   {
     key: 'replacement',
     label: 'Reemplazos',
-    capabilities: ['view', 'create', 'update', 'delete']
-  },
-  {
-    key: 'config',
-    label: 'Configuración (Servicios/Tipos)',
     capabilities: ['view', 'create', 'update', 'delete']
   },
   {
@@ -117,7 +132,7 @@ watch(
         name: '',
         code: '',
         description: '',
-        level: 10, // Default User
+        level: 10, // Default IStaff
         permissions: [],
         hasSystemAccess: false
       }
@@ -224,11 +239,11 @@ function onSubmit() {
             <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
               >Permisos del Sistema</label
             >
-            <div class="permissions-container border rounded-3 overflow-hidden">
+            <div class="permissions-container border rounded-3 overflow-hidden row g-0">
               <div
                 v-for="mod in permissionModules"
                 :key="mod.key"
-                class="module-row p-3 border-bottom bg-white"
+                class="col-12 col-md-6 module-row p-3 border-bottom border-end bg-white"
               >
                 <div class="d-flex align-items-center justify-content-between mb-2">
                   <span class="fw-bold text-dark small">{{ mod.label }}</span>

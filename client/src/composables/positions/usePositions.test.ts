@@ -40,7 +40,7 @@ describe('usePositions composable', () => {
 
   it('should open edit modal', () => {
     const { showModal, selectedPosition, openEditModal } = usePositions()
-    const pos = { _id: '1', name: 'Developer', position_code: 'DEV' }
+    const pos = { _id: '1', name: 'Developer', position_code: 'DEV', isActive: true }
     openEditModal(pos)
     expect(showModal.value).toBe(true)
     expect(selectedPosition.value).toEqual(pos)
@@ -77,7 +77,7 @@ describe('usePositions composable', () => {
 
   it('should confirm delete and delete position', async () => {
     const { positionToDelete, showDeleteModal, confirmDelete, handleDelete } = usePositions()
-    const pos = { _id: '1', name: 'Developer', position_code: 'DEV' }
+    const pos = { _id: '1', name: 'Developer', position_code: 'DEV', isActive: true }
     
     confirmDelete(pos)
     expect(showDeleteModal.value).toBe(true)

@@ -18,8 +18,8 @@ export const usePublicStore = defineStore('public', {
       try {
         const data: PublicShiftsResponse = await PublicService.getPublicShifts(userId, month, year)
         
-        if (data.user) {
-          this.userInfo = data.user
+        if (data.IStaff) {
+          this.userInfo = data.IStaff
         }
         
         if (data.timeline) {

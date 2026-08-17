@@ -17,8 +17,8 @@ const mocks = vi.hoisted(() => ({
 
 const mockUsersState: any[] = []
 
-vi.mock('@/stores/user.store', () => ({
-  useUserStore: () => ({
+vi.mock('@/stores/staff.store', () => ({
+  useStaffStore: () => ({
     fetchPaginated: mocks.fetchPaginated,
     mostrarTodos: mocks.mostrarTodos,
     crearUsuario: mocks.crearUsuario,
@@ -70,7 +70,7 @@ describe('useUsers Composable', () => {
       {
         _id: '1',
         nombre: 'Test',
-        apellido: 'User',
+        apellido: 'IStaff',
         rut: '12345678-9',
         tipo_cargo: 'TENS',
         habilitado: 'SI'
@@ -139,11 +139,11 @@ describe('useUsers Composable', () => {
     expect(usuariosFiltrados.value[0].nombre).toBe('Test')
   })
 
-  it('should handle user creation (CRUD)', async () => {
+  it('should handle IStaff creation (CRUD)', async () => {
     const { handleCreate, paginatedUsuarios: usuarios } = mountComposable()
     await new Promise((r) => setTimeout(r, 0))
 
-    const newUser = { nombre: 'New', apellido: 'User', rut: '11111111-1' }
+    const newUser = { nombre: 'New', apellido: 'IStaff', rut: '11111111-1' }
     mocks.crearUsuario.mockResolvedValue({ ...newUser, _id: '3' })
 
     // Simulate store update
@@ -156,7 +156,7 @@ describe('useUsers Composable', () => {
     expect(mocks.showAlert).toHaveBeenCalledWith('Guardado', expect.stringContaining('creado'))
   })
 
-  it('should handle user deletion (CRUD)', async () => {
+  it('should handle IStaff deletion (CRUD)', async () => {
     const { handleDelete, paginatedUsuarios: usuarios } = mountComposable()
     await new Promise((r) => setTimeout(r, 0))
 

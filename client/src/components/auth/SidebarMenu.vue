@@ -16,7 +16,7 @@
       <div class="menu-group">
         <h3>Personal</h3>
         <router-link
-          :to="{ name: 'personal-funcionarios' }"
+          :to="{ name: 'personal-staff' }"
           class="menu-item"
           title="Funcionarios"
           v-if="can('users.view')"
@@ -24,15 +24,7 @@
           <i class="bi bi-person-badge"></i>
           <span class="text">Funcionarios</span>
         </router-link>
-        <router-link
-          :to="{ name: 'personal-cargos' }"
-          class="menu-item"
-          title="Roles y Cargos"
-          v-if="can('cargos.view')"
-        >
-          <i class="bi bi-briefcase"></i>
-          <span class="text">Roles y Cargos</span>
-        </router-link>
+
         <router-link
           :to="{ name: 'personal-ficha-turnos' }"
           class="menu-item"
@@ -127,9 +119,14 @@
       </div>
 
       <!-- Configuración Section -->
-      <div class="menu-group" v-if="can('config.view')">
+      <div class="menu-group" v-if="can('service.view') || can('turn-type.view') || can('role.view') || can('position.view')">
         <h3>Configuración</h3>
-        <router-link :to="{ name: 'configuracion-servicios' }" class="menu-item" title="Servicios">
+        <router-link
+          :to="{ name: 'configuracion-servicios' }"
+          class="menu-item"
+          title="Servicios"
+          v-if="can('service.view')"
+        >
           <i class="bi bi-hospital"></i>
           <span class="text">Servicios</span>
         </router-link>
@@ -137,9 +134,19 @@
           :to="{ name: 'configuracion-tipos-turno' }"
           class="menu-item"
           title="Tipos de Turno"
+          v-if="can('turn-type.view')"
         >
           <i class="bi bi-clock"></i>
           <span class="text">Tipos de Turno</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'personal-cargos' }"
+          class="menu-item"
+          title="Roles y Cargos"
+          v-if="can('role.view') || can('position.view')"
+        >
+          <i class="bi bi-briefcase"></i>
+          <span class="text">Roles y Cargos</span>
         </router-link>
       </div>
     </div>

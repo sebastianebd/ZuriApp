@@ -70,11 +70,22 @@ async function me(req: AuthRequest, res: Response) {
     return res.status(401).json({ message: "Usuario no autenticado" });
   }
 
-  // Composición del Payload de Usuario (Staff + Role)
+  // 1. Extraer objeto plano para evitar fuga de instancias Mongoose
+  const staffObj = (req.staff as any).toObject();
+  const roleDoc = staffObj.roleId as any;
+
+  // 2. Extraer roleId para limpiar el payload
+  const { roleId, ...restStaff } = staffObj;
+
+  // 3. Construir DTO estricto para el Frontend
   const userPayload = {
-    ...req.staff,
-    nivel: req.staff.roleId?.level || 0,
-    permisos: req.staff.roleId?.permissions || [],
+    ...restStaff,
+    role: {
+      code: roleDoc?.code,
+      level: roleDoc?.level || 0,
+      permissions: roleDoc?.permissions || [],
+      hasSystemAccess: roleDoc?.hasSystemAccess || false
+    }
   };
 
   res.status(200).json(userPayload);

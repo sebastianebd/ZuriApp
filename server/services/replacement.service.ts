@@ -85,16 +85,33 @@ async function obtenerActivos() {
 async function obtenerActivosPaginado(options: {
   search?: string;
   servicio?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
   page: number;
   limit: number;
 }) {
-  const { search, servicio, page, limit } = options;
+  const { search, servicio, fechaInicio, fechaFin, page, limit } = options;
   const query: any = {
     status: { $in: ["EN CURSO", "PENDIENTE"] },
   };
 
   if (servicio && servicio.trim().length > 0) {
     query.servicio = servicio;
+  }
+
+  // Date filters
+  if (fechaInicio || fechaFin) {
+    query.$and = query.$and || [];
+    
+    // Si hay fechaInicio, el reemplazo debe iniciar en o después de esta fecha
+    if (fechaInicio) {
+      query.$and.push({ fecha_inicio: { $gte: fechaInicio } });
+    }
+    
+    // Si hay fechaFin, el reemplazo debe terminar en o antes de esta fecha
+    if (fechaFin) {
+      query.$and.push({ fecha_termino: { $lte: fechaFin } });
+    }
   }
 
   // Búsqueda Optimizada:
@@ -114,7 +131,7 @@ async function obtenerActivosPaginado(options: {
     ];
   }
 
-  const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}`;
+  const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}:fi${fechaInicio || "none"}:ff${fechaFin || "none"}`;
   const cachedData = await get(cacheKey);
   if (cachedData) return cachedData;
 
@@ -124,7 +141,7 @@ async function obtenerActivosPaginado(options: {
   const [reemplazos, total] = await Promise.all([
     Replacement.find(query)
       .populate("creado_por", "firstName lastName")
-      .populate("id_entrante", "_id positionId")
+      .populate({ path: "id_entrante", select: "_id positionId firstName lastName rut", populate: { path: "positionId", select: "name" } })
       .skip(skip)
       .limit(limit)
       .lean(),
@@ -173,26 +190,18 @@ async function obtenerInactivosPaginados(
     };
   }
 
-  if (filtros.fechaInicio) {
-    const fechaInicio = new Date(filtros.fechaInicio);
-    const fechaFinDia = new Date(fechaInicio);
-    fechaFinDia.setDate(fechaFinDia.getDate() + 1);
-
-    query.fecha_inicio = {
-      $gte: fechaInicio,
-      $lt: fechaFinDia,
-    };
-  }
-
-  if (filtros.fechaFin) {
-    const fechaTermino = new Date(filtros.fechaFin);
-    const fechaFinDia = new Date(fechaTermino);
-    fechaFinDia.setDate(fechaFinDia.getDate() + 1);
-
-    query.fecha_termino = {
-      $gte: fechaTermino,
-      $lt: fechaFinDia,
-    };
+  if (filtros.fechaInicio || filtros.fechaFin) {
+    query.$and = query.$and || [];
+    
+    // Si hay fechaInicio, el reemplazo debe iniciar en o después de esta fecha
+    if (filtros.fechaInicio) {
+      query.$and.push({ fecha_inicio: { $gte: filtros.fechaInicio } });
+    }
+    
+    // Si hay fechaFin, el reemplazo debe terminar en o antes de esta fecha
+    if (filtros.fechaFin) {
+      query.$and.push({ fecha_termino: { $lte: filtros.fechaFin } });
+    }
   }
 
   const sortedQuery = { ...filtros };
@@ -229,18 +238,45 @@ async function obtenerPorId(id: string) {
 }
 
 async function actualizar(id: string, data: Partial<IReplacement>) {
-  await Replacement.findByIdAndUpdate(id, data, { new: true });
+  if (data.tipo_turno) {
+    const { default: TurnTypeModel } = await import("../models/turn-type.model");
+    const turnTypeDoc = await TurnTypeModel.findOne({
+      nombre: { $regex: new RegExp(`^${escapeRegex(data.tipo_turno)}$`, "i") },
+      deleted_at: null,
+    });
+
+    if (!turnTypeDoc) {
+      const error = new Error(`El turno '${data.tipo_turno}' no existe o está inactivo.`);
+      (error as any).status = 400;
+      throw error;
+    }
+
+    data.turn_type_id = turnTypeDoc._id as any;
+    data.snapshot_secuencia = turnTypeDoc.toObject().secuencia.map((item: any) => {
+      const { color, ...rest } = item;
+      return rest;
+    });
+  }
+
+  const updatedReplacement = await Replacement.findByIdAndUpdate(id, data, { new: true });
   await delPattern("replacements:*");
-  return await Replacement.findById(id);
+
+  if (updatedReplacement && updatedReplacement.id_entrante) {
+    socketService.emitTurnUpdate(updatedReplacement.id_entrante.toString());
+  }
+
+  return updatedReplacement;
 }
 
-async function finalizarReemplazo(id: string) {
+async function finalizarReemplazo(id: string, fechaTermino?: string) {
   // C4 Timezone fix: store plain UTC (new Date()). The hardcoded Chile offset
   // was wrong — Chile switches between UTC-3 and UTC-4 seasonally.
   // The frontend already formats dates with { timeZone: "America/Santiago" }.
+  const fecha = fechaTermino ? new Date(fechaTermino) : new Date();
+
   await Replacement.findByIdAndUpdate(
     id,
-    { status: "FINALIZADO", fecha_termino: new Date() },
+    { status: "FINALIZADO", fecha_termino: fecha },
     { new: true },
   );
   await delPattern("replacements:*");

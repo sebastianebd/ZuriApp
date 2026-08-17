@@ -10,11 +10,11 @@ const router = Router();
 // ABM simple para las siglas visuales en el calendario (L, N, X, etc.)
 router.use(authMiddleware);
 
-router.get("/", TurnSiglaController.getTurnSiglas);
+router.get("/", requirePermission("turn-sigla.view"), TurnSiglaController.getTurnSiglas);
 
 // [SECURITY] Escrituras restringidas a roles con permiso de gestión de turnos
-router.post("/", requirePermission("gestionar.turnos"), validateSchema(createTurnSiglaSchema), TurnSiglaController.createTurnSigla);
-router.put("/:id", requirePermission("gestionar.turnos"), validateSchema(updateTurnSiglaSchema), TurnSiglaController.updateTurnSigla);
-router.delete("/:id", requirePermission("gestionar.turnos"), TurnSiglaController.deleteTurnSigla);
+router.post("/", requirePermission("turn-sigla.create"), validateSchema(createTurnSiglaSchema), TurnSiglaController.createTurnSigla);
+router.put("/:id", requirePermission("turn-sigla.update"), validateSchema(updateTurnSiglaSchema), TurnSiglaController.updateTurnSigla);
+router.delete("/:id", requirePermission("turn-sigla.delete"), TurnSiglaController.deleteTurnSigla);
 
 export default router;

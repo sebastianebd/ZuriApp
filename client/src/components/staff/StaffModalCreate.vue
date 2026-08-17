@@ -63,13 +63,13 @@
                         >Nombre</label
                       >
                       <input
-                        v-model="form.nombre"
+                        v-model="form.firstName"
                         class="form-control"
-                        :class="{ 'is-invalid': errors.nombre }"
+                        :class="{ 'is-invalid': errors.firstName }"
                         placeholder="Ej: Sebastián"
                       />
-                      <div v-if="errors.nombre" class="invalid-feedback fw-bold floating-error">
-                        {{ errors.nombre }}
+                      <div v-if="errors.firstName" class="invalid-feedback fw-bold floating-error">
+                        {{ errors.firstName }}
                       </div>
                     </div>
 
@@ -79,13 +79,13 @@
                         >Apellido</label
                       >
                       <input
-                        v-model="form.apellido"
+                        v-model="form.lastName"
                         class="form-control"
-                        :class="{ 'is-invalid': errors.apellido }"
+                        :class="{ 'is-invalid': errors.lastName }"
                         placeholder="Ej: Barría"
                       />
-                      <div v-if="errors.apellido" class="invalid-feedback fw-bold floating-error">
-                        {{ errors.apellido }}
+                      <div v-if="errors.lastName" class="invalid-feedback fw-bold floating-error">
+                        {{ errors.lastName }}
                       </div>
                     </div>
 
@@ -95,7 +95,7 @@
                         >Fecha de Nacimiento</label
                       >
                       <DatePicker
-                        v-model="form.fecha_nac"
+                        v-model="form.birthDate"
                         :popover="popoverConfig"
                         :masks="{ input: 'DD/MM/YYYY' }"
                       >
@@ -106,7 +106,7 @@
                             </span>
                             <input
                               class="form-control border-start-0 ps-0"
-                              :class="{ 'is-invalid': errors.fecha_nac }"
+                              :class="{ 'is-invalid': errors.birthDate }"
                               :value="inputValue"
                               v-on="inputEvents"
                               placeholder="Seleccione fecha"
@@ -116,26 +116,42 @@
                         </template>
                       </DatePicker>
                       <div
-                        v-if="errors.fecha_nac"
+                        v-if="errors.birthDate"
                         class="text-danger x-small fw-bold floating-error"
                       >
-                        {{ errors.fecha_nac }}
+                        {{ errors.birthDate }}
                       </div>
                     </div>
 
                     <!-- Dirección -->
-                    <div class="mb-2 position-relative">
+                    <div class="mb-4 position-relative">
                       <label class="form-label x-small fw-bold text-secondary text-uppercase"
                         >Dirección</label
                       >
                       <input
-                        v-model="form.direccion"
+                        v-model="form.address"
                         class="form-control"
-                        :class="{ 'is-invalid': errors.direccion }"
+                        :class="{ 'is-invalid': errors.address }"
                         placeholder="Calle, Número"
                       />
-                      <div v-if="errors.direccion" class="invalid-feedback fw-bold floating-error">
-                        {{ errors.direccion }}
+                      <div v-if="errors.address" class="invalid-feedback fw-bold floating-error">
+                        {{ errors.address }}
+                      </div>
+                    </div>
+
+                    <!-- Ciudad -->
+                    <div class="mb-2 position-relative">
+                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
+                        >Ciudad</label
+                      >
+                      <input
+                        v-model="form.city"
+                        class="form-control"
+                        :class="{ 'is-invalid': errors.city }"
+                        placeholder="Ej: Santiago"
+                      />
+                      <div v-if="errors.city" class="invalid-feedback fw-bold floating-error">
+                        {{ errors.city }}
                       </div>
                     </div>
                   </div>
@@ -150,46 +166,27 @@
                       Contacto y Rol
                     </h6>
 
-                    <!-- Ciudad -->
-                    <div class="mb-4 position-relative">
-                      <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                        >Ciudad</label
-                      >
-                      <input
-                        v-model="form.ciudad"
-                        class="form-control"
-                        :class="{ 'is-invalid': errors.ciudad }"
-                        placeholder="Ej: Santiago"
-                      />
-                      <div v-if="errors.ciudad" class="invalid-feedback fw-bold floating-error">
-                        {{ errors.ciudad }}
-                      </div>
-                    </div>
-
                     <!-- Teléfono -->
                     <div class="mb-4 position-relative">
                       <label class="form-label x-small fw-bold text-secondary text-uppercase"
                         >Teléfono</label
                       >
                       <div class="input-group">
-                        <span class="input-group-text bg-light text-secondary fw-bold border-end-0">
+                        <span class="input-group-text bg-light text-secondary border-end-0">
                           +56
                         </span>
                         <input
-                          v-model="form.telefono"
+                          v-model="form.phone"
                           type="text"
                           class="form-control border-start-0 ps-1"
-                          :class="{ 'is-invalid': errors.telefono }"
+                          :class="{ 'is-invalid': errors.phone }"
                           placeholder="912345678"
                           maxlength="9"
-                          @input="form.telefono = form.telefono.replace(/[^0-9]/g, '')"
+                          @input="form.phone = form.phone.replace(/[^0-9]/g, '')"
                         />
                       </div>
-                      <div
-                        v-if="errors.telefono"
-                        class="text-danger x-small fw-bold floating-error"
-                      >
-                        {{ errors.telefono }}
+                      <div v-if="errors.phone" class="text-danger x-small fw-bold floating-error">
+                        {{ errors.phone }}
                       </div>
                     </div>
 
@@ -230,10 +227,7 @@
                           {{ option.name }} <small class="text-muted">({{ option.code }})</small>
                         </template>
                       </v-select>
-                      <div
-                        v-if="errors.roleId"
-                        class="text-danger x-small fw-bold floating-error"
-                      >
+                      <div v-if="errors.roleId" class="text-danger x-small fw-bold floating-error">
                         {{ errors.roleId }}
                       </div>
                     </div>
@@ -268,41 +262,39 @@
                         >Tipo Contrato</label
                       >
                       <v-select
-                        v-model="form.tipo_contrato"
-                        :options="['PLANTA', 'REEMPLAZO']"
+                        v-model="form.contractType"
+                        :options="listaTipoContrato"
                         placeholder="Seleccione contrato"
                         class="custom-v-select"
-                        :class="{ 'is-invalid': errors.tipo_contrato }"
+                        :class="{ 'is-invalid': errors.contractType }"
                         :clearable="false"
                         :searchable="false"
                       />
                       <div
-                        v-if="errors.tipo_contrato"
+                        v-if="errors.contractType"
                         class="text-danger x-small fw-bold floating-error"
                       >
-                        {{ errors.tipo_contrato }}
+                        {{ errors.contractType }}
                       </div>
                     </div>
 
-                    <!-- Habilitado -->
-                    <div v-if="shouldShowHabilitado" class="mb-2 position-relative">
+                    <!-- Disponibilidad Operativa -->
+                    <div class="mb-2 position-relative">
                       <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                        >Estado Inicial</label
+                        >Disponibilidad Operativa</label
                       >
-                      <v-select
-                        v-model="form.habilitado"
-                        :options="listaHabilitado"
-                        placeholder="Seleccione estado"
-                        class="custom-v-select"
-                        :class="{ 'is-invalid': errors.habilitado }"
-                        :clearable="false"
-                        :searchable="true"
-                      />
-                      <div
-                        v-if="errors.habilitado"
-                        class="text-danger x-small fw-bold floating-error"
-                      >
-                        {{ errors.habilitado }}
+                      <div class="form-check form-switch mt-1 fs-5">
+                        <input
+                          class="form-check-input shadow-none cursor-pointer"
+                          type="checkbox"
+                          role="switch"
+                          v-model="form.isActive"
+                        />
+                        <label
+                          class="form-check-label x-small text-secondary fw-semibold ms-2 align-middle"
+                        >
+                          {{ form.isActive ? 'Habilitado' : 'Inactivo' }}
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -346,7 +338,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 import { validateRut } from '@fdograph/rut-utilities'
 import { formatRut, cleanRutForStorage } from '@/utils/rut.util'
@@ -357,6 +349,7 @@ const props = defineProps<{
   visible: boolean
   listaRoles: any[]
   listaPositions: any[]
+  listaTipoContrato: string[]
   listaHabilitado: string[]
   listaServicios: any[]
 }>()
@@ -368,18 +361,18 @@ const emit = defineEmits<{
 
 const initialForm = {
   rut: '',
-  nombre: '',
-  apellido: '',
-  fecha_nac: null,
-  direccion: '',
-  ciudad: '',
-  telefono: '',
+  firstName: '',
+  lastName: '',
+  birthDate: null,
+  address: '',
+  city: '',
+  phone: '',
   email: '',
   roleId: '',
   positionId: '',
   servicio: '',
-  tipo_contrato: '',
-  habilitado: ''
+  contractType: '',
+  isActive: true
 }
 
 const form = ref({ ...initialForm })
@@ -396,13 +389,7 @@ const popoverConfig = {
   placement: 'bottom' as const
 }
 
-// Logic to conditionally show "Habilitado"
-const shouldShowHabilitado = computed(() => {
-  const role = props.listaRoles.find(r => r._id === form.value.roleId)
-  if (!role) return false
-  // Roles with system access don't need manual Habilitado since they are automatically enabled after OTL
-  return !role.hasSystemAccess
-})
+// Removed shouldShowHabilitado since it's always shown now
 
 // Watchers
 watch(
@@ -414,15 +401,7 @@ watch(
   }
 )
 
-// Watch for role changes to reset hidden fields
-watch(
-  () => form.value.roleId,
-  () => {
-    if (!shouldShowHabilitado.value) {
-      form.value.habilitado = ''
-    }
-  }
-)
+// Watch for role changes (removed hidden fields reset logic)
 
 function resetForm() {
   form.value = { ...initialForm }
@@ -441,47 +420,47 @@ const validateForm = () => {
   }
 
   // Validar Nombre
-  if (!form.value.nombre) {
-    newErrors.nombre = 'El nombre es obligatorio'
-  } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(form.value.nombre)) {
-    newErrors.nombre = 'Solo letras permitidas'
-  } else if (form.value.nombre.length > 30) {
-    newErrors.nombre = 'Máximo 30 caracteres'
+  if (!form.value.firstName) {
+    newErrors.firstName = 'El nombre es obligatorio'
+  } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(form.value.firstName)) {
+    newErrors.firstName = 'Solo letras permitidas'
+  } else if (form.value.firstName.length > 30) {
+    newErrors.firstName = 'Máximo 30 caracteres'
   }
 
   // Validar Apellido
-  if (!form.value.apellido) {
-    newErrors.apellido = 'El apellido es obligatorio'
-  } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(form.value.apellido)) {
-    newErrors.apellido = 'Solo letras permitidas'
-  } else if (form.value.apellido.length > 30) {
-    newErrors.apellido = 'Máximo 30 caracteres'
+  if (!form.value.lastName) {
+    newErrors.lastName = 'El apellido es obligatorio'
+  } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(form.value.lastName)) {
+    newErrors.lastName = 'Solo letras permitidas'
+  } else if (form.value.lastName.length > 30) {
+    newErrors.lastName = 'Máximo 30 caracteres'
   }
 
   // Validar Fecha Nacimiento
-  if (!form.value.fecha_nac) {
-    newErrors.fecha_nac = 'La fecha es obligatoria'
+  if (!form.value.birthDate) {
+    newErrors.birthDate = 'La fecha es obligatoria'
   }
 
   // Validar Dirección
-  if (!form.value.direccion) {
-    newErrors.direccion = 'La dirección es obligatoria'
-  } else if (form.value.direccion.length > 35) {
-    newErrors.direccion = 'Máximo 35 caracteres'
+  if (!form.value.address) {
+    newErrors.address = 'La dirección es obligatoria'
+  } else if (form.value.address.length > 35) {
+    newErrors.address = 'Máximo 35 caracteres'
   }
 
   // Validar Ciudad
-  if (!form.value.ciudad) {
-    newErrors.ciudad = 'La ciudad es obligatoria'
-  } else if (form.value.ciudad.length > 35) {
-    newErrors.ciudad = 'Máximo 35 caracteres'
+  if (!form.value.city) {
+    newErrors.city = 'La ciudad es obligatoria'
+  } else if (form.value.city.length > 35) {
+    newErrors.city = 'Máximo 35 caracteres'
   }
 
   // Validar Teléfono
-  if (!form.value.telefono) {
-    newErrors.telefono = 'El teléfono es obligatorio'
-  } else if (!/^\d{9}$/.test(form.value.telefono)) {
-    newErrors.telefono = 'Debe tener 9 dígitos'
+  if (!form.value.phone) {
+    newErrors.phone = 'El teléfono es obligatorio'
+  } else if (!/^\d{9}$/.test(form.value.phone)) {
+    newErrors.phone = 'Debe tener 9 dígitos'
   }
 
   // Validar Email
@@ -502,13 +481,13 @@ const validateForm = () => {
   }
 
   // Validar Tipo Contrato
-  if (!form.value.tipo_contrato) {
-    newErrors.tipo_contrato = 'Debe seleccionar tipo contrato'
+  if (!form.value.contractType) {
+    newErrors.contractType = 'Debe seleccionar tipo contrato'
   }
 
-  // Validar Habilitado (Solo si es visible)
-  if (shouldShowHabilitado.value && !form.value.habilitado) {
-    newErrors.habilitado = 'Debe seleccionar un estado'
+  // Validar Habilitado
+  if (typeof form.value.isActive !== 'boolean') {
+    newErrors.isActive = 'Debe seleccionar un estado'
   }
 
   errors.value = newErrors
@@ -535,13 +514,14 @@ function confirmarGuardar() {
   const dbRut = cleanRutForStorage(form.value.rut)
 
   // Format phone number with +56 prefix
-  const formattedPhone = `+56${form.value.telefono}`
+  const formattedPhone = `+56${form.value.phone}`
 
   const dataToSave = {
     ...form.value,
     rut: dbRut,
-    telefono: formattedPhone,
-    fecha_nac: form.value.fecha_nac ? new Date(form.value.fecha_nac as any).toISOString() : null
+    phone: formattedPhone,
+    birthDate: form.value.birthDate ? new Date(form.value.birthDate as any).toISOString() : null,
+    isActive: form.value.isActive
   }
   emit('guardar', dataToSave)
   confirmVisible.value = false

@@ -1,18 +1,18 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface IStaff extends Document {
   rut: string;
   firstName: string;
   lastName: string;
-  birthDate?: Date;
-  address?: string;
-  phone?: string;
-  email?: string;
-  city?: string;
-  contractType?: string;
-  status?: string;
+  birthDate: Date;
+  address: string;
+  phone: string;
+  email: string;
+  city: string;
+  contractType: string;
+  isActive: boolean;
   roleId: mongoose.Types.ObjectId;
-  positionId?: mongoose.Types.ObjectId;
+  positionId: mongoose.Types.ObjectId;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -36,21 +36,26 @@ const StaffSchema: Schema = new Schema(
       required: true,
       trim: true,
     },
-    birthDate: { type: Date },
-    address: { type: String, trim: true },
-    phone: { type: String, trim: true },
-    email: { type: String, trim: true, lowercase: true },
-    city: { type: String, trim: true },
-    contractType: { type: String },
-    status: { type: String, default: 'HABILITADO' },
+    birthDate: { type: Date, required: true },
+    address: { type: String, trim: true, required: true },
+    phone: { type: String, trim: true, required: true },
+    email: { type: String, trim: true, lowercase: true, required: true },
+    city: { type: String, trim: true, required: true },
+    contractType: {
+      type: String,
+      enum: ["CONTRATA", "PLANTA", "HONORARIO"],
+      required: true,
+    },
+    isActive: { type: Boolean, default: true, required: true },
     roleId: {
       type: Schema.Types.ObjectId,
-      ref: 'Role',
+      ref: "Role",
       required: true,
     },
     positionId: {
       type: Schema.Types.ObjectId,
-      ref: 'Position',
+      ref: "Position",
+      required: true,
     },
     isDeleted: {
       type: Boolean,
@@ -59,7 +64,7 @@ const StaffSchema: Schema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export const STAFF_AUDIT_FIELDS = [
@@ -68,9 +73,9 @@ export const STAFF_AUDIT_FIELDS = [
   "lastName",
   "email",
   "phone",
-  "status",
+  "isActive",
   "roleId",
   "positionId",
 ];
 
-export default mongoose.model<IStaff>('Staff', StaffSchema);
+export default mongoose.model<IStaff>("Staff", StaffSchema);

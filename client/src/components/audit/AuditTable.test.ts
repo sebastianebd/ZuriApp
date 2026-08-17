@@ -60,7 +60,7 @@ describe('AuditTable.vue', () => {
     expect(wrapper.text()).toContain('Se creó funcionario Juan')
     expect(wrapper.text()).toContain('Se eliminó servicio Pediatria')
 
-    // Check user initials
+    // Check IStaff initials
     expect(wrapper.text()).toContain('AS') // Administrador Sistema
     expect(wrapper.text()).toContain('MR') // Maria Rojas
   })

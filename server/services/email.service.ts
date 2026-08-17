@@ -17,7 +17,12 @@ if (emailConfig.resendApiKey) {
 // --- Templates ---
 // Definimos templates HTML funcionales directamente en código para mantener simplicidad y portabilidad
 // sin requerir un motor de vistas complejo. El diseño es responsive y profesional.
-const getWelcomeTemplate = (nombre: string, rut: string, resetLink: string, isReset = false) => {
+const getWelcomeTemplate = (
+  nombre: string,
+  rut: string,
+  resetLink: string,
+  isReset = false,
+) => {
   const title = isReset ? "Restablecer Contraseña" : "Bienvenido a ZuriApp";
   const heading = isReset ? "Restablecer Contraseña" : "Bienvenido a ZuriApp";
   const intro = isReset
@@ -87,7 +92,7 @@ const sendWelcomeEmail = async (
   const htmlContent = getWelcomeTemplate(nombre, rut, resetLink, isReset);
   const subject = isReset
     ? "ZuriApp - Restablecer Contraseña"
-    : "Bienvenido a ZuriApp - Activa tu cuenta";
+    : "Bienvenido/a a ZuriApp - Activa tu cuenta";
   try {
     if (!resend) {
       logger.warn(
@@ -120,6 +125,19 @@ const sendWelcomeEmail = async (
   }
 };
 
+const sendTemplatedEmail = async (
+  to: string,
+  subject: string,
+  template: string,
+  context: any
+) => {
+  if (template === "otl-welcome") {
+    return sendWelcomeEmail(to, context.nombre || context.name, context.rut, context.resetLink || context.token, context.isReset);
+  }
+  throw new Error(`Template ${template} not found`);
+};
+
 export default {
   sendWelcomeEmail,
+  sendTemplatedEmail,
 };

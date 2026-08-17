@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import UserModalCreate from './UserModalCreate.vue'
+import StaffModalCreate from './StaffModalCreate.vue'
 
 // Mock v-calendar module globally using inline definition to avoid hoisting issues
 vi.mock('v-calendar', () => ({
@@ -24,11 +24,12 @@ const VSelectStub = {
   props: ['modelValue', 'options']
 }
 
-describe('UserModalCreate.vue', () => {
+describe('StaffModalCreate.vue', () => {
   const defaultProps = {
     visible: true,
     listaRoles: [{ _id: '1', name: 'Admin', code: 'ADMIN', hasSystemAccess: true }],
     listaPositions: [{ _id: '1', name: 'Developer', position_code: 'DEV' }],
+    listaTipoContrato: ['CONTRATA', 'PLANTA', 'HONORARIO'],
     listaHabilitado: ['SI', 'NO'],
     listaServicios: ['UCI', 'URGENCIA']
   }
@@ -42,7 +43,7 @@ describe('UserModalCreate.vue', () => {
   }
 
   it('renders correctly when visible', () => {
-    const wrapper = mount(UserModalCreate, {
+    const wrapper = mount(StaffModalCreate, {
       props: defaultProps,
       global: globalOptions
     })
@@ -52,7 +53,7 @@ describe('UserModalCreate.vue', () => {
   })
 
   it('validates required fields', async () => {
-    const wrapper = mount(UserModalCreate, {
+    const wrapper = mount(StaffModalCreate, {
       props: defaultProps,
       global: globalOptions
     })
@@ -65,7 +66,7 @@ describe('UserModalCreate.vue', () => {
   })
 
   it('validates rut format', async () => {
-    const wrapper = mount(UserModalCreate, {
+    const wrapper = mount(StaffModalCreate, {
       props: defaultProps,
       global: globalOptions
     })
@@ -79,7 +80,7 @@ describe('UserModalCreate.vue', () => {
   })
 
   it('opens confirmation modal on valid form', async () => {
-    const wrapper = mount(UserModalCreate, {
+    const wrapper = mount(StaffModalCreate, {
       props: defaultProps,
       global: globalOptions
     })
@@ -121,7 +122,7 @@ describe('UserModalCreate.vue', () => {
   })
 
   it('emits guardar event on confirmation', async () => {
-    const wrapper = mount(UserModalCreate, {
+    const wrapper = mount(StaffModalCreate, {
       props: defaultProps,
       global: globalOptions
     })
@@ -153,6 +154,6 @@ describe('UserModalCreate.vue', () => {
     expect(wrapper.emitted('guardar')).toBeTruthy()
     const payload = wrapper.emitted('guardar')![0][0] as any
     expect(payload.rut).toBe('12345678-5')
-    expect(payload.telefono).toBe('+56912345678')
+    expect(payload.phone).toBe('+56912345678')
   })
 })

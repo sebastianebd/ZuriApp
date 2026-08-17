@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { toTitleCase } from "../utils/formatters";
 
 export const serviceSchema = z.object({
-  nombre: z.string().min(1, "El nombre es requerido").trim(),
+  nombre: z.string().min(1, "El nombre es requerido").transform(toTitleCase),
   jefe_servicio: z
     .string()
     .optional()
@@ -23,7 +24,10 @@ export const serviceSchema = z.object({
     .string()
     .optional()
     .nullable()
-    .transform((v) => (v === "" ? null : v)),
+    .transform((v) => {
+      if (!v) return v === "" ? null : v;
+      return toTitleCase(v);
+    }),
   anexo: z
     .string()
     .optional()

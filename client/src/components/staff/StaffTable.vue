@@ -45,13 +45,13 @@
 
           <!-- Usuario -->
           <td>
-            <div class="user-node">
+            <div class="IStaff-node">
               <div class="avatar-modern bg-gradient-primary text-white shadow-sm">
-                {{ getInitials(usuario.nombre + ' ' + usuario.apellido) }}
+                {{ getInitials(usuario.firstName + ' ' + usuario.lastName) }}
               </div>
-              <div class="user-info ms-3">
+              <div class="IStaff-info ms-3">
                 <div class="fw-bold text-dark text-truncate">
-                  {{ formatShortName(usuario.nombre, usuario.apellido) }}
+                  {{ formatShortName(usuario.firstName, usuario.lastName) }}
                 </div>
                 <div class="rut-text">#{{ usuario._id.slice(-6) }}</div>
               </div>
@@ -65,7 +65,7 @@
                 <i class="bi bi-envelope me-2 text-primary opacity-50"></i> {{ usuario.email }}
               </div>
               <div class="d-flex align-items-center">
-                <i class="bi bi-telephone me-2 text-success opacity-50"></i> {{ usuario.telefono }}
+                <i class="bi bi-telephone me-2 text-success opacity-50"></i> {{ usuario.phone }}
               </div>
             </div>
           </td>
@@ -74,19 +74,27 @@
           <td>
             <div class="d-flex flex-column justify-content-center h-100">
               <span class="fw-medium text-dark x-small mb-1">{{
-                formatTitleCase(usuario.ciudad) || 'Sin ciudad'
+                formatTitleCase(usuario.city) || 'Sin ciudad'
               }}</span>
               <span class="text-muted x-small text-truncate" style="max-width: 150px">{{
-                formatTitleCase(usuario.direccion) || 'Sin dirección'
+                formatTitleCase(usuario.address) || 'Sin dirección'
               }}</span>
             </div>
           </td>
 
           <!-- Rol -->
           <td>
-            <span class="badge-modern-role">
-              {{ formatTitleCase(usuario.tipo_cargo) }}
-            </span>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge-modern-role">
+                {{ formatTitleCase(usuario.positionId?.name || usuario.roleId?.name) }}
+              </span>
+              <i
+                v-if="usuario.roleId?.hasSystemAccess"
+                class="bi bi-shield-lock-fill text-primary"
+                title="Con acceso al sistema"
+                style="font-size: 0.85rem;"
+              ></i>
+            </div>
           </td>
 
           <!-- Estado -->
@@ -94,9 +102,9 @@
             <div class="h-100 d-flex align-items-center justify-content-center">
               <span
                 class="status-glass"
-                :class="usuario.habilitado === 'HABILITADO' ? 'glass-success' : 'glass-danger'"
+                :class="usuario.isActive ? 'glass-success' : 'glass-danger'"
               >
-                {{ usuario.habilitado }}
+                {{ usuario.isActive ? 'HABILITADO' : 'INACTIVO' }}
               </span>
             </div>
           </td>
@@ -151,7 +159,7 @@
 import { ref, onMounted } from 'vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 import { useAuthStore } from '@/stores/auth.store'
-import { useCargoStore } from '@/stores/cargo.store'
+import { useRoleStore } from '@/stores/role.store'
 import { formatTitleCase } from '@/utils/text-formatters'
 
 const props = defineProps<{
@@ -160,7 +168,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['editar', 'eliminar', 'detalle'])
-const cargoStore = useCargoStore()
+const roleStore = useRoleStore()
 const authStore = useAuthStore()
 
 // Refs
@@ -170,15 +178,20 @@ const usuarioAEliminar = ref<any>(null)
 const copiedId = ref<string | null>(null)
 
 onMounted(() => {
-  if (cargoStore.cargos.length === 0) {
-    cargoStore.fetchCargos()
+  if (roleStore.roles.length === 0) {
+    roleStore.fetchRoles()
   }
 })
 
-function getLevel(cargoName: string): number {
-  if (!cargoName) return 0
-  const cargo = cargoStore.cargos.find((c) => c.nombre === cargoName)
-  return cargo ? cargo.nivel ?? 0 : 0
+function getLevel(targetUser: any): number {
+  if (!targetUser) return 0
+  if (targetUser.role?.level !== undefined) {
+    return targetUser.role.level
+  }
+  if (targetUser.roleId?.level !== undefined) {
+    return targetUser.roleId.level
+  }
+  return 0
 }
 
 function canEdit(targetUser: any) {
@@ -188,11 +201,12 @@ function canEdit(targetUser: any) {
   if (!authStore.hasPermission('users.update')) return false
 
   // 2. Check Hierarchy
-  const myLevel = getLevel(props.loginUser.tipo_cargo)
-  const targetLevel = getLevel(targetUser.tipo_cargo)
+  const myLevel = getLevel(props.loginUser)
+  const targetLevel = getLevel(targetUser)
 
   // STRICTLY GREATER: Cannot edit peers or superiors.
-  return myLevel > targetLevel
+  // EXCEPTION: Level 100 (Sys Admin) can edit everyone, including themselves.
+  return myLevel > targetLevel || myLevel === 100
 }
 
 function canDelete(targetUser: any) {
@@ -201,16 +215,20 @@ function canDelete(targetUser: any) {
   // 1. Check Permission Key
   if (!authStore.hasPermission('users.delete')) return false
 
-  // 2. Check Hierarchy
-  const myLevel = getLevel(props.loginUser.tipo_cargo)
-  const targetLevel = getLevel(targetUser.tipo_cargo)
+  // 2. Prevent Self-Deletion
+  if (props.loginUser._id === targetUser._id) return false
 
-  return myLevel > targetLevel
+  // 3. Check Hierarchy
+  const myLevel = getLevel(props.loginUser)
+  const targetLevel = getLevel(targetUser)
+
+  // EXCEPTION: Level 100 can delete anyone (except themselves, blocked above)
+  return myLevel > targetLevel || myLevel === 100
 }
 
 function confirmarEliminacion(usuario: any) {
   usuarioAEliminar.value = usuario
-  mensajeModal.value = `¿Seguro que deseas eliminar a ${usuario.nombre} ${usuario.apellido}?`
+  mensajeModal.value = `¿Seguro que deseas eliminar a ${usuario.firstName} ${usuario.lastName}?`
   mostrarModal.value = true
 }
 
@@ -344,7 +362,7 @@ async function copyCode(code: string) {
   color: #334155;
 }
 
-.user-node {
+.IStaff-node {
   display: flex;
   align-items: center;
 }
@@ -366,7 +384,7 @@ async function copyCode(code: string) {
   color: white;
 }
 
-.user-info {
+.IStaff-info {
   line-height: 1.2;
 }
 

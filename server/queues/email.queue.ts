@@ -28,16 +28,24 @@ export const setupEmailWorker = () => {
     QUEUE_NAME,
     async (job: Job) => {
       logger.info(`[EmailWorker] Procesando trabajo ${job.id}: ${job.name}`);
-      const { to, nombre, rut, resetLink, isReset } = job.data;
+      const { to, nombre, rut, resetLink, isReset, template, context, subject } = job.data;
 
       // Delegación al servicio de negocio
-      await emailService.sendWelcomeEmail(to, nombre, rut, resetLink, isReset);
+      if (template && context) {
+        // Nuevo formato dinámico
+        await emailService.sendTemplatedEmail(to, subject || 'ZuriApp Notification', template, context);
+      } else {
+        // Formato legado retrocompatible
+        await emailService.sendWelcomeEmail(to, nombre, rut, resetLink, isReset);
+      }
 
       // Seguridad en Logs: no loguear el link (contiene el token)
-      await job.updateData({
-        ...job.data,
-        resetLink: "[REDACTED]",
-      });
+      const sanitizedData = { ...job.data };
+      if (sanitizedData.resetLink) sanitizedData.resetLink = "[REDACTED]";
+      if (sanitizedData.context && sanitizedData.context.token) sanitizedData.context.token = "[REDACTED]";
+      if (sanitizedData.context && sanitizedData.context.resetLink) sanitizedData.context.resetLink = "[REDACTED]";
+
+      await job.updateData(sanitizedData);
 
       logger.info(`[EmailWorker] Trabajo ${job.id} completado exitosamente`);
     },

@@ -48,8 +48,9 @@ async function createException(payload: any, currentUser: any) {
 
   if (exception.assignment_model === "TurnAssignment") {
     await exception.populate({
-      path: "assignment_id.user_id",
+      path: "assignment_id.staffId",
       select: "firstName lastName",
+      model: "Staff",
     });
   }
 
@@ -60,7 +61,7 @@ async function createException(payload: any, currentUser: any) {
     if (exception.assignment_model === "Replacement") {
       targetName = `${assignment.nombre_entrante} ${assignment.apellido_entrante}`;
     } else {
-      const u = assignment.user_id;
+      const u = assignment.staffId;
       if (u) {
         targetName = `${u.firstName} ${u.lastName}`;
       }
@@ -94,10 +95,10 @@ async function createException(payload: any, currentUser: any) {
     let targetId = "";
     const assignment: any = exception.assignment_id;
 
-    if (exception.assignment_model === "TurnAssignment" && assignment.user_id) {
-      targetId = assignment.user_id._id
-        ? assignment.user_id._id.toString()
-        : assignment.user_id.toString();
+    if (exception.assignment_model === "TurnAssignment" && assignment.staffId) {
+      targetId = assignment.staffId._id
+        ? assignment.staffId._id.toString()
+        : assignment.staffId.toString();
     } else if (exception.assignment_model === "Replacement" && assignment.id_entrante) {
       targetId = assignment.id_entrante.toString();
     }
@@ -116,12 +117,12 @@ async function getExceptions(filters: any) {
   const query: any = {};
   if (assignment_id) query.assignment_id = assignment_id;
   if (start_date && end_date) {
-    const endDateTime = new Date(end_date as string);
-    endDateTime.setHours(23, 59, 59, 999);
+    const startStr = (start_date as string).includes('T') ? (start_date as string).split('T')[0] : (start_date as string);
+    const endStr = (end_date as string).includes('T') ? (end_date as string).split('T')[0] : (end_date as string);
 
     query.date = {
-      $gte: new Date(start_date as string),
-      $lte: endDateTime,
+      $gte: new Date(`${startStr}T00:00:00.000Z`),
+      $lte: new Date(`${endStr}T23:59:59.999Z`),
     };
   }
 
@@ -136,7 +137,7 @@ async function getExceptions(filters: any) {
 
   if (turnAssignmentExceptions.length > 0) {
     await ShiftExceptionModel.populate(turnAssignmentExceptions, {
-      path: "assignment_id.user_id",
+      path: "assignment_id.staffId",
       select: "firstName lastName roleId positionId",
       model: "Staff",
     });

@@ -20,7 +20,18 @@ app.use(pinia)
 app.component('v-select', vSelect as any)
 app.use(VCalendar, {})
 
+import { setupAxiosInterceptors, injectAuthCallbacks } from './composables/useApi'
+import { useAuthStore } from './stores/auth.store'
+
 app.use(router)
+
+const authStore = useAuthStore()
+injectAuthCallbacks(
+  () => authStore.getAccessToken(),
+  () => authStore.refreshToken(),
+  () => authStore.logout()
+)
+setupAxiosInterceptors()
 
 if (import.meta.env.PROD) {
   Sentry.init({

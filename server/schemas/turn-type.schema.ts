@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { toTitleCase, toSentenceCase } from "../utils/formatters";
 
 export const turnTypeSchema = z.object({
-  nombre: z.string().min(1, "El nombre es requerido").trim(),
-  descripcion: z.string().optional(),
+  nombre: z.string().min(1, "El nombre es requerido").transform(toTitleCase),
+  descripcion: z.string().optional().transform((v) => (v ? toSentenceCase(v) : v)),
   alias: z.string().optional(),
   jornada: z.enum(["DIURNO", "NOCTURNO", "MIXTO"]).optional(),
   cantidad_dias: z.number().min(1, "Debe tener al menos 1 día"),

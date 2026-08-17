@@ -43,11 +43,11 @@
 
           <!-- Usuario Resp. -->
           <td>
-            <div class="user-node">
+            <div class="IStaff-node">
               <div class="avatar-modern bg-gradient-dark text-white shadow-sm">
                 {{ getInitials(log.user_name) }}
               </div>
-              <div class="user-info ms-3">
+              <div class="IStaff-info ms-3">
                 <div class="fw-bold text-dark text-truncate">
                   {{ formatTitleCase(log.user_name || 'Desconocido') }}
                 </div>
@@ -203,7 +203,7 @@ function getActionGlassClass(action: string) {
 }
 
 /* --- Components --- */
-.user-node {
+.IStaff-node {
   display: flex;
   align-items: center;
 }
@@ -225,7 +225,7 @@ function getActionGlassClass(action: string) {
   color: white;
 }
 
-.user-info {
+.IStaff-info {
   line-height: 1.2;
 }
 .rut-text {

@@ -7,6 +7,7 @@ export interface IRole extends Document {
   permissions: string[];
   hasSystemAccess: boolean;
   description?: string;
+  deleted_at?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +41,10 @@ const RoleSchema: Schema = new Schema(
     description: {
       type: String,
       trim: true,
+    },
+    deleted_at: {
+      type: Date,
+      default: null,
     },
   },
   {

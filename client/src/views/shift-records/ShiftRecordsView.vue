@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, onUnmounted, onActivated } from 'vue'
 import { useReportStore } from '../../stores/report.store'
-import { useUserStore } from '../../stores/user.store'
+import { useStaffStore } from '../../stores/staff.store'
 import { useTurnSiglaStore } from '../../stores/turn-sigla.store'
 import { useReplacementStore } from '../../stores/replacement.store'
 import { useServiceStore } from '../../stores/service.store'
@@ -11,7 +11,7 @@ import 'vue-select/dist/vue-select.css'
 import { debounce } from 'lodash-es'
 
 const reportStore = useReportStore()
-const userStore = useUserStore()
+const staffStore = useStaffStore()
 const turnSiglaStore = useTurnSiglaStore()
 const replacementStore = useReplacementStore()
 const serviceStore = useServiceStore()
@@ -39,10 +39,10 @@ const months = [
   'Diciembre'
 ]
 
-// --- User Search Logic (Copied & Adapted) ---
+// --- IStaff Search Logic (Copied & Adapted) ---
 const performSearch = debounce(async (search: string, loading: (l: boolean) => void) => {
   try {
-    const results = await userStore.buscarUsuarios(search)
+    const results = await staffStore.searchStaff({ search, limit: 1000 })
     userOptions.value = results
   } catch (e) {
     console.error(e)
@@ -57,14 +57,14 @@ const onSearch = (search: string, loading: (l: boolean) => void) => {
   performSearch(search, loading)
 }
 
-const getUserLabel = (option: any) => `${option.nombre} ${option.apellido}`
+const getUserLabel = (option: any) => `${option.firstName} ${option.lastName}`
 
 // --- Data Fetching ---
 const fetchData = async () => {
   if (!selectedUser.value) return
 
-  // Silent Refresh: Only show loading if data is missing or belongs to another user
-  const isDifferentUser = reportStore.reportData?.user?._id !== selectedUser.value._id
+  // Silent Refresh: Only show loading if data is missing or belongs to another IStaff
+  const isDifferentUser = reportStore.reportData?.IStaff?._id !== selectedUser.value._id
   if (!reportStore.reportData || isDifferentUser) {
     isLoading.value = true
   }
@@ -75,7 +75,7 @@ const fetchData = async () => {
     reportStore.currentFilters.year = year.value
     await Promise.all([
       reportStore.fetchReportSummary({ preview: true }),
-      // Fetch replacements where user is involved (search by RUT covers both, looking for Saliente)
+      // Fetch replacements where IStaff is involved (search by RUT covers both, looking for Saliente)
       replacementStore.fetchActiveReplacementsPaginated({
         search: selectedUser.value.rut,
         limit: 100 // Ensure we catch all relevant ones
@@ -136,18 +136,18 @@ onMounted(async () => {
   if (!socket.connected) socket.connect()
   socket.on('turn:update', handleSocketUpdate)
 
-  // 1. Capture cached user from Store (to persist selection)
-  const cachedUser = reportStore.reportData?.user
+  // 1. Capture cached IStaff from Store (to persist selection)
+  const cachedUser = reportStore.reportData?.IStaff
 
   // 2. Load Options
-  const defaults = await userStore.buscarUsuarios('')
+  const defaults = await staffStore.searchStaff({ search: '', limit: 1000 })
   userOptions.value = defaults
   await turnSiglaStore.fetchSiglas()
   await serviceStore.fetchServices()
 
   // 3. Restore Selection (triggers watcher -> fetchData)
   if (cachedUser) {
-    console.log('Restoring user context...')
+    console.log('Restoring IStaff context...')
     selectedUser.value = cachedUser
   }
 })
@@ -254,12 +254,12 @@ const isToday = (dayNum: number) => {
           @search="onSearch"
           :get-option-label="getUserLabel"
           placeholder="Buscar Funcionario (Nombre o RUT)..."
-          class="user-select premium-select"
+          class="IStaff-select premium-select"
         >
-          <template #option="{ nombre, apellido, rut, tipo_cargo }">
-            <div class="user-option">
-              <strong>{{ nombre }} {{ apellido }}</strong>
-              <small>{{ rut }} - {{ tipo_cargo }}</small>
+          <template #option="{ firstName, lastName, rut, positionId, roleId }">
+            <div class="IStaff-option">
+              <strong>{{ firstName }} {{ lastName }}</strong>
+              <small>{{ rut }} - {{ positionId?.name || roleId?.name || '' }}</small>
             </div>
           </template>
         </v-select>
@@ -269,14 +269,14 @@ const isToday = (dayNum: number) => {
       <div v-if="reportStore.reportData" class="profile-card fade-in">
         <div class="profile-header">
           <div class="avatar-placeholder">
-            {{ reportStore.reportData.user.nombre[0] }}{{ reportStore.reportData.user.apellido[0] }}
+            {{ reportStore.reportData.IStaff.firstName[0] }}{{ reportStore.reportData.IStaff.lastName[0] }}
           </div>
           <div class="profile-info">
             <h3>
-              {{ reportStore.reportData.user.nombre }} {{ reportStore.reportData.user.apellido }}
+              {{ reportStore.reportData.IStaff.firstName }} {{ reportStore.reportData.IStaff.lastName }}
             </h3>
-            <p class="role">{{ reportStore.reportData.user.cargo }}</p>
-            <p class="meta">{{ reportStore.reportData.user.rut }}</p>
+            <p class="role">{{ reportStore.reportData.IStaff.positionId?.name || reportStore.reportData.IStaff.roleId?.name || '' }}</p>
+            <p class="meta">{{ reportStore.reportData.IStaff.rut }}</p>
           </div>
         </div>
         <div class="profile-details">
@@ -516,18 +516,18 @@ const isToday = (dayNum: number) => {
   display: block;
 }
 
-/* User Option Dropdown Item */
-.user-option {
+/* IStaff Option Dropdown Item */
+.IStaff-option {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
 }
-.user-option strong {
+.IStaff-option strong {
   font-size: 0.9rem;
   color: #1e293b;
   text-transform: uppercase;
 }
-.user-option small {
+.IStaff-option small {
   font-size: 0.75rem;
   color: #64748b;
 }

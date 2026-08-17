@@ -38,7 +38,7 @@
           "
           :options="[
             { label: 'Todos', value: '' },
-            ...listaTipoCargo.map((c) => ({ label: c, value: c }))
+            ...listaPositions.map((c) => ({ label: c.name, value: c._id }))
           ]"
           :reduce="(option: any) => option.value"
           label="label"
@@ -48,7 +48,7 @@
           class="custom-v-select"
         >
           <template #selected-option="{ label }">
-            <span class="text-secondary small">{{ label }}</span>
+            <span :style="label === 'Todos' ? 'color: #94a3b8; font-weight: 400;' : ''">{{ label }}</span>
           </template>
         </v-select>
       </div>
@@ -76,7 +76,7 @@
           class="custom-v-select"
         >
           <template #selected-option="{ label }">
-            <span class="text-secondary small">{{ label }}</span>
+            <span :style="label === 'Todos' ? 'color: #94a3b8; font-weight: 400;' : ''">{{ label }}</span>
           </template>
         </v-select>
       </div>
@@ -88,7 +88,7 @@
 import { ref } from 'vue'
 
 defineProps<{
-  listaTipoCargo: string[]
+  listaPositions: any[]
   listaHabilitado: string[]
   filtroRut: string
   filtroNombre: string

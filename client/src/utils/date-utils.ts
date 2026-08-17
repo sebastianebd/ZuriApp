@@ -62,4 +62,4 @@ export const formatReportDate = (dateStr: string | Date): string => {
   const mn = String(d.getUTCMonth() + 1).padStart(2, '0')
   const yr = d.getUTCFullYear()
   return `${day}/${mn}/${yr}`
-}
+}

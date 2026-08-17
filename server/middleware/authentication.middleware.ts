@@ -73,7 +73,7 @@ async function authMiddleware(
       });
     }
 
-    const staff = await Staff.findById(account.staffId).populate('roleId').exec();
+    const staff = await Staff.findById(account.staffId).populate(['roleId', 'positionId']).exec();
     
     if (!staff || staff.isDeleted) {
       return res.status(401).json({

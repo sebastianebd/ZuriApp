@@ -85,7 +85,18 @@ export const useReportStore = defineStore('report', () => {
       link.click()
       link.remove()
     } catch (err: any) {
-      error.value = 'No se encontraron registros para este usuario en el periodo seleccionado.'
+      if (err instanceof Blob || err?.response?.data instanceof Blob || (err?.data && err.data instanceof Blob)) {
+        try {
+          const blob = err instanceof Blob ? err : (err?.response?.data || err?.data)
+          const text = await blob.text()
+          const json = JSON.parse(text)
+          error.value = json.message || 'Error al exportar el archivo.'
+        } catch (e) {
+          error.value = 'No se encontraron registros para este usuario en el periodo seleccionado.'
+        }
+      } else {
+        error.value = err?.message || 'No se encontraron registros para este usuario en el periodo seleccionado.'
+      }
       throw err
     }
   }
@@ -104,10 +115,17 @@ export const useReportStore = defineStore('report', () => {
       link.click()
       link.remove()
     } catch (err: any) {
-      if (err.response?.status === 404) {
-        error.value = 'No se encontraron registros para este servicio en el periodo seleccionado.'
+      if (err instanceof Blob || err?.response?.data instanceof Blob || (err?.data && err.data instanceof Blob)) {
+        try {
+          const blob = err instanceof Blob ? err : (err?.response?.data || err?.data)
+          const text = await blob.text()
+          const json = JSON.parse(text)
+          error.value = json.message || 'Error al exportar el archivo.'
+        } catch (e) {
+          error.value = 'Error al descargar avance.'
+        }
       } else {
-        error.value = 'Error al descargar avance.'
+        error.value = err?.message || 'Error al descargar avance.'
       }
       throw err
     }

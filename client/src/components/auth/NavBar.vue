@@ -36,22 +36,22 @@
             </button>
           </li>
 
-          <!-- User Dropdown -->
-          <li v-if="isAuthenticated && user" class="nav-item dropdown">
+          <!-- IStaff Dropdown -->
+          <li v-if="isAuthenticated && IStaff" class="nav-item dropdown">
             <a
-              class="nav-link user-dropdown-toggle d-flex align-items-center"
+              class="nav-link IStaff-dropdown-toggle d-flex align-items-center"
               href="#"
               role="button"
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              <div class="user-avatar-small me-2">
-                {{ user.nombre?.[0] }}{{ user.apellido?.[0] }}
+              <div class="IStaff-avatar-small me-2">
+                {{ IStaff.firstName?.[0] }}{{ IStaff.lastName?.[0] }}
               </div>
               <div class="d-none d-sm-block">
-                <p class="mb-0 user-name-text">{{ user.nombre }} {{ user.apellido }}</p>
-                <p class="mb-0 user-role-text text-muted smaller text-uppercase">
-                  {{ user.positionId?.name || 'Usuario' }}
+                <p class="mb-0 IStaff-name-text">{{ IStaff.firstName }} {{ IStaff.lastName }}</p>
+                <p class="mb-0 IStaff-role-text text-muted smaller text-uppercase">
+                  {{ IStaff.positionId?.name || 'Usuario' }}
                 </p>
               </div>
               <i class="bi bi-chevron-down ms-2 small opacity-50"></i>
@@ -65,7 +65,7 @@
               </li>
               <li>
                 <router-link
-                  :to="{ name: 'user' }"
+                  :to="{ name: 'IStaff' }"
                   class="dropdown-item d-flex align-items-center rounded-3 mb-1 py-2"
                 >
                   <i class="bi bi-person-circle me-2 text-primary"></i>
@@ -104,7 +104,7 @@
 <script setup lang="ts">
 import { useAuth } from '../../composables/login/useAuth'
 
-const { user, authReady, isAuthenticated, logout } = useAuth()
+const { IStaff, authReady, isAuthenticated, logout } = useAuth()
 </script>
 
 <style scoped>
@@ -121,17 +121,17 @@ const { user, authReady, isAuthenticated, logout } = useAuth()
   letter-spacing: 0.05em;
 }
 
-.user-dropdown-toggle {
+.IStaff-dropdown-toggle {
   padding: 0.5rem 0.75rem !important;
   border-radius: 12px;
   transition: all 0.2s ease;
 }
 
-.user-dropdown-toggle:hover {
+.IStaff-dropdown-toggle:hover {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.user-avatar-small {
+.IStaff-avatar-small {
   width: 38px;
   height: 38px;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
@@ -145,14 +145,14 @@ const { user, authReady, isAuthenticated, logout } = useAuth()
   box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
 }
 
-.user-name-text {
+.IStaff-name-text {
   font-size: 0.9rem;
   font-weight: 600;
   color: #1e293b;
   line-height: 1.2;
 }
 
-.user-role-text {
+.IStaff-role-text {
   font-size: 0.7rem;
   font-weight: 700;
   line-height: 1.2;

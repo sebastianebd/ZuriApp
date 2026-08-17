@@ -1,19 +1,18 @@
-import { ref, onMounted, watch, computed } from 'vue'
+import { onMounted, watch, computed } from 'vue'
 import { useShiftsState } from './useShiftsState'
 import { useShiftsGrid } from './useShiftsGrid'
 import { useShiftsExceptions } from './useShiftsExceptions'
 import { useShiftsTooltip } from './useShiftsTooltip'
+import { useShiftsActions } from './useShiftsActions'
 
 import { useAuthStore } from '@/stores/auth.store'
 import { useServiceStore } from '@/stores/service.store'
-import { useOptionStore } from '@/stores/option.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useShiftExceptionStore } from '@/stores/shift-exception.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
-import { useUserStore } from '@/stores/user.store'
-import type { User } from '@/types/user.types'
+
 
 export function useCurrentShifts(props: {
   readonly?: boolean
@@ -21,16 +20,12 @@ export function useCurrentShifts(props: {
   externalFilters?: any
 }) {
   const serviceStore = useServiceStore()
-  const optionStore = useOptionStore()
   const replacementStore = useReplacementStore()
   const turnAssignmentStore = useTurnAssignmentStore()
   const exceptionStore = useShiftExceptionStore()
   const turnTypeStore = useTurnTypeStore()
   const turnSiglaStore = useTurnSiglaStore()
-  const userStore = useUserStore()
   const authStore = useAuthStore()
-
-  const allUsers = ref<User[]>([])
 
   const hasUpdatePermission = computed(() => authStore.hasPermission('shifts.update'))
   const hasCreatePermission = computed(() => authStore.hasPermission('shifts.create'))
@@ -38,9 +33,10 @@ export function useCurrentShifts(props: {
   const loadingAssignments = computed(() => turnAssignmentStore.loading)
 
   const state = useShiftsState()
-  const grid = useShiftsGrid(state, props, allUsers)
+  const grid = useShiftsGrid(state, props)
   const exceptions = useShiftsExceptions(state, grid, props)
   const tooltip = useShiftsTooltip(grid.getShiftTooltip)
+  const actions = useShiftsActions(turnAssignmentStore, state, exceptions, loadData)
 
   async function loadData() {
     state.loading.value = true
@@ -48,7 +44,7 @@ export function useCurrentShifts(props: {
       const startOfMonth = new Date(state.currentYear.value, state.currentMonth.value, 1)
       const endOfMonth = new Date(state.currentYear.value, state.currentMonth.value + 1, 0)
 
-      await Promise.all([optionStore.mostrarOpciones(), serviceStore.fetchServices()])
+      await serviceStore.fetchServices()
 
       const activeServiceFilter = props.historyMode
         ? props.externalFilters?.service
@@ -56,13 +52,7 @@ export function useCurrentShifts(props: {
 
       const dictPromises = [
         turnTypeStore.fetchTurnTypes(true),
-        turnSiglaStore.fetchSiglas(),
-        userStore
-          .mostrarTodos(1000)
-          .then((data: User[]) => {
-            allUsers.value = data
-          })
-          .catch((err) => console.error('[ShiftsView] Failed to load users:', err))
+        turnSiglaStore.fetchSiglas()
       ]
 
       if (!activeServiceFilter) {
@@ -88,33 +78,7 @@ export function useCurrentShifts(props: {
     }
   }
 
-  async function handleSaveAssignment(payload: any) {
-    try {
-      await turnAssignmentStore.addAssignment(payload)
-      state.closeModal()
-      state.alertComponent.value.show('Éxito', 'Turno asignado correctamente', 'success')
-      loadData()
-    } catch (error) {
-      console.error(error)
-      state.alertComponent.value.show('Error', 'No se pudo guardar la asignación', 'error')
-    }
-  }
 
-  async function handleDeleteAssignment() {
-    if (!exceptions.selectedShiftData.value) return
-
-    try {
-      const idToDelete = exceptions.selectedShiftData.value.assignmentId
-      await turnAssignmentStore.removeAssignment(idToDelete)
-
-      exceptions.showModifyModal.value = false
-      state.alertComponent.value.show('Éxito', 'Asignación eliminada correctamente', 'success')
-      loadData()
-    } catch (error) {
-      console.error(error)
-      state.alertComponent.value.show('Error', 'No se pudo eliminar la asignación', 'error')
-    }
-  }
 
   const activeServiceComputed = computed(() => {
     return props.historyMode ? props.externalFilters?.service : state.selectedService.value
@@ -147,14 +111,12 @@ export function useCurrentShifts(props: {
     ...state,
     ...grid,
     ...exceptions,
+    ...actions,
     loadData,
-    handleSaveAssignment,
-    handleDeleteAssignment,
     hasUpdatePermission,
     hasCreatePermission,
     loadingExceptions,
     loadingAssignments,
-    allUsers,
     selectedServiceName,
     ...tooltip
   }

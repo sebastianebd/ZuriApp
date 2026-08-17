@@ -12,10 +12,10 @@ describe('useReplacementModals', () => {
 
   it('opens and closes create modal correctly', () => {
     const modals = useReplacementModals()
-    modals.openCreateModal('user-1')
+    modals.openCreateModal('IStaff-1')
 
     expect(modals.createModalVisible.value).toBe(true)
-    expect(modals.registroNuevo.value.creado_por).toBe('user-1')
+    expect(modals.registroNuevo.value.creado_por).toBe('IStaff-1')
 
     modals.closeCreateModal()
     expect(modals.createModalVisible.value).toBe(false)

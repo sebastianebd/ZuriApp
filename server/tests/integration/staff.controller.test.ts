@@ -42,12 +42,12 @@ vi.mock('@bull-board/api/bullMQAdapter', () => {
 vi.mock('../../middleware/authentication.middleware', () => {
   return {
     default: vi.fn((req, res, next) => {
-      req.staff = { id: '507f1f77bcf86cd799439011', rut: '11111111-1' };
+      req.staff = { id: '507f1f77bcf86cd799439011', rut: '11111111-1', roleId: { level: 999 } };
       req.account = { id: '507f1f77bcf86cd799439011', name: '11111111-1' };
       next();
     }),
     requirePermission: vi.fn(() => (req: any, res: any, next: any) => {
-      req.staff = { id: '507f1f77bcf86cd799439011', rut: '11111111-1' };
+      req.staff = { id: '507f1f77bcf86cd799439011', rut: '11111111-1', roleId: { level: 999 } };
       req.account = { id: '507f1f77bcf86cd799439011', name: '11111111-1' };
       next();
     }),

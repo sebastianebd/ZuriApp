@@ -39,15 +39,15 @@ const router = createRouter({
           component: () => import('@/views/profile/ProfileView.vue')
         },
         {
-          path: 'user',
-          name: 'user',
+          path: 'IStaff',
+          name: 'IStaff',
           component: () => import('@/views/profile/ProfileView.vue')
         },
 
         // ==================== PERSONAL ====================
         {
-          path: 'personal/funcionarios',
-          name: 'personal-funcionarios',
+          path: 'personal/staff',
+          name: 'personal-staff',
           component: () => import('@/views/employees/EmployeesView.vue')
         },
         {

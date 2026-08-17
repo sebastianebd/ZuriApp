@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toTitleCase, toSentenceCase } from "../utils/formatters";
 
 // Schema base con todos los campos del modelo TurnSigla
 const turnSiglaBodySchema = z.object({
@@ -7,8 +8,8 @@ const turnSiglaBodySchema = z.object({
     .min(1)
     .max(5)
     .transform((val) => val.toUpperCase()),
-  nombre: z.string().min(1, "El nombre es requerido"),
-  descripcion: z.string().optional(),
+  nombre: z.string().min(1, "El nombre es requerido").transform(toTitleCase),
+  descripcion: z.string().optional().transform((v) => (v ? toSentenceCase(v) : v)),
   color: z.string().regex(/^#([0-9A-F]{3}){1,2}$/i, "Color inválido"),
   turno_entrada: z
     .string()

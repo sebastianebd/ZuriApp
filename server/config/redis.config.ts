@@ -1,5 +1,6 @@
 import Redis from "ioredis";
 import env from "./env.config";
+import logger from "./logger.config";
 
 // Cliente Redis Singleton
 // Utilizamos 'ioredis' por su soporte robusto para Promesas y Cluster.
@@ -8,11 +9,11 @@ const redisUrl = env.REDIS_URL;
 const redis = new Redis(redisUrl);
 
 redis.on("connect", () => {
-  console.log("✅ Conectado a Redis");
+  logger.info("✅ Conectado a Redis");
 });
 
 redis.on("error", (err: any) => {
-  console.error("❌ Error en conexión a Redis:", err);
+  logger.error("❌ Error en conexión a Redis:", err);
 });
 
 // A continuación, exportamos wrappers tipados para operaciones comunes.

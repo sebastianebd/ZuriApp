@@ -1,16 +1,18 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { debounce } from 'lodash-es'
-import { useUserStore } from '@/stores/user.store'
-import { useOptionStore } from '@/stores/option.store'
+import { useStaffStore } from '@/stores/staff.store'
 import { useServiceStore } from '@/stores/service.store'
 import { useAuthStore } from '@/stores/auth.store'
+import { useRoleStore } from '@/stores/role.store'
+import { usePositionStore } from '@/stores/position.store'
 import socket from '@/plugins/socket'
 
 export function useEmployeesState() {
-  const userStore = useUserStore()
-  const optionStore = useOptionStore()
+  const staffStore = useStaffStore()
   const serviceStore = useServiceStore()
   const authStore = useAuthStore()
+  const roleStore = useRoleStore()
+  const positionStore = usePositionStore()
 
   // --- REFS
   const loading = ref(false)
@@ -18,72 +20,63 @@ export function useEmployeesState() {
   // Filters
   const filtroRut = ref('')
   const filtroNombre = ref('')
-  const tipoCargo = ref('')
+  const positionId = ref('')
   const filtroHabilitado = ref('')
 
   // Lists
-  const listaTipoCargo = ref<string[]>([])
-  const listaRoles = ref<any[]>([])
-  const listaPositions = ref<any[]>([])
-  const listaTipoContrato = ref<string[]>(['PLANTA', 'REEMPLAZO'])
-  const listaHabilitado = ref<string[]>([])
+  const listaRoles = computed(() => roleStore.roles)
+  const listaPositions = computed(() => positionStore.positions)
+  const listaTipoContrato = ref<string[]>(['CONTRATA', 'PLANTA', 'HONORARIO'])
+  const listaHabilitado = ref<string[]>(['HABILITADO', 'INACTIVO'])
   const listaServicios = computed(() => serviceStore.services)
   const listaTiposTurno = ref<string[]>([])
 
   // --- SERVER-SIDE PAGINATION
   const currentPage = ref(1)
-  const totalPages = computed(() => userStore.pagination.totalPages)
+  const totalPages = computed(() => staffStore.pagination.totalPages)
   const itemsPerPage = 10
 
-  const userLoged = computed(() => authStore.user)
+  const userLoged = computed(() => authStore.IStaff)
 
   // --- FILTER & SORT LOGIC
   const rolesDisponiblesCreacion = computed(() => {
-    if (!userLoged.value) return []
-    const cargoActual = userLoged.value.tipo_cargo
-
-    if (cargoActual === 'ADMIN-TI') {
-      return listaTipoCargo.value
-    } else if (cargoActual === 'RECURSOS HUMANOS') {
-      return listaTipoCargo.value.filter((rol) => !['ADMIN-TI', 'RECURSOS HUMANOS'].includes(rol))
-    }
-    return []
+    if (!userLoged.value || !userLoged.value.role) return []
+    const myLevel = userLoged.value.role.level || 0
+    return listaRoles.value.filter((rol) => rol.level < myLevel)
   })
 
   // Server-side data (from store)
-  const usuariosFiltrados = computed(() => userStore.currentPageUsers)
-  const paginatedUsuarios = computed(() => userStore.currentPageUsers)
+  const usuariosFiltrados = computed(() => staffStore.currentPageStaff)
+  const paginatedUsuarios = computed(() => staffStore.currentPageStaff)
 
   // --- DATA LOADING ---
   async function loadUsers(page: number = 1) {
     loading.value = true
     try {
       // Fetch paginated users from server
-      await userStore.fetchPaginated({
+      await staffStore.fetchPaginated({
         page,
         limit: itemsPerPage,
         search: filtroNombre.value,
-        cargo: tipoCargo.value,
-        habilitado: filtroHabilitado.value,
+        positionId: positionId.value,
+        isActive:
+          filtroHabilitado.value === 'HABILITADO'
+            ? true
+            : filtroHabilitado.value === 'INACTIVO'
+            ? false
+            : undefined,
         rut: filtroRut.value
       })
 
       // Load options only once
-      if (listaTipoCargo.value.length === 0) {
-        const opciones = await optionStore.mostrarOpciones()
-        listaTipoCargo.value = opciones.tipoCargo
-        listaHabilitado.value = opciones.habilitado
-        listaTiposTurno.value = opciones.tiposTurno
-      }
       if (serviceStore.services.length === 0) {
         await serviceStore.fetchServices()
       }
-      if (listaRoles.value.length === 0) {
-        const api = authStore.usePrivateApi()
-        const rolesRes = await api.get('/roles')
-        listaRoles.value = rolesRes.data
-        const posRes = await api.get('/positions')
-        listaPositions.value = posRes.data
+      if (roleStore.roles.length === 0) {
+        await roleStore.fetchRoles()
+      }
+      if (positionStore.positions.length === 0) {
+        await positionStore.fetchPositions()
       }
     } finally {
       loading.value = false
@@ -98,14 +91,14 @@ export function useEmployeesState() {
     }
   }
 
-  // Debounced search (waits 300ms after user stops typing)
+  // Debounced search (waits 300ms after IStaff stops typing)
   const debouncedSearch = debounce(async () => {
     currentPage.value = 1 // Reset to page 1 on search
     await loadUsers(1)
   }, 300)
 
   // Watch filters and trigger debounced search
-  watch([filtroNombre, tipoCargo, filtroHabilitado, filtroRut], () => {
+  watch([filtroNombre, positionId, filtroHabilitado, filtroRut], () => {
     debouncedSearch()
   })
 
@@ -128,9 +121,8 @@ export function useEmployeesState() {
     userLoged,
     filtroRut,
     filtroNombre,
-    tipoCargo,
+    positionId,
     filtroHabilitado,
-    listaTipoCargo,
     listaRoles,
     listaPositions,
     listaTipoContrato,

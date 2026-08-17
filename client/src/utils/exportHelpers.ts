@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { type ReplacementRegistration } from '@/types/replacement.types'
-import { type User } from '@/types/user.types'
+import { type IStaff } from '@/types/staff.types'
 import { type AuditLog } from '@/types/audit.types'
 import * as XLSX from 'xlsx'
 
@@ -160,7 +160,7 @@ export const exportHistoryToPDF = (registros: ReplacementRegistration[], filtros
     doc.save(`Reporte_Historial_${new Date().toISOString().slice(0, 10)}.pdf`)
   }
 
-export const exportUsersToPDF = (users: User[]) => {
+export const exportUsersToPDF = (users: IStaff[]) => {
       const doc = new jsPDF()
 
       // Title
@@ -177,12 +177,12 @@ export const exportUsersToPDF = (users: User[]) => {
       users.forEach((u) => {
         const row = [
           u.rut,
-          u.nombre,
-          u.apellido,
-          u.tipo_cargo,
-          (u as any).servicio || '-', // Servicio is optional in User interface but present in data
+          u.firstName,
+          u.lastName,
+          u.positionId?.name || u.roleId?.name || '-',
+          (u as any).servicio || '-', // Servicio is optional in IStaff interface but present in data
           u.email,
-          u.habilitado
+          u.isActive ? 'Activo' : 'Inactivo'
         ]
         tableRows.push(row)
       })
@@ -197,20 +197,20 @@ export const exportUsersToPDF = (users: User[]) => {
 
       doc.save(`Reporte_Usuarios_${new Date().toISOString().slice(0, 10)}.pdf`)
     }
-export const exportUsersToExcel = (users: User[]) => {
+export const exportUsersToExcel = (users: IStaff[]) => {
       // 1. Prepare Data
       const data = users.map((u) => ({
         RUT: u.rut,
-        Nombre: u.nombre,
-        Apellido: u.apellido,
-        Cargo: u.tipo_cargo,
+        Nombre: u.firstName,
+        Apellido: u.lastName,
+        Cargo: u.positionId?.name || u.roleId?.name || '-',
         Servicio: (u as any).servicio || '-',
         Email: u.email,
-        Telefono: u.telefono,
-        'Fecha Nacimiento': u.fecha_nac ? new Date(u.fecha_nac).toLocaleDateString() : '-',
-        Direccion: u.direccion,
-        Ciudad: u.ciudad,
-        Estado: u.habilitado
+        Telefono: u.phone,
+        'Fecha Nacimiento': u.birthDate ? new Date(u.birthDate).toLocaleDateString() : '-',
+        Direccion: u.address,
+        Ciudad: u.city,
+        Estado: u.isActive ? 'Activo' : 'Inactivo'
       }))
 
       // 2. Create Sheet

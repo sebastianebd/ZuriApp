@@ -18,7 +18,8 @@ export const createAssignment = async (req: Request, res: Response) => {
     );
     if (!allowed) return;
 
-    const assignment = await turnAssignmentService.createAssignment(req.body, (req as any).account);
+    const userRoleLevel = (req as AuthRequest).staff?.roleId?.level || 0;
+    const assignment = await turnAssignmentService.createAssignment(req.body, (req as any).account, userRoleLevel);
     res.json(assignment);
   } catch (error: any) {
     const statusCode = error.statusCode || 500;
@@ -56,7 +57,8 @@ export const getAssignmentById = async (req: Request, res: Response) => {
 
 export const updateAssignment = async (req: Request, res: Response) => {
   try {
-    const assignment = await turnAssignmentService.updateAssignment(req.params.id, req.body);
+    const userRoleLevel = (req as AuthRequest).staff?.roleId?.level || 0;
+    const assignment = await turnAssignmentService.updateAssignment(req.params.id, req.body, userRoleLevel);
     res.json(assignment);
   } catch (error: any) {
     const statusCode = error.statusCode || 500;
@@ -66,7 +68,8 @@ export const updateAssignment = async (req: Request, res: Response) => {
 
 export const deleteAssignment = async (req: Request, res: Response) => {
   try {
-    await turnAssignmentService.deleteAssignment(req.params.id);
+    const userRoleLevel = (req as AuthRequest).staff?.roleId?.level || 0;
+    await turnAssignmentService.deleteAssignment(req.params.id, userRoleLevel);
     res.json({ message: "Assignment deleted successfully" });
   } catch (error: any) {
     const statusCode = error.statusCode || 500;

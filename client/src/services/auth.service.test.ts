@@ -62,12 +62,12 @@ describe('AuthService', () => {
   })
 
   it('getUser should use private API', async () => {
-    const mockResponse = { data: { name: 'User' } }
+    const mockResponse = { data: { name: 'IStaff' } }
     mockApi.get.mockResolvedValue(mockResponse)
 
     const result = await AuthService.getUser(mockApi as any)
 
-    expect(mockApi.get).toHaveBeenCalledWith('/auth/user')
+    expect(mockApi.get).toHaveBeenCalledWith('/auth/IStaff')
     expect(result).toEqual(mockResponse.data)
   })
 })

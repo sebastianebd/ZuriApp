@@ -31,7 +31,7 @@
           <div class="modal-body p-4 bg-light bg-opacity-50">
             <form @submit.prevent="guardar">
               <div class="bg-white p-4 rounded-4 shadow-sm border">
-                <!-- 🏢 ENTERPRISE: User Selection with v-select -->
+                <!-- 🏢 ENTERPRISE: IStaff Selection with v-select -->
                 <div class="mb-4 position-relative">
                   <label class="form-label x-small fw-bold text-secondary text-uppercase"
                     >Funcionario (PLANTA)</label
@@ -44,19 +44,19 @@
                     @search="searchUser"
                     label="displayName"
                     placeholder="Buscar funcionario PLANTA..."
-                    class="user-select-planta"
-                    :class="{ 'is-invalid': errors.user_id }"
+                    class="IStaff-select-planta"
+                    :class="{ 'is-invalid': errors.staffId }"
                   >
                     <template #option="option">
-                      <div class="user-option">
+                      <div class="IStaff-option">
                         <div class="d-flex justify-content-between align-items-center">
                           <div>
                             <span class="fw-bold text-dark">{{ option.rut }}</span>
                             <span class="text-secondary ms-2"
-                              >{{ option.nombre }} {{ option.apellido }}</span
+                              >{{ option.firstName }} {{ option.lastName }}</span
                             >
                           </div>
-                          <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                          <span class="badge bg-primary">{{ option.positionId?.name || option.roleId?.name || '' }}</span>
                         </div>
                       </div>
                     </template>
@@ -67,12 +67,12 @@
                           style="width: 32px; height: 32px; font-size: 0.75rem"
                         >
                           <span class="fw-bold"
-                            >{{ option.nombre.charAt(0) }}{{ option.apellido.charAt(0) }}</span
+                            >{{ option.firstName.charAt(0) }}{{ option.lastName.charAt(0) }}</span
                           >
                         </div>
                         <div>
                           <div class="fw-bold text-dark" style="font-size: 0.875rem">
-                            {{ option.nombre }} {{ option.apellido }}
+                            {{ option.firstName }} {{ option.lastName }}
                           </div>
                           <div class="text-secondary" style="font-size: 0.7rem">
                             {{ option.rut }}
@@ -88,8 +88,8 @@
                       </div>
                     </template>
                   </v-select>
-                  <div v-if="errors.user_id" class="text-danger x-small fw-bold floating-error">
-                    {{ errors.user_id }}
+                  <div v-if="errors.staffId" class="text-danger x-small fw-bold floating-error">
+                    {{ errors.staffId }}
                   </div>
                 </div>
 
@@ -244,12 +244,12 @@ import { DatePicker } from 'v-calendar'
 import 'v-calendar/dist/style.css'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
-import { useUserStore } from '@/stores/user.store'
+import { useStaffStore } from '@/stores/staff.store'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { useServiceStore } from '@/stores/service.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
-import { type User } from '@/types/user.types'
+import { type IStaff } from '@/types/staff.types'
 
 const props = defineProps<{
   visible: boolean
@@ -261,15 +261,17 @@ const emit = defineEmits<{
   (e: 'guardar', payload: any): void
 }>()
 
-const usersStore = useUserStore()
+const usersStore = useStaffStore()
 const turnAssignmentStore = useTurnAssignmentStore()
 const serviceStore = useServiceStore()
 const turnTypeStore = useTurnTypeStore()
 const replacementStore = useReplacementStore()
 
-// 🏢 ENTERPRISE: User search with server-side filtering (PLANTA only)
-const selectedUser = ref<User | null>(null)
-const userOptions = ref<User[]>([])
+const INDEFINITE_END_DATE = new Date('2099-12-31T23:59:59Z')
+
+// 🏢 ENTERPRISE: IStaff search with server-side filtering (PLANTA only)
+const selectedUser = ref<IStaff | null>(null)
+const userOptions = ref<IStaff[]>([])
 const isSearchingUser = ref(false)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -287,22 +289,22 @@ const searchUser = (query: string, loading: (isLoading: boolean) => void) => {
 
   searchTimeout = setTimeout(async () => {
     try {
-      await usersStore.searchUsers({
+      await usersStore.searchStaff({
         search: query.trim(),
         page: 1,
         limit: 20
       })
 
       // 🏭 CRITICAL: Filter PLANTA only
-      const plantaUsers = usersStore.searchResults.filter((u) => u.tipo_contrato === 'PLANTA')
+      const plantaUsers = usersStore.searchResults.filter((u) => u.contractType === 'PLANTA')
 
       // Transform results for v-select
       userOptions.value = plantaUsers.map((u) => ({
         ...u,
-        displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+        displayName: `${u.rut} - ${u.firstName} ${u.lastName}`
       }))
     } catch (error) {
-      console.error('[TurnAssignmentModal] Search user error:', error)
+      console.error('[TurnAssignmentModal] Search IStaff error:', error)
       userOptions.value = []
     } finally {
       loading(false)
@@ -314,14 +316,14 @@ const searchUser = (query: string, loading: (isLoading: boolean) => void) => {
 // Watch selectedUser and update form
 watch(selectedUser, async (newUser) => {
   if (newUser) {
-    form.value.user_id = newUser._id
-    if (errors.value.user_id) delete errors.value.user_id
+    form.value.staffId = newUser._id
+    if (errors.value.staffId) delete errors.value.staffId
 
     // Fetch assignments for date blocking
     const assignments = await turnAssignmentStore.fetchAssignmentsByUser(newUser._id)
     blockedDates.value = getBlockedDates(assignments)
   } else {
-    form.value.user_id = ''
+    form.value.staffId = ''
     blockedDates.value = []
   }
 })
@@ -337,7 +339,7 @@ const serviceOptions = computed(() => {
 
 // Form AuthState
 const form = ref({
-  user_id: '',
+  staffId: '',
   service: '',
   turn_type: '',
   start_date: null as Date | null,
@@ -363,7 +365,7 @@ watch(
 
 function resetForm() {
   form.value = {
-    user_id: '',
+    staffId: '',
     service: '',
     turn_type: '',
     start_date: new Date(),
@@ -390,17 +392,23 @@ const blockedDates = ref<any[]>([])
 
 function getBlockedDates(assignments: any[]) {
   return assignments.map((a) => {
-    return {
-      start: new Date(a.start_date),
-      end: a.end_date ? new Date(a.end_date) : null // Null end means indefinite. v-calendar handles null end? limit to 100 years maybe.
+    const s = new Date(a.start_date)
+    const start = new Date(Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate(), 12, 0, 0))
+    
+    let end = null
+    if (a.end_date) {
+      const e = new Date(a.end_date)
+      end = new Date(Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), e.getUTCDate(), 12, 0, 0))
     }
+    
+    return { start, end }
   })
 }
 
 const vCalendarDisabledDates = computed(() => {
   return blockedDates.value.map((range) => ({
     start: range.start,
-    end: range.end || new Date(2100, 0, 1)
+    end: range.end || INDEFINITE_END_DATE
   }))
 })
 
@@ -417,14 +425,14 @@ watch(selectedUser, async (newUser) => {
       limit: 100
     })
 
-    // 3. Get Absence Dates (User is SALIENTE)
+    // 3. Get Absence Dates (IStaff is SALIENTE)
     const absenceDateStrings = replacementStore.getFechasAusencia(newUser._id, replacements)
     // Convert string "YYYY-MM-DD" to range { start, end }
     const absenceBlocks = absenceDateStrings.map((dateStr: string) => {
       // Parse UTC to avoid timezone shifts.
       // Assuming dateStr is YYYY-MM-DD.
       const [y, m, d] = dateStr.split('-').map(Number)
-      const dateObj = new Date(y, m - 1, d)
+      const dateObj = new Date(Date.UTC(y, m - 1, d, 12, 0, 0))
       return { start: dateObj, end: dateObj } // Single day block
     })
 
@@ -439,8 +447,8 @@ function validateForm() {
   errors.value = {}
   let isValid = true
 
-  if (!form.value.user_id) {
-    errors.value.user_id = 'Debe seleccionar un funcionario'
+  if (!form.value.staffId) {
+    errors.value.staffId = 'Debe seleccionar un funcionario'
     isValid = false
   }
 
@@ -478,7 +486,7 @@ function validateForm() {
     // IMPORTANT: Clear time part to compare only dates
     newStart.setHours(0, 0, 0, 0)
 
-    const newEnd = form.value.end_date ? new Date(form.value.end_date) : new Date(2100, 0, 1)
+    const newEnd = form.value.end_date ? new Date(form.value.end_date) : INDEFINITE_END_DATE
     newEnd.setHours(23, 59, 59, 999) // End at end of day
 
     const hasOverlap = blockedDates.value.some((range) => {
@@ -486,7 +494,7 @@ function validateForm() {
       const blockedStart = new Date(range.start)
       blockedStart.setHours(0, 0, 0, 0)
 
-      const blockedEnd = range.end ? new Date(range.end) : new Date(2100, 0, 1)
+      const blockedEnd = range.end ? new Date(range.end) : INDEFINITE_END_DATE
       blockedEnd.setHours(23, 59, 59, 999)
 
       // Overlap logic: StartA <= EndB AND EndA >= StartB
@@ -610,8 +618,8 @@ function guardar() {
   color: #ef4444;
 }
 
-/* \ud83c\udfe2 ENTERPRISE: Custom v-select for PLANTA user selection */
-.user-select-planta :deep(.vs__dropdown-toggle) {
+/* \ud83c\udfe2 ENTERPRISE: Custom v-select for PLANTA IStaff selection */
+.IStaff-select-planta :deep(.vs__dropdown-toggle) {
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   padding: 6px;
@@ -621,7 +629,7 @@ function guardar() {
   overflow: hidden;
 }
 
-.user-select-planta :deep(.vs__selected-options) {
+.IStaff-select-planta :deep(.vs__selected-options) {
   min-height: 48px;
   max-height: 48px;
   overflow: hidden;
@@ -629,14 +637,14 @@ function guardar() {
   align-items: center;
 }
 
-.user-select-planta :deep(.vs__selected) {
+.IStaff-select-planta :deep(.vs__selected) {
   display: flex;
   align-items: center;
   margin: 0;
   padding: 0;
 }
 
-.user-select-planta :deep(.vs__dropdown-menu) {
+.IStaff-select-planta :deep(.vs__dropdown-menu) {
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -647,19 +655,19 @@ function guardar() {
   z-index: 9999;
 }
 
-.user-select-planta :deep(.vs__dropdown-option) {
+.IStaff-select-planta :deep(.vs__dropdown-option) {
   border-radius: 0.375rem;
   padding: 10px 12px;
   margin-bottom: 2px;
   font-size: 0.875rem;
 }
 
-.user-select-planta :deep(.vs__dropdown-option--highlight) {
+.IStaff-select-planta :deep(.vs__dropdown-option--highlight) {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
 }
 
-.user-option {
+.IStaff-option {
   width: 100%;
 }
 </style>

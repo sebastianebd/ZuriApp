@@ -97,21 +97,21 @@
                       <span class="fw-bold text-dark x-small">{{ usuario.rut }}</span>
                     </td>
                     <td class="px-2 py-2 text-dark x-small">
-                      {{ usuario.nombre }} {{ usuario.apellido }}
+                      {{ usuario.firstName }} {{ usuario.lastName }}
                     </td>
                     <td class="px-2 py-2">
                       <span
                         class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill x-small fw-bold"
                       >
-                        {{ usuario.tipo_cargo }}
+                        {{ usuario.positionId?.name || usuario.roleId?.name || '-' }}
                       </span>
                     </td>
                     <td class="px-2 py-2">
-                      <span class="x-small text-secondary">{{ usuario.direccion }}</span>
+                      <span class="x-small text-secondary">{{ usuario.address || '-' }}</span>
                     </td>
                     <td class="px-2 py-2">
                       <span class="x-small text-secondary">
-                        <i class="bi bi-telephone me-1"></i>{{ usuario.telefono }}
+                        <i class="bi bi-telephone me-1"></i>{{ usuario.phone }}
                       </span>
                     </td>
                     <td class="px-2 py-2">
@@ -126,12 +126,12 @@
                       <span
                         class="badge px-2 py-1 rounded-pill x-small fw-bold shadow-xs"
                         :class="
-                          usuario.habilitado
+                          usuario.isActive
                             ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
                             : 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25'
                         "
                       >
-                        {{ usuario.habilitado ? 'Activo' : 'Inactivo' }}
+                        {{ usuario.isActive ? 'Activo' : 'Inactivo' }}
                       </span>
                     </td>
                   </tr>
@@ -202,8 +202,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useUserStore } from '@/stores/user.store'
-import { type User } from '@/types/user.types'
+import { useStaffStore } from '@/stores/staff.store'
+import { type IStaff } from '@/types/staff.types'
 
 // 🏢 ENTERPRISE: Self-contained modal with server-side search
 const props = defineProps<{
@@ -215,34 +215,34 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'cerrar'): void
-  (e: 'usuario-seleccionado', usuario: User): void
+  (e: 'usuario-seleccionado', usuario: IStaff): void
 }>()
 
-const userStore = useUserStore()
+const staffStore = useStaffStore()
 
 // --- Estado local
 const searchQuery = ref('')
 const filtroCargoLocal = ref<string | null>(null)
-const usuarioSeleccionado = ref<User | null>(null)
+const usuarioSeleccionado = ref<IStaff | null>(null)
 let lastClickTime = 0
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 // --- Computed from store
-const usuarios = computed(() => userStore.searchResults)
-const isLoading = computed(() => userStore.isSearching)
-const currentPage = computed(() => userStore.searchPagination.currentPage)
-const totalPages = computed(() => userStore.searchPagination.totalPages)
-const totalItems = computed(() => userStore.searchPagination.totalItems)
+const usuarios = computed(() => staffStore.searchResults)
+const isLoading = computed(() => staffStore.isSearching)
+const currentPage = computed(() => staffStore.searchPagination.currentPage)
+const totalPages = computed(() => staffStore.searchPagination.totalPages)
+const totalItems = computed(() => staffStore.searchPagination.totalItems)
 
 // 🏢 ENTERPRISE: Debounced server-side search (300ms)
 const performSearch = async (query: string, page: number = 1) => {
   if (!query || query.trim().length < 2) {
-    userStore.searchResults = []
+    staffStore.searchResults = []
     return
   }
 
   try {
-    await userStore.searchUsers({
+    await staffStore.searchStaff({
       search: query.trim(),
       page,
       limit: 20
@@ -257,7 +257,7 @@ watch(searchQuery, (newQuery) => {
   if (searchTimeout) clearTimeout(searchTimeout)
 
   if (!newQuery || newQuery.trim().length < 2) {
-    userStore.searchResults = []
+    staffStore.searchResults = []
     return
   }
 
@@ -272,25 +272,25 @@ watch(
   (visible) => {
     if (!visible) {
       searchQuery.value = ''
-      userStore.searchResults = []
+      staffStore.searchResults = []
       usuarioSeleccionado.value = null
     }
   }
 )
 
-// --- Filtrar usuarios (client-side filters on search results)
+// --- Filtrar usuarios (client-side only AFTER search)
 const usuariosFiltrados = computed(() => {
-  let lista = usuarios.value.filter((u) => !['ADMIN-TI', 'RECURSOS HUMANOS'].includes(u.tipo_cargo))
+  let lista = usuarios.value.filter((u) => !['ADMIN-TI', 'RECURSOS HUMANOS'].includes((u.positionId?.name || u.roleId?.name || '').toUpperCase()))
 
   // Apply cargo filter if needed (for grupo=2)
   if (props.grupo === 2 && props.cargoFiltro) {
-    lista = lista.filter((u) => u.tipo_cargo === props.cargoFiltro)
+    lista = lista.filter((u) => (u.positionId?.name || u.roleId?.name) === props.cargoFiltro)
   }
 
   // Apply local cargo filter
   if (filtroCargoLocal.value && filtroCargoLocal.value !== 'Todos') {
     const cargoBusqueda = String(filtroCargoLocal.value).toLowerCase()
-    lista = lista.filter((u) => u.tipo_cargo?.toLowerCase().includes(cargoBusqueda))
+    lista = lista.filter((u) => (u.positionId?.name || u.roleId?.name || '').toLowerCase().includes(cargoBusqueda))
   }
 
   return lista
@@ -304,7 +304,7 @@ function changePage(page: number) {
 }
 
 // --- Click
-function handleClick(usuario: User) {
+function handleClick(usuario: IStaff) {
   const now = Date.now()
   const doubleClick = now - lastClickTime < 300
 

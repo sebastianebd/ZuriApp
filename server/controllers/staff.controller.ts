@@ -5,7 +5,8 @@ import auditService from "../services/audit.service";
 import { AuthRequest } from "../middleware/authentication.middleware";
 export const createStaff = async (req: AuthRequest, res: Response) => {
   try {
-    const staff = await staffService.onboardStaff(req.body);
+    const userRoleLevel = req.staff?.roleId?.level || 0;
+    const staff = await staffService.onboardStaff(req.body, userRoleLevel);
     
     await auditService.logAction(
       "CREAR",
@@ -26,7 +27,8 @@ export const createStaff = async (req: AuthRequest, res: Response) => {
 export const updateStaff = async (req: AuthRequest, res: Response) => {
   try {
     const original: any = await staffService.getStaffById(req.params.id);
-    const staff = await staffService.updateStaff(req.params.id, req.body);
+    const userRoleLevel = req.staff?.roleId?.level || 0;
+    const staff = await staffService.updateStaff(req.params.id, req.body, userRoleLevel);
     
     const diff = auditService.generateDiff(original, req.body, "Staff");
     const nombreUsuario = original
@@ -55,7 +57,8 @@ export const updateStaff = async (req: AuthRequest, res: Response) => {
 export const deleteStaff = async (req: AuthRequest, res: Response) => {
   try {
     const staffToDelete: any = await staffService.getStaffById(req.params.id);
-    const staff = await staffService.deleteStaff(req.params.id);
+    const userRoleLevel = req.staff?.roleId?.level || 0;
+    const staff = await staffService.deleteStaff(req.params.id, userRoleLevel);
     
     await auditService.logAction(
       "ELIMINAR",
@@ -96,15 +99,20 @@ export const getAllStaff = async (req: AuthRequest, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = (req.query.search as string) || "";
+    const rut = (req.query.rut as string) || "";
     const roleId = (req.query.roleId as string) || "";
     const positionId = (req.query.positionId as string) || "";
-    const status = (req.query.status as string) || "";
+    const isActiveQuery = req.query.isActive as string;
+    let isActive: boolean | undefined = undefined;
+    if (isActiveQuery === 'true') isActive = true;
+    else if (isActiveQuery === 'false') isActive = false;
 
     const result = await staffService.getAllStaff({
       search,
+      rut,
       roleId,
       positionId,
-      status,
+      isActive,
       page,
       limit,
       userRoleLevel,
@@ -118,13 +126,3 @@ export const getAllStaff = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const sendResetLink = async (req: AuthRequest, res: Response) => {
-  try {
-    await staffService.sendResetLink(req.params.id);
-    res.status(200).json({ message: "Enlace de restablecimiento enviado exitosamente" });
-  } catch (error: any) {
-    logger.error(`Error in sendResetLink: ${error.message}`);
-    const statusCode = error.statusCode || error.status || 500;
-    res.status(statusCode).json({ message: error.message || "Error al enviar enlace", error });
-  }
-};

@@ -1,5 +1,5 @@
 <template>
-  <div class="user-management-view p-4">
+  <div class="IStaff-management-view p-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div class="d-flex align-items-center gap-3">
@@ -33,21 +33,18 @@
       <div class="card-body p-4">
         <!-- Filter Section -->
         <div class="">
-          <UserFilter
-            :lista-tipo-cargo="listaTipoCargo"
+          <StaffFilter
+            v-model:filtroRut="filtroRut"
+            v-model:filtroNombre="filtroNombre"
+            v-model:tipoCargo="positionId"
+            v-model:filtroHabilitado="filtroHabilitado"
+            :lista-positions="listaPositions"
             :lista-habilitado="listaHabilitado"
-            :filtro-rut="filtroRut"
-            :filtro-nombre="filtroNombre"
-            :tipo-cargo="tipoCargo"
-            :filtro-habilitado="filtroHabilitado"
-            @update:filtroRut="(v) => (filtroRut = v)"
-            @update:filtroNombre="(v) => (filtroNombre = v)"
-            @update:tipoCargo="(v) => (tipoCargo = v)"
-            @update:filtroHabilitado="(v) => (filtroHabilitado = v)"
+            @exportar="openExportModal"
           />
         </div>
 
-        <!-- User Table Section -->
+        <!-- IStaff Table Section -->
         <div class="table-container position-relative">
           <TableLoader v-if="loading" text="Cargando usuarios..." />
 
@@ -60,7 +57,7 @@
           </div>
 
           <template v-else>
-            <UserTable
+            <StaffTable
               :usuarios="paginatedUsuarios"
               :login-user="userLoged"
               @editar="openUpdateModal"
@@ -80,7 +77,7 @@
     </div>
 
     <!-- Modales -->
-    <UserModalUpdate
+    <StaffModalUpdate
       :visible="updateModalVisible"
       :usuario="usuarioActual"
       :lista-roles="listaRoles"
@@ -91,17 +88,18 @@
       @guardar="handleUpdate"
     />
 
-    <UserModalCreate
+    <StaffModalCreate
       :visible="createModalVisible"
-      :lista-roles="listaRoles"
+      :lista-roles="rolesDisponiblesCreacion"
       :lista-positions="listaPositions"
+      :lista-tipo-contrato="listaTipoContrato"
       :lista-habilitado="listaHabilitado"
       :lista-servicios="listaServicios"
       @cerrar="closeCreateModal"
       @guardar="handleCreate"
     />
 
-    <UserModalDetail
+    <StaffModalDetail
       :visible="historialModalVisible"
       :usuario="usuarioSeleccionado"
       :lista-servicios="listaServicios"
@@ -120,13 +118,13 @@
 <script setup lang="ts">
 import { useUsers } from '@/composables/employees/useEmployees'
 import {
-  UserFilter,
-  UserTable,
-  UserModalUpdate,
-  UserModalCreate,
-  UserModalDetail
-} from '@/components/users'
-import ExportFormatModal from '@/components/users/ExportFormatModal.vue'
+  StaffFilter,
+  StaffTable,
+  StaffModalUpdate,
+  StaffModalCreate,
+  StaffModalDetail
+} from '@/components/staff'
+import ExportFormatModal from '@/components/staff/ExportFormatModal.vue'
 import { exportUsersToPDF, exportUsersToExcel } from '@/utils/exportHelpers'
 import TableLoader from '@/components/common/TableLoader.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
@@ -144,11 +142,10 @@ const {
   // Filters
   filtroRut,
   filtroNombre,
-  tipoCargo,
+  positionId,
   filtroHabilitado,
 
   // Lists
-  listaTipoCargo,
   listaRoles,
   listaPositions,
   listaTipoContrato,
@@ -212,7 +209,7 @@ const handleExportFormat = (format: 'pdf' | 'excel') => {
   justify-content: center;
 }
 
-.user-management-view {
+.IStaff-management-view {
   background-color: #f8fafc;
 }
 

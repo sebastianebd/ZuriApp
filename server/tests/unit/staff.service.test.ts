@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import StaffService from "../../services/staff.service";
 import Staff from "../../models/staff.model";
-import Account from "../../models/account.model";
+import accountService from "../../services/account.service";
 
 vi.mock("../../models/staff.model");
-vi.mock("../../models/account.model");
+vi.mock("../../services/account.service");
 vi.mock("../../queues/email.queue", () => ({
   emailQueue: {
     add: vi.fn(),
@@ -56,22 +56,22 @@ describe("Staff Service - Unit Tests", () => {
       mongoose.startSession = vi.fn().mockResolvedValue(sessionMock);
 
       (Staff.findById as any).mockReturnValue({
-        session: vi.fn().mockResolvedValue({
-          _id: "staff123",
-          save: vi.fn().mockResolvedValue(true)
+        session: vi.fn().mockReturnValue({
+          populate: vi.fn().mockResolvedValue({
+            _id: "staff123",
+            roleId: { level: 0 },
+            isDeleted: false,
+            save: vi.fn().mockResolvedValue(true)
+          })
         })
       });
-      (Account.deleteOne as any).mockReturnValue({
-        session: vi.fn().mockResolvedValue({})
-      });
+      (accountService.revokeAccount as any).mockResolvedValue(true);
 
-      await StaffService.deleteStaff("staff123");
+      await StaffService.deleteStaff("staff123", 999);
 
       // Check that soft delete fields were set
       // The staff mock was retrieved via session()
-      expect(Account.deleteOne).toHaveBeenCalledWith(
-        { staffId: "staff123" }
-      );
+      expect(accountService.revokeAccount).toHaveBeenCalledWith("staff123", sessionMock);
     });
   });
 });

@@ -1,4 +1,4 @@
-import type { User } from './user.types'
+import type { IStaff } from './staff.types'
 
 export interface ReplacementRegistration {
   id_negocio: string
@@ -17,7 +17,7 @@ export interface ReplacementRegistration {
   tipo_cargo: string
   servicio: string
   status: string
-  creado_por: string | User
+  creado_por: string | IStaff
   corte_anticipado: Boolean
 }
 
@@ -29,7 +29,6 @@ export interface BaseEventData {
   apellido_saliente: string
   tipo_turno: string
   servicio: string
-  tipo_cargo: string
   fecha_termino_original: string // Se necesita para el término de B
 }
 

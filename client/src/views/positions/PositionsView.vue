@@ -14,7 +14,7 @@
 
       <!-- Action Button based on active tab -->
       <button
-        v-if="activeTab === 'roles' && hasPermissionRoles('cargos.create')"
+        v-if="activeTab === 'roles' && hasPermissionRoles('role.create')"
         class="btn btn-primary fw-bold shadow-sm px-4"
         @click="openCreateRoleModal"
       >
@@ -22,7 +22,7 @@
       </button>
 
       <button
-        v-else-if="activeTab === 'positions' && hasPermissionPositions('cargos.create')"
+        v-else-if="activeTab === 'positions' && hasPermissionPositions('position.create')"
         class="btn btn-primary fw-bold shadow-sm px-4"
         @click="openCreatePositionModal"
       >

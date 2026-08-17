@@ -49,7 +49,7 @@ describe("Turn Assignment Service - Unit Tests (Overlap Logic)", () => {
     (TurnAssignmentModel.create as any).mockResolvedValue(mockAssignment);
     (notificationService.notifyShiftAssignment as any).mockResolvedValue(true);
 
-    const result = await turnAssignmentService.createAssignment(payload, mockCurrentUser);
+    const result = await turnAssignmentService.createAssignment(payload, mockCurrentUser, 1);
 
     expect(TurnType.findOne).toHaveBeenCalled();
     expect(TurnAssignmentModel.findOne).toHaveBeenCalled();
@@ -64,9 +64,9 @@ describe("Turn Assignment Service - Unit Tests (Overlap Logic)", () => {
     (TurnType.findOne as any).mockResolvedValue(null);
 
     const payload = { staffId: "staff1", turn_type: "Inexistente", start_date: "2024-01-01" };
-    await expect(turnAssignmentService.createAssignment(payload, mockCurrentUser))
+    await expect(turnAssignmentService.createAssignment(payload, mockCurrentUser, 1))
       .rejects.toThrow(AppError);
-    await expect(turnAssignmentService.createAssignment(payload, mockCurrentUser))
+    await expect(turnAssignmentService.createAssignment(payload, mockCurrentUser, 1))
       .rejects.toMatchObject({ status: 404 });
   });
 
@@ -81,10 +81,10 @@ describe("Turn Assignment Service - Unit Tests (Overlap Logic)", () => {
 
     const payload = { staffId: "staff1", turn_type: "Mañana", start_date: "2024-01-01" };
     
-    await expect(turnAssignmentService.createAssignment(payload, mockCurrentUser))
+    await expect(turnAssignmentService.createAssignment(payload, mockCurrentUser, 1))
       .rejects.toThrow(AppError);
       
-    await expect(turnAssignmentService.createAssignment(payload, mockCurrentUser))
+    await expect(turnAssignmentService.createAssignment(payload, mockCurrentUser, 1))
       .rejects.toMatchObject({ status: 409 });
   });
 });

@@ -11,12 +11,18 @@ export const validateSchema =
   (schema: ZodSchema<any>) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // ParseAsync permite validaciones asíncronas si el esquema lo requiere (ej: checks de unicidad)
-      await schema.parseAsync({
+      // ParseAsync permite validaciones asíncronas y retorna los datos transformados
+      const parsedData = await schema.parseAsync({
         body: req.body,
         query: req.query,
         params: req.params,
       });
+      
+      // Mutamos el objeto req para que los controladores reciban la data limpia (ej: TitleCase)
+      req.body = parsedData.body;
+      req.query = parsedData.query;
+      req.params = parsedData.params;
+
       next();
     } catch (error) {
       if (error instanceof ZodError) {

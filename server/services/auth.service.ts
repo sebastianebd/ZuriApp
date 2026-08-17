@@ -133,18 +133,25 @@ async function login({
   await account.save();
 
   // Resolución de Permisos:
-  const staff = await Staff.findById(account.staffId).populate("roleId").exec();
+  const staff = await Staff.findById(account.staffId).populate(["roleId", "positionId"]).exec();
 
   if (!staff) {
     throw new AuthError("Personal asociado a la cuenta no encontrado.");
   }
 
   // Construcción del Payload de Staff con permisos del Rol
-  const role = staff.roleId as any;
+  const staffObj = staff.toObject();
+  const roleDoc = staffObj.roleId as any;
+  const { roleId, ...restStaff } = staffObj;
+  
   const staffPayload = {
-    ...staff.toObject(),
-    nivel: role?.level || 0,
-    permisos: role?.permissions || [],
+    ...restStaff,
+    role: {
+      code: roleDoc?.code,
+      level: roleDoc?.level || 0,
+      permissions: roleDoc?.permissions || [],
+      hasSystemAccess: roleDoc?.hasSystemAccess || false
+    }
   };
 
   return { 
