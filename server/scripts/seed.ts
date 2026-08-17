@@ -103,7 +103,7 @@ async function seed() {
       city: "Santiago",
       roleId: adminRole._id,
       positionId: adminPosition._id,
-      contractType: "TITULAR",
+      contractType: "CONTRATA",
       isDeleted: false,
       isActive: false,
     };
