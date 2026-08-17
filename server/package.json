@@ -10,7 +10,6 @@
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "seed": "ts-node scripts/seed.ts",
-    "seed:options": "ts-node scripts/seed-options.ts",
     "seed:cargos": "ts-node scripts/seed-cargos.ts",
     "seed:services": "ts-node scripts/seed-services.ts",
     "seed:turntypes": "ts-node scripts/seed-turntypes.ts",
