@@ -8,18 +8,18 @@ test.describe('User Management', () => {
     await login(page)
 
     // Navigate to users page
-    await page.goto('/app/personal/funcionarios')
+    await page.goto('/app/personal/staff')
     await page.waitForLoadState('networkidle')
   })
 
   test('should navigate to Users page', async ({ page }) => {
     await page.locator('a[title="Funcionarios"]').click()
-    await expect(page).toHaveURL(/personal\/funcionarios/)
+    await expect(page).toHaveURL(/personal\/staff/)
     await expect(page.locator('h4:has-text("Gestión de Usuarios")')).toBeVisible()
   })
 
   test('should open Create User modal', async ({ page }) => {
-    await page.goto('/app/personal/funcionarios')
+    await page.goto('/app/personal/staff')
     const createBtn = page.locator('button', { hasText: 'Crear Usuario' })
     await createBtn.waitFor({ state: 'visible', timeout: 10000 })
     await createBtn.click()
@@ -27,7 +27,7 @@ test.describe('User Management', () => {
     await expect(page.locator('.modal-title')).toContainText(/Nuevo Usuario/i)
   })
   test('should create a new user', async ({ page }) => {
-    await page.goto('/app/personal/funcionarios')
+    await page.goto('/app/personal/staff')
     await page.waitForLoadState('networkidle') // Wait for all network requests including options
     await page.waitForTimeout(500) // Small buffer for Firefox
 

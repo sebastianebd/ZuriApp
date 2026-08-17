@@ -33,7 +33,7 @@ test.describe('Login Flow', () => {
     await expect(page).not.toHaveURL(/\/$/, { timeout: 15000 })
 
     // Verify user name appears in navbar (indicates successful login and layout change)
-    await expect(page.locator('nav')).toContainText('ADMIN PRINCIPAL', {
+    await expect(page.locator('nav')).toContainText('Admin Principal', {
       timeout: 10000
     })
   })
