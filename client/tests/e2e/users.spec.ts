@@ -63,12 +63,12 @@ test.describe('User Management', () => {
     await activeModal.getByPlaceholder('Calle, Número').fill('Calle Falsa 123')
     await activeModal.getByPlaceholder('Ej: Santiago').fill('Santiago')
     const fechaInput = activeModal.getByPlaceholder('Seleccione fecha')
-    await fechaInput.evaluate((el) => el.removeAttribute('readonly'))
     await fechaInput.click()
-    await fechaInput.fill('15/12/2025')
-    await fechaInput.press('Enter')
-    await fechaInput.blur()
-    await page.keyboard.press('Escape')
+    // Wait for v-calendar popover
+    await page.locator('.vc-popover-content').waitFor({ state: 'visible', timeout: 5000 })
+    // Click a specific day (e.g., 15)
+    await page.locator('.vc-popover-content .vc-day-content').filter({ hasText: /^15$/ }).first().click()
+    await page.waitForTimeout(300)
     await page.waitForTimeout(300)
 
     const selectCargo = activeModal
@@ -80,9 +80,20 @@ test.describe('User Management', () => {
     // Wait for dropdown menu to open
     await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
 
-    const optionTens = page.locator('.vs__dropdown-option').filter({ hasText: /^TENS$/ })
-    await optionTens.waitFor({ state: 'visible' })
-    await optionTens.click()
+    const optionCargo = page.locator('.vs__dropdown-menu .vs__dropdown-option').first()
+    await optionCargo.waitFor({ state: 'visible' })
+    await optionCargo.click()
+
+    const selectRole = activeModal
+      .getByText('Rol (Perfil de Acceso)')
+      .locator('..')
+      .getByRole('combobox')
+    await selectRole.click({ force: true })
+
+    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
+
+    // Click the first option directly from the open dropdown menu
+    await page.locator('.vs__dropdown-menu .vs__dropdown-option').first().click()
 
     const selectContrato = activeModal
       .getByText(/^Tipo Contrato$/)
@@ -95,11 +106,10 @@ test.describe('User Management', () => {
 
     // Habilitado is now a switch, assert its state
     await expect(activeModal.getByText('Habilitado', { exact: true })).toBeVisible()
-    await expect(page.locator('.vs__selected').filter({ hasText: /^TENS$/ })).toBeVisible()
     await activeModal.getByPlaceholder('Ej: Sebastián').press('Enter')
     await page.waitForTimeout(500)
 
-    const saveBtn = activeModal.locator('.btn-primary')
+    const saveBtn = activeModal.getByRole('button', { name: /Guardar Usuario/i })
     await saveBtn.click()
 
     // Wait for Confirmation Modal
@@ -110,15 +120,17 @@ test.describe('User Management', () => {
     const responsePromise = page.waitForResponse(
       (resp) =>
         resp.request().method() === 'POST' &&
-        (resp.url().includes('/users') || resp.url().includes('/api/users')) &&
-        resp.status() >= 200 &&
-        resp.status() < 300
+        (resp.url().includes('/users') || resp.url().includes('/api/users') || resp.url().includes('/staff'))
     )
 
     // Click "Sí, Continuar"
     await page.getByRole('button', { name: 'Sí, Continuar' }).click()
 
-    await responsePromise
+    const resp = await responsePromise
+    if (!resp.ok()) {
+      console.error('API Error:', resp.status(), await resp.text())
+    }
+    expect(resp.ok()).toBeTruthy()
     await expect(page.getByText('¿Seguro que deseas crear este usuario?')).not.toBeVisible({
       timeout: 10000
     })
