@@ -77,7 +77,9 @@ test.describe('User Management', () => {
       .getByRole('combobox')
     await selectCargo.click({ force: true })
     await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
+    await page.waitForSelector('.vs__dropdown-option')
     await selectCargo.press('ArrowDown')
+    await page.waitForSelector('.vs__dropdown-option--highlight')
     await selectCargo.press('Enter')
 
     const selectRole = activeModal
@@ -86,7 +88,9 @@ test.describe('User Management', () => {
       .getByRole('combobox')
     await selectRole.click({ force: true })
     await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
+    await page.waitForSelector('.vs__dropdown-option')
     await selectRole.press('ArrowDown')
+    await page.waitForSelector('.vs__dropdown-option--highlight')
     await selectRole.press('Enter')
 
     const selectContrato = activeModal
@@ -95,7 +99,9 @@ test.describe('User Management', () => {
       .getByRole('combobox')
     await selectContrato.click({ force: true })
     await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
+    await page.waitForSelector('.vs__dropdown-option')
     await selectContrato.press('ArrowDown')
+    await page.waitForSelector('.vs__dropdown-option--highlight')
     await selectContrato.press('Enter')
 
     // Habilitado is now a switch, assert its state
