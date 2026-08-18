@@ -76,6 +76,7 @@ test.describe('User Management', () => {
       .locator('..')
       .getByRole('combobox')
     await selectCargo.click({ force: true })
+    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
     await selectCargo.press('ArrowDown')
     await selectCargo.press('Enter')
 
@@ -84,6 +85,7 @@ test.describe('User Management', () => {
       .locator('..')
       .getByRole('combobox')
     await selectRole.click({ force: true })
+    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
     await selectRole.press('ArrowDown')
     await selectRole.press('Enter')
 
@@ -92,6 +94,7 @@ test.describe('User Management', () => {
       .locator('..')
       .getByRole('combobox')
     await selectContrato.click({ force: true })
+    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
     await selectContrato.press('ArrowDown')
     await selectContrato.press('Enter')
 
