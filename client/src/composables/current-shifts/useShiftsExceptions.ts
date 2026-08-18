@@ -50,7 +50,7 @@ export function useShiftsExceptions(state: any, grid: any, props: { readonly?: b
   async function handleSaveException(data: { override_type: string }) {
     if (!selectedShiftData.value) return
 
-    if (!authStore.user || !authStore.user._id) {
+    if (!authStore.IStaff || !authStore.IStaff._id) {
       state.alertComponent.value.show('Error', 'Debe iniciar sesión para realizar cambios', 'error')
       return
     }
@@ -63,7 +63,7 @@ export function useShiftsExceptions(state: any, grid: any, props: { readonly?: b
           selectedShiftData.value.currentShift?.sigla || 'X'
         ),
         override_type: data.override_type,
-        created_by: authStore.user._id
+        created_by: authStore.IStaff._id
       })
 
       recentlyModifiedCell.value = {

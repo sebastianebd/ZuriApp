@@ -36,8 +36,10 @@ connectDB();
 // Solo iniciar el servidor HTTP una vez que la conexión a la Base de Datos esté establecida
 // para asegurar que la aplicación esté completamente lista para manejar solicitudes de negocio.
 mongoose.connection.once("open", () => {
-  logger.info(`DB connected: ${mongoose.connection.name}`);
-  server.listen(PORT, () => logger.info(`Server running on port ${PORT}`));
+  logger.info(`✅ Conectado a DB: ${mongoose.connection.name}`);
+  server.listen(PORT, () =>
+    logger.info(`✅ Server corriendo en puerto: ${PORT}`),
+  );
 });
 
 // Manejadores de errores globales:

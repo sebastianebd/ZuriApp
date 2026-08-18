@@ -1,30 +1,15 @@
 import { Queue, Worker, Job } from "bullmq";
 import emailService from "../services/email.service";
 import logger from "../config/logger.config";
-
-// --- Configuración de Redis ---
-// Se estandarizan los detalles de conexión para soportar tanto desarrollo local (host)
-// como despliegues en Docker (service names/URLs).
-const redisConnection: any = {
-  host: "localhost", // Default Fallback (DX Local)
-  port: 6379,
-};
-
-// Ajuste dinámico para entornos contenerizados (Production/Staging)
-if (process.env.REDIS_URL) {
-  const url = new URL(process.env.REDIS_URL);
-  redisConnection.host = url.hostname;
-  redisConnection.port = Number(url.port);
-  redisConnection.password = url.password;
-  redisConnection.username = url.username;
-}
+import bullmqConnection from "../config/bullmq-connection";
+import * as Sentry from "@sentry/node";
 
 const QUEUE_NAME = "email-queue";
 
 // 1. Definición de la Cola (Producer)
 // Centraliza la configuración de comportamiento de los trabajos encolados.
 export const emailQueue = new Queue(QUEUE_NAME, {
-  connection: redisConnection,
+  connection: bullmqConnection,
   defaultJobOptions: {
     attempts: 3, // Resiliencia: Reintentar hasta 3 veces ante fallos transitorios (ej: timeout SMTP)
     backoff: {
@@ -43,24 +28,29 @@ export const setupEmailWorker = () => {
     QUEUE_NAME,
     async (job: Job) => {
       logger.info(`[EmailWorker] Procesando trabajo ${job.id}: ${job.name}`);
-      const { to, nombre, rut, pass } = job.data;
+      const { to, nombre, rut, resetLink, isReset, template, context, subject } = job.data;
 
       // Delegación al servicio de negocio
-      await emailService.sendWelcomeEmail(to, nombre, rut, pass);
+      if (template && context) {
+        // Nuevo formato dinámico
+        await emailService.sendTemplatedEmail(to, subject || 'ZuriApp Notification', template, context);
+      } else {
+        // Formato legado retrocompatible
+        await emailService.sendWelcomeEmail(to, nombre, rut, resetLink, isReset);
+      }
 
-      // Seguridad en Logs:
-      // Enmascaramos datos sensibles (Credenciales) en el objeto del trabajo persistido
-      // para evitar fugas de información en paneles de administración (Bull Board/Redis).
-      await job.updateData({
-        ...job.data,
-        rut: "XX.XXX.XXX-X",
-        pass: "******",
-      });
+      // Seguridad en Logs: no loguear el link (contiene el token)
+      const sanitizedData = { ...job.data };
+      if (sanitizedData.resetLink) sanitizedData.resetLink = "[REDACTED]";
+      if (sanitizedData.context && sanitizedData.context.token) sanitizedData.context.token = "[REDACTED]";
+      if (sanitizedData.context && sanitizedData.context.resetLink) sanitizedData.context.resetLink = "[REDACTED]";
+
+      await job.updateData(sanitizedData);
 
       logger.info(`[EmailWorker] Trabajo ${job.id} completado exitosamente`);
     },
     {
-      connection: redisConnection,
+      connection: bullmqConnection,
     },
   );
 
@@ -68,6 +58,7 @@ export const setupEmailWorker = () => {
     logger.error(
       `[EmailWorker] Trabajo ${job?.id} falló con error: ${err.message}`,
     );
+    Sentry.captureException(err);
   });
 
   logger.info(

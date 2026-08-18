@@ -83,7 +83,7 @@ router.get(
 router.get(
   "/:id",
   requirePermission("replacement.view"),
-  replacementController.obtenerHistorialUsuario,
+  replacementController.obtenerHistorialStaff,
 );
 
 export default router;

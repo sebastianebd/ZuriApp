@@ -37,3 +37,7 @@ const authLimiter = isProduction
   : dummyLimiter;
 
 export { globalLimiter, authLimiter };
+
+// generalLimiter: alias de globalLimiter para rutas públicas y proxies de terceros.
+// ponytail: mismo límite que globalLimiter (100 req/15min) — suficiente para ICS y Sentry tunnel.
+export const generalLimiter = globalLimiter;

@@ -8,7 +8,8 @@ import * as redisConfig from "../../config/redis.config";
 // Inyectamos un usuario "admin" ficticio para tener permisos totales durante estas pruebas.
 vi.mock("../../middleware/authentication.middleware", () => ({
   default: (req: any, res: any, next: any) => {
-    req.user = { _id: "admin_id", nombre: "TEST", apellido: "ADMIN" };
+    req.staff = { _id: "admin_id", firstName: "TEST", lastName: "ADMIN", roleId: { level: 100 } };
+    req.account = { id: "admin_id", name: "TEST ADMIN" };
     next();
   },
   requirePermission: () => (req: any, res: any, next: any) => next(),
@@ -156,7 +157,7 @@ describe("Audit Controller - Integration", () => {
 
       // No queremos que el servidor "crashee", sino que retorne 500.
       expect(response.status).toBe(500);
-      expect(response.body.message).toBe("Error al obtener logs de auditoría");
+      expect(response.body.message).toBe("Database error");
     });
   });
 });

@@ -31,8 +31,8 @@ test.describe('Shifts Management', () => {
     await expect(page.getByText('Asignar Turno Planta')).toBeVisible()
 
     // Check that the user selection v-select is visible
-    // The component uses class "user-select-planta"
-    const userSelect = page.locator('.user-select-planta')
+    // The component uses class "IStaff-select-planta"
+    const userSelect = page.locator('.IStaff-select-planta')
     await expect(userSelect).toBeVisible({ timeout: 5000 })
 
     // Verify the label is present

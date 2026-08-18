@@ -49,11 +49,11 @@
           <td>
             <div class="d-flex align-items-center py-2 h-100">
               <!-- Saliente -->
-              <div class="user-node position-relative">
+              <div class="IStaff-node position-relative">
                 <div class="avatar-modern bg-gradient-danger text-white shadow-sm">
                   {{ getInitials(reemplazo.nombre_saliente + ' ' + reemplazo.apellido_saliente) }}
                 </div>
-                <div class="user-info ms-3">
+                <div class="IStaff-info ms-3">
                   <div class="fw-bold text-dark text-truncate">
                     {{ formatShortName(reemplazo.nombre_saliente, reemplazo.apellido_saliente) }}
                   </div>
@@ -67,11 +67,11 @@
               </div>
 
               <!-- Entrante -->
-              <div class="user-node">
+              <div class="IStaff-node">
                 <div class="avatar-modern bg-gradient-success text-white shadow-sm">
                   {{ getInitials(reemplazo.nombre_entrante + ' ' + reemplazo.apellido_entrante) }}
                 </div>
-                <div class="user-info ms-3">
+                <div class="IStaff-info ms-3">
                   <div class="fw-bold text-dark text-truncate">
                     {{ formatShortName(reemplazo.nombre_entrante, reemplazo.apellido_entrante) }}
                   </div>
@@ -120,7 +120,7 @@
                 {{ formatTitleCase(reemplazo.status) }}
               </span>
               <small class="creator-text mt-1">
-                {{ getCreatorName(reemplazo).split(' ')[0] }}
+                {{ getCreatorName(reemplazo) }}
               </small>
             </div>
           </td>
@@ -189,7 +189,7 @@
 import { ref } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { type ReplacementRegistration } from '@/types/replacement.types'
-import { type User } from '@/types/user.types'
+import { type IStaff } from '@/types/staff.types'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatTitleCase } from '@/utils/text-formatters'
 import { useServiceStore } from '@/stores/service.store'
@@ -230,9 +230,9 @@ const copiedId = ref<string | null>(null)
 const getCreatorName = (reemplazo: ReplacementRegistration): string => {
   const creator = reemplazo.creado_por
 
-  if (typeof creator !== 'string' && creator && 'nombre' in creator && 'apellido' in creator) {
-    const user = creator as User
-    return `${user.nombre} ${user.apellido}`
+  if (typeof creator !== 'string' && creator && 'firstName' in creator && 'lastName' in creator) {
+    const IStaff = creator as IStaff
+    return `${IStaff.firstName} ${IStaff.lastName}`
   }
   return String(creator) || 'N/A'
 }
@@ -416,7 +416,7 @@ async function copyCode(code: string) {
   color: #334155;
 }
 
-.user-node {
+.IStaff-node {
   display: flex;
   align-items: center;
   width: 180px; /* Fixed width for alignment */
@@ -444,7 +444,7 @@ async function copyCode(code: string) {
   color: white;
 }
 
-.user-info {
+.IStaff-info {
   line-height: 1.2;
 }
 

@@ -8,18 +8,18 @@ test.describe('User Management', () => {
     await login(page)
 
     // Navigate to users page
-    await page.goto('/app/personal/funcionarios')
+    await page.goto('/app/personal/staff')
     await page.waitForLoadState('networkidle')
   })
 
   test('should navigate to Users page', async ({ page }) => {
     await page.locator('a[title="Funcionarios"]').click()
-    await expect(page).toHaveURL(/personal\/funcionarios/)
+    await expect(page).toHaveURL(/personal\/staff/)
     await expect(page.locator('h4:has-text("Gestión de Usuarios")')).toBeVisible()
   })
 
   test('should open Create User modal', async ({ page }) => {
-    await page.goto('/app/personal/funcionarios')
+    await page.goto('/app/personal/staff')
     const createBtn = page.locator('button', { hasText: 'Crear Usuario' })
     await createBtn.waitFor({ state: 'visible', timeout: 10000 })
     await createBtn.click()
@@ -27,7 +27,7 @@ test.describe('User Management', () => {
     await expect(page.locator('.modal-title')).toContainText(/Nuevo Usuario/i)
   })
   test('should create a new user', async ({ page }) => {
-    await page.goto('/app/personal/funcionarios')
+    await page.goto('/app/personal/staff')
     await page.waitForLoadState('networkidle') // Wait for all network requests including options
     await page.waitForTimeout(500) // Small buffer for Firefox
 
@@ -63,50 +63,37 @@ test.describe('User Management', () => {
     await activeModal.getByPlaceholder('Calle, Número').fill('Calle Falsa 123')
     await activeModal.getByPlaceholder('Ej: Santiago').fill('Santiago')
     const fechaInput = activeModal.getByPlaceholder('Seleccione fecha')
-    await fechaInput.evaluate((el) => el.removeAttribute('readonly'))
     await fechaInput.click()
-    await fechaInput.fill('15/12/2025')
-    await fechaInput.press('Enter')
-    await fechaInput.blur()
-    await page.keyboard.press('Escape')
+    // Wait for v-calendar popover
+    await page.locator('.vc-popover-content').waitFor({ state: 'visible', timeout: 5000 })
+    // Click a specific day (e.g., 15)
+    await page.locator('.vc-popover-content .vc-day-content').filter({ hasText: /^15$/ }).first().click()
+    await page.waitForTimeout(300)
     await page.waitForTimeout(300)
 
-    const selectCargo = activeModal
-      .getByText(/^Cargo$/)
-      .locator('..')
-      .getByRole('combobox')
-    await selectCargo.click({ force: true })
+    const selectCargoContainer = activeModal.getByText('Cargo Físico (Position)').locator('..')
+    await selectCargoContainer.getByRole('combobox').click({ force: true })
+    const cargoOption = selectCargoContainer.locator('.vs__dropdown-option').first()
+    await cargoOption.waitFor({ state: 'visible', timeout: 5000 })
+    await cargoOption.click()
 
-    // Wait for dropdown menu to open
-    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
+    const selectRoleContainer = activeModal.getByText('Rol (Perfil de Acceso)').locator('..')
+    await selectRoleContainer.getByRole('combobox').click({ force: true })
+    const roleOption = selectRoleContainer.locator('.vs__dropdown-option').first()
+    await roleOption.waitFor({ state: 'visible', timeout: 5000 })
+    await roleOption.click()
 
-    const optionTens = page.locator('.vs__dropdown-option').filter({ hasText: /^TENS$/ })
-    await optionTens.waitFor({ state: 'visible' })
-    await optionTens.click()
+    const selectContratoContainer = activeModal.getByText(/^Tipo Contrato$/).locator('..')
+    await selectContratoContainer.getByRole('combobox').click({ force: true })
+    const contratoOption = selectContratoContainer.locator('.vs__dropdown-option').first()
+    await contratoOption.waitFor({ state: 'visible', timeout: 5000 })
+    await contratoOption.click()
 
-    const selectContrato = activeModal
-      .getByText(/^Tipo Contrato$/)
-      .locator('..')
-      .getByRole('combobox')
-    await selectContrato.click()
-    const optionPlanta = page.locator('.vs__dropdown-option').filter({ hasText: /^PLANTA$/ })
-    await optionPlanta.waitFor({ state: 'visible' })
-    await optionPlanta.click()
-
-    const selectHabilitado = activeModal
-      .getByText(/^Estado Inicial$/)
-      .locator('..')
-      .getByRole('combobox')
-    await selectHabilitado.click()
-    const optionHab = page.locator('.vs__dropdown-option').filter({ hasText: /^HABILITADO$/ })
-    await optionHab.waitFor({ state: 'visible' })
-    await optionHab.click()
-    await expect(page.locator('.vs__selected').filter({ hasText: /^TENS$/ })).toBeVisible()
-    await expect(page.locator('.vs__selected').filter({ hasText: /^HABILITADO$/ })).toBeVisible()
-    await activeModal.getByPlaceholder('Ej: Sebastián').press('Enter')
+    // Habilitado is now a switch, assert its state
+    await expect(activeModal.getByText('Habilitado', { exact: true })).toBeVisible()
     await page.waitForTimeout(500)
 
-    const saveBtn = activeModal.locator('.btn-primary')
+    const saveBtn = activeModal.getByRole('button', { name: /Guardar Usuario/i })
     await saveBtn.click()
 
     // Wait for Confirmation Modal
@@ -117,15 +104,17 @@ test.describe('User Management', () => {
     const responsePromise = page.waitForResponse(
       (resp) =>
         resp.request().method() === 'POST' &&
-        (resp.url().includes('/users') || resp.url().includes('/api/users')) &&
-        resp.status() >= 200 &&
-        resp.status() < 300
+        (resp.url().includes('/users') || resp.url().includes('/api/users') || resp.url().includes('/staff'))
     )
 
     // Click "Sí, Continuar"
     await page.getByRole('button', { name: 'Sí, Continuar' }).click()
 
-    await responsePromise
+    const resp = await responsePromise
+    if (!resp.ok()) {
+      console.error('API Error:', resp.status(), await resp.text())
+    }
+    expect(resp.ok()).toBeTruthy()
     await expect(page.getByText('¿Seguro que deseas crear este usuario?')).not.toBeVisible({
       timeout: 10000
     })

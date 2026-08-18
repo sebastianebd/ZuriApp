@@ -23,8 +23,9 @@ router.post(
   requirePermission("periods.manage"),
   PeriodController.addException,
 );
+// [DOMAIN] Parámetro renombrado de :userId a :staffId para coherencia con dominio Staff
 router.delete(
-  "/:id/exceptions/:userId",
+  "/:id/exceptions/:staffId",
   requirePermission("periods.manage"),
   PeriodController.removeException,
 );

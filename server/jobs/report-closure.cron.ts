@@ -2,6 +2,7 @@ import cron from "node-cron";
 import dayjs from "dayjs";
 import logger from "../config/logger.config";
 import { reportClosureQueue } from "../queues/report.queue";
+import * as Sentry from "@sentry/node";
 
 /**
  * Cronjob de Cierre Mensual Automático.
@@ -37,6 +38,7 @@ cron.schedule("0 0 5 * *", async () => {
     );
   } catch (error: any) {
     logger.error(`[ReportCron] ❌ Error al encolar el cierre mensual: ${error.message}`);
+    Sentry.captureException(error);
   }
 });
 

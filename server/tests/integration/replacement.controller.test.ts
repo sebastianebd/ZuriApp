@@ -2,13 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import replacementService from "../../services/replacement.service";
 import auditService from "../../services/audit.service";
+import socketService from "../../services/socket.service";
 import app from "../../app";
 
 // Mock del middleware de autenticación:
 // Simulamos un usuario admin autenticado para saltar la validación de JWT y permisos en estas pruebas de integración.
 vi.mock("../../middleware/authentication.middleware", () => ({
   default: (req: any, res: any, next: any) => {
-    req.user = { _id: "admin_id", nombre: "TEST", apellido: "ADMIN" };
+    req.staff = { _id: "admin_id", firstName: "TEST", lastName: "ADMIN", roleId: { level: 100 } };
+    req.account = { id: "admin_id", name: "TEST ADMIN" };
     next();
   },
   requirePermission: () => (req: any, res: any, next: any) => next(),
@@ -58,19 +60,29 @@ describe("Replacement Controller - Integration", () => {
   describe("POST /api/reemplazos", () => {
     it("debería crear un reemplazo y registrar la auditoría correspondiente", async () => {
       const mockPayload = {
-        id_saliente: "507f1f77bcf86cd799439011",
-        rut_saliente: "12345678-9",
-        nombre_saliente: "JUAN",
-        apellido_saliente: "PEREZ",
         id_entrante: "507f1f77bcf86cd799439012",
         rut_entrante: "87654321-0",
         nombre_entrante: "PEDRO",
         apellido_entrante: "GOMEZ",
+        id_saliente: "507f1f77bcf86cd799439011",
+        rut_saliente: "12345678-9",
+        nombre_saliente: "JUAN",
+        apellido_saliente: "PEREZ",
         tipo_turno: "DIURNO",
+        servicio: "MEDICINA",
         fecha_inicio: "2024-01-01",
         fecha_termino: "2024-01-15",
-        servicio: "MEDICINA",
         creado_por: "507f1f77bcf86cd799439013",
+      };
+
+      const expectedPayload = {
+        ...mockPayload,
+        nombre_entrante: "Pedro",
+        apellido_entrante: "Gomez",
+        nombre_saliente: "Juan",
+        apellido_saliente: "Perez",
+        fecha_inicio: expect.any(Date),
+        fecha_termino: expect.any(Date),
       };
 
       const mockCreated = {
@@ -87,7 +99,7 @@ describe("Replacement Controller - Integration", () => {
 
       expect(response.status).toBe(201);
 
-      expect(replacementService.registrar).toHaveBeenCalledWith(mockPayload);
+      expect(replacementService.registrar).toHaveBeenCalledWith(expectedPayload);
 
       // Verificación de Cumplimiento (Compliance):
       // Es crítico asegurar que cada acción de escritura deje un rastro de auditoría.
@@ -99,6 +111,8 @@ describe("Replacement Controller - Integration", () => {
         expect.anything(),
         mockCreated._id,
       );
+
+
     });
   });
 
@@ -123,7 +137,12 @@ describe("Replacement Controller - Integration", () => {
   describe("PUT /api/reemplazos/:id", () => {
     it("debería actualizar un reemplazo y registrar auditoría", async () => {
       const mockId = "507f1f77bcf86cd799439011";
-      const mockUpdate = { fecha_termino: "2024-02-01" };
+      const mockUpdate = {
+        fecha_termino: "2024-02-01",
+      };
+      const expectedUpdate = {
+        fecha_termino: expect.any(Date),
+      };
       const mockOriginal = {
         _id: mockId,
         fecha_termino: "2024-01-15",
@@ -143,7 +162,7 @@ describe("Replacement Controller - Integration", () => {
       expect(response.status).toBe(200);
       expect(replacementService.actualizar).toHaveBeenCalledWith(
         mockId,
-        mockUpdate,
+        expectedUpdate,
       );
       expect(auditService.logAction).toHaveBeenCalledWith(
         "MODIFICAR",
@@ -267,7 +286,26 @@ describe("Replacement Controller - Integration", () => {
         "Reemplazos Activos",
         expect.anything(),
         expect.stringContaining("Se sustituyó el reemplazo"),
-        mockPayload,
+        expect.objectContaining({
+          datos_base_evento: expect.objectContaining({
+            id_evento_principal: "EVT1",
+            id_saliente: "507f1f77bcf86cd799439013",
+            rut_saliente: "98765432-1",
+            nombre_saliente: "Old",
+            apellido_saliente: "User",
+            tipo_turno: "DIURNO",
+            servicio: "UCI",
+            fecha_termino_original: expect.any(Date),
+          }),
+          id_registro_a: "507f1f77bcf86cd799439011",
+          fecha_corte_a: expect.any(Date),
+          nuevo_entrante: expect.objectContaining({
+            id_entrante: "507f1f77bcf86cd799439012",
+            rut_entrante: "12345678-9",
+            nombre_entrante: "New",
+            apellido_entrante: "User",
+          }),
+        }),
         mockPayload.id_registro_a,
       );
     });
@@ -299,7 +337,7 @@ describe("Replacement Controller - Integration", () => {
       // aunque en la práctica el servicio determina como buscarlo.
       const userId = "507f1f77bcf86cd799439099";
 
-      (replacementService.obtenerHistorialUsuario as any).mockResolvedValue(
+      (replacementService.obtenerHistorialStaff as any).mockResolvedValue(
         mockResult,
       );
 

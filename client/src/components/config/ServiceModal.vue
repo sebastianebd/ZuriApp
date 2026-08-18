@@ -3,8 +3,8 @@ import { ref, watch, computed } from 'vue'
 import { Form, Field, ErrorMessage } from 'vee-validate'
 import * as yup from 'yup'
 import { useServiceStore, type Service } from '@/stores/service.store'
-import { type User } from '@/types/user.types'
-import UserSelectionModal from '@/components/common/UserSelectionModal.vue'
+import { type IStaff } from '@/types/staff.types'
+import StaffSelectionModal from '@/components/common/StaffSelectionModal.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -32,10 +32,10 @@ const schema = yup.object({
 const formData = ref({
   nombre: '',
   codigo: '',
-  jefe_servicio: null as User | null,
-  supervisor: null as User | null,
-  coordinadores: [] as User[], // Array of Users
-  jefes_turno: [] as User[], // Array of Users
+  jefe_servicio: null as IStaff | null,
+  supervisor: null as IStaff | null,
+  coordinadores: [] as IStaff[], // Array of Users
+  jefes_turno: [] as IStaff[], // Array of Users
   centro_costo: '',
   ubicacion: '',
   anexo: '',
@@ -43,14 +43,14 @@ const formData = ref({
   activo: true
 })
 
-// User Selection Modal AuthState
+// IStaff Selection Modal AuthState
 const showUserModal = ref(false)
 const userModalConfig = ref({
   title: '',
   multiple: false,
   max: 1,
   targetField: '' as keyof typeof formData.value,
-  currentSelection: [] as User[]
+  currentSelection: [] as IStaff[]
 })
 
 // Helpers to open modal
@@ -60,7 +60,7 @@ function openUserSelector(field: 'jefe_servicio' | 'supervisor') {
     multiple: false,
     max: 1,
     targetField: field,
-    currentSelection: formData.value[field] ? [formData.value[field] as User] : []
+    currentSelection: formData.value[field] ? [formData.value[field] as IStaff] : []
   }
   showUserModal.value = true
 }
@@ -73,32 +73,32 @@ function openUserSelectorMultiple(field: 'coordinadores' | 'jefes_turno') {
     multiple: true,
     max: 10,
     targetField: field,
-    currentSelection: formData.value[field] as User[]
+    currentSelection: formData.value[field] as IStaff[]
   }
   showUserModal.value = true
 }
 
 // Handle Selection
-function handleUserSelection(selection: User | User[]) {
+function handleUserSelection(selection: IStaff | IStaff[]) {
   const field = userModalConfig.value.targetField
 
   if (field === 'jefe_servicio' || field === 'supervisor') {
     // Single
-    formData.value[field] = selection as User
+    formData.value[field] = selection as IStaff
   } else {
     // Multiple
     if (Array.isArray(selection)) {
       // Type assertion needed because formData types
-      ;(formData.value[field] as User[]) = selection
+      ;(formData.value[field] as IStaff[]) = selection
     } else {
-      ;(formData.value[field] as User[]) = [selection]
+      ;(formData.value[field] as IStaff[]) = [selection]
     }
   }
 }
 
 // Remove item from list
 function removeUser(field: 'coordinadores' | 'jefes_turno', userId: string) {
-  ;(formData.value[field] as User[]) = (formData.value[field] as User[]).filter(
+  ;(formData.value[field] as IStaff[]) = (formData.value[field] as IStaff[]).filter(
     (u) => u._id !== userId
   )
 }
@@ -112,9 +112,9 @@ const serviceStore = useServiceStore() // Access store for conflict check
 // Helper to capitalize
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 
-// Check if user has roles in OTHER services
-function getUserConflicts(user: User): string[] {
-  if (!user || !user._id) return []
+// Check if IStaff has roles in OTHER services
+function getUserConflicts(IStaff: IStaff): string[] {
+  if (!IStaff || !IStaff._id) return []
 
   const conflicts: string[] = []
 
@@ -124,25 +124,25 @@ function getUserConflicts(user: User): string[] {
     if (isEditing.value && svc._id === props.service?._id) return
 
     // Check Jefe Servicio
-    if (svc.jefe_servicio && (svc.jefe_servicio as any)._id === user._id) {
+    if (svc.jefe_servicio && (svc.jefe_servicio as any)._id === IStaff._id) {
       conflicts.push(`Jefe de Servicio en ${svc.nombre}`)
     }
 
     // Check Supervisor
-    if (svc.supervisor && (svc.supervisor as any)._id === user._id) {
+    if (svc.supervisor && (svc.supervisor as any)._id === IStaff._id) {
       conflicts.push(`Supervisor en ${svc.nombre}`)
     }
 
     // Check Coordinadores
     if (svc.coordinadores && Array.isArray(svc.coordinadores)) {
-      if (svc.coordinadores.some((u: any) => u._id === user._id)) {
+      if (svc.coordinadores.some((u: any) => u._id === IStaff._id)) {
         conflicts.push(`Coordinador en ${svc.nombre}`)
       }
     }
 
     // Check Jefes de Turno
     if (svc.jefes_turno && Array.isArray(svc.jefes_turno)) {
-      if (svc.jefes_turno.some((u: any) => u._id === user._id)) {
+      if (svc.jefes_turno.some((u: any) => u._id === IStaff._id)) {
         conflicts.push(`Jefe de Turno en ${svc.nombre}`)
       }
     }
@@ -156,24 +156,24 @@ watch(
   () => props.service,
   (newVal) => {
     if (newVal) {
-      // Mapping populate data back to User structure if possible
+      // Mapping populate data back to IStaff structure if possible
       // The store interfaces say `ServiceUserStub | string`.
       // We need to cast carefully.
 
-      const mapUser = (u: any): User | null =>
+      const mapUser = (u: any): IStaff | null =>
         u && typeof u === 'object'
           ? ({
               _id: u._id,
-              nombre: u.nombre,
-              apellido: u.apellido,
+              firstName: u.nombre || u.firstName,
+              lastName: u.apellido || u.lastName,
               rut: u.rut,
               email: u.email
-            } as User)
+            } as IStaff)
           : null
 
-      const mapUsers = (list: any[] | undefined): User[] => {
+      const mapUsers = (list: any[] | undefined): IStaff[] => {
         if (!list) return []
-        return list.map((u) => mapUser(u)).filter((u) => u !== null) as User[]
+        return list.map((u) => mapUser(u)).filter((u) => u !== null) as IStaff[]
       }
 
       formData.value = {
@@ -309,14 +309,14 @@ function onSubmit() {
                 </label>
 
                 <div v-if="formData.jefe_servicio">
-                  <div class="selected-user-card">
+                  <div class="selected-IStaff-card">
                     <div class="d-flex align-items-center gap-2">
                       <div class="avatar-sm bg-primary text-white">
-                        {{ formData.jefe_servicio.nombre.charAt(0) }}
+                        {{ formData.jefe_servicio.firstName.charAt(0) }}
                       </div>
                       <div class="lh-sm">
                         <div class="fw-bold x-small">
-                          {{ formData.jefe_servicio.nombre }} {{ formData.jefe_servicio.apellido }}
+                          {{ formData.jefe_servicio.firstName }} {{ formData.jefe_servicio.lastName }}
                         </div>
                         <div class="text-muted x-xx-small">{{ formData.jefe_servicio.rut }}</div>
                       </div>
@@ -366,14 +366,14 @@ function onSubmit() {
                 </label>
 
                 <div v-if="formData.supervisor">
-                  <div class="selected-user-card">
+                  <div class="selected-IStaff-card">
                     <div class="d-flex align-items-center gap-2">
                       <div class="avatar-sm bg-info text-dark">
-                        {{ formData.supervisor.nombre.charAt(0) }}
+                        {{ formData.supervisor.firstName.charAt(0) }}
                       </div>
                       <div class="lh-sm">
                         <div class="fw-bold x-small">
-                          {{ formData.supervisor.nombre }} {{ formData.supervisor.apellido }}
+                          {{ formData.supervisor.firstName }} {{ formData.supervisor.lastName }}
                         </div>
                         <div class="text-muted x-xx-small">{{ formData.supervisor.rut }}</div>
                       </div>
@@ -423,11 +423,11 @@ function onSubmit() {
                 </button>
               </label>
               <div class="d-flex flex-wrap gap-2">
-                <div v-for="user in formData.coordinadores" :key="user._id" class="chip-user">
-                  <span class="x-small fw-bold">{{ user.nombre }} {{ user.apellido }}</span>
+                <div v-for="IStaff in formData.coordinadores" :key="IStaff._id" class="chip-IStaff">
+                  <span class="x-small fw-bold">{{ IStaff.firstName }} {{ IStaff.lastName }}</span>
                   <i
                     class="bi bi-x ms-2 cursor-pointer"
-                    @click="removeUser('coordinadores', user._id)"
+                    @click="removeUser('coordinadores', IStaff._id)"
                   ></i>
                 </div>
                 <div
@@ -455,14 +455,14 @@ function onSubmit() {
               </label>
               <div class="d-flex flex-wrap gap-2">
                 <div
-                  v-for="user in formData.jefes_turno"
-                  :key="user._id"
-                  class="chip-user bg-dark text-white border-0"
+                  v-for="IStaff in formData.jefes_turno"
+                  :key="IStaff._id"
+                  class="chip-IStaff bg-dark text-white border-0"
                 >
-                  <span class="x-small fw-bold">{{ user.nombre }} {{ user.apellido }}</span>
+                  <span class="x-small fw-bold">{{ IStaff.firstName }} {{ IStaff.lastName }}</span>
                   <i
                     class="bi bi-x ms-2 cursor-pointer"
-                    @click="removeUser('jefes_turno', user._id)"
+                    @click="removeUser('jefes_turno', IStaff._id)"
                   ></i>
                 </div>
                 <div
@@ -553,8 +553,8 @@ function onSubmit() {
     </div>
   </div>
 
-  <!-- User Selection Modal -->
-  <UserSelectionModal
+  <!-- IStaff Selection Modal -->
+  <StaffSelectionModal
     :visible="showUserModal"
     :title="userModalConfig.title"
     :multiple="userModalConfig.multiple"
@@ -678,7 +678,7 @@ function onSubmit() {
   padding-bottom: 0.5rem;
 }
 
-/* User Selection Components */
+/* IStaff Selection Components */
 .empty-selection {
   border: 2px dashed #e2e8f0;
   border-radius: 12px;
@@ -696,7 +696,7 @@ function onSubmit() {
   background: #eff6ff;
 }
 
-.selected-user-card {
+.selected-IStaff-card {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 0.5rem 0.75rem;
@@ -734,7 +734,7 @@ function onSubmit() {
   color: #ef4444;
 }
 
-.chip-user {
+.chip-IStaff {
   display: inline-flex;
   align-items: center;
   background: #f1f5f9;
@@ -743,7 +743,7 @@ function onSubmit() {
   border: 1px solid #e2e8f0;
   transition: all 0.2s;
 }
-.chip-user:hover {
+.chip-IStaff:hover {
   background: #e2e8f0;
 }
 .cursor-pointer {

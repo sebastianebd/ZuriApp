@@ -1,8 +1,8 @@
-import type { User } from './user.types'
+import type { IStaff } from './staff.types'
 
 export interface TurnAssignment {
   _id: string
-  user_id: string | User
+  staffId: string | IStaff
   service: string
   turn_type: string
   start_date: string | Date

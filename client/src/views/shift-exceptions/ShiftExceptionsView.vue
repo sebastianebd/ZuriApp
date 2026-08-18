@@ -25,7 +25,7 @@
     <div class="card border-0 shadow-sm rounded-4">
       <div class="card-body p-4">
         <!-- Filter Section -->
-        <div class="mb-4">
+        <div class="mb-4" style="position: relative; z-index: 20;">
           <ShiftExceptionFilter
             v-model="filters"
             :lista-servicios="services"
@@ -207,14 +207,14 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useShiftExceptionStore } from '@/stores/shift-exception.store'
 import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
-import { useOptionStore } from '@/stores/option.store'
+import { usePositionStore } from '@/stores/position.store'
 import { useServiceStore } from '@/stores/service.store'
 import ShiftExceptionFilter from '@/components/historial/ShiftExceptionFilter.vue'
 import { formatTitleCase } from '@/utils/text-formatters'
 
 const exceptionStore = useShiftExceptionStore()
 const turnSiglaStore = useTurnSiglaStore()
-const optionStore = useOptionStore()
+const positionStore = usePositionStore()
 const serviceStore = useServiceStore()
 
 const loading = ref(false)
@@ -238,32 +238,24 @@ watch(
 
 const services = computed(() => serviceStore.services || [])
 const cargos = computed(() => {
-  const all = optionStore.opciones?.tipoCargo || []
-  return all.filter((c) => !['RECURSOS HUMANOS', 'ADMIN-TI'].includes(c))
+  const all = positionStore.positions.map((p: any) => formatTitleCase(p.name)) || []
+  return all.filter((c: string) => {
+    const upper = (c || '').toUpperCase()
+    return !['RECURSOS HUMANOS', 'ADMIN-TI'].includes(upper)
+  })
 })
 
 const filteredExceptions = computed(() => {
   let result = exceptionStore.exceptions
 
   if (filters.value.service) {
-    result = result.filter((e: any) => {
-      const assignment = e.assignment_id
-      if (assignment && typeof assignment === 'object') {
-        if (serviceStore.isServiceMatch(assignment.service, filters.value.service)) return true
-        if (assignment.user_id && serviceStore.isServiceMatch(assignment.user_id.servicio, filters.value.service)) return true
-      }
-      return false
-    })
+    result = result.filter((e: any) => 
+      serviceStore.isServiceMatch(getAssignmentService(e), filters.value.service)
+    )
   }
 
   if (filters.value.cargo) {
-    result = result.filter((e: any) => {
-      const assignment = e.assignment_id
-      if (assignment && typeof assignment === 'object' && assignment.user_id) {
-        if (assignment.user_id.tipo_cargo === filters.value.cargo) return true
-      }
-      return false
-    })
+    result = result.filter((e: any) => getAssignmentCargo(e) === filters.value.cargo)
   }
   // Sort by date desc (newest first)
   return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -298,17 +290,12 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
-// Logic: Get Local Start/End of Day
-function getLocalStartOfDay(date: Date) {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  return d
-}
-
-function getLocalEndOfDay(date: Date) {
-  const d = new Date(date)
-  d.setHours(23, 59, 59, 999)
-  return d
+// Formatter to send pure YYYY-MM-DD strings without timezone offsets
+function toYYYYMMDD(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 async function loadExceptions() {
@@ -316,12 +303,12 @@ async function loadExceptions() {
   try {
     const startISO =
       filters.value.startDate instanceof Date
-        ? getLocalStartOfDay(filters.value.startDate).toISOString()
+        ? toYYYYMMDD(filters.value.startDate)
         : undefined
 
     const endISO =
       filters.value.endDate instanceof Date
-        ? getLocalEndOfDay(filters.value.endDate).toISOString()
+        ? toYYYYMMDD(filters.value.endDate)
         : undefined
 
     await exceptionStore.loadExceptions(undefined, startISO, endISO)
@@ -392,9 +379,9 @@ function getShiftStyle(type: string) {
 function getAssignmentName(exception: any) {
   const assignment = exception.assignment_id
   if (assignment && typeof assignment === 'object') {
-    // Case 1: TurnAssignment (User nested)
-    if (assignment.user_id && assignment.user_id.nombre) {
-      return formatTitleCase(`${assignment.user_id.nombre} ${assignment.user_id.apellido}`)
+    // Case 1: TurnAssignment (IStaff nested)
+    if (assignment.staffId && assignment.staffId.firstName) {
+      return formatTitleCase(`${assignment.staffId.firstName} ${assignment.staffId.lastName}`)
     }
     // Case 2: Replacement (Fields at root)
     if (assignment.nombre_entrante) {
@@ -407,19 +394,26 @@ function getAssignmentName(exception: any) {
 function getAssignmentCargo(exception: any) {
   const assignment = exception.assignment_id
   if (assignment && typeof assignment === 'object') {
+    let posId: any = null;
+    
     // Case 1: TurnAssignment
-    if (assignment.user_id && assignment.user_id.tipo_cargo) {
-      return formatTitleCase(assignment.user_id.tipo_cargo)
+    if (assignment.staffId && assignment.staffId.positionId) {
+      posId = typeof assignment.staffId.positionId === 'object' 
+        ? assignment.staffId.positionId._id || assignment.staffId.positionId.id
+        : assignment.staffId.positionId;
     }
-    // Case 2: Replacement - try to get from populated user, or fallback
-    if (
-      assignment.id_entrante &&
-      typeof assignment.id_entrante === 'object' &&
-      assignment.id_entrante.tipo_cargo
-    ) {
-      return formatTitleCase(assignment.id_entrante.tipo_cargo)
+    // Case 2: Replacement
+    else if (assignment.id_entrante && typeof assignment.id_entrante === 'object' && assignment.id_entrante.positionId) {
+      posId = typeof assignment.id_entrante.positionId === 'object'
+        ? assignment.id_entrante.positionId._id || assignment.id_entrante.positionId.id
+        : assignment.id_entrante.positionId;
     }
-    // Fallback context
+
+    if (posId) {
+      const pos = positionStore.positions.find(p => p._id === posId)
+      if (pos) return formatTitleCase(pos.name)
+    }
+
     if (assignment.rut_entrante) return 'Reemplazo'
   }
   return ''
@@ -431,9 +425,6 @@ function getAssignmentService(exception: any) {
   if (assignment && typeof assignment === 'object') {
     if (assignment.servicio) rawService = assignment.servicio
     else if (assignment.service) rawService = assignment.service
-    else if (assignment.user_id && typeof assignment.user_id === 'object' && assignment.user_id.servicio) {
-      rawService = assignment.user_id.servicio
-    }
   }
   
   if (!rawService) return 'N/A'
@@ -442,8 +433,8 @@ function getAssignmentService(exception: any) {
 
 function getCreatedByName(exception: any) {
   const creator = exception.created_by
-  if (creator && typeof creator === 'object' && creator.nombre) {
-    return formatTitleCase(`${creator.nombre} ${creator.apellido}`)
+  if (creator && typeof creator === 'object' && creator.firstName) {
+    return formatTitleCase(`${creator.firstName} ${creator.lastName}`)
   }
   return 'Sistema'
 }
@@ -453,7 +444,12 @@ onMounted(async () => {
   // filters.value.startDate = null
   // filters.value.endDate = null
 
-  await Promise.all([optionStore.mostrarOpciones(), turnSiglaStore.fetchSiglas()])
+  await Promise.all([
+    exceptionStore.loadExceptions(),
+    turnSiglaStore.fetchSiglas(),
+    serviceStore.fetchServices(),
+    positionStore.fetchPositions()
+  ])
   loadExceptions() // Trigger initial load
 })
 </script>

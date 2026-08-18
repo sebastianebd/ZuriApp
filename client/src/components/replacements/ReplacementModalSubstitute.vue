@@ -111,22 +111,22 @@
                   class="premium-select"
                 >
                   <template #option="option">
-                    <div class="user-option">
+                    <div class="IStaff-option">
                       <div class="d-flex justify-content-between align-items-center">
                         <div>
                           <span class="fw-bold text-dark">{{ option.rut }}</span>
                           <span class="text-secondary ms-2"
-                            >{{ option.nombre }} {{ option.apellido }}</span
+                            >{{ option.firstName }} {{ option.lastName }}</span
                           >
                         </div>
-                        <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                        <span class="badge bg-primary">{{ option.positionId?.name || 'Sin Cargo' }}</span>
                       </div>
                     </div>
                   </template>
                   <template #selected-option="option">
                     <div class="d-flex align-items-center">
                       <div class="fw-bold text-dark text-truncate">
-                        {{ option.nombre }} {{ option.apellido }}
+                        {{ option.firstName }} {{ option.lastName }}
                         <small class="text-muted ms-1">({{ option.rut }})</small>
                       </div>
                     </div>
@@ -190,7 +190,7 @@ import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
 import 'v-calendar/style.css'
 import { debounce } from 'lodash-es'
-import { useUserStore } from '@/stores/user.store'
+import { useStaffStore } from '@/stores/staff.store'
 
 interface ReemplazoModalData extends Partial<ReplacementRegistration> {
   fecha_inicio?: string
@@ -304,8 +304,8 @@ const fechaInicioB = computed(() => {
   }
 })
 
-// User Search Logic
-const userStore = useUserStore()
+// IStaff Search Logic
+const staffStore = useStaffStore()
 const selectedUser = ref<any>(null)
 const userOptions = ref<any[]>([])
 const isSearchingUser = ref(false)
@@ -313,11 +313,11 @@ const isSearchingUser = ref(false)
 // 🚀 Debounced Search with Lodash (300ms) - Consistent with ReportsView
 const performSearch = debounce(async (search: string, loading: (l: boolean) => void) => {
   try {
-    await userStore.searchUsers({ search, page: 1, limit: 10 })
+    await staffStore.searchStaff({ search, page: 1, limit: 10 })
 
-    userOptions.value = userStore.searchResults.map((u: any) => ({
+    userOptions.value = staffStore.searchResults.map((u: any) => ({
       ...u,
-      displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+      displayName: `${u.rut} - ${u.firstName} ${u.lastName}`
     }))
   } catch (error) {
     console.error('Error searching users:', error)
@@ -342,14 +342,14 @@ const searchUsers = (search: string, loading: (l: boolean) => void) => {
 }
 
 // Watch selection and emit update
-watch(selectedUser, (user) => {
-  if (user) {
+watch(selectedUser, (IStaff) => {
+  if (IStaff) {
     emit('update:nuevoFuncionarioB', {
-      rut_entrante: user.rut,
-      nombre_entrante: user.nombre,
-      apellido_entrante: user.apellido,
-      id_entrante: user._id,
-      tipo_cargo: user.tipo_cargo
+      rut_entrante: IStaff.rut,
+      nombre_entrante: IStaff.firstName,
+      apellido_entrante: IStaff.lastName,
+      id_entrante: IStaff._id,
+      tipo_cargo: IStaff.tipo_cargo
     })
   } else {
     emit('update:nuevoFuncionarioB', {})
@@ -364,8 +364,8 @@ watch(
       if (props.nuevoFuncionarioB && props.nuevoFuncionarioB.rut_entrante) {
         selectedUser.value = {
           rut: props.nuevoFuncionarioB.rut_entrante,
-          nombre: props.nuevoFuncionarioB.nombre_entrante,
-          apellido: props.nuevoFuncionarioB.apellido_entrante,
+          firstName: props.nuevoFuncionarioB.nombre_entrante,
+          lastName: props.nuevoFuncionarioB.apellido_entrante,
           _id: props.nuevoFuncionarioB.id_entrante
         }
       } else {
@@ -460,7 +460,7 @@ button:active {
   transform: translateY(0);
 }
 
-/* Base Styles for Premium Selects (User Search + Dates) */
+/* Base Styles for Premium Selects (IStaff Search + Dates) */
 .premium-select :deep(.vs__dropdown-toggle) {
   border: 1px solid #e2e8f0;
   border-radius: 0.375rem;

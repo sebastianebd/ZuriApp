@@ -39,3 +39,10 @@ export const changePasswordSchema = z.object({
       path: ["confirmPassword"],
     }),
 });
+
+export const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z.string().min(1, "El token es requerido"),
+    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  }),
+});

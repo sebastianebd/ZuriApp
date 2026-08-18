@@ -56,13 +56,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import ShiftsView from '@/views/current-shifts/CurrentShiftsView.vue'
-import { useOptionStore } from '@/stores/option.store'
+import { usePositionStore } from '@/stores/position.store'
 import { useServiceStore } from '@/stores/service.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
 
-const optionStore = useOptionStore()
+const positionStore = usePositionStore()
 const serviceStore = useServiceStore()
 const turnTypeStore = useTurnTypeStore()
 const shiftsViewRef = ref<InstanceType<typeof ShiftsView> | null>(null)
@@ -74,13 +74,13 @@ const filters = ref({
 
 const services = computed(() => serviceStore.services || [])
 const cargos = computed(() => {
-  const all = optionStore.opciones?.tipoCargo || []
-  return all.filter((c) => !['RECURSOS HUMANOS', 'ADMIN-TI'].includes(c))
+  const all = positionStore.positions.map((p: any) => p.name) || []
+  return all.filter((c: string) => !['RECURSOS HUMANOS', 'ADMIN-TI'].includes(c))
 })
 
 onMounted(async () => {
   await Promise.all([
-    optionStore.mostrarOpciones(),
+    positionStore.fetchPositions(),
     serviceStore.fetchServices(),
     turnTypeStore.fetchTurnTypes(true)
   ])
@@ -92,10 +92,10 @@ onMounted(async () => {
     // Since <script setup> components are closed by default, we rely on standard method accessibility
     // or we might need to expose it.
     // Assuming methods are not exposed by default in script setup, verify ShiftsView definition.
-    // However, if we can't call prevMonth easily, we can trust the user's manual navigation for now
+    // However, if we can't call prevMonth easily, we can trust the IStaff's manual navigation for now
     // OR we should have exposed it in ShiftsView via defineExpose.
     // Let's rely on defineExpose being added if this fails, or modify ShiftsView to expose it.
-    // For now, let's try to call it if available, as User requested "previous month default".
+    // For now, let's try to call it if available, as IStaff requested "previous month default".
     // EDIT: ShiftsView doesn't have defineExpose.
     // STRATEGY: Customize ShiftsView to expose 'prevMonth' or handle Date via prop.
     // Since I can't easily edit ShiftsView again in this single atomic step without risk,

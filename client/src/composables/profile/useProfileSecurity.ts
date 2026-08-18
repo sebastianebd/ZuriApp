@@ -49,7 +49,7 @@ export function useProfileSecurity() {
     }
   })
 
-  // User Agent Parser Helper
+  // IStaff Agent Parser Helper
   const parseUserAgent = (ua: string) => {
     if (ua.includes('Windows')) return 'Windows PC'
     if (ua.includes('Macintosh')) return 'Mac'

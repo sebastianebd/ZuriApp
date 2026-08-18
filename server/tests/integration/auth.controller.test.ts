@@ -7,30 +7,26 @@ import authService from "../../services/auth.service";
 // Necesario para pruebas que requieren un usuario ya logueado en `req.user` sin pasar por el proceso real de login.
 vi.mock("../../middleware/authentication.middleware", () => ({
   default: (req: any, res: any, next: any) => {
-    req.user = {
-      _id: "admin_id",
-      nombre: "TEST",
-      apellido: "ADMIN",
+    req.staff = {
+      _id: "507f1f77bcf86cd799439011",
+      firstName: "TEST",
+      lastName: "ADMIN",
       rut: "12345678",
-      tipo_cargo: "ADMIN-TI",
-      toObject: () => ({ _id: "admin_id", nombre: "TEST", apellido: "ADMIN" }),
+      roleId: {
+        code: "SYS_ADMIN",
+        level: 100,
+        hasSystemAccess: true,
+        permissions: ["*"],
+      },
+      toObject: () => ({ _id: "507f1f77bcf86cd799439011", firstName: "TEST", lastName: "ADMIN" }),
+    };
+    req.account = {
+      id: "507f1f77bcf86cd799439011",
+      name: "12345678",
     };
     next();
   },
   requirePermission: () => (req: any, res: any, next: any) => next(),
-}));
-
-// Mock del modelo Cargo:
-// Evitamos consultas reales a la BD para permisos. Devolvemos permisos por defecto para las pruebas.
-vi.mock("../../models/cargo.model", () => ({
-  default: {
-    findOne: vi.fn().mockReturnValue({
-      lean: vi.fn().mockResolvedValue({
-        nivel: 1,
-        permisos: ["all"],
-      }),
-    }),
-  },
 }));
 
 // Mock completo del servicio de auth para aislar la lógica del controlador (unit testing del controller).
@@ -47,7 +43,8 @@ describe("Auth Controller - Integration", () => {
       const mockTokens = {
         accessToken: "mock-access-token",
         refreshToken: "mock-refresh-token",
-        user: { id: "1", rut: "12345678-9" }, // Usuario agregado para coincidir con respuesta del controlador
+        account: { id: "1", name: "12345678-9" },
+        staff: { firstName: "Test", lastName: "Staff" }
       };
 
       // Mockeamos el servicio para que resuelva exitosamente sin tocar la BD.
@@ -85,7 +82,7 @@ describe("Auth Controller - Integration", () => {
         .send({ rut: "bad", password: "bad" });
 
       expect(response.status).toBe(401);
-      expect(response.body.mensaje).toBe("Credenciales inválidas");
+      expect(response.body.message).toBe("Credenciales inválidas");
     });
   });
 
@@ -113,7 +110,7 @@ describe("Auth Controller - Integration", () => {
         .set("Cookie", ["refresh_token=invalid-token"]);
 
       expect(response.status).toBe(401);
-      expect(response.body.mensaje).toBe("Token inválido");
+      expect(response.body.message).toBe("Token inválido");
     });
   });
 
@@ -144,18 +141,18 @@ describe("Auth Controller - Integration", () => {
         .set("Cookie", ["refresh_token=some-token"]);
 
       expect(response.status).toBe(500);
-      expect(response.body.mensaje).toBe("Logout failed");
+      expect(response.body.message).toBe("Logout failed");
     });
   });
 
-  describe("GET /api/auth/user", () => {
+  describe("GET /api/auth/me", () => {
     it("debería retornar información del usuario con permisos", async () => {
-      const response = await request(app).get("/api/auth/user");
+      const response = await request(app).get("/api/auth/me");
 
       // Con el auth mockeado, debería retornar 200 directo
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty("_id");
-      expect(response.body).toHaveProperty("nombre");
+      expect(response.body).toHaveProperty("firstName");
     });
   });
 

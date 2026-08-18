@@ -1,5 +1,5 @@
 <template>
-  <div class="user-profile-view">
+  <div class="IStaff-profile-view">
     <div class="container-fluid px-4 py-4">
       <!-- Header -->
       <!-- Header & Tabs -->
@@ -38,7 +38,7 @@
 
       <Suspense>
         <template #default>
-          <div v-if="user">
+          <div v-if="IStaff">
             <!-- Pestaña: Mi Perfil -->
             <div v-if="activeTab === 'profile'" class="row g-4 fade-in">
               <!-- Columna Izquierda: Perfil y Stats (Igual que antes) -->
@@ -51,14 +51,14 @@
                         <div class="avatar-circle mx-auto mb-3">
                           <i class="bi bi-person-fill"></i>
                         </div>
-                        <h4 class="fw-bold mb-1">{{ user.nombre }} {{ user.apellido }}</h4>
-                        <p class="text-muted mb-3">{{ user.tipo_cargo }}</p>
+                        <h4 class="fw-bold mb-1">{{ IStaff.firstName }} {{ IStaff.lastName }}</h4>
+                        <p class="text-muted mb-3">{{ IStaff.positionId?.name || IStaff.role?.code }}</p>
                         <span
                           class="badge rounded-pill px-3 py-2"
-                          :class="user.habilitado ? 'bg-success' : 'bg-danger'"
+                          :class="IStaff.isActive ? 'bg-success' : 'bg-danger'"
                         >
                           <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem"></i>
-                          {{ user.habilitado ? 'Activo' : 'Inactivo' }}
+                          {{ IStaff.isActive ? 'Activo' : 'Inactivo' }}
                         </span>
                       </div>
                     </div>
@@ -110,25 +110,25 @@
                           <div class="col-12 col-md-6">
                             <div class="info-item">
                               <label class="info-label">RUT</label>
-                              <p class="info-value">{{ user.rut }}</p>
+                              <p class="info-value">{{ IStaff.rut }}</p>
                             </div>
                           </div>
                           <div class="col-12 col-md-6">
                             <div class="info-item">
                               <label class="info-label">Fecha de Nacimiento</label>
-                              <p class="info-value">{{ formatDate(user.fecha_nac) }}</p>
+                              <p class="info-value">{{ formatDate(IStaff.birthDate) }}</p>
                             </div>
                           </div>
                           <div class="col-12 col-md-6">
                             <div class="info-item">
                               <label class="info-label">Email</label>
-                              <p class="info-value">{{ user.email }}</p>
+                              <p class="info-value">{{ IStaff.email }}</p>
                             </div>
                           </div>
                           <div class="col-12 col-md-6">
                             <div class="info-item">
                               <label class="info-label">Teléfono</label>
-                              <p class="info-value">{{ user.telefono }}</p>
+                              <p class="info-value">{{ IStaff.phone }}</p>
                             </div>
                           </div>
                         </div>
@@ -505,7 +505,7 @@ import AlertMessage from '@/components/common/AlertMessage.vue'
 
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale)
 
-const { user, stats, chartData, chartOptions, recentActivity, loading } = useUserProfile()
+const { IStaff, stats, chartData, chartOptions, recentActivity, loading } = useUserProfile()
 
 const {
   activeTab,
@@ -527,7 +527,7 @@ const {
 </script>
 
 <style scoped>
-.user-profile-view {
+.IStaff-profile-view {
   background-color: #f8f9fa;
 }
 

@@ -1,14 +1,15 @@
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, inject } from 'vue'
 import { debounce } from 'lodash-es'
 import { useReportStore } from '@/stores/report.store'
-import { useUserStore } from '@/stores/user.store'
+import { useStaffStore } from '@/stores/staff.store'
 import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
 import { usePeriodStore } from '@/stores/period.store'
 import { useServiceStore } from '@/stores/service.store'
 
 export function useReports() {
+  const showAlert = inject<(title: string, message: string, type?: 'success' | 'error' | 'info') => void>('showAlert')
   const reportStore = useReportStore()
-  const userStore = useUserStore()
+  const staffStore = useStaffStore()
   const siglaStore = useTurnSiglaStore()
   const serviceStore = useServiceStore()
   const periodStore = usePeriodStore()
@@ -33,7 +34,7 @@ export function useReports() {
   // Debounced Search with Lodash (300ms)
   const performSearch = debounce(async (search: string, loading: (l: boolean) => void) => {
     try {
-      const results = await userStore.buscarUsuarios(search)
+      const results = await staffStore.searchStaff({ search, limit: 1000 })
       userOptions.value = results
     } catch (e) {
       console.error(e)
@@ -51,7 +52,7 @@ export function useReports() {
   // Fetch users for the dropdown (Load default top 20)
   onMounted(async () => {
     reportStore.error = null // Clear any persistent errors on mount
-    const defaults = await userStore.buscarUsuarios('')
+    const defaults = await staffStore.searchStaff({ search: '', limit: 1000 })
     userOptions.value = defaults
 
     // Ensure siglas are loaded for colors
@@ -81,7 +82,6 @@ export function useReports() {
 
   const isExporting = ref<'excel' | 'pdf' | 'ind-excel' | 'ind-pdf' | null>(null)
 
-  // Watchers to clear report when filters change and fetch period state
   watch([month, year], ([m, y]) => {
     periodStore.fetchPeriod(m, y)
     reportStore.reportData = null
@@ -93,9 +93,16 @@ export function useReports() {
     reportStore.error = null
   })
 
+  watch(() => reportStore.error, (newError) => {
+    if (newError) {
+      showAlert?.('Atención', newError, 'error')
+      reportStore.error = null // clear it after showing
+    }
+  })
+
   const getUserLabel = (option: any) => {
     if (!option) return ''
-    return `${option.nombre} ${option.apellido} (${option.rut})`
+    return `${option.firstName} ${option.lastName} (${option.rut})`
   }
 
   const handleGenerateReport = async () => {
@@ -125,7 +132,7 @@ export function useReports() {
 
     if (selectedUser.value && reportStore.reportData) {
       const monthName = months[month.value - 1]
-      const fullName = `${selectedUser.value.nombre}_${selectedUser.value.apellido}`.replace(
+      const fullName = `${selectedUser.value.firstName}_${selectedUser.value.lastName}`.replace(
         /\s+/g,
         '_'
       )

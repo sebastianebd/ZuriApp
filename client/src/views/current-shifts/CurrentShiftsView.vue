@@ -444,7 +444,7 @@ thead .sticky-col {
   border-bottom-color: #0ea5e9;
 }
 
-/* Sticky First Column (User Node) */
+/* Sticky First Column (IStaff Node) */
 .sticky-col.first-col {
   position: sticky;
   left: 0;
@@ -480,7 +480,7 @@ thead .sticky-col {
   padding: 6px 4px; /* Tighter padding for cells */
 }
 
-/* --- User Cell Styling --- */
+/* --- IStaff Cell Styling --- */
 .avatar-circle {
   width: 36px;
   height: 36px;
@@ -496,7 +496,7 @@ thead .sticky-col {
 }
 
 .shift-table td.sticky-col {
-  padding: 12px 16px; /* More breathing room for user */
+  padding: 12px 16px; /* More breathing room for IStaff */
 }
 /* Cell Styling */
 .shift-cell {

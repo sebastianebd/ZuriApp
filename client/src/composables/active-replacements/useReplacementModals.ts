@@ -87,20 +87,45 @@ const createSustitucionPayload = (): SubstitutionPayload => {
     throw new Error('Datos de sustitución incompletos.')
   }
 
+  const toUTC = (dateStr: string) => {
+    if (!dateStr) return dateStr
+    const [y, m, d] = String(dateStr).split('T')[0].split('-').map(Number)
+    return new Date(Date.UTC(y, m - 1, d, 0, 0, 0)).toISOString()
+  }
+
+  // Sanitizar el ID de entrante (por si v-select lo mandó como objeto en algún punto)
+  let idEntranteLimpio = nuevoEntranteSustitucion.value.id_entrante
+  if (typeof idEntranteLimpio === 'object' && idEntranteLimpio !== null) {
+    idEntranteLimpio = (idEntranteLimpio as any)._id || idEntranteLimpio
+  }
+
+  // Sanitizar campos poblados desde la tabla
+  let idSalienteLimpio = registroActual.value.id_saliente
+  if (typeof idSalienteLimpio === 'object' && idSalienteLimpio !== null) {
+    idSalienteLimpio = (idSalienteLimpio as any)._id || idSalienteLimpio
+  }
+
+  let servicioLimpio = registroActual.value.servicio
+  if (typeof servicioLimpio === 'object' && servicioLimpio !== null) {
+    servicioLimpio = (servicioLimpio as any)._id || servicioLimpio
+  }
+
   return {
     id_registro_a: registroActual.value._id!,
-    fecha_corte_a: fechaCorteSustitucion.value,
-    nuevo_entrante: nuevoEntranteSustitucion.value,
+    fecha_corte_a: toUTC(fechaCorteSustitucion.value),
+    nuevo_entrante: {
+      ...nuevoEntranteSustitucion.value,
+      id_entrante: idEntranteLimpio
+    },
     datos_base_evento: {
       id_evento_principal: registroActual.value.id_negocio!,
       tipo_turno: registroActual.value.tipo_turno!,
-      servicio: registroActual.value.servicio!,
-      id_saliente: registroActual.value.id_saliente!,
+      servicio: servicioLimpio!,
+      id_saliente: idSalienteLimpio!,
       rut_saliente: registroActual.value.rut_saliente!,
       nombre_saliente: registroActual.value.nombre_saliente!,
       apellido_saliente: registroActual.value.apellido_saliente!,
-      tipo_cargo: registroActual.value.tipo_cargo!,
-      fecha_termino_original: registroActual.value.fecha_termino!
+      fecha_termino_original: toUTC(registroActual.value.fecha_termino!)
     }
   }
 }

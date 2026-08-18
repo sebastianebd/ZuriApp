@@ -1,5 +1,5 @@
 import { ref, inject } from 'vue'
-import { type User } from '@/types/user.types'
+import { type IStaff } from '@/types/staff.types'
 import { useReplacementStore } from '@/stores/replacement.store'
 
 export function useEmployeesModals() {
@@ -38,7 +38,7 @@ export function useEmployeesModals() {
     historialUsuario.value = []
   }
 
-  function openUpdateModal(usuario: User) {
+  function openUpdateModal(usuario: IStaff) {
     usuarioActual.value = { ...usuario }
     updateModalVisible.value = true
   }

@@ -1,4 +1,4 @@
-import { computed, type Ref } from 'vue'
+import { computed } from 'vue'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
@@ -9,7 +9,7 @@ import { calculateShift, parseAsLocal } from '@/services/turn-pattern.service'
 import { formatTitleCase } from '@/utils/text-formatters'
 import type { ReplacementRegistration } from '@/types/replacement.types'
 import type { TurnAssignment } from '@/types/turn.types'
-import type { User } from '@/types/user.types'
+import type { IStaff } from '@/types/staff.types'
 
 // Export interfaces for use in view and other composables
 export interface GridRow {
@@ -35,8 +35,7 @@ export interface ShiftResult {
 
 export function useShiftsGrid(
   state: any, // state object from useShiftsState
-  props: { historyMode?: boolean; externalFilters?: any },
-  allUsers: Ref<User[]>
+  props: { historyMode?: boolean; externalFilters?: any }
 ) {
   const turnAssignmentStore = useTurnAssignmentStore()
   const replacementStore = useReplacementStore()
@@ -101,7 +100,7 @@ export function useShiftsGrid(
     const userAssignmentsMap = new Map<string, TurnAssignment[]>()
 
     turnAssignmentStore.assignments.forEach((a) => {
-      const uid = typeof a.user_id === 'string' ? a.user_id : (a.user_id as unknown as User)?._id
+      const uid = typeof a.staffId === 'string' ? a.staffId : (a.staffId as unknown as IStaff)?._id
       if (!uid) return
       if (!userAssignmentsMap.has(uid)) userAssignmentsMap.set(uid, [])
       userAssignmentsMap.get(uid)?.push(a)
@@ -152,27 +151,21 @@ export function useShiftsGrid(
 
       if (validReplacements.length > 0) {
         const rep = validReplacements[0]
-        let cargo = rep.tipo_cargo
-
-        if (!cargo && typeof rep.id_entrante === 'object') {
-          cargo = (rep.id_entrante as any).tipo_cargo
+        let cargo = ''
+        if (typeof rep.id_entrante === 'object' && rep.id_entrante !== null) {
+          cargo = (rep.id_entrante as any).positionId?.name || ''
         }
 
         if (!cargo) {
           const foundUserAssignment = turnAssignmentStore.assignments.find((a) => {
             const uid =
-              typeof a.user_id === 'string' ? a.user_id : (a.user_id as unknown as User)?._id
+              typeof a.staffId === 'string' ? a.staffId : (a.staffId as unknown as IStaff)?._id
             return uid === userId
           })
 
-          if (foundUserAssignment && typeof foundUserAssignment.user_id !== 'string') {
-            const u = foundUserAssignment.user_id as unknown as User
-            cargo = u?.tipo_cargo
-          }
-
-          if (!cargo && Array.isArray(allUsers.value) && allUsers.value.length > 0) {
-            const foundUser = allUsers.value.find((u) => u._id === userId)
-            if (foundUser) cargo = foundUser.tipo_cargo
+          if (foundUserAssignment && typeof foundUserAssignment.staffId !== 'string') {
+            const u = foundUserAssignment.staffId as unknown as IStaff
+            cargo = u?.positionId?.name || u?.roleId?.name || ''
           }
         }
 
@@ -235,10 +228,10 @@ export function useShiftsGrid(
     })
 
     turnAssignmentStore.assignments.forEach((a: TurnAssignment) => {
-      const user = a.user_id as unknown as User
-      if (!user || processedUsers.has(user._id)) return
+      const IStaff = a.staffId as unknown as IStaff
+      if (!IStaff || processedUsers.has(IStaff._id)) return
 
-      const effectiveService = a.service || user.servicio || user.tipo_cargo
+      const effectiveService = a.service || IStaff.positionId?.name || IStaff.roleId?.name
 
       const activeServiceFilter = props.historyMode
         ? props.externalFilters?.service
@@ -250,11 +243,12 @@ export function useShiftsGrid(
       if (
         props.historyMode &&
         props.externalFilters?.cargo &&
-        user.tipo_cargo !== props.externalFilters.cargo
+        IStaff.positionId?.name !== props.externalFilters.cargo &&
+        IStaff.roleId?.name !== props.externalFilters.cargo
       )
         return
 
-      const userAssignments = userAssignmentsMap.get(user._id) || []
+      const userAssignments = userAssignmentsMap.get(IStaff._id) || []
       const hasOverlap = userAssignments.some((assign) => {
         const start = parseAsLocal(assign.start_date)
         const end = assign.end_date ? parseAsLocal(assign.end_date) : new Date(9999, 11, 31)
@@ -262,14 +256,14 @@ export function useShiftsGrid(
       })
 
       if (hasOverlap) {
-        processedUsers.add(user._id)
+        processedUsers.add(IStaff._id)
         rows.push({
           _id: a._id,
-          userId: user._id,
-          nombre: user.nombre,
-          apellido: user.apellido,
-          cargo: user.tipo_cargo,
-          servicio: effectiveService,
+          userId: IStaff._id,
+          nombre: IStaff.firstName,
+          apellido: IStaff.lastName,
+          cargo: IStaff.positionId?.name || IStaff.roleId?.name || '',
+          servicio: effectiveService || '',
           tipo_turno: a.turn_type,
           fecha_inicio: a.start_date,
           getShift: (date: Date) => {

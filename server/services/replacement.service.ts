@@ -1,4 +1,8 @@
-import Reemplazo, { IReplacement } from "../models/replacement.model";
+import Replacement, { IReplacement } from "../models/replacement.model";
+import mongoose from "mongoose";
+import { escapeRegex } from "../utils/regex";
+import { get, set, delPattern } from "../config/redis.config";
+import socketService from "../services/socket.service";
 
 // --- Helpers de Estado ---
 // Determinamos el estado inicial basado puramente en fecha vs ahora.
@@ -32,8 +36,8 @@ const determineStatusCorte = (fecha_corte: Date | string): string => {
   return "EN CURSO";
 };
 
-async function registrar(data: any) {
-  const initialStatus = determineStatus(data.fecha_inicio);
+async function registrar(data: Partial<IReplacement>) {
+  const initialStatus = determineStatus(data.fecha_inicio as Date | string);
 
   /* 
    Resolución de Tipo de Turno:
@@ -44,11 +48,11 @@ async function registrar(data: any) {
   */
   const { default: TurnTypeModel } = await import("../models/turn-type.model");
   const turnTypeDoc = await TurnTypeModel.findOne({
-    nombre: { $regex: new RegExp(`^${data.tipo_turno}$`, "i") },
+    nombre: { $regex: new RegExp(`^${escapeRegex(data.tipo_turno || "")}$`, "i") },
     deleted_at: null,
   });
 
-  const nuevoReemplazo = new Reemplazo({
+  const nuevoReemplazo = new Replacement({
     ...data,
     turn_type_id: turnTypeDoc ? turnTypeDoc._id : undefined,
     snapshot_secuencia: turnTypeDoc
@@ -57,35 +61,57 @@ async function registrar(data: any) {
           return rest; // Solo guardamos la lógica de turnos, el color puede ser cosmético
         })
       : [],
-    fecha_inicio: new Date(data.fecha_inicio),
-    fecha_termino: new Date(data.fecha_termino),
+    fecha_inicio: new Date(data.fecha_inicio!),
+    fecha_termino: new Date(data.fecha_termino!),
     status: initialStatus,
   });
 
-  return await nuevoReemplazo.save();
+  const saved = await nuevoReemplazo.save();
+  await delPattern("replacements:*");
+  if (saved.id_entrante) {
+    socketService.emitTurnUpdate(saved.id_entrante.toString());
+  }
+  return saved;
 }
 
 async function obtenerActivos() {
-  return await Reemplazo.find({
+  return await Replacement.find({
     status: { $in: ["EN CURSO", "PENDIENTE"] },
   })
-    .populate("creado_por", "nombre apellido")
-    .populate("id_entrante", "tipo_cargo");
+    .populate("creado_por", "firstName lastName")
+    .populate("id_entrante", "positionId");
 }
 
 async function obtenerActivosPaginado(options: {
   search?: string;
   servicio?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
   page: number;
   limit: number;
 }) {
-  const { search, servicio, page, limit } = options;
+  const { search, servicio, fechaInicio, fechaFin, page, limit } = options;
   const query: any = {
     status: { $in: ["EN CURSO", "PENDIENTE"] },
   };
 
   if (servicio && servicio.trim().length > 0) {
     query.servicio = servicio;
+  }
+
+  // Date filters
+  if (fechaInicio || fechaFin) {
+    query.$and = query.$and || [];
+    
+    // Si hay fechaInicio, el reemplazo debe iniciar en o después de esta fecha
+    if (fechaInicio) {
+      query.$and.push({ fecha_inicio: { $gte: fechaInicio } });
+    }
+    
+    // Si hay fechaFin, el reemplazo debe terminar en o antes de esta fecha
+    if (fechaFin) {
+      query.$and.push({ fecha_termino: { $lte: fechaFin } });
+    }
   }
 
   // Búsqueda Optimizada:
@@ -105,20 +131,24 @@ async function obtenerActivosPaginado(options: {
     ];
   }
 
+  const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}:fi${fechaInicio || "none"}:ff${fechaFin || "none"}`;
+  const cachedData = await get(cacheKey);
+  if (cachedData) return cachedData;
+
   const skip = (page - 1) * limit;
 
   // Ejecución Paralela: Data + Conteo Total
   const [reemplazos, total] = await Promise.all([
-    Reemplazo.find(query)
-      .populate("creado_por", "nombre apellido")
-      .populate("id_entrante", "_id tipo_cargo")
+    Replacement.find(query)
+      .populate("creado_por", "firstName lastName")
+      .populate({ path: "id_entrante", select: "_id positionId firstName lastName rut", populate: { path: "positionId", select: "name" } })
       .skip(skip)
       .limit(limit)
       .lean(),
-    Reemplazo.countDocuments(query),
+    Replacement.countDocuments(query),
   ]);
 
-  return {
+  const result = {
     reemplazos,
     pagination: {
       currentPage: page,
@@ -127,6 +157,8 @@ async function obtenerActivosPaginado(options: {
       itemsPerPage: limit,
     },
   };
+  await set(cacheKey, result, 60);
+  return result;
 }
 
 async function obtenerInactivosPaginados(
@@ -143,97 +175,143 @@ async function obtenerInactivosPaginados(
   }
 
   if (filtros.rutSaliente) {
+    // C1 ReDoS fix: escape staff input before building RegExp
     query.rut_saliente = {
-      $regex: new RegExp(`^${filtros.rutSaliente}`),
+      $regex: new RegExp(`^${escapeRegex(filtros.rutSaliente)}`),
       $options: "i",
     };
   }
 
   if (filtros.rutEntrante) {
+    // C1 ReDoS fix: escape staff input before building RegExp
     query.rut_entrante = {
-      $regex: new RegExp(`^${filtros.rutEntrante}`),
+      $regex: new RegExp(`^${escapeRegex(filtros.rutEntrante)}`),
       $options: "i",
     };
   }
 
-  if (filtros.fechaInicio) {
-    const fechaInicio = new Date(filtros.fechaInicio);
-    const fechaFinDia = new Date(fechaInicio);
-    fechaFinDia.setDate(fechaFinDia.getDate() + 1);
-
-    query.fecha_inicio = {
-      $gte: fechaInicio,
-      $lt: fechaFinDia,
-    };
+  if (filtros.fechaInicio || filtros.fechaFin) {
+    query.$and = query.$and || [];
+    
+    // Si hay fechaInicio, el reemplazo debe iniciar en o después de esta fecha
+    if (filtros.fechaInicio) {
+      query.$and.push({ fecha_inicio: { $gte: filtros.fechaInicio } });
+    }
+    
+    // Si hay fechaFin, el reemplazo debe terminar en o antes de esta fecha
+    if (filtros.fechaFin) {
+      query.$and.push({ fecha_termino: { $lte: filtros.fechaFin } });
+    }
   }
 
-  if (filtros.fechaFin) {
-    const fechaTermino = new Date(filtros.fechaFin);
-    const fechaFinDia = new Date(fechaTermino);
-    fechaFinDia.setDate(fechaFinDia.getDate() + 1);
-
-    query.fecha_termino = {
-      $gte: fechaTermino,
-      $lt: fechaFinDia,
-    };
-  }
+  const sortedQuery = { ...filtros };
+  const cacheKey = `replacements:history:paginated:${JSON.stringify(sortedQuery)}`;
+  const cachedData = await get(cacheKey);
+  if (cachedData) return cachedData;
 
   const skip = (pagina - 1) * limite;
 
   const [registros, totalRegistros] = await Promise.all([
-    Reemplazo.find(query)
-      .populate("creado_por", "nombre apellido")
+    Replacement.find(query)
+      .populate("creado_por", "firstName lastName")
       .sort({ fecha_inicio: -1 })
       .skip(skip)
       .limit(limite)
       .exec(),
 
-    Reemplazo.countDocuments(query),
+    Replacement.countDocuments(query),
   ]);
 
-  return {
+  const result = {
     registros,
     totalRegistros,
     paginaActual: Number(pagina),
     limite,
     totalPages: Math.ceil(totalRegistros / limite),
   };
+  await set(cacheKey, result, 60);
+  return result;
 }
 
 async function obtenerPorId(id: string) {
-  return await Reemplazo.findById(id).lean();
+  return await Replacement.findById(id).lean();
 }
 
-async function actualizar(id: string, data: any) {
-  await Reemplazo.findByIdAndUpdate(id, data, { new: true });
-  return await Reemplazo.findById(id);
+async function actualizar(id: string, data: Partial<IReplacement>) {
+  if (data.tipo_turno) {
+    const { default: TurnTypeModel } = await import("../models/turn-type.model");
+    const turnTypeDoc = await TurnTypeModel.findOne({
+      nombre: { $regex: new RegExp(`^${escapeRegex(data.tipo_turno)}$`, "i") },
+      deleted_at: null,
+    });
+
+    if (!turnTypeDoc) {
+      const error = new Error(`El turno '${data.tipo_turno}' no existe o está inactivo.`);
+      (error as any).status = 400;
+      throw error;
+    }
+
+    data.turn_type_id = turnTypeDoc._id as any;
+    data.snapshot_secuencia = turnTypeDoc.toObject().secuencia.map((item: any) => {
+      const { color, ...rest } = item;
+      return rest;
+    });
+  }
+
+  const updatedReplacement = await Replacement.findByIdAndUpdate(id, data, { new: true });
+  await delPattern("replacements:*");
+
+  if (updatedReplacement && updatedReplacement.id_entrante) {
+    socketService.emitTurnUpdate(updatedReplacement.id_entrante.toString());
+  }
+
+  return updatedReplacement;
 }
 
-async function finalizarReemplazo(id: string) {
-  // Ajuste Horario Chile:
-  // Forzamos la fecha de término al "ahora" local para cerrar el ciclo correctamente
-  // según la zona horaria del negocio, evitando problemas de cierre en horas UTC vs Local.
-  const now = new Date();
-  const chileOffset = 3 * 60 * 60 * 1000;
-  const fechaCierre = new Date(now.getTime() - chileOffset);
+async function finalizarReemplazo(id: string, fechaTermino?: string) {
+  // C4 Timezone fix: store plain UTC (new Date()). The hardcoded Chile offset
+  // was wrong — Chile switches between UTC-3 and UTC-4 seasonally.
+  // The frontend already formats dates with { timeZone: "America/Santiago" }.
+  const fecha = fechaTermino ? new Date(fechaTermino) : new Date();
 
-  await Reemplazo.findByIdAndUpdate(
+  await Replacement.findByIdAndUpdate(
     id,
-    { status: "FINALIZADO", fecha_termino: fechaCierre },
+    { status: "FINALIZADO", fecha_termino: fecha },
     { new: true },
   );
-  return await Reemplazo.findById(id);
+  await delPattern("replacements:*");
+  socketService.emitHistoryUpdate("finalize", id);
+  return await Replacement.findById(id);
 }
 
 async function anularReemplazo(id: string) {
-  await Reemplazo.findByIdAndUpdate(id, { status: "ANULADO" });
-  return await Reemplazo.findById(id);
+  await Replacement.findByIdAndUpdate(id, { status: "ANULADO" });
+  await delPattern("replacements:*");
+  socketService.emitHistoryUpdate("annul", id);
+  return await Replacement.findById(id);
 }
 
-async function obtenerHistorialUsuario(id: string) {
-  return await Reemplazo.find({
+async function obtenerHistorialStaff(id: string) {
+  const cacheKey = `replacements:user_history:${id}`;
+  const cachedData = await get(cacheKey);
+  if (cachedData) return cachedData;
+
+  const data = await Replacement.find({
     $or: [{ id_entrante: id }, { id_saliente: id }],
   });
+  await set(cacheKey, data, 300);
+  return data;
+}
+
+export function getCleanBodyForDiff(body: any) {
+  const validFields = Object.keys(Replacement.schema.paths);
+  const cleanBody: any = {};
+  Object.keys(body).forEach((key) => {
+    if (validFields.includes(key)) {
+      cleanBody[key] = body[key];
+    }
+  });
+  return cleanBody;
 }
 
 const getNextDay = (dateString: string | Date) => {
@@ -255,9 +333,8 @@ interface SustitucionPayload {
 }
 
 // Lógica de Negocio: Sustitución de Reemplazo
-// Maneja el caso complejo donde un reemplazo en curso (Usuario A) debe ser interrumpido
-// y continuado por otro usuario (Usuario B) desde el día siguiente.
-// Esto implica una transacción lógica: Cerrar A con estado "Interrumpido" y crear B.
+// C3 Transaction fix: ambas escrituras (cerrar A, crear B) se ejecutan dentro de una
+// transacción Mongoose. Si B falla, el cierre de A se revierte automáticamente.
 async function sustituir(payload: SustitucionPayload) {
   const { id_registro_a, fecha_corte_a, nuevo_entrante, datos_base_evento } =
     payload;
@@ -270,54 +347,73 @@ async function sustituir(payload: SustitucionPayload) {
   ) {
     throw new Error("Faltan datos esenciales para la sustitución.");
   }
+
   const fechaCorteDate = new Date(fecha_corte_a);
-
-  // 1. Cerrar Registro A
-  const registroA_actualizado = await Reemplazo.findByIdAndUpdate(
-    id_registro_a,
-    {
-      fecha_termino: fechaCorteDate,
-      status: determineStatusCorte(fecha_corte_a),
-      corte_anticipado: true,
-      updated_at: new Date(),
-    },
-    { new: true },
-  );
-  if (!registroA_actualizado) {
-    throw new Error(
-      `Registro de reemplazo con ID ${id_registro_a} no encontrado.`,
-    );
-  }
-
-  // 2. Crear Registro B (Continuidad)
-  // El nuevo reemplazo comienza al día siguiente del corte.
   const fechaInicioB = getNextDay(fecha_corte_a);
-  const datosNuevoReemplazo = {
-    id_negocio: datos_base_evento.id_evento_principal, // Mantenemos link al parental si existe
-    id_saliente: datos_base_evento.id_saliente,
-    rut_saliente: datos_base_evento.rut_saliente,
-    nombre_saliente: datos_base_evento.nombre_saliente,
-    apellido_saliente: datos_base_evento.apellido_saliente,
-    tipo_cargo: datos_base_evento.tipo_cargo,
-    tipo_turno: datos_base_evento.tipo_turno,
-    servicio: datos_base_evento.servicio,
-    id_entrante: nuevo_entrante.id_entrante,
-    rut_entrante: nuevo_entrante.rut_entrante,
-    nombre_entrante: nuevo_entrante.nombre_entrante,
-    apellido_entrante: nuevo_entrante.apellido_entrante,
-    fecha_inicio: new Date(fechaInicioB),
-    fecha_termino: new Date(datos_base_evento.fecha_termino_original),
-    status: determineStatus(fechaInicioB),
-    creado_por: registroA_actualizado.creado_por,
-  };
-  if (!datosNuevoReemplazo.id_entrante) {
-    throw new Error("El nuevo funcionario entrante es requerido.");
+
+  // ponytail: capture results in outer scope — withTransaction() return type
+  // is undefined in Mongoose typings so we can't rely on its return value.
+  let registroA: any;
+  let registroB: any;
+
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      // 1. Cerrar Registro A
+      registroA = await Replacement.findByIdAndUpdate(
+        id_registro_a,
+        {
+          fecha_termino: fechaCorteDate,
+          status: determineStatusCorte(fecha_corte_a),
+          corte_anticipado: true,
+          updated_at: new Date(),
+        },
+        { new: true, session },
+      );
+      if (!registroA) {
+        throw new Error(
+          `Registro de reemplazo con ID ${id_registro_a} no encontrado.`,
+        );
+      }
+
+      // 2. Crear Registro B (Continuidad)
+      // El nuevo reemplazo comienza al día siguiente del corte.
+      if (!nuevo_entrante.id_entrante) {
+        throw new Error("El nuevo funcionario entrante es requerido.");
+      }
+
+      const datosNuevoReemplazo = {
+        id_negocio: datos_base_evento.id_evento_principal,
+        id_saliente: datos_base_evento.id_saliente,
+        rut_saliente: datos_base_evento.rut_saliente,
+        nombre_saliente: datos_base_evento.nombre_saliente,
+        apellido_saliente: datos_base_evento.apellido_saliente,
+        tipo_cargo: datos_base_evento.tipo_cargo,
+        tipo_turno: datos_base_evento.tipo_turno,
+        servicio: datos_base_evento.servicio,
+        id_entrante: nuevo_entrante.id_entrante,
+        rut_entrante: nuevo_entrante.rut_entrante,
+        nombre_entrante: nuevo_entrante.nombre_entrante,
+        apellido_entrante: nuevo_entrante.apellido_entrante,
+        fecha_inicio: new Date(fechaInicioB),
+        fecha_termino: new Date(datos_base_evento.fecha_termino_original),
+        status: determineStatus(fechaInicioB),
+        creado_por: registroA.creado_por,
+      };
+
+      const nuevoReemplazoDoc = new Replacement(datosNuevoReemplazo);
+      registroB = await nuevoReemplazoDoc.save({ session });
+    });
+  } finally {
+    await session.endSession();
   }
 
-  const nuevoReemplazoB = new Reemplazo(datosNuevoReemplazo);
-  const registroB_guardado = await nuevoReemplazoB.save();
+  if (registroA && registroB) {
+    await delPattern("replacements:*");
+    socketService.emitHistoryUpdate("substitute", registroA._id);
+  }
 
-  return [registroA_actualizado, registroB_guardado];
+  return [registroA, registroB];
 }
 
 export default {
@@ -327,8 +423,9 @@ export default {
   actualizar,
   finalizarReemplazo,
   anularReemplazo,
-  obtenerHistorialUsuario,
+  obtenerHistorialStaff,
   sustituir,
   obtenerInactivosPaginados,
   obtenerPorId,
+  getCleanBodyForDiff,
 };

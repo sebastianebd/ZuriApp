@@ -33,7 +33,7 @@ export const logout = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
 
 export const getUser = async (apiPrivate: ReturnType<typeof useApiPrivate>) => {
   try {
-    const { data } = await apiPrivate.get('/auth/user')
+    const { data } = await apiPrivate.get('/auth/me')
     return data
   } catch (error) {
     throw errorHandler(error)

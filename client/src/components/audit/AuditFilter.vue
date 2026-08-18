@@ -67,18 +67,7 @@
         ></v-select>
       </div>
 
-      <!-- Buscar (Usuario) 
-      <div class="col-md-2">
-        <label class="form-label fw-semibold text-secondary small">Usuario (ID):</label>
-        <input
-          type="text"
-          class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
-          v-model.trim="filters.userId"
-          placeholder="Buscar ID..."
-          @input="emitFilters"
-        />
-      </div>
-      -->
+
     </div>
   </div>
 </template>

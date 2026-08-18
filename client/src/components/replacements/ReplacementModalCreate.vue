@@ -47,7 +47,7 @@
                 <!-- SALIENTE CARD -->
                 <div class="col-md-5">
                   <div
-                    class="user-card outgoing p-3 rounded-3 border border-danger border-opacity-25 bg-danger bg-opacity-10 position-relative"
+                    class="IStaff-card outgoing p-3 rounded-3 border border-danger border-opacity-25 bg-danger bg-opacity-10 position-relative"
                   >
                     <div
                       class="badge bg-danger text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
@@ -68,18 +68,18 @@
                         @search="searchSaliente"
                         label="displayName"
                         placeholder="Escribe RUT o nombre..."
-                        class="user-select-danger"
+                        class="IStaff-select-danger"
                       >
                         <template #option="option">
-                          <div class="user-option">
+                          <div class="IStaff-option">
                             <div class="d-flex justify-content-between align-items-center">
                               <div>
                                 <span class="fw-bold text-dark">{{ option.rut }}</span>
                                 <span class="text-secondary ms-2"
-                                  >{{ option.nombre }} {{ option.apellido }}</span
+                                  >{{ option.firstName }} {{ option.lastName }}</span
                                 >
                               </div>
-                              <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                              <span class="badge bg-primary">{{ option.positionId?.name || 'Sin Cargo' }}</span>
                             </div>
                           </div>
                         </template>
@@ -89,11 +89,11 @@
                               class="avatar-filled bg-gradient-danger text-white shadow-sm me-2"
                               style="width: 32px; height: 32px; font-size: 0.75rem"
                             >
-                              {{ getInitials(option.nombre + ' ' + option.apellido) }}
+                              {{ getInitials(option.firstName + ' ' + option.lastName) }}
                             </div>
                             <div>
                               <div class="fw-bold text-dark" style="font-size: 0.875rem">
-                                {{ option.nombre }} {{ option.apellido }}
+                                {{ option.firstName }} {{ option.lastName }}
                               </div>
                               <div class="text-secondary" style="font-size: 0.7rem">
                                 {{ option.rut }}
@@ -126,7 +126,7 @@
                 <!-- ENTRANTE CARD -->
                 <div class="col-md-5">
                   <div
-                    class="user-card incoming p-3 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10 position-relative"
+                    class="IStaff-card incoming p-3 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10 position-relative"
                   >
                     <div
                       class="badge bg-success text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
@@ -147,18 +147,18 @@
                         @search="searchEntrante"
                         label="displayName"
                         placeholder="Escribe RUT o nombre..."
-                        class="user-select-success"
+                        class="IStaff-select-success"
                       >
                         <template #option="option">
-                          <div class="user-option">
+                          <div class="IStaff-option">
                             <div class="d-flex justify-content-between align-items-center">
                               <div>
                                 <span class="fw-bold text-dark">{{ option.rut }}</span>
                                 <span class="text-secondary ms-2"
-                                  >{{ option.nombre }} {{ option.apellido }}</span
+                                  >{{ option.firstName }} {{ option.lastName }}</span
                                 >
                               </div>
-                              <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                              <span class="badge bg-primary">{{ option.positionId?.name || 'Sin Cargo' }}</span>
                             </div>
                           </div>
                         </template>
@@ -168,11 +168,11 @@
                               class="avatar-filled bg-gradient-success text-white shadow-sm me-2"
                               style="width: 32px; height: 32px; font-size: 0.75rem"
                             >
-                              {{ getInitials(option.nombre + ' ' + option.apellido) }}
+                              {{ getInitials(option.firstName + ' ' + option.lastName) }}
                             </div>
                             <div>
                               <div class="fw-bold text-dark" style="font-size: 0.875rem">
-                                {{ option.nombre }} {{ option.apellido }}
+                                {{ option.firstName }} {{ option.lastName }}
                               </div>
                               <div class="text-secondary" style="font-size: 0.7rem">
                                 {{ option.rut }}
@@ -331,8 +331,8 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed } from 'vue'
 import { type ReplacementRegistration } from '@/types/replacement.types'
-import { type User } from '@/types/user.types'
-import { useUserStore } from '@/stores/user.store'
+import { type IStaff } from '@/types/staff.types'
+import { useStaffStore } from '@/stores/staff.store'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
@@ -355,18 +355,18 @@ const emit = defineEmits<{
   (e: 'guardar', registro: ReplacementRegistration): void
 }>()
 
-const userStore = useUserStore()
+const staffStore = useStaffStore()
 const turnAssignmentStore = useTurnAssignmentStore()
 const replacementStore = useReplacementStore()
 
 const registroLocal = reactive({ ...props.registro })
 const showConfirmacion = ref(false)
 
-// 🏢 ENTERPRISE: User selection with server-side search
-const selectedSaliente = ref<User | null>(null)
-const selectedEntrante = ref<User | null>(null)
-const salienteOptions = ref<User[]>([])
-const entranteOptions = ref<User[]>([])
+// 🏢 ENTERPRISE: IStaff selection with server-side search
+const selectedSaliente = ref<IStaff | null>(null)
+const selectedEntrante = ref<IStaff | null>(null)
+const salienteOptions = ref<IStaff[]>([])
+const entranteOptions = ref<IStaff[]>([])
 const isSearchingSaliente = ref(false)
 const isSearchingEntrante = ref(false)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
@@ -385,16 +385,16 @@ const searchSaliente = (query: string, loading: (isLoading: boolean) => void) =>
 
   searchTimeout = setTimeout(async () => {
     try {
-      await userStore.searchUsers({
+      await staffStore.searchStaff({
         search: query.trim(),
         page: 1,
         limit: 20
       })
 
       // Transform results for v-select
-      salienteOptions.value = userStore.searchResults.map((u) => ({
+      salienteOptions.value = staffStore.searchResults.map((u) => ({
         ...u,
-        displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+        displayName: `${u.rut} - ${u.firstName} ${u.lastName}`
       }))
     } catch (error) {
       console.error('[ReplacementModalCreate] Search saliente error:', error)
@@ -420,16 +420,16 @@ const searchEntrante = (query: string, loading: (isLoading: boolean) => void) =>
 
   searchTimeout = setTimeout(async () => {
     try {
-      await userStore.searchUsers({
+      await staffStore.searchStaff({
         search: query.trim(),
         page: 1,
         limit: 20
       })
 
       // Transform results for v-select
-      entranteOptions.value = userStore.searchResults.map((u) => ({
+      entranteOptions.value = staffStore.searchResults.map((u) => ({
         ...u,
-        displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+        displayName: `${u.rut} - ${u.firstName} ${u.lastName}`
       }))
     } catch (error) {
       console.error('[ReplacementModalCreate] Search entrante error:', error)
@@ -451,20 +451,20 @@ const parseDateStr = (str: string) => {
   return new Date(y, m - 1, d)
 }
 
-// Shared helper to fetch ALL blocked dates for a user (Absence + Working + Shifts)
-const fetchAllBlockedDates = async (user: User) => {
+// Shared helper to fetch ALL blocked dates for a IStaff (Absence + Working + Shifts)
+const fetchAllBlockedDates = async (IStaff: IStaff) => {
   try {
     const [replacements, assignments] = await Promise.all([
-      replacementStore.checkConflicts({ search: user.rut, limit: 100 }),
-      turnAssignmentStore.fetchAssignmentsByUser(user._id)
+      replacementStore.checkConflicts({ search: IStaff.rut, limit: 100 }),
+      turnAssignmentStore.fetchAssignmentsByUser(IStaff._id)
     ])
 
-    // 1. Absences (User is Saliente)
-    const absenceStrs = replacementStore.getFechasAusencia(user._id, replacements)
+    // 1. Absences (IStaff is Saliente)
+    const absenceStrs = replacementStore.getFechasAusencia(IStaff._id, replacements)
     const absenceDates = absenceStrs.map(parseDateStr)
 
-    // 2. Occupied as Replacement (User is Entrante)
-    const occupiedStrs = replacementStore.getFechasOcupadas(user._id, replacements)
+    // 2. Occupied as Replacement (IStaff is Entrante)
+    const occupiedStrs = replacementStore.getFechasOcupadas(IStaff._id, replacements)
     const occupiedDates = occupiedStrs.map(parseDateStr)
 
     // 3. Occupied by Shift Assignment
@@ -475,21 +475,21 @@ const fetchAllBlockedDates = async (user: User) => {
 
     return [...absenceDates, ...occupiedDates, ...shiftRanges]
   } catch (error) {
-    console.error(`Error fetching blocked dates for ${user.rut}:`, error)
+    console.error(`Error fetching blocked dates for ${IStaff.rut}:`, error)
     return []
   }
 }
 
 // Watch Saliente -> Update Form & Fetch ALL Blocked Dates
-watch(selectedSaliente, async (user) => {
-  if (user) {
+watch(selectedSaliente, async (IStaff) => {
+  if (IStaff) {
     Object.assign(registroLocal, {
-      id_saliente: user._id,
-      rut_saliente: user.rut,
-      nombre_saliente: user.nombre,
-      apellido_saliente: user.apellido
+      id_saliente: IStaff._id,
+      rut_saliente: IStaff.rut,
+      nombre_saliente: IStaff.firstName,
+      apellido_saliente: IStaff.lastName
     })
-    salienteBlockedDates.value = await fetchAllBlockedDates(user)
+    salienteBlockedDates.value = await fetchAllBlockedDates(IStaff)
   } else {
     registroLocal.id_saliente = undefined
     registroLocal.rut_saliente = undefined
@@ -500,15 +500,15 @@ watch(selectedSaliente, async (user) => {
 })
 
 // Watch Entrante -> Update Form & Fetch ALL Blocked Dates
-watch(selectedEntrante, async (user) => {
-  if (user) {
+watch(selectedEntrante, async (IStaff) => {
+  if (IStaff) {
     Object.assign(registroLocal, {
-      id_entrante: user._id,
-      rut_entrante: user.rut,
-      nombre_entrante: user.nombre,
-      apellido_entrante: user.apellido
+      id_entrante: IStaff._id,
+      rut_entrante: IStaff.rut,
+      nombre_entrante: IStaff.firstName,
+      apellido_entrante: IStaff.lastName
     })
-    entranteBlockedRanges.value = await fetchAllBlockedDates(user)
+    entranteBlockedRanges.value = await fetchAllBlockedDates(IStaff)
   } else {
     registroLocal.id_entrante = undefined
     registroLocal.rut_entrante = undefined
@@ -569,9 +569,9 @@ const validationError = computed(() => {
     } else {
       // If no end date set yet, we only validate start against blocks if strictly needed,
       // but usually we validate range. If single day replacment assumption?
-      // User says "input start and end".
+      // IStaff says "input start and end".
       // If end is missing, we assume end = start for blocking check?
-      // No, let's wait for end date usually. But if user only wants 1 day...
+      // No, let's wait for end date usually. But if IStaff only wants 1 day...
       // Let's assume end = start if not provided for safety check?
       // Or just check conflict for start date.
       const startEnd = new Date(start)
@@ -726,7 +726,27 @@ function abrirConfirmacion() {
 
 function confirmarGuardar() {
   showConfirmacion.value = false
-  emit('guardar', registroLocal as ReplacementRegistration)
+  
+  // Clean payload for strict backend
+  const payload = { ...registroLocal } as any
+  
+  // Force strict UTC Dates
+  if (payload.fecha_inicio) {
+    const [y, m, d] = String(payload.fecha_inicio).split('T')[0].split('-').map(Number)
+    payload.fecha_inicio = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)).toISOString()
+  }
+  
+  if (payload.fecha_termino) {
+    const [y, m, d] = String(payload.fecha_termino).split('T')[0].split('-').map(Number)
+    payload.fecha_termino = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)).toISOString()
+  }
+
+  // Ensure ObjectIds are strings, not objects (Vue-Select sometimes binds objects)
+  if (typeof payload.id_saliente === 'object' && payload.id_saliente?._id) payload.id_saliente = payload.id_saliente._id
+  if (typeof payload.id_entrante === 'object' && payload.id_entrante?._id) payload.id_entrante = payload.id_entrante._id
+  if (typeof payload.servicio === 'object' && payload.servicio?._id) payload.servicio = payload.servicio._id
+
+  emit('guardar', payload as ReplacementRegistration)
 }
 
 function cancelarConfirmacion() {
@@ -767,12 +787,12 @@ function cancelarConfirmacion() {
   }
 }
 
-/* User Cards */
-.user-card {
+/* IStaff Cards */
+.IStaff-card {
   transition: all 0.2s ease;
   height: 100%;
 }
-.user-card:hover {
+.IStaff-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
@@ -893,9 +913,9 @@ function cancelarConfirmacion() {
   opacity: 0;
 }
 
-/* 🏢 ENTERPRISE: Custom v-select styles for user selection */
-.user-select-danger :deep(.vs__dropdown-toggle),
-.user-select-success :deep(.vs__dropdown-toggle) {
+/* 🏢 ENTERPRISE: Custom v-select styles for IStaff selection */
+.IStaff-select-danger :deep(.vs__dropdown-toggle),
+.IStaff-select-success :deep(.vs__dropdown-toggle) {
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   padding: 6px;
@@ -905,8 +925,8 @@ function cancelarConfirmacion() {
   overflow: hidden;
 }
 
-.user-select-danger :deep(.vs__selected-options),
-.user-select-success :deep(.vs__selected-options) {
+.IStaff-select-danger :deep(.vs__selected-options),
+.IStaff-select-success :deep(.vs__selected-options) {
   min-height: 48px;
   max-height: 48px;
   overflow: hidden;
@@ -914,35 +934,35 @@ function cancelarConfirmacion() {
   align-items: center;
 }
 
-.user-select-danger :deep(.vs__selected),
-.user-select-success :deep(.vs__selected) {
+.IStaff-select-danger :deep(.vs__selected),
+.IStaff-select-success :deep(.vs__selected) {
   display: flex;
   align-items: center;
   margin: 0;
   padding: 0;
 }
 
-.user-select-danger :deep(.vs__dropdown-toggle) {
+.IStaff-select-danger :deep(.vs__dropdown-toggle) {
   border-color: rgba(239, 68, 68, 0.3);
 }
 
-.user-select-success :deep(.vs__dropdown-toggle) {
+.IStaff-select-success :deep(.vs__dropdown-toggle) {
   border-color: rgba(34, 197, 94, 0.3);
 }
 
-.user-select-danger :deep(.vs__dropdown-toggle):hover,
-.user-select-success :deep(.vs__dropdown-toggle):hover {
+.IStaff-select-danger :deep(.vs__dropdown-toggle):hover,
+.IStaff-select-success :deep(.vs__dropdown-toggle):hover {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.user-select-danger :deep(.vs__search::placeholder),
-.user-select-success :deep(.vs__search::placeholder) {
+.IStaff-select-danger :deep(.vs__search::placeholder),
+.IStaff-select-success :deep(.vs__search::placeholder) {
   color: #94a3b8;
   font-size: 0.875rem;
 }
 
-.user-select-danger :deep(.vs__dropdown-menu),
-.user-select-success :deep(.vs__dropdown-menu) {
+.IStaff-select-danger :deep(.vs__dropdown-menu),
+.IStaff-select-success :deep(.vs__dropdown-menu) {
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -953,30 +973,30 @@ function cancelarConfirmacion() {
   z-index: 9999; /* Above everything */
 }
 
-.user-select-danger :deep(.vs__dropdown-option),
-.user-select-success :deep(.vs__dropdown-option) {
+.IStaff-select-danger :deep(.vs__dropdown-option),
+.IStaff-select-success :deep(.vs__dropdown-option) {
   border-radius: 0.375rem;
   padding: 10px 12px;
   margin-bottom: 2px;
   font-size: 0.875rem;
 }
 
-.user-select-danger :deep(.vs__dropdown-option--highlight) {
+.IStaff-select-danger :deep(.vs__dropdown-option--highlight) {
   background: rgba(239, 68, 68, 0.1);
   color: #dc2626;
 }
 
-.user-select-success :deep(.vs__dropdown-option--highlight) {
+.IStaff-select-success :deep(.vs__dropdown-option--highlight) {
   background: rgba(34, 197, 94, 0.1);
   color: #16a34a;
 }
 
-.user-select-danger :deep(.vs__spinner),
-.user-select-success :deep(.vs__spinner) {
+.IStaff-select-danger :deep(.vs__spinner),
+.IStaff-select-success :deep(.vs__spinner) {
   border-left-color: #3b82f6;
 }
 
-.user-option {
+.IStaff-option {
   width: 100%;
 }
 </style>
