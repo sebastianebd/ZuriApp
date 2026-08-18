@@ -71,34 +71,22 @@ test.describe('User Management', () => {
     await page.waitForTimeout(300)
     await page.waitForTimeout(300)
 
-    const selectCargo = activeModal
-      .getByText('Cargo Físico (Position)')
-      .locator('..')
-      .getByRole('combobox')
-    await selectCargo.click({ force: true })
-    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
-    const cargoOption = activeModal.locator('.vs__dropdown-option').first()
-    await cargoOption.waitFor({ state: 'visible' })
+    const selectCargoContainer = activeModal.getByText('Cargo Físico (Position)').locator('..')
+    await selectCargoContainer.getByRole('combobox').click({ force: true })
+    const cargoOption = selectCargoContainer.locator('.vs__dropdown-option').first()
+    await cargoOption.waitFor({ state: 'visible', timeout: 5000 })
     await cargoOption.click()
 
-    const selectRole = activeModal
-      .getByText('Rol (Perfil de Acceso)')
-      .locator('..')
-      .getByRole('combobox')
-    await selectRole.click({ force: true })
-    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
-    const roleOption = activeModal.locator('.vs__dropdown-option').first()
-    await roleOption.waitFor({ state: 'visible' })
+    const selectRoleContainer = activeModal.getByText('Rol (Perfil de Acceso)').locator('..')
+    await selectRoleContainer.getByRole('combobox').click({ force: true })
+    const roleOption = selectRoleContainer.locator('.vs__dropdown-option').first()
+    await roleOption.waitFor({ state: 'visible', timeout: 5000 })
     await roleOption.click()
 
-    const selectContrato = activeModal
-      .getByText(/^Tipo Contrato$/)
-      .locator('..')
-      .getByRole('combobox')
-    await selectContrato.click({ force: true })
-    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
-    const contratoOption = activeModal.locator('.vs__dropdown-option').first()
-    await contratoOption.waitFor({ state: 'visible' })
+    const selectContratoContainer = activeModal.getByText(/^Tipo Contrato$/).locator('..')
+    await selectContratoContainer.getByRole('combobox').click({ force: true })
+    const contratoOption = selectContratoContainer.locator('.vs__dropdown-option').first()
+    await contratoOption.waitFor({ state: 'visible', timeout: 5000 })
     await contratoOption.click()
 
     // Habilitado is now a switch, assert its state
