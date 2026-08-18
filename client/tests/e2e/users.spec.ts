@@ -72,7 +72,7 @@ test.describe('User Management', () => {
     await page.waitForTimeout(300)
 
     const selectCargo = activeModal
-      .getByText(/^Cargo$/)
+      .getByText('Cargo Físico (Position)')
       .locator('..')
       .getByRole('combobox')
     await selectCargo.click({ force: true })
@@ -93,16 +93,9 @@ test.describe('User Management', () => {
     await optionPlanta.waitFor({ state: 'visible' })
     await optionPlanta.click()
 
-    const selectHabilitado = activeModal
-      .getByText(/^Estado Inicial$/)
-      .locator('..')
-      .getByRole('combobox')
-    await selectHabilitado.click()
-    const optionHab = page.locator('.vs__dropdown-option').filter({ hasText: /^HABILITADO$/ })
-    await optionHab.waitFor({ state: 'visible' })
-    await optionHab.click()
+    // Habilitado is now a switch, assert its state
+    await expect(activeModal.getByText('Habilitado', { exact: true })).toBeVisible()
     await expect(page.locator('.vs__selected').filter({ hasText: /^TENS$/ })).toBeVisible()
-    await expect(page.locator('.vs__selected').filter({ hasText: /^HABILITADO$/ })).toBeVisible()
     await activeModal.getByPlaceholder('Ej: Sebastián').press('Enter')
     await page.waitForTimeout(500)
 
