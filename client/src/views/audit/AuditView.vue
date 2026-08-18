@@ -89,7 +89,7 @@ import AuditTable from '@/components/audit/AuditTable.vue'
 import AuditDetailModal from '@/components/audit/AuditDetailModal.vue'
 import TableLoader from '@/components/common/TableLoader.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
-import ExportFormatModal from '@/components/users/ExportFormatModal.vue'
+import ExportFormatModal from '@/components/staff/ExportFormatModal.vue'
 import socket from '@/plugins/socket'
 import { exportAuditToPDF, exportAuditToExcel } from '@/utils/exportHelpers'
 import type { AuditLog } from '@/types/audit.types'
@@ -145,7 +145,7 @@ onMounted(() => {
   auditStore.fetchLogs(1, 10)
 
   socket.on('audit:update', () => {
-    auditStore.fetchLogs(currentPage.value, 10, currentFilters.value)
+    auditStore.fetchLogs(currentPage.value, 10, currentFilters.value, true)
   })
 })
 

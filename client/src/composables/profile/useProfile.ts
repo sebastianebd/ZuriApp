@@ -7,7 +7,7 @@ export function useUserProfile() {
   const authStore = useAuthStore()
   const serviceStore = useServiceStore()
 
-  const user = computed(() => {
+  const IStaff = computed(() => {
     return authStore.userDetail
   })
 
@@ -77,7 +77,7 @@ export function useUserProfile() {
 
   onMounted(async () => {
     try {
-      if (!authStore.user) {
+      if (!authStore.IStaff) {
         await authStore.getUser()
       }
       await loadProfileData()
@@ -87,7 +87,7 @@ export function useUserProfile() {
   })
 
   return {
-    user,
+    IStaff,
     stats,
     loading,
     chartData,

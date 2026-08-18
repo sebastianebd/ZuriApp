@@ -35,7 +35,7 @@
         <DatePicker
           v-model="store.fechaInicio"
           :popover="popoverConfig"
-          :masks="{ input: 'YYYY-MM-DD' }"
+          :masks="{ input: 'DD-MM-YYYY' }"
         >
           <template #default="{ inputValue, inputEvents }">
             <input
@@ -54,7 +54,7 @@
         <DatePicker
           v-model="store.fechaFin"
           :popover="popoverConfig"
-          :masks="{ input: 'YYYY-MM-DD' }"
+          :masks="{ input: 'DD-MM-YYYY' }"
         >
           <template #default="{ inputValue, inputEvents }">
             <input

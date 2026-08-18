@@ -35,7 +35,7 @@
                 <!-- COLUMNA SALIENTE -->
                 <div class="col-md-5">
                   <div
-                    class="user-card outgoing p-2 rounded-3 border border-danger border-opacity-25 bg-danger bg-opacity-10 position-relative h-100"
+                    class="IStaff-card outgoing p-2 rounded-3 border border-danger border-opacity-25 bg-danger bg-opacity-10 position-relative h-100"
                   >
                     <div
                       class="badge bg-danger text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
@@ -93,7 +93,7 @@
                   </div>
 
                   <div
-                    class="user-card incoming p-2 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10 position-relative h-100"
+                    class="IStaff-card incoming p-2 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10 position-relative h-100"
                   >
                     <div
                       class="badge bg-success text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
@@ -133,18 +133,18 @@
                         @search="searchEntrante"
                         label="displayName"
                         placeholder="Buscar funcionario..."
-                        class="user-select-success"
+                        class="IStaff-select-success"
                       >
                         <template #option="option">
-                          <div class="user-option">
+                          <div class="IStaff-option">
                             <div class="d-flex justify-content-between align-items-center">
                               <div>
                                 <span class="fw-bold text-dark">{{ option.rut }}</span>
                                 <span class="text-secondary ms-2"
-                                  >{{ option.nombre }} {{ option.apellido }}</span
+                                  >{{ option.firstName }} {{ option.lastName }}</span
                                 >
                               </div>
-                              <span class="badge bg-primary">{{ option.tipo_cargo }}</span>
+                              <span class="badge bg-primary">{{ option.positionId?.name || 'Sin Cargo' }}</span>
                             </div>
                           </div>
                         </template>
@@ -154,14 +154,14 @@
                               class="avatar-filled bg-gradient-success text-white shadow-sm me-2"
                               style="width: 32px; height: 32px; font-size: 0.75rem"
                             >
-                              {{ getInitials(option.nombre + ' ' + option.apellido) }}
+                              {{ getInitials(option.firstName + ' ' + option.lastName) }}
                             </div>
                             <div style="overflow: hidden">
                               <div
                                 class="fw-bold text-dark text-truncate"
                                 style="font-size: 0.8rem"
                               >
-                                {{ option.nombre }} {{ option.apellido }}
+                                {{ option.firstName }} {{ option.lastName }}
                               </div>
                               <div class="text-secondary x-small font-monospace text-truncate">
                                 {{ option.rut }}
@@ -256,13 +256,18 @@
                   <DatePicker
                     ref="dpInicio"
                     :model-value="
-                      registro.fecha_inicio ? registro.fecha_inicio + 'T00:00:00' : null
+                      registro.fecha_inicio ? String(registro.fecha_inicio).split('T')[0] + 'T12:00:00' : null
                     "
                     @update:model-value="
                       (newDate) => {
+                        let dateStr = newDate;
+                        if (newDate instanceof Date && !isNaN(newDate.getTime())) {
+                          const offset = newDate.getTimezoneOffset() * 60000;
+                          dateStr = (new Date(newDate.getTime() - offset)).toISOString().split('T')[0];
+                        }
                         $emit('update:registro', {
                           ...registro,
-                          fecha_inicio: newDate
+                          fecha_inicio: dateStr
                         })
                       }
                     "
@@ -306,13 +311,18 @@
                   <DatePicker
                     ref="dpTermino"
                     :model-value="
-                      registro.fecha_termino ? registro.fecha_termino + 'T00:00:00' : null
+                      registro.fecha_termino ? String(registro.fecha_termino).split('T')[0] + 'T12:00:00' : null
                     "
                     @update:model-value="
                       (newDate) => {
+                        let dateStr = newDate;
+                        if (newDate instanceof Date && !isNaN(newDate.getTime())) {
+                          const offset = newDate.getTimezoneOffset() * 60000;
+                          dateStr = (new Date(newDate.getTime() - offset)).toISOString().split('T')[0];
+                        }
                         $emit('update:registro', {
                           ...registro,
-                          fecha_termino: newDate
+                          fecha_termino: dateStr
                         })
                       }
                     "
@@ -389,7 +399,7 @@
 <script setup lang="ts">
 import { getInitials } from '@/utils/text-formatters'
 import { type ReplacementRegistration } from '@/types/replacement.types'
-import { type User } from '@/types/user.types'
+import { type IStaff } from '@/types/staff.types'
 import { ref, computed, watch } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
@@ -397,7 +407,7 @@ import 'v-calendar/style.css'
 import { useDatePicker } from '@/composables/useDatePicker'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
-import { useUserStore } from '@/stores/user.store'
+import { useStaffStore } from '@/stores/staff.store'
 
 interface ReemplazoModalData extends Partial<ReplacementRegistration> {
   fecha_inicio?: string
@@ -420,12 +430,12 @@ const emit = defineEmits<{
   (e: 'update:registro', nuevoRegistro: ReemplazoModalData): void
 }>()
 
-const userStore = useUserStore()
+const staffStore = useStaffStore()
 const showConfirmacion = ref(false)
 
 // v-select state
-const selectedEntrante = ref<any>(null) // Use 'any' to construct incomplete user obj
-const entranteOptions = ref<User[]>([])
+const selectedEntrante = ref<any>(null) // Use 'any' to construct incomplete IStaff obj
+const entranteOptions = ref<IStaff[]>([])
 const isSearchingEntrante = ref(false)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -438,8 +448,8 @@ watch(
       selectedEntrante.value = {
         _id: newVal.id_entrante,
         rut: newVal.rut_entrante,
-        nombre: newVal.nombre_entrante || '',
-        apellido: newVal.apellido_entrante || '',
+        firstName: newVal.nombre_entrante || '',
+        lastName: newVal.apellido_entrante || '',
         displayName: `${newVal.rut_entrante} - ${newVal.nombre_entrante} ${newVal.apellido_entrante}` // Helper for label if needed
       }
     } else {
@@ -449,23 +459,23 @@ watch(
   { deep: true, immediate: true }
 )
 
-// Watch user selection to update registro
-watch(selectedEntrante, (user) => {
-  // If user selected
-  if (user) {
+// Watch IStaff selection to update registro
+watch(selectedEntrante, (IStaff) => {
+  // If IStaff selected
+  if (IStaff) {
     // Break loop: Only emit if ID is different
-    if (user._id !== props.registro.id_entrante) {
+    if (IStaff._id !== props.registro.id_entrante) {
       emit('update:registro', {
         ...props.registro,
-        id_entrante: user._id,
-        rut_entrante: user.rut,
-        nombre_entrante: user.nombre,
-        apellido_entrante: user.apellido
+        id_entrante: IStaff._id,
+        rut_entrante: IStaff.rut,
+        nombre_entrante: IStaff.nombre,
+        apellido_entrante: IStaff.apellido
       })
     }
   }
-  // If user cleared
-  else if (!user && props.registro.id_entrante) {
+  // If IStaff cleared
+  else if (!IStaff && props.registro.id_entrante) {
     emit('update:registro', {
       ...props.registro,
       id_entrante: undefined,
@@ -490,15 +500,15 @@ const searchEntrante = (query: string, loading: (isLoading: boolean) => void) =>
 
   searchTimeout = setTimeout(async () => {
     try {
-      await userStore.searchUsers({
+      await staffStore.searchStaff({
         search: query.trim(),
         page: 1,
         limit: 20
       })
 
-      entranteOptions.value = userStore.searchResults.map((u) => ({
+      entranteOptions.value = staffStore.searchResults.map((u) => ({
         ...u,
-        displayName: `${u.rut} - ${u.nombre} ${u.apellido}`
+        displayName: `${u.rut} - ${u.firstName} ${u.lastName}`
       }))
     } catch (error) {
       console.error('Search error:', error)
@@ -587,7 +597,7 @@ const { popoverConfig, dateAttributes, isDisabled } = useDatePicker(props)
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-/* User Cards & Avatar */
+/* IStaff Cards & Avatar */
 .avatar-filled {
   width: 40px;
   height: 40px;

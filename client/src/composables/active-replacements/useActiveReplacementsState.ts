@@ -1,5 +1,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
-import { useOptionStore } from '@/stores/option.store'
+import { useTurnTypeStore } from '@/stores/turn-type.store'
+import { usePositionStore } from '@/stores/position.store'
 import { useServiceStore } from '@/stores/service.store'
 import { useReplacementStore } from '@/stores/replacement.store'
 
@@ -12,12 +13,13 @@ interface StateDependencies {
 
 export function useActiveReplacementsState(deps?: StateDependencies) {
   const replacementStore = useReplacementStore()
-  const optionStore = useOptionStore()
+  const turnTypeStore = useTurnTypeStore()
+  const positionStore = usePositionStore()
   const serviceStore = useServiceStore()
 
-  const listaDeTurnos = ref<string[]>([])
+  const listaDeTurnos = computed(() => turnTypeStore.turnTypes.map((t: any) => t.nombre || t.name))
   const listaDeServicios = computed(() => serviceStore.services)
-  const listaDeCargos = ref<string[]>([])
+  const listaDeCargos = computed(() => positionStore.positions)
 
   // Server-side pagination state
   const currentPage = ref(1)
@@ -31,11 +33,13 @@ export function useActiveReplacementsState(deps?: StateDependencies) {
 
   onMounted(async () => {
     try {
-      // Load Options
-      const opciones = await optionStore.mostrarOpciones()
-      listaDeTurnos.value = opciones.tiposTurno || []
-      listaDeCargos.value = opciones.tipoCargo || []
-      
+      // Load Reference Data
+      if (turnTypeStore.turnTypes.length === 0) {
+        await turnTypeStore.fetchTurnTypes(true)
+      }
+      if (positionStore.positions.length === 0) {
+        await positionStore.fetchPositions()
+      }
       if (serviceStore.services.length === 0) {
         await serviceStore.fetchServices()
       }
@@ -43,7 +47,12 @@ export function useActiveReplacementsState(deps?: StateDependencies) {
       // Load Initial Data
       await replacementStore.fetchActiveReplacementsPaginated({
         page: currentPage.value,
-        limit: itemsPerPage.value
+        limit: itemsPerPage.value,
+        fechaInicio: replacementStore.fechaInicio,
+        fechaFin: replacementStore.fechaFin,
+        rutSaliente: replacementStore.filtroRutSaliente,
+        rutEntrante: replacementStore.filtroRutEntrante,
+        servicio: replacementStore.filtroServicio
       })
     } catch (error) {
       console.error('[useReplacements] Error loading data:', error)
@@ -61,9 +70,37 @@ export function useActiveReplacementsState(deps?: StateDependencies) {
   watch(currentPage, async () => {
     await replacementStore.fetchActiveReplacementsPaginated({
       page: currentPage.value,
-      limit: itemsPerPage.value
+      limit: itemsPerPage.value,
+      fechaInicio: replacementStore.fechaInicio,
+      fechaFin: replacementStore.fechaFin,
+      rutSaliente: replacementStore.filtroRutSaliente,
+      rutEntrante: replacementStore.filtroRutEntrante,
+      servicio: replacementStore.filtroServicio
     })
   })
+
+  // Watch for filter changes and fetch data (resetting to page 1)
+  watch(
+    [
+      () => replacementStore.fechaInicio,
+      () => replacementStore.fechaFin,
+      () => replacementStore.filtroRutSaliente,
+      () => replacementStore.filtroRutEntrante,
+      () => replacementStore.filtroServicio
+    ],
+    async () => {
+      currentPage.value = 1
+      await replacementStore.fetchActiveReplacementsPaginated({
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        fechaInicio: replacementStore.fechaInicio,
+        fechaFin: replacementStore.fechaFin,
+        rutSaliente: replacementStore.filtroRutSaliente,
+        rutEntrante: replacementStore.filtroRutEntrante,
+        servicio: replacementStore.filtroServicio
+      })
+    }
+  )
 
   const fechasOcupadas = computed(() => {
     if (!deps) return []

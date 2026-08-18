@@ -84,6 +84,6 @@ describe('useLogin Composable', () => {
 
     await onSubmit()
 
-    expect(loginError.value).toBe('Rut o Contraseña incorrectos')
+    expect(loginError.value).toBe('Invalid credentials')
   })
 })

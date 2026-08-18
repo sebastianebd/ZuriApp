@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toTitleCase } from "../utils/formatters";
 
 // --- Validadores Reutilizables ---
 // Estandarizamos la validación de ObjectIDs de MongoDB para consistencia en todos los esquemas.
@@ -14,12 +15,12 @@ export const createReplacementSchema = z.object({
     id_negocio: z.string().optional(),
     id_saliente: objectIdSchema,
     rut_saliente: z.string().min(8, "RUT saliente inválido"),
-    nombre_saliente: z.string().min(2),
-    apellido_saliente: z.string().min(2),
+    nombre_saliente: z.string().min(2).transform(toTitleCase),
+    apellido_saliente: z.string().min(2).transform(toTitleCase),
     id_entrante: objectIdSchema,
     rut_entrante: z.string().min(8, "RUT entrante inválido"),
-    nombre_entrante: z.string().min(2),
-    apellido_entrante: z.string().min(2),
+    nombre_entrante: z.string().min(2).transform(toTitleCase),
+    apellido_entrante: z.string().min(2).transform(toTitleCase),
     tipo_turno: z.string().min(1),
     // Coerción de Fechas:
     // Zod transforma strings ISO8601 a objetos Date nativos automáticamente.
@@ -43,6 +44,8 @@ export const updateReplacementSchema = z.object({
     .object({
       rut_saliente: z.string().min(8).optional(),
       rut_entrante: z.string().min(8).optional(),
+      tipo_turno: z.string().min(1).optional(),
+      servicio: z.string().min(1).optional(),
       fecha_inicio: z.coerce.date().optional(),
       fecha_termino: z.coerce.date().optional(),
       status: z
@@ -61,16 +64,15 @@ export const substitutionSchema = z.object({
     nuevo_entrante: z.object({
       id_entrante: objectIdSchema,
       rut_entrante: z.string().min(8, "RUT inválido"),
-      nombre_entrante: z.string().min(2),
-      apellido_entrante: z.string().min(2),
+      nombre_entrante: z.string().min(2).transform(toTitleCase),
+      apellido_entrante: z.string().min(2).transform(toTitleCase),
     }),
     datos_base_evento: z.object({
       id_evento_principal: z.string().min(1),
       id_saliente: objectIdSchema,
       rut_saliente: z.string().min(8),
-      nombre_saliente: z.string().min(2),
-      apellido_saliente: z.string().min(2),
-      tipo_cargo: z.string().min(1),
+      nombre_saliente: z.string().min(2).transform(toTitleCase),
+      apellido_saliente: z.string().min(2).transform(toTitleCase),
       tipo_turno: z.string().min(1),
       servicio: z.string().min(1),
       fecha_termino_original: z.coerce.date(),

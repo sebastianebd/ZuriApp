@@ -1,6 +1,6 @@
 <template>
   <div class="mb-4">
-    <div class="row row-cols-1 row-cols-md-5 g-3 align-items-end">
+    <div class="row row-cols-1 row-cols-md-4 g-3 align-items-end">
       <!-- Fecha Inicio -->
       <div class="col">
         <label class="form-label fw-semibold text-secondary small">Desde:</label>
@@ -12,7 +12,7 @@
         >
           <template #default="{ inputValue, inputEvents }">
             <input
-              class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+              class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0 custom-date-input"
               :value="inputValue"
               v-on="inputEvents"
               placeholder="Fecha Inicio"
@@ -33,7 +33,7 @@
         >
           <template #default="{ inputValue, inputEvents }">
             <input
-              class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
+              class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0 custom-date-input"
               :value="inputValue"
               v-on="inputEvents"
               placeholder="Fecha Termino"
@@ -64,7 +64,7 @@
           class="custom-v-select"
         >
           <template #selected-option="{ label }">
-            <span class="text-secondary small">{{ label }}</span>
+            <span>{{ label }}</span>
           </template>
         </v-select>
       </div>
@@ -87,30 +87,7 @@
           class="custom-v-select"
         >
           <template #selected-option="{ label }">
-            <span class="text-secondary small">{{ label }}</span>
-          </template>
-        </v-select>
-      </div>
-
-      <!-- Tipo Turno -->
-      <div class="col">
-        <label class="form-label fw-semibold text-secondary small">Tipo Turno</label>
-        <v-select
-          :model-value="modelValue.shiftType"
-          @update:model-value="(newValue: any) => updateFilter('shiftType', newValue)"
-          :options="[
-            { label: 'Todos', value: '' },
-            ...listaTiposTurno.map((s) => ({ label: s, value: s }))
-          ]"
-          :reduce="(option: any) => option.value"
-          label="label"
-          :clearable="false"
-          :searchable="true"
-          placeholder="Seleccione..."
-          class="custom-v-select"
-        >
-          <template #selected-option="{ label }">
-            <span class="text-secondary small">{{ label }}</span>
+            <span>{{ label }}</span>
           </template>
         </v-select>
       </div>
@@ -127,21 +104,18 @@ interface Filters {
   endDate: Date | null
   service: string
   cargo: string
-  shiftType?: string
 }
 
 const props = withDefaults(
   defineProps<{
     listaServicios: any[]
     listaCargos?: string[]
-    listaTiposTurno?: string[]
     modelValue: Filters
     hideDates?: boolean
   }>(),
   {
     hideDates: false,
-    listaCargos: () => [],
-    listaTiposTurno: () => []
+    listaCargos: () => []
   }
 )
 
@@ -150,7 +124,7 @@ const emit = defineEmits<{
 }>()
 
 const popoverConfig: any = {
-  visibility: 'click', // Explicit as requested
+  visibility: 'focus', // Changed to focus to allow auto-dismiss when clicking elsewhere
   placement: 'bottom',
   modifiers: [
     {
@@ -176,6 +150,19 @@ const updateFilter = (key: keyof Filters, value: any) => {
   --vc-font-size-lg: 0.9rem;
 }
 
+/* Custom Date Input Typography */
+.custom-date-input {
+  font-size: 0.8125rem !important;
+  color: #1e293b !important;
+  font-weight: 500 !important;
+  padding: 4px 12px;
+  min-height: 31px;
+}
+.custom-date-input::placeholder {
+  color: #64748b;
+  font-weight: 400;
+}
+
 /* Custom v-select */
 .custom-v-select :deep(.vs__dropdown-toggle) {
   background: #f8f9fa;
@@ -188,8 +175,8 @@ const updateFilter = (key: keyof Filters, value: any) => {
 
 .custom-v-select :deep(.vs__selected) {
   font-size: 0.8125rem;
-  color: #1e293b;
-  font-weight: 500;
+  color: #64748b;
+  font-weight: 400;
   margin: 0;
   padding: 0 0.5rem;
   white-space: nowrap;

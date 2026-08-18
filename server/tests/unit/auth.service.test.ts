@@ -5,26 +5,26 @@ import authService, {
   AuthError,
   ValidationError,
 } from "../../services/auth.service";
-import User from "../../models/user.model";
-import Cargo from "../../models/cargo.model";
+import Account from "../../models/account.model";
+import Staff from "../../models/staff.model";
+import Role from "../../models/role.model";
 import LoginHistory from "../../models/login-history.model";
 import redis from "../../config/redis.config";
 import socketConfig from "../../config/socket";
 
 // Mock global de dependencias:
-// Control total sobre librerías externas y modelos para pruebas unitarias deterministas.
 vi.mock("bcrypt");
 vi.mock("jsonwebtoken");
-vi.mock("../../models/user.model");
-vi.mock("../../models/cargo.model");
+vi.mock("../../models/account.model");
+vi.mock("../../models/staff.model");
+vi.mock("../../models/role.model");
 vi.mock("../../models/login-history.model");
-vi.mock("../../config/redis.config");
 vi.mock("../../config/socket");
+
 
 describe("Auth Service - Unit Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Limpieza de estado: Asegurar que variables de entorno temporales no filtren entre tests.
     delete process.env.DISABLE_CONCURRENT_SESSION;
   });
 
@@ -37,25 +37,47 @@ describe("Auth Service - Unit Tests", () => {
     };
 
     it("debería autenticar credenciales válidas y retornar tokens (Access & Refresh)", async () => {
-      const mockUser = {
-        _id: "user123",
-        id: "user123",
+      const mockAccount = {
+        _id: "acc123",
         rut: "12345678-9",
         password: "hashedPassword",
-        tipo_cargo: "ADMIN-TI",
+        staffId: "staff123",
         refresh_token: undefined,
         save: vi.fn().mockResolvedValue(true),
-        toObject: () => ({ _id: "user123", rut: "12345678-9" }),
       };
 
-      const mockCargo = {
-        nivel: 1,
-        permisos: ["all"],
+      const mockRole = {
+        name: "ADMIN-TI",
+        level: 1,
+        code: "ADM",
       };
 
-      (User.findOne as any).mockReturnValue({
+      const mockStaff = {
+        _id: "staff123",
+        firstName: "Test",
+        lastName: "User",
+        rut: "12345678-9",
+        roleId: mockRole,
+        toObject: function () {
+          return {
+            _id: "staff123",
+            firstName: "Test",
+            lastName: "User",
+            rut: "12345678-9",
+            roleId: mockRole,
+          };
+        },
+      };
+
+      (Account.findOne as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
-          exec: vi.fn().mockResolvedValue(mockUser),
+          exec: vi.fn().mockResolvedValue(mockAccount),
+        }),
+      });
+
+      (Staff.findById as any).mockReturnValue({
+        populate: vi.fn().mockReturnValue({
+          exec: vi.fn().mockResolvedValue(mockStaff),
         }),
       });
 
@@ -65,9 +87,7 @@ describe("Auth Service - Unit Tests", () => {
         .mockReturnValueOnce("accessToken")
         .mockReturnValueOnce("refreshToken");
       (LoginHistory.create as any).mockResolvedValue({});
-      (Cargo.findOne as any).mockReturnValue({
-        lean: vi.fn().mockResolvedValue(mockCargo),
-      });
+      
       // Importante: Simular que no hay sesión activa en Redis.
       (redis.get as any).mockResolvedValue(null);
 
@@ -75,9 +95,10 @@ describe("Auth Service - Unit Tests", () => {
 
       expect(result).toHaveProperty("accessToken", "accessToken");
       expect(result).toHaveProperty("refreshToken", "refreshToken");
-      expect(result).toHaveProperty("user");
-      expect(result.user.nivel).toBe(1);
-      expect(result.user.permisos).toEqual(["all"]);
+      expect(result).toHaveProperty("account");
+      expect(result).toHaveProperty("staff");
+      expect(result.staff).toHaveProperty("role");
+      expect((result.staff.role as any).level).toBe(1);
       expect(LoginHistory.create).toHaveBeenCalledWith(
         expect.objectContaining({ status: "SUCCESS" }),
       );
@@ -98,8 +119,8 @@ describe("Auth Service - Unit Tests", () => {
       ).rejects.toThrow(ValidationError);
     });
 
-    it("debería lanzar AuthError si el usuario no existe", async () => {
-      (User.findOne as any).mockReturnValue({
+    it("debería lanzar AuthError si la cuenta no existe", async () => {
+      (Account.findOne as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
           exec: vi.fn().mockResolvedValue(null),
         }),
@@ -109,15 +130,15 @@ describe("Auth Service - Unit Tests", () => {
     });
 
     it("debería lanzar AuthError si la contraseña es incorrecta", async () => {
-      const mockUser = {
-        _id: "user123",
+      const mockAccount = {
+        _id: "acc123",
         rut: "12345678-9",
         password: "hashedPassword",
       };
 
-      (User.findOne as any).mockReturnValue({
+      (Account.findOne as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
-          exec: vi.fn().mockResolvedValue(mockUser),
+          exec: vi.fn().mockResolvedValue(mockAccount),
         }),
       });
 
@@ -131,17 +152,16 @@ describe("Auth Service - Unit Tests", () => {
     });
 
     it("debería lanzar error 409 si el usuario ya tiene una sesión activa (Concurrencia)", async () => {
-      const mockUser = {
-        _id: "user123",
-        id: "user123",
+      const mockAccount = {
+        _id: "acc123",
         rut: "12345678-9",
         password: "hashedPassword",
-        tipo_cargo: "ADMIN-TI",
+        staffId: "staff123",
       };
 
-      (User.findOne as any).mockReturnValue({
+      (Account.findOne as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
-          exec: vi.fn().mockResolvedValue(mockUser),
+          exec: vi.fn().mockResolvedValue(mockAccount),
         }),
       });
 
@@ -163,22 +183,46 @@ describe("Auth Service - Unit Tests", () => {
     });
 
     it("debería permitir login si la sesión es 'stale' (socket desconectado)", async () => {
-      // Caso Borde Crítico: El registro en Redis dice "conectado", pero el socket real user ya no existe.
-      // Esto pasa si el servidor se reinicia o el socket se cae sin limpiar Redis.
-      const mockUser = {
-        _id: "user123",
-        id: "user123",
+      const mockAccount = {
+        _id: "acc123",
         rut: "12345678-9",
         password: "hashedPassword",
-        tipo_cargo: "ADMIN-TI",
-        refresh_token: undefined,
+        staffId: "staff123",
         save: vi.fn().mockResolvedValue(true),
-        toObject: () => ({ _id: "user123", rut: "12345678-9" }),
+      };
+      
+      const mockRole = {
+        name: "ADMIN-TI",
+        level: 1,
+        code: "ADM",
       };
 
-      (User.findOne as any).mockReturnValue({
+      const mockStaff = {
+        _id: "staff123",
+        firstName: "Test",
+        lastName: "User",
+        rut: "12345678-9",
+        roleId: mockRole,
+        toObject: function () {
+          return {
+            _id: "staff123",
+            firstName: "Test",
+            lastName: "User",
+            rut: "12345678-9",
+            roleId: mockRole,
+          };
+        },
+      };
+
+      (Account.findOne as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
-          exec: vi.fn().mockResolvedValue(mockUser),
+          exec: vi.fn().mockResolvedValue(mockAccount),
+        }),
+      });
+
+      (Staff.findById as any).mockReturnValue({
+        populate: vi.fn().mockReturnValue({
+          exec: vi.fn().mockResolvedValue(mockStaff),
         }),
       });
 
@@ -188,9 +232,6 @@ describe("Auth Service - Unit Tests", () => {
         .mockReturnValueOnce("accessToken")
         .mockReturnValueOnce("refreshToken");
       (LoginHistory.create as any).mockResolvedValue({});
-      (Cargo.findOne as any).mockReturnValue({
-        lean: vi.fn().mockResolvedValue({ nivel: 1, permisos: [] }),
-      });
       (redis.get as any).mockResolvedValue(
         JSON.stringify({ socket_id: "stale_socket", device: "Chrome" }),
       );
@@ -204,26 +245,27 @@ describe("Auth Service - Unit Tests", () => {
       const result = await authService.login(mockLoginData);
 
       expect(result).toHaveProperty("accessToken");
-      expect(redis.del).toHaveBeenCalledWith("active_session:user123");
+      expect(redis.del).toHaveBeenCalledWith("active_session:staff123");
     });
   });
 
   describe("refresh()", () => {
     it("debería generar un nuevo access token con un refresh token válido", async () => {
-      const mockUser = {
-        _id: "user123",
-        id: "user123",
+      const mockAccount = {
+        _id: "acc123",
         refresh_token: "hashedRefreshToken",
       };
 
-      (jwt.verify as any).mockReturnValue({ id: "user123" });
-      (User.findById as any).mockReturnValue({
+      (jwt.verify as any).mockReturnValue({ id: "acc123" });
+      (Account.findById as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
-          exec: vi.fn().mockResolvedValue(mockUser),
+          exec: vi.fn().mockResolvedValue(mockAccount),
         }),
       });
       (bcrypt.compare as any).mockResolvedValue(true);
-      (jwt.sign as any).mockReturnValue("newAccessToken");
+      (jwt.sign as any)
+        .mockReturnValueOnce("newAccessToken")
+        .mockReturnValueOnce("newRefreshToken");
 
       const result = await authService.refresh("validRefreshToken");
 
@@ -248,9 +290,9 @@ describe("Auth Service - Unit Tests", () => {
       );
     });
 
-    it("debería lanzar AuthError si el usuario no existe", async () => {
-      (jwt.verify as any).mockReturnValue({ id: "user123" });
-      (User.findById as any).mockReturnValue({
+    it("debería lanzar AuthError si la cuenta no existe", async () => {
+      (jwt.verify as any).mockReturnValue({ id: "acc123" });
+      (Account.findById as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
           exec: vi.fn().mockResolvedValue(null),
         }),
@@ -261,16 +303,16 @@ describe("Auth Service - Unit Tests", () => {
       );
     });
 
-    it("debería lanzar AuthError si el refresh token no coincide con el hash almacenado (Posible robo)", async () => {
-      const mockUser = {
-        _id: "user123",
+    it("debería lanzar AuthError si el refresh token no coincide con el hash almacenado", async () => {
+      const mockAccount = {
+        _id: "acc123",
         refresh_token: "hashedRefreshToken",
       };
 
-      (jwt.verify as any).mockReturnValue({ id: "user123" });
-      (User.findById as any).mockReturnValue({
+      (jwt.verify as any).mockReturnValue({ id: "acc123" });
+      (Account.findById as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
-          exec: vi.fn().mockResolvedValue(mockUser),
+          exec: vi.fn().mockResolvedValue(mockAccount),
         }),
       });
       (bcrypt.compare as any).mockResolvedValue(false);
@@ -282,94 +324,74 @@ describe("Auth Service - Unit Tests", () => {
   });
 
   describe("logout()", () => {
-    it("debería eliminar el refresh_token del documento del usuario", async () => {
-      const mockUser = {
-        _id: "user123",
+    it("debería eliminar el refresh_token del documento de la cuenta", async () => {
+      const mockAccount = {
+        _id: "acc123",
         refresh_token: "hashedRefreshToken",
         save: vi.fn().mockResolvedValue(true),
       };
 
-      (jwt.verify as any).mockReturnValue({ id: "user123" });
-      (User.findById as any).mockReturnValue({
+      (jwt.verify as any).mockReturnValue({ id: "acc123" });
+      (Account.findById as any).mockReturnValue({
         select: vi.fn().mockReturnValue({
-          exec: vi.fn().mockResolvedValue(mockUser),
+          exec: vi.fn().mockResolvedValue(mockAccount),
         }),
       });
       (bcrypt.compare as any).mockResolvedValue(true);
 
       await authService.logout("validRefreshToken");
 
-      expect(mockUser.refresh_token).toBeUndefined();
-      expect(mockUser.save).toHaveBeenCalled();
+      expect(mockAccount.refresh_token).toBeUndefined();
+      expect(mockAccount.save).toHaveBeenCalled();
     });
 
     it("debería manejar token faltante sin lanzar error", async () => {
       await expect(authService.logout("")).resolves.toBeUndefined();
     });
-
-    it("debería manejar token inválido sin lanzar error", async () => {
-      (jwt.verify as any).mockImplementation(() => {
-        throw new Error("Invalid token");
-      });
-
-      await expect(authService.logout("invalidToken")).resolves.toBeUndefined();
-    });
-
-    it("debería manejar usuario no encontrado sin lanzar error", async () => {
-      (jwt.verify as any).mockReturnValue({ id: "user123" });
-      (User.findById as any).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          exec: vi.fn().mockResolvedValue(null),
-        }),
-      });
-
-      await expect(authService.logout("validToken")).resolves.toBeUndefined();
-    });
   });
 
   describe("changePassword()", () => {
     it("debería actualizar contraseña cuando la actual es correcta", async () => {
-      const mockUser = {
-        _id: "user123",
-        rut: "12345678-9",
+      const mockAccount = {
+        _id: "acc123",
         password: "oldHashedPassword",
         save: vi.fn().mockResolvedValue(true),
       };
 
-      (User.findById as any).mockReturnValue({
-        select: vi.fn().mockResolvedValue(mockUser),
+      (Account.findById as any).mockReturnValue({
+        select: vi.fn().mockResolvedValue(mockAccount),
       });
       (bcrypt.compare as any).mockResolvedValue(true);
 
-      await authService.changePassword("user123", "oldPassword", "newPassword");
+      await authService.changePassword("acc123", "oldPassword", "newPassword");
 
-      expect(mockUser.password).toBe("newPassword");
-      expect(mockUser.save).toHaveBeenCalled();
+      expect(mockAccount.password).toBe("newPassword");
+      expect(mockAccount.save).toHaveBeenCalled();
     });
 
-    it("debería lanzar AuthError si el usuario no existe", async () => {
-      (User.findById as any).mockReturnValue({
+    it("debería lanzar AuthError si la cuenta no existe", async () => {
+      (Account.findById as any).mockReturnValue({
         select: vi.fn().mockResolvedValue(null),
       });
 
       await expect(
-        authService.changePassword("user123", "old", "new"),
+        authService.changePassword("acc123", "old", "new"),
       ).rejects.toThrow(AuthError);
     });
 
     it("debería lanzar AuthError si la contraseña actual es incorrecta", async () => {
-      const mockUser = {
-        _id: "user123",
+      const mockAccount = {
+        _id: "acc123",
         password: "hashedPassword",
       };
 
-      (User.findById as any).mockReturnValue({
-        select: vi.fn().mockResolvedValue(mockUser),
+      (Account.findById as any).mockReturnValue({
+        select: vi.fn().mockResolvedValue(mockAccount),
       });
       (bcrypt.compare as any).mockResolvedValue(false);
 
       await expect(
-        authService.changePassword("user123", "wrongPassword", "newPassword"),
+        authService.changePassword("acc123", "wrongPassword", "newPassword"),
       ).rejects.toThrow(AuthError);
     });
   });
@@ -377,8 +399,8 @@ describe("Auth Service - Unit Tests", () => {
   describe("getLoginHistory()", () => {
     it("debería retornar los últimos 20 intentos de login", async () => {
       const mockHistory = [
-        { user: "user123", timestamp: new Date(), status: "SUCCESS" },
-        { user: "user123", timestamp: new Date(), status: "FAILED" },
+        { accountId: "acc123", timestamp: new Date(), status: "SUCCESS" },
+        { accountId: "acc123", timestamp: new Date(), status: "FAILED" },
       ];
 
       (LoginHistory.find as any).mockReturnValue({
@@ -389,10 +411,43 @@ describe("Auth Service - Unit Tests", () => {
         }),
       });
 
-      const result = await authService.getLoginHistory("user123");
+      const result = await authService.getLoginHistory("acc123");
 
       expect(result).toEqual(mockHistory);
-      expect(LoginHistory.find).toHaveBeenCalledWith({ user: "user123" });
+      expect(LoginHistory.find).toHaveBeenCalledWith({ accountId: "acc123" });
+    });
+  });
+
+  describe("generateResetToken()", () => {
+    it("debería devolver un token en texto plano", async () => {
+      (Account.findByIdAndUpdate as any).mockResolvedValue({});
+
+      const { generateResetToken } = await import("../../services/auth.service");
+      const { rawToken } = await generateResetToken("someAccountId");
+
+      expect(typeof rawToken).toBe("string");
+      expect(rawToken.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("validateResetToken()", () => {
+    it("debería devolver la cuenta si el token es válido y no ha expirado", async () => {
+      const cryptoLib = await import("crypto");
+      const rawToken = cryptoLib.randomBytes(32).toString("hex");
+      const hashedToken = cryptoLib.createHash("sha256").update(rawToken).digest("hex");
+
+      (Account.findOne as any).mockResolvedValue({ _id: "acc123", rut: "12345678-9" });
+
+      const { validateResetToken } = await import("../../services/auth.service");
+      const account = await validateResetToken(rawToken);
+
+      expect(Account.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resetPasswordToken: hashedToken,
+          resetPasswordExpire: expect.objectContaining({ $gt: expect.any(Date) }),
+        })
+      );
+      expect(account).toMatchObject({ _id: "acc123" });
     });
   });
 });

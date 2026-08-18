@@ -46,3 +46,12 @@ TurnSiglaSchema.index(
 );
 
 export const TurnSigla = model<ITurnSigla>("TurnSigla", TurnSiglaSchema);
+
+export const TURN_SIGLA_AUDIT_FIELDS = [
+  "sigla",
+  "turno_entrada",
+  "turno_salida",
+  "color",
+  "nombre",
+  "activo",
+];

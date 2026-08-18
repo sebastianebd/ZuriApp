@@ -6,7 +6,7 @@ export function useAuth() {
   const authStore = useAuthStore()
   const router = useRouter()
 
-  const user = computed(() => authStore.user)
+  const IStaff = computed(() => authStore.IStaff)
   const authReady = computed(() => authStore.authReady)
   const isAuthenticated = computed(() => authStore.isAuthenticated)
 
@@ -22,7 +22,7 @@ export function useAuth() {
   }
 
   return {
-    user,
+    IStaff,
     authReady,
     isAuthenticated,
     can,

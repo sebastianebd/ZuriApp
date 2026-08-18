@@ -1,5 +1,5 @@
 import logger from "../config/logger.config";
-import userService from "./user.service";
+import staffService from "./staff.service";
 import { IReplacement } from "../models/replacement.model";
 import axios from "axios";
 
@@ -11,9 +11,9 @@ import axios from "axios";
 // Helper: Generador de Links Frontend
 // Centralizamos la construcción de URLs para garantizar que los deep-links apuntan
 // correctamente al entorno desplegado (o localhost en dev).
-const generateFrontendLink = (userId: string, date?: Date): string => {
+const generateFrontendLink = (staffId: string, date?: Date): string => {
   const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  let link = `${baseUrl}/mi-calendario?uid=${userId}`;
+  let link = `${baseUrl}/mi-calendario?uid=${staffId}`;
 
   if (date) {
     link += `&month=${date.getMonth() + 1}&year=${date.getFullYear()}`;
@@ -43,7 +43,7 @@ async function sendWhatsApp(to: string, message: string) {
     // Meta / WhatsApp API es estricta con los formatos.
     // ZuriApp almacena +569XXXXXXXX, pero la API suele preferir el formato raw sin '+'
     // aunque soporta internacional. Limpiamos espacios y símbolos para maximizar compatibilidad.
-    const cleanTo = to.replace("+", "").replace(/\s/g, "");
+    const cleanTo = to.replace(/\+/g, "").replace(/\s/g, "");
 
     const url = `https://graph.facebook.com/${WHATSAPP_VERSION}/${WHATSAPP_PHONE_ID}/messages`;
 
@@ -95,18 +95,18 @@ async function notifyReplacement(replacement: IReplacement) {
     // 1. Obtención de Datos del Destinatario (Entrante)
     // Es vital confirmar que tenemos un número de teléfono válido antes de intentar construir el mensaje.
     const entranteId = replacement.id_entrante.toString();
-    const userEntrante: any = await userService.obtenerPorId(entranteId);
+    const staffEntrante = await staffService.getStaffById(entranteId);
 
-    if (!userEntrante || !userEntrante.telefono) {
+    if (!staffEntrante || !staffEntrante.phone) {
       logger.warn(
-        `[NotifyReplacement] Omitiendo notificación. Usuario ${entranteId} no encontrado o sin teléfono.`,
+        `[NotifyReplacement] Omitiendo notificación. Staff ${entranteId} no encontrado o sin teléfono.`,
       );
       return;
     }
 
     // 2. Formateo y Construcción de Mensaje
     // Usamos templates literales claros con emojis para mejorar la legibilidad rápida en móvil.
-    const nombreEntrante = `${userEntrante.nombre} ${userEntrante.apellido}`;
+    const nombreEntrante = `${staffEntrante.firstName} ${staffEntrante.lastName}`;
     const nombreSaliente = `${replacement.nombre_saliente} ${replacement.apellido_saliente}`;
 
     const startDisplay = new Date(replacement.fecha_inicio).toLocaleString(
@@ -120,7 +120,7 @@ async function notifyReplacement(replacement: IReplacement) {
 
     // Deep Link al Calendario Específico
     const publicLink = generateFrontendLink(
-      userEntrante._id.toString(),
+      staffEntrante._id.toString(),
       new Date(replacement.fecha_inicio),
     );
 
@@ -135,7 +135,7 @@ async function notifyReplacement(replacement: IReplacement) {
       `${publicLink}`;
 
     // 3. Envío
-    await sendWhatsApp(userEntrante.telefono, message);
+    await sendWhatsApp(staffEntrante.phone, message);
   } catch (error) {
     logger.error(`[NotifyReplacement] Error general en notificación: ${error}`);
   }
@@ -143,27 +143,27 @@ async function notifyReplacement(replacement: IReplacement) {
 
 async function notifyShiftAssignment(assignment: any) {
   try {
-    // 1. Resolución de Usuario
-    // La asignación puede venir con el objeto de usuario populado o solo el ID.
+    // 1. Resolución de Staff
+    // La asignación puede venir con el objeto de staff populado o solo el ID.
     // Normalizamos esto para asegurar acceso a propiedades críticas (teléfono).
-    let user = assignment.user_id;
+    let staff = assignment.staffId;
 
-    const userIdString = user._id ? user._id.toString() : user.toString();
+    const staffIdString = staff._id ? staff._id.toString() : staff.toString();
 
-    // Si el objeto está incompleto (ej: populado parcialmente), re-fesechamos.
-    if (!user.telefono || !user.servicio) {
-      user = await userService.obtenerPorId(userIdString);
+    // Si el objeto está incompleto (ej: populado parcialmente), re-consultamos desde la BD.
+    if (!staff.phone) {
+      staff = await staffService.getStaffById(staffIdString);
     }
 
-    if (!user || !user.telefono) {
+    if (!staff || !staff.phone) {
       logger.warn(
-        `[NotifyShiftAssignment] Omitiendo notificación. Usuario sin teléfono o no encontrado.`,
+        `[NotifyShiftAssignment] Omitiendo notificación. Staff sin teléfono o no encontrado.`,
       );
       return;
     }
 
     // 2. Formateo
-    const nombreUsuario = `${user.nombre} ${user.apellido}`;
+    const nombreStaff = `${staff.firstName} ${staff.lastName}`;
     const startDisplay = new Date(assignment.start_date).toLocaleDateString(
       "es-CL",
       { timeZone: "America/Santiago" },
@@ -176,19 +176,19 @@ async function notifyShiftAssignment(assignment: any) {
       });
     }
 
-    const calendarLink = generateFrontendLink(user._id || user.id);
+    const calendarLink = generateFrontendLink(staff._id || staff.id);
 
     const message =
-      `👋 Hola *${nombreUsuario}*, se te han asignado nuevos turnos.\n\n` +
+      `👋 Hola *${nombreStaff}*, se te han asignado nuevos turnos.\n\n` +
       `📋 *Tipo de Turno:* ${assignment.turn_type_name || "Asignado"}\n` +
-      `🏥 *Servicio:* ${assignment.service || user.servicio || "No especificado"}\n` +
+      `🏥 *Servicio:* ${assignment.service || "No especificado"}\n` +
       `📅 *Inicio:* ${startDisplay}\n` +
       `📅 *Termino:* ${endDisplay}\n\n` +
       `👇 *Revisa el detalle en tu calendario:*\n` +
       `${calendarLink}`;
 
     // 3. Envío
-    await sendWhatsApp(user.telefono, message);
+    await sendWhatsApp(staff.phone, message);
   } catch (error) {
     logger.error(
       `[NotifyShiftAssignment] Error general en notificación: ${error}`,

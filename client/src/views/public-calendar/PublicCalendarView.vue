@@ -12,7 +12,7 @@
 
     <!-- Main Content -->
     <div class="container-fluid flex-grow-1 p-3 p-md-4 d-flex flex-column">
-      <!-- User Info Header -->
+      <!-- IStaff Info Header -->
       <div
         v-if="userInfo"
         class="alert alert-light border shadow-sm d-flex justify-content-between align-items-center mb-4"

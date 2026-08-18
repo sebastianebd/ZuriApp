@@ -1,12 +1,13 @@
 import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
+import env from "./env.config";
 
 // Inicialización Temprana de Sentry
 // Debe ser importado antes de cualquier otro módulo para instrumentar correctamente
 // las llamadas a bajo nivel (http, db, etc.).
-if (process.env.NODE_ENV !== "development") {
+if (env.NODE_ENV !== "development") {
   Sentry.init({
-    dsn: process.env.SENTRY_DSN,
+    dsn: env.SENTRY_DSN,
     integrations: [nodeProfilingIntegration()],
     // Release Tracking
     // Asocia los errores con una versión específica del código, facilitando
@@ -14,7 +15,7 @@ if (process.env.NODE_ENV !== "development") {
     release: "zuri-app@1.0.0",
     // Entorno de Ejecución
     // Permite filtrar errores por (development, staging, production)
-    environment: process.env.NODE_ENV || "development",
+    environment: env.NODE_ENV,
     // Performance Monitoring
     // Muestreo del 100% (1.0) para capturar todas las trazas en esta etapa.
     // En alto tráfico, esto se debería reducir (ej: 0.1) para ahorrar cuota/costos.

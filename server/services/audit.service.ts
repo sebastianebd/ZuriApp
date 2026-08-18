@@ -1,14 +1,15 @@
 import mongoose, { FilterQuery } from "mongoose";
 import AuditLog, { IAuditLog } from "../models/audit.model";
-import "../models/user.model";
+import "../models/staff.model";
 import logger from "../config/logger.config";
-import { delPattern } from "../config/redis.config";
 import socketIO from "../config/socket";
+import { get, set } from "../config/redis.config";
+import { AuditModelName, AUDIT_WHITELISTS } from "../config/audit.registry";
 
 async function logAction(
   action: string,
   module: string,
-  user: any,
+  account: { id: string; name: string },
   description: string,
   details: any = null,
   entityId: string | null = null,
@@ -17,18 +18,19 @@ async function logAction(
     const logEntry = new AuditLog({
       action,
       module,
-      user_id: user.id || user._id,
-      user_name: `${user.nombre} ${user.apellido}`,
+      accountId: account.id,
+      accountName: account.name,
       resource_id: entityId,
       description,
       details,
     });
 
     await logEntry.save();
-    // Cache Invalidation Strategy:
-    // Invalidamos todo el patrón audit:* para asegurar consistencia inmediata en listados.
-    // Aunque agresivo, garantiza que el admin siempre vea la última acción.
-    await delPattern("audit:*");
+
+    // Cache Invalidation Eliminada:
+    // La auditoría se escribe frecuentemente y su lectura no requiere invalidación en tiempo real.
+    // Un TTL corto en el get es suficiente. Eliminar delPattern('audit:*') mejora el rendimiento y previene fallos por Redis.
+
 
     // Notificaciones en Tiempo Real (Fire-and-Forget):
     // Emitimos el evento vía Socket.IO para actualizar dashboards de administradores activos.
@@ -39,7 +41,7 @@ async function logAction(
       io.emit("audit:update", {
         action,
         module,
-        user: user.nombre,
+        account: account.name,
         description,
       });
     } catch (err) {
@@ -53,18 +55,30 @@ async function logAction(
   }
 }
 
+interface AuditFilters {
+  module?: string;
+  action?: string;
+  accountId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 async function getLogs(
-  filters: any = {},
+  filters: AuditFilters = {},
   page: number = 1,
   limit: number = 20,
 ) {
+  const cacheKey = `audit:${JSON.stringify({ filters, page, limit })}`;
+  const cachedData = await get(cacheKey);
+  if (cachedData) return cachedData;
+
   const query: FilterQuery<IAuditLog> = {};
 
   if (filters.module) query.module = filters.module;
   if (filters.action) query.action = filters.action;
 
-  if (filters.userId && mongoose.Types.ObjectId.isValid(filters.userId)) {
-    query.user_id = new mongoose.Types.ObjectId(filters.userId);
+  if (filters.accountId && mongoose.Types.ObjectId.isValid(filters.accountId)) {
+    query.accountId = new mongoose.Types.ObjectId(filters.accountId);
   }
 
   if (filters.startDate || filters.endDate) {
@@ -80,43 +94,41 @@ async function getLogs(
     if (Object.keys(dateQuery).length > 0) query.created_at = dateQuery;
   }
 
-  const logs = await AuditLog.find(query)
-    .sort({ created_at: -1 })
-    .skip((page - 1) * limit)
-    .limit(limit)
-    .populate("user_id", "nombre apellido rut");
+  // Ejecutar find y count en paralelo para evitar ejecución secuencial
+  const [logs, totalDocs] = await Promise.all([
+    AuditLog.find(query)
+      .sort({ created_at: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    AuditLog.countDocuments(query),
+  ]);
 
-  const total = await AuditLog.countDocuments(query);
+  const totalPages = Math.ceil(totalDocs / limit) || 1;
 
-  return {
+  const response = {
     logs,
-    total,
-    page: Number(page),
-    totalPages: Math.ceil(total / limit),
+    totalDocs,
+    totalPages,
+    currentPage: Number(page),
   };
+
+  await set(cacheKey, response, 300); // TTL: 300 segundos (5 minutos)
+  return response;
 }
 
-function generateDiff(oldData: any, newData: any): string {
+function generateDiff(oldData: any, newData: any, modelName: AuditModelName): string {
   if (!oldData || !newData) return "";
 
   const changes: string[] = [];
-  // Lista Negra de Campos:
-  // Excluimos campos técnicos o sensibles que no aportan valor semántico al historial de cambios visible por el usuario.
-  const ignoredKeys = [
-    "_id",
-    "created_at",
-    "updated_at",
-    "__v",
-    "password",
-    "refresh_token",
-    "id",
-    "full_name",
-    "creado_por",
-    "updatedAt",
-  ];
+  
+  // Lista Blanca de Campos por Modelo (Registry Pattern):
+  // Solo los campos explícitamente listados en el registry (model.ts) serán auditados.
+  // Cualquier campo nuevo, técnico o sensible se ignora por defecto.
+  const allowedKeys = AUDIT_WHITELISTS[modelName] || [];
 
   Object.keys(newData).forEach((key) => {
-    if (ignoredKeys.includes(key)) return;
+    if (!allowedKeys.includes(key)) return;
 
     let oldVal = oldData[key];
     let newVal = newData[key];
@@ -150,7 +162,7 @@ function generateDiff(oldData: any, newData: any): string {
         if (!oldDay) {
           seqChanges.push(`Día ${newDay.dia}: Nuevo`);
         } else {
-          // Compare fields within the day
+          // Comparar campos dentro del día
           const dayUpdates: string[] = [];
 
           // Sigla

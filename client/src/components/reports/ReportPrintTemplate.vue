@@ -10,7 +10,7 @@
         </div>
         <div class="report-id">
           <strong
-            >REPORTE #{{ year }}-{{ month }}-{{ String(reportData.user.rut).slice(-4) }}</strong
+            >REPORTE #{{ year }}-{{ month }}-{{ String(reportData.IStaff.rut).slice(-4) }}</strong
           >
           <p>Fecha emisión: {{ formatDate(new Date()) }}</p>
         </div>
@@ -35,16 +35,16 @@
           <div class="employee-item">
             <label>Funcionario</label>
             <span class="value-text"
-              >{{ reportData.user.nombre }} {{ reportData.user.apellido }}</span
+              >{{ reportData.IStaff.firstName }} {{ reportData.IStaff.lastName }}</span
             >
           </div>
           <div class="employee-item">
             <label>RUT</label>
-            <span class="value-text">{{ reportData.user.rut }}</span>
+            <span class="value-text">{{ reportData.IStaff.rut }}</span>
           </div>
           <div class="employee-item">
             <label>Cargo</label>
-            <span class="value-text">{{ reportData.user.cargo }}</span>
+            <span class="value-text">{{ reportData.IStaff.cargo }}</span>
           </div>
           <div class="employee-item">
             <label>Servicio Principal</label>
@@ -52,7 +52,7 @@
           </div>
           <div class="employee-item">
             <label>Antigüedad</label>
-            <span class="value-text">{{ reportData.user.antiguedad }}</span>
+            <span class="value-text">{{ reportData.IStaff.antiguedad }}</span>
           </div>
           <div class="employee-item">
             <label>Período Analizado</label>

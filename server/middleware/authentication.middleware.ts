@@ -1,10 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import User, { IUser } from "../models/user.model";
+
+import Account from '../models/account.model';
+import Staff, { IStaff } from '../models/staff.model';
 import logger from "../config/logger.config";
 
+import { IRole } from "../models/role.model";
+
+export interface AuthContext extends Omit<IStaff, 'roleId'> {
+  roleId: IRole; // Populated
+}
+
 export interface AuthRequest extends Request {
-  user?: IUser;
+  staff?: AuthContext;
+  account?: {
+    id: string;
+    rut: string;
+    name: string;
+  };
 }
 
 /**
@@ -31,35 +44,67 @@ async function authMiddleware(
 
     const token = authHeader.split(" ")[1];
 
-    jwt.verify(
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Acceso no autorizado: formato de token inválido",
+      });
+    }
+
+    const decoded = jwt.verify(
       token,
-      process.env.ACCESS_TOKEN_SECRET as string,
-      async (err: any, decoded: any) => {
-        if (err) {
-          return res.status(403).json({
-            success: false,
-            message: "Token inválido o expirado",
-          });
-        }
+      process.env.ACCESS_TOKEN_SECRET as string
+    ) as jwt.JwtPayload;
 
-        // Recuperación del Contexto de Usuario
-        // Filtramos campos sensibles (password, refresh_token) preventivamente.
-        const user = await User.findById(decoded.id)
-          .select("-password -refresh_token")
-          .exec();
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Token inválido: payload incompleto",
+      });
+    }
 
-        if (!user) {
-          return res.status(401).json({
-            success: false,
-            message: "Usuario no encontrado",
-          });
-        }
+    // Recuperación del Contexto de Usuario usando los nuevos modelos
+    const account = await Account.findById(decoded.id).exec();
+    
+    if (!account || !account.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: "Cuenta de usuario inactiva o eliminada",
+      });
+    }
 
-        req.user = user as IUser;
-        next();
-      },
-    );
+    const staff = await Staff.findById(account.staffId).populate(['roleId', 'positionId']).exec();
+    
+    if (!staff || staff.isDeleted) {
+      return res.status(401).json({
+        success: false,
+        message: "Cuenta de usuario inactiva o eliminada",
+      });
+    }
+
+    const role = staff.roleId as unknown as IRole;
+    if (!role || !role.hasSystemAccess) {
+      return res.status(403).json({
+        success: false,
+        message: "Su rol actual no tiene acceso al sistema",
+      });
+    }
+
+    // Asignamos el contexto (Staff con Role poblado)
+    req.staff = staff as unknown as AuthContext;
+    req.account = {
+      id: account._id.toString(),
+      rut: account.rut,
+      name: `${staff.firstName} ${staff.lastName}`,
+    };
+    next();
   } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError) {
+      return res.status(403).json({
+        success: false,
+        message: "Token inválido o expirado",
+      });
+    }
     logger.error(`❌ Error en authMiddleware: ${error}`);
     return res.status(500).json({
       success: false,
@@ -77,16 +122,15 @@ export function requireAdmin(
   res: Response,
   next: NextFunction,
 ) {
-  if (!req.user) {
+  if (!req.staff) {
     return res.status(401).json({
       success: false,
       message: "Acceso denegado: usuario no autenticado",
     });
   }
 
-  // Jerarquía Estática: ADMIN-TI se considera Super Admin hardcodeado
-  // para evitar bloqueos si la BD de permisos se corrompe.
-  if (req.user.tipo_cargo !== "ADMIN-TI") {
+  // Jerarquía Estática: Nivel 100 se considera Super Admin
+  if (req.staff.roleId.level !== 100) {
     return res.status(403).json({
       success: false,
       message: "Acceso denegado: se requieren privilegios de administrador",
@@ -96,41 +140,29 @@ export function requireAdmin(
   next();
 }
 
-import Cargo from "../models/cargo.model";
-
 /**
  * Factory de Middleware para Permisos Granulares
- * Permite definir políticas de acceso dinámicas basadas en las capacidades ('capabilities') del cargo,
- * en lugar de validar roles fijos ('users.create' vs 'es_jefe').
+ * Permite definir políticas de acceso dinámicas basadas en los permisos (permissions) del rol.
  */
 export const requirePermission = (permission: string) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
+    if (!req.staff || !req.staff.roleId) {
       return res.status(401).json({
         success: false,
-        message: "Acceso denegado: usuario no autenticado",
+        message: "Acceso denegado: usuario no autenticado o sin rol válido",
       });
     }
 
     try {
-      const cargo = await Cargo.findOne({ nombre: req.user.tipo_cargo });
-
-      if (!cargo) {
-        // Política de Fallo Seguro (Fail-Close):
-        // Si el cargo no existe en la configuración actual, se deniega el acceso por defecto.
-        return res.status(403).json({
-          success: false,
-          message: "Acceso denegado: rol no configurado en el sistema",
-        });
-      }
+      const role = req.staff.roleId;
 
       // Bypass Maestro: Nivel 100 garantiza acceso total de emergencia.
-      if (cargo.nivel === 100) {
+      if (role.level === 100) {
         return next();
       }
 
-      // Verificación de Capacidad Específica
-      if (cargo.permisos && cargo.permisos.includes(permission)) {
+      // Verificación de Permiso Específico
+      if (role.permissions && role.permissions.includes(permission)) {
         return next();
       }
 
@@ -139,7 +171,7 @@ export const requirePermission = (permission: string) => {
         message: `Acceso denegado: se requiere el permiso '${permission}'`,
       });
     } catch (error) {
-      console.error("Error verificando permisos:", error);
+      logger.error(`Error verificando permisos: ${error}`);
       return res
         .status(500)
         .json({ success: false, message: "Error verificando permisos" });

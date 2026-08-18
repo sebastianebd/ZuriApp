@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import * as ReplacementService from '../services/replacement.service'
 import { useAuthStore } from './auth.store'
-import { useServiceStore } from './service.store'
 import { type ReplacementRegistration, type SubstitutionPayload } from '@/types/replacement.types'
 import type { AxiosInstance } from 'axios'
 import { getDatesInRange } from '@/utils/date-utils'
@@ -81,7 +80,7 @@ export const useReplacementStore = defineStore('replacement', {
         return Array.from(fechasOcupadasSet)
       },
 
-    // NEW: Get dates where user is SALIENTE (Absent)
+    // NEW: Get dates where IStaff is SALIENTE (Absent)
     getFechasAusencia:
       (state) =>
       (funcionarioId: string, sourceData?: ReplacementRegistration[]): string[] => {
@@ -106,47 +105,42 @@ export const useReplacementStore = defineStore('replacement', {
       },
 
     reemplazosFiltrados(state) {
-      let filtrados = state.currentPageReplacements
-
-      if (state.fechaInicio) {
-        filtrados = filtrados.filter((r) => String(r.fecha_inicio) === state.fechaInicio)
-      }
-      if (state.fechaFin) {
-        filtrados = filtrados.filter((r) => String(r.fecha_termino) === state.fechaFin)
-      }
-
-      if (state.filtroRutSaliente) {
-        filtrados = filtrados.filter((r) => r.rut_saliente.startsWith(state.filtroRutSaliente))
-      }
-
-      if (state.filtroRutEntrante) {
-        filtrados = filtrados.filter((r) => r.rut_entrante.startsWith(state.filtroRutEntrante))
-      }
-
-      if (state.filtroServicio) {
-        const serviceStore = useServiceStore()
-        filtrados = filtrados.filter((r) => serviceStore.isServiceMatch(r.servicio, state.filtroServicio))
-      }
-
-      return filtrados
+      // Filtrado migrado al Backend para soportar paginación real.
+      return state.currentPageReplacements
     }
   },
 
   actions: {
-    // New: Fetch paginated active replacements
     async fetchActiveReplacementsPaginated(params: {
       page?: number
       limit?: number
       search?: string
       servicio?: string
+      fechaInicio?: string | Date | null
+      fechaFin?: string | Date | null
+      rutSaliente?: string
+      rutEntrante?: string
     }) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       this.cargando = true
       this.error = null
 
+      // Helper to format Date to YYYY-MM-DD safely
+      const formatDate = (val: string | Date | null | undefined) => {
+        if (!val) return undefined
+        if (typeof val === 'string') return val
+        return val.toISOString().split('T')[0]
+      }
+
+      const queryParams = {
+        ...params,
+        fechaInicio: formatDate(params.fechaInicio),
+        fechaFin: formatDate(params.fechaFin)
+      }
+
       try {
-        const response = await ReplacementService.mostrarReemplazos(apiPrivate, params)
+        const response = await ReplacementService.mostrarReemplazos(apiPrivate, queryParams)
 
         // Check if response has pagination structure
         if (response.reemplazos && response.pagination) {
@@ -197,7 +191,7 @@ export const useReplacementStore = defineStore('replacement', {
 
       try {
         // WORKAROUND: Fetch ALL active replacements to manually filter client-side
-        // This ensures we find records where the user is 'Entrante', which might be missed by backend search.
+        // This ensures we find records where the IStaff is 'Entrante', which might be missed by backend search.
         const response = await ReplacementService.mostrarReemplazos(apiPrivate, { limit: 1000 })
 
         let allReplacements: ReplacementRegistration[] = []
@@ -239,8 +233,8 @@ export const useReplacementStore = defineStore('replacement', {
       filtros: {
         rutSaliente?: string
         rutEntrante?: string
-        fechaInicio?: string
-        fechaFin?: string
+        fechaInicio?: string | Date | null
+        fechaFin?: string | Date | null
         servicio?: string
       },
       page: number = 1
@@ -250,10 +244,22 @@ export const useReplacementStore = defineStore('replacement', {
       this.cargando = true
       this.error = null
 
+      const formatDate = (val: string | Date | null | undefined) => {
+        if (!val) return undefined
+        if (typeof val === 'string') return val
+        return val.toISOString().split('T')[0]
+      }
+
+      const formattedFiltros = {
+        ...filtros,
+        fechaInicio: formatDate(filtros.fechaInicio),
+        fechaFin: formatDate(filtros.fechaFin)
+      }
+
       try {
         const response = await ReplacementService.obtenerInactivosPaginados(
           apiPrivate,
-          filtros,
+          formattedFiltros,
           page,
           this.finalizedPagination.itemsPerPage
         )
@@ -320,14 +326,18 @@ export const useReplacementStore = defineStore('replacement', {
     },
 
     //ESTA FUNCION ES PARA FINALIZAR (ANTICIPADAMENTE) REEMPLAZO NO ELIMINAR
-    async finalizarReemplazo(reemplazoId: string) {
+    async finalizarReemplazo(reemplazoId: string, fechaTermino?: string) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
       this.cargando = true
       this.error = null
 
       try {
-        const data = await ReplacementService.finalizarReemplazo(apiPrivate, reemplazoId)
+        const data = await ReplacementService.finalizarReemplazo(
+          apiPrivate,
+          reemplazoId,
+          fechaTermino
+        )
         // Refresh current page after finalization
         await this.fetchActiveReplacementsPaginated({ page: this.currentPage })
         return data
@@ -464,6 +474,16 @@ export const useReplacementStore = defineStore('replacement', {
       this.filtroRutEntrante = ''
       this.fechaInicio = ''
       this.fechaFin = ''
+    },
+
+    clearState() {
+      this.currentPageReplacements = []
+      this.currentPage = 1
+      this.totalPages = 1
+      this.totalItems = 0
+      this.cargando = false
+      this.error = null
+      this.limpiarFiltros()
     }
   }
 })

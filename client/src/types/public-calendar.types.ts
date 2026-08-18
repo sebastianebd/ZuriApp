@@ -18,6 +18,6 @@ export interface PublicDayEntry {
 }
 
 export interface PublicShiftsResponse {
-  user: PublicUser
+  IStaff: PublicUser
   timeline: PublicDayEntry[]
 }

@@ -100,13 +100,13 @@
                 <td>
                   <div class="d-flex align-items-center py-2 h-100">
                     <!-- Saliente -->
-                    <div class="user-node position-relative">
+                    <div class="IStaff-node position-relative">
                       <div class="avatar-modern bg-gradient-danger text-white shadow-sm">
                         {{
                           getInitials(reemplazo.nombre_saliente + ' ' + reemplazo.apellido_saliente)
                         }}
                       </div>
-                      <div class="user-info ms-3">
+                      <div class="IStaff-info ms-3">
                         <div class="fw-bold text-dark text-truncate">
                           {{
                             formatShortName(reemplazo.nombre_saliente, reemplazo.apellido_saliente)
@@ -124,13 +124,13 @@
                     </div>
 
                     <!-- Entrante -->
-                    <div class="user-node">
+                    <div class="IStaff-node">
                       <div class="avatar-modern bg-gradient-success text-white shadow-sm">
                         {{
                           getInitials(reemplazo.nombre_entrante + ' ' + reemplazo.apellido_entrante)
                         }}
                       </div>
-                      <div class="user-info ms-3">
+                      <div class="IStaff-info ms-3">
                         <div class="fw-bold text-dark text-truncate">
                           {{
                             formatShortName(reemplazo.nombre_entrante, reemplazo.apellido_entrante)
@@ -405,7 +405,7 @@ async function copyCode(code: string) {
   color: #334155;
 }
 
-.user-node {
+.IStaff-node {
   display: flex;
   align-items: center;
   width: 180px; /* Fixed width for alignment */
@@ -433,7 +433,7 @@ async function copyCode(code: string) {
   color: white;
 }
 
-.user-info {
+.IStaff-info {
   line-height: 1.2;
 }
 

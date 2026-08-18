@@ -1,13 +1,12 @@
-import mongoose, { Schema, Document, Model, PaginateModel } from "mongoose";
-import mongoosePaginate from "mongoose-paginate-v2";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IAuditLog extends Document {
   action: string;
   module: string;
   description: string;
   details: any;
-  user_id?: mongoose.Types.ObjectId;
-  user_name?: string;
+  accountId?: mongoose.Types.ObjectId;
+  accountName?: string;
   resource_id?: string;
   created_at: Date;
   updated_at: Date;
@@ -33,12 +32,12 @@ const auditLogSchema: Schema = new Schema(
       type: Schema.Types.Mixed,
       default: null,
     },
-    user_id: {
+    accountId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Account",
       required: false,
     },
-    user_name: {
+    accountName: {
       type: String,
       required: false,
     },
@@ -54,11 +53,4 @@ const auditLogSchema: Schema = new Schema(
   }
 );
 
-auditLogSchema.plugin(mongoosePaginate);
-
-interface AuditLogModel extends PaginateModel<IAuditLog> {}
-
-export default mongoose.model<IAuditLog, AuditLogModel>(
-  "AuditLog",
-  auditLogSchema
-);
+export default mongoose.model<IAuditLog>("AuditLog", auditLogSchema);

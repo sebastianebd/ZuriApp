@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import * as ReportService from "../services/report.service";
-import Period from "../models/period.model";
-import ReportSnapshot from "../models/report-snapshot.model";
+import * as ExcelReportService from "../services/excel-report.service";
 import { getSignedDownloadUrl } from "../config/s3.client";
 
 /**
@@ -21,55 +20,18 @@ export const getMonthlySummary = async (
     if (!month || !year || !userId) {
       return res
         .status(400)
-        .json({ error: "Missing required parameters: month, year, userId" });
+        .json({ message: "Missing required parameters: month, year, userId" });
     }
 
     const reqMonth = Number(month);
     const reqYear = Number(year);
     const userIdStr = String(userId);
 
-    // Consulta el estado del período
-    const period = await Period.findOne({ month: reqMonth, year: reqYear });
-    const isPeriodClosed = period?.status === "CLOSED";
-
-    if (isPeriodClosed) {
-      // Período cerrado → Lazy Evaluation desde Snapshot inmutable
-      const existing = await ReportSnapshot.findOne({
-        user_id: new mongoose.Types.ObjectId(userIdStr),
-        period_id: period!._id,
-      });
-
-      if (existing) {
-        // Cache hit: devuelve el snapshot inmutable
-        return res.json({ ...existing.snapshot_data, _fromSnapshot: true });
-      }
-
-      // Cache miss: calcula, guarda y devuelve
-      const data = await ReportService.getMonthlyReport({
-        month: reqMonth,
-        year: reqYear,
-        userId: userIdStr,
-      });
-
-      await ReportSnapshot.create({
-        user_id: new mongoose.Types.ObjectId(userIdStr),
-        period_id: period!._id,
-        snapshot_data: data as Record<string, unknown>,
-        generated_at: new Date(),
-      });
-
-      return res.json({ ...data, _fromSnapshot: false });
-    }
-
-    // Período abierto: cálculo dinámico en tiempo real
-    const data = await ReportService.getMonthlyReport({
-      month: reqMonth,
-      year: reqYear,
-      userId: userIdStr,
-    });
+    const data = await ReportService.getMonthlySummaryWithSnapshot(reqMonth, reqYear, userIdStr);
     res.json(data);
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({ message: error.message || "Error al obtener reporte", error });
   }
 };
 
@@ -88,16 +50,16 @@ export const exportExcelByService = async (
     if (!month || !year || !serviceId) {
       return res
         .status(400)
-        .json({ error: "Missing required parameters: month, year, serviceId" });
+        .json({ message: "Missing required parameters: month, year, serviceId" });
     }
 
     const reqMonth = Number(month);
     const reqYear = Number(year);
 
-    const period = await Period.findOne({ month: reqMonth, year: reqYear });
+    const period = await ReportService.getPeriod(reqMonth, reqYear);
 
     // Si el período está cerrado, usa Snapshots; si está abierto, calcula al vuelo
-    const workbook = await ReportService.generateServiceExcelReport({
+    const workbook = await ExcelReportService.generateServiceExcelReport({
       month: reqMonth,
       year: reqYear,
       serviceId: String(serviceId),
@@ -115,8 +77,9 @@ export const exportExcelByService = async (
 
     await workbook.xlsx.write(res);
     res.end();
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({ message: error.message || "Error al exportar reporte", error });
   }
 };
 
@@ -135,16 +98,16 @@ export const exportIndividualExcel = async (
     if (!month || !year || !userId) {
       return res
         .status(400)
-        .json({ error: "Missing required parameters: month, year, userId" });
+        .json({ message: "Missing required parameters: month, year, userId" });
     }
 
     const reqMonth = Number(month);
     const reqYear = Number(year);
     const userIdStr = String(userId);
 
-    const period = await Period.findOne({ month: reqMonth, year: reqYear });
+    const period = await ReportService.getPeriod(reqMonth, reqYear);
 
-    const workbook = await ReportService.generateIndividualExcelReport(
+    const workbook = await ExcelReportService.generateIndividualExcelReport(
       reqMonth,
       reqYear,
       userIdStr,
@@ -162,8 +125,9 @@ export const exportIndividualExcel = async (
 
     await workbook.xlsx.write(res);
     res.end();
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({ message: error.message || "Error al exportar cartola", error });
   }
 };
 
@@ -182,17 +146,14 @@ export const getServicePDFUrl = async (
     if (!month || !year || !serviceId) {
       return res
         .status(400)
-        .json({ error: "Missing required parameters: month, year, serviceId" });
+        .json({ message: "Missing required parameters: month, year, serviceId" });
     }
 
-    const period = await Period.findOne({
-      month: Number(month),
-      year: Number(year),
-    });
+    const period = await ReportService.getPeriod(Number(month), Number(year));
 
     if (!period || period.status !== "CLOSED") {
       return res.status(400).json({
-        error: "El PDF oficial solo está disponible para períodos cerrados.",
+        message: "El PDF oficial solo está disponible para períodos cerrados.",
       });
     }
 
@@ -200,13 +161,14 @@ export const getServicePDFUrl = async (
     const s3Key = (period as any).pdfUrls?.get?.(String(serviceId));
     if (!s3Key) {
       return res.status(404).json({
-        error: "PDF no encontrado para este servicio.",
+        message: "PDF no encontrado para este servicio.",
       });
     }
 
     const signedUrl = await getSignedDownloadUrl(s3Key, 300);
     res.json({ signedUrl });
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    const statusCode = error.statusCode || error.status || 500;
+    res.status(statusCode).json({ message: error.message || "Error al obtener pdf", error });
   }
 };

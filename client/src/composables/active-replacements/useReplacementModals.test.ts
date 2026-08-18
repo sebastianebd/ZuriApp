@@ -12,10 +12,10 @@ describe('useReplacementModals', () => {
 
   it('opens and closes create modal correctly', () => {
     const modals = useReplacementModals()
-    modals.openCreateModal('user-1')
+    modals.openCreateModal('IStaff-1')
 
     expect(modals.createModalVisible.value).toBe(true)
-    expect(modals.registroNuevo.value.creado_por).toBe('user-1')
+    expect(modals.registroNuevo.value.creado_por).toBe('IStaff-1')
 
     modals.closeCreateModal()
     expect(modals.createModalVisible.value).toBe(false)
@@ -85,7 +85,7 @@ describe('useReplacementModals', () => {
     const payload = modals.createSustitucionPayload()
 
     expect(payload.id_registro_a).toBe('reg-1')
-    expect(payload.fecha_corte_a).toBe('2023-06-01')
+    expect(payload.fecha_corte_a).toBe('2023-06-01T00:00:00.000Z')
     expect(payload.nuevo_entrante).toEqual({ id_entrante: 'ent-1' })
     expect(payload.datos_base_evento.id_evento_principal).toBe('neg-1')
   })

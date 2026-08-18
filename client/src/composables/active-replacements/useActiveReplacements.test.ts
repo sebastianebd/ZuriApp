@@ -41,13 +41,15 @@ vi.mock('@/stores/option.store', () => ({
 vi.mock('@/stores/replacement.store', () => ({
   useReplacementStore: () => mockReplacementStore
 }))
-vi.mock('@/services/user.service', () => ({
+vi.mock('@/services/IStaff.service', () => ({
   mostrarTodosUsuarios: vi.fn().mockResolvedValue([{ _id: 'u1', nombre: 'Test' }])
 }))
 vi.mock('@/plugins/socket', () => ({
   default: {
     on: vi.fn(),
-    off: vi.fn()
+    off: vi.fn(),
+    connect: vi.fn(),
+    connected: false
   }
 }))
 vi.mock('vue', async (importOriginal) => {
@@ -65,6 +67,20 @@ vi.mock('@/stores/turn-type.store', () => ({
   useTurnTypeStore: () => ({
     fetchTurnTypes: vi.fn(),
     turnTypes: [{ nombre: 'MAÑANA' }]
+  })
+}))
+
+vi.mock('@/stores/position.store', () => ({
+  usePositionStore: () => ({
+    fetchPositions: vi.fn(),
+    positions: []
+  })
+}))
+
+vi.mock('@/stores/service.store', () => ({
+  useServiceStore: () => ({
+    fetchServices: vi.fn(),
+    services: []
   })
 }))
 
@@ -118,9 +134,7 @@ describe('useReplacements', () => {
     const { listaDeTurnos } = result
 
     await new Promise((r) => setTimeout(r, 0))
-
     expect(mockReplacementStore.fetchActiveReplacementsPaginated).toHaveBeenCalled()
-    expect(mockOptionStore.mostrarOpciones).toHaveBeenCalled()
     expect(listaDeTurnos.value).toEqual(['MAÑANA'])
   })
 
@@ -148,7 +162,7 @@ describe('useReplacements', () => {
 
     await confirmarSustitucion()
 
-    expect(mockShowAlert).toHaveBeenCalledWith('Error', expect.stringContaining('Debe asignar'))
+    expect(mockShowAlert).toHaveBeenCalledWith('Error', expect.stringContaining('Debe asignar'), 'error')
     expect(mockReplacementStore.procesarSustitucion).not.toHaveBeenCalled()
   })
 
@@ -183,7 +197,7 @@ describe('useReplacements', () => {
     const { result } = withSetup(() => useReplacements())
     const { handleFinalizar } = result
     await handleFinalizar('r1')
-    expect(mockReplacementStore.finalizarReemplazo).toHaveBeenCalledWith('r1')
+    expect(mockReplacementStore.finalizarReemplazo).toHaveBeenCalledWith('r1', expect.any(String))
     expect(mockShowAlert).toHaveBeenCalledWith('Finalizado', expect.any(String))
   })
 

@@ -108,12 +108,12 @@
               @search="onSearch"
               :get-option-label="getUserLabel"
               placeholder="Buscar Funcionario (Nombre o RUT)..."
-              class="user-search premium-select mb-4"
+              class="IStaff-search premium-select mb-4"
             >
-              <template #option="{ nombre, apellido, rut, tipo_cargo }">
-                <div class="user-option">
-                  <strong>{{ nombre }} {{ apellido }}</strong>
-                  <small>{{ rut }} - {{ tipo_cargo }}</small>
+              <template #option="{ firstName, lastName, rut, positionId }">
+                <div class="IStaff-option">
+                  <strong>{{ firstName }} {{ lastName }}</strong>
+                  <small>{{ rut }} - {{ positionId?.name || 'Sin Cargo' }}</small>
                 </div>
               </template>
             </v-select>
@@ -163,12 +163,7 @@
       </div>
     </div>
 
-    <!-- Error/Warning Alert (Envuelto para evitar Cumulative Layout Shift) -->
-    <div class="position-relative w-50 hide-print mt-4" style="height: 0">
-      <div v-if="reportStore.error" class="alert-box warning position-absolute w-90 m-0">
-        ⚠️ {{ reportStore.error }}
-      </div>
-    </div>
+    <!-- Error/Warning Alert removed in favor of SweetAlert2 -->
 
     <ReportPrintTemplate
       :report-data="reportStore.reportData"
@@ -365,7 +360,7 @@ const {
   border-color: #94a3b8;
 }
 
-.user-search {
+.IStaff-search {
   flex: 1;
   min-width: 300px;
 }
@@ -523,7 +518,7 @@ const {
   .btn-print,
   .btn-generate,
   .premium-select,
-  .user-search,
+  .IStaff-search,
   .date-filters {
     display: none !important;
   }

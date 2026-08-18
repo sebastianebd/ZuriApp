@@ -15,11 +15,7 @@ export const useTurnAssignmentStore = defineStore('turnAssignment', () => {
   const error = ref<string | null>(null)
 
   const authStore = useAuthStore()
-  const apiPrivate = useApiPrivate(
-    () => authStore.accessToken,
-    authStore.refreshToken,
-    authStore.logout
-  )
+  const apiPrivate = useApiPrivate()
 
   const loadAssignments = async () => {
     loading.value = true
@@ -65,7 +61,7 @@ export const useTurnAssignmentStore = defineStore('turnAssignment', () => {
     try {
       return await fetchAssignments(apiPrivate, { user_id: userId })
     } catch (err: any) {
-      console.error('Error fetching user assignments', err)
+      console.error('Error fetching IStaff assignments', err)
       return []
     }
   }

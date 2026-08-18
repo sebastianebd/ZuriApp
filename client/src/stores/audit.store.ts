@@ -36,8 +36,8 @@ export const useAuditStore = defineStore('audit', () => {
     return filterOptions.value
   }
 
-  async function fetchLogs(page = 1, limit = 14, filters: any = {}) {
-    loading.value = true
+  async function fetchLogs(page = 1, limit = 14, filters: any = {}, isBackgroundUpdate = false) {
+    if (!isBackgroundUpdate) loading.value = true
     error.value = null
     try {
       // Actualizar estado de filtros
@@ -54,7 +54,7 @@ export const useAuditStore = defineStore('audit', () => {
       console.error('Error fetching audit logs:', err)
       error.value = err.response?.data?.mensaje || 'Error al cargar historial de auditoría'
     } finally {
-      loading.value = false
+      if (!isBackgroundUpdate) loading.value = false
     }
   }
 

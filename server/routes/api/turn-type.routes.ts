@@ -15,11 +15,11 @@ const router = Router();
 // Configuración estructural de los turnos (Horarios, reglas).
 router.use(authMiddleware);
 
-router.get("/", getTurnTypes);
+router.get("/", requirePermission("turn-type.view"), getTurnTypes);
 
 // Modificaciones restringidas a administradores de turnos
-router.post("/", requirePermission("gestionar.turnos"), createTurnType);
-router.put("/:id", requirePermission("gestionar.turnos"), updateTurnType);
-router.delete("/:id", requirePermission("gestionar.turnos"), deleteTurnType);
+router.post("/", requirePermission("turn-type.create"), createTurnType);
+router.put("/:id", requirePermission("turn-type.update"), updateTurnType);
+router.delete("/:id", requirePermission("turn-type.delete"), deleteTurnType);
 
 export default router;

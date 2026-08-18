@@ -79,8 +79,14 @@ export function useLogin() {
       const status = err.status || (err.response && err.response.status)
       if (status === 409) {
         accountInUseError.value = 'Cuenta conectada'
+      } else if (err.errors && Array.isArray(err.errors)) {
+        err.errors.forEach((validationError: any) => {
+          if (validationError.path.includes('rut')) rutError.value = validationError.message
+          if (validationError.path.includes('password')) passwordError.value = validationError.message
+        })
+        loginError.value = err.message || 'Error de validación'
       } else {
-        loginError.value = 'Rut o Contraseña incorrectos'
+        loginError.value = err.message || 'Rut o Contraseña incorrectos'
       }
     } finally {
       isSubmitting.value = false

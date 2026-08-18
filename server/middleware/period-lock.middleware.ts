@@ -8,8 +8,7 @@ import { AuthRequest } from "./authentication.middleware";
  *
  * Reglas:
  * - Si el período está OPEN → permitido siempre.
- * - Si el período está CLOSED y el userId está en unlockedUsers → permitido (excepción activa).
- * - Si el período está CLOSED y el userId NO está en unlockedUsers → 403.
+ * - Si el período está CLOSED → 403.
  * - Si no existe el documento de período → se considera OPEN (comportamiento por defecto).
  *
  * @returns true si se debe continuar, false si ya respondió con 403.
@@ -19,22 +18,14 @@ export async function checkPeriodLock(
   res: Response,
   month: number,
   year: number,
-  userId: string,
+  staffId: string,
 ): Promise<boolean> {
   const period = await Period.findOne({ month, year });
   if (!period || period.status === "OPEN") return true;
 
-  const isUnlocked = period.unlockedUsers.some((id) =>
-    id.equals(new mongoose.Types.ObjectId(userId)),
-  );
-
-  if (!isUnlocked) {
-    res.status(403).json({
-      message: `El período ${month}/${year} está cerrado. Solicite una excepción al administrador.`,
-      code: "PERIOD_LOCKED",
-    });
-    return false;
-  }
-
-  return true;
+  res.status(403).json({
+    message: `El período ${month}/${year} está cerrado. Solicite una excepción al administrador.`,
+    code: "PERIOD_LOCKED",
+  });
+  return false;
 }

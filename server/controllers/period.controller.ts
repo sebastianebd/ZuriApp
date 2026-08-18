@@ -1,9 +1,6 @@
 import { Response } from "express";
-import mongoose from "mongoose";
-import Period from "../models/period.model";
-import ReportSnapshot from "../models/report-snapshot.model";
-import auditService from "../services/audit.service";
 import { AuthRequest } from "../middleware/authentication.middleware";
+import periodService from "../services/period.service";
 
 /**
  * GET /periods?month=&year=
@@ -14,14 +11,11 @@ export const getPeriod = async (req: AuthRequest, res: Response) => {
   try {
     const month = Number(req.query.month) || new Date().getMonth() + 1;
     const year = Number(req.query.year) || new Date().getFullYear();
-
-    const period = await Period.findOne({ month, year });
-    // Si no existe el documento, el período es OPEN por defecto
-    res.json(
-      period ?? { month, year, status: "OPEN", unlockedUsers: [] },
-    );
-  } catch (error) {
-    res.status(500).json({ message: "Error al obtener período", error });
+    const period = await periodService.getPeriod(month, year);
+    res.json(period);
+  } catch (error: any) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message || "Error al obtener período", error });
   }
 };
 
@@ -32,35 +26,11 @@ export const getPeriod = async (req: AuthRequest, res: Response) => {
 export const closePeriod = async (req: AuthRequest, res: Response) => {
   try {
     const { month, year } = req.body;
-    if (!month || !year) {
-      return res.status(400).json({ message: "Se requieren month y year" });
-    }
-
-    const period = await Period.findOneAndUpdate(
-      { month, year },
-      {
-        $set: {
-          status: "CLOSED",
-          closedAt: new Date(),
-          closedBy: req.user?._id,
-        },
-        $setOnInsert: { unlockedUsers: [] },
-      },
-      { upsert: true, new: true },
-    );
-
-    await auditService.logAction(
-      "CIERRE_MES",
-      "Períodos",
-      req.user,
-      `Período ${month}/${year} cerrado`,
-      { period_id: period._id },
-      period._id.toString(),
-    );
-
+    const period = await periodService.closePeriod(month, year, req.account);
     res.json(period);
-  } catch (error) {
-    res.status(500).json({ message: "Error al cerrar período", error });
+  } catch (error: any) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message || "Error al cerrar período", error });
   }
 };
 
@@ -73,39 +43,11 @@ export const closePeriod = async (req: AuthRequest, res: Response) => {
 export const addException = async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.body;
-    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "userId inválido" });
-    }
-
-    const period = await Period.findByIdAndUpdate(
-      req.params.id,
-      { $addToSet: { unlockedUsers: new mongoose.Types.ObjectId(userId) } },
-      { new: true },
-    );
-
-    if (!period) return res.status(404).json({ message: "Período no encontrado" });
-    if (period.status !== "CLOSED") {
-      return res.status(400).json({ message: "Solo se pueden agregar excepciones en períodos cerrados" });
-    }
-
-    // Invalidar snapshot previo del usuario para forzar recálculo
-    await ReportSnapshot.deleteOne({
-      user_id: new mongoose.Types.ObjectId(userId),
-      period_id: period._id,
-    });
-
-    await auditService.logAction(
-      "EXCEPCION_CREADA",
-      "Períodos",
-      req.user,
-      `Excepción de escritura otorgada al usuario ${userId} en período ${period.month}/${period.year}`,
-      { period_id: period._id, user_id: userId },
-      period._id.toString(),
-    );
-
+    const period = await periodService.addException(req.params.id, userId, req.account);
     res.json(period);
-  } catch (error) {
-    res.status(500).json({ message: "Error al agregar excepción", error });
+  } catch (error: any) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message || "Error al agregar excepción", error });
   }
 };
 
@@ -117,29 +59,11 @@ export const addException = async (req: AuthRequest, res: Response) => {
 export const removeException = async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "userId inválido" });
-    }
-
-    const period = await Period.findByIdAndUpdate(
-      req.params.id,
-      { $pull: { unlockedUsers: new mongoose.Types.ObjectId(userId) } },
-      { new: true },
-    );
-
-    if (!period) return res.status(404).json({ message: "Período no encontrado" });
-
-    await auditService.logAction(
-      "EXCEPCION_REVOCADA",
-      "Períodos",
-      req.user,
-      `Excepción revocada para usuario ${userId} en período ${period.month}/${period.year}`,
-      { period_id: period._id, user_id: userId },
-      period._id.toString(),
-    );
-
+    const period = await periodService.removeException(req.params.id, userId, req.account);
     res.json(period);
-  } catch (error) {
-    res.status(500).json({ message: "Error al revocar excepción", error });
+  } catch (error: any) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message || "Error al revocar excepción", error });
   }
 };
+

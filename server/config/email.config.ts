@@ -1,18 +1,20 @@
+import env from "./env.config";
+
 // Configuración de Email (Resend)
 // Centraliza las credenciales y el remitente por defecto para garantizar consistencia
 // en todas las comunicaciones transaccionales.
 export const emailConfig = {
-  resendApiKey: process.env.RESEND_API_KEY,
+  resendApiKey: env.RESEND_API_KEY,
   // Remitente por Defecto
   // En desarrollo, usamos el dominio de pruebas de Resend ('onboarding@resend.dev').
   // En producción, esto DEBE ser reemplazado por un dominio verificado (ej: 'soporte@zuriapp.cl').
-  from: process.env.SMTP_FROM || '"Soporte ZuriApp" <onboarding@resend.dev>',
+  from: env.SMTP_FROM,
 };
 
 // Verificación de Sanidad (Health Check) al inicio
-// Advierte inmediatamente si falta la configuración crítica de correo,
-// evitando fallos silenciosos en tiempo de ejecución cuando se intente enviar un email.
-if (!process.env.RESEND_API_KEY) {
+// Advierte inmediatamente si falta la configuración crítica de correo en desarrollo.
+// En producción, env.config lanza un error crítico.
+if (!env.RESEND_API_KEY && env.NODE_ENV !== "production") {
   console.warn(
     "⚠️  ADVERTENCIA DE EMAIL: No se ha detectado 'RESEND_API_KEY' en las variables de entorno.",
   );
