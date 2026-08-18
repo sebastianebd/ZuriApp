@@ -77,10 +77,9 @@ test.describe('User Management', () => {
       .getByRole('combobox')
     await selectCargo.click({ force: true })
     await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
-    await page.waitForSelector('.vs__dropdown-option')
-    await selectCargo.press('ArrowDown')
-    await page.waitForSelector('.vs__dropdown-option--highlight')
-    await selectCargo.press('Enter')
+    const cargoOption = activeModal.locator('.vs__dropdown-option').first()
+    await cargoOption.waitFor({ state: 'visible' })
+    await cargoOption.click()
 
     const selectRole = activeModal
       .getByText('Rol (Perfil de Acceso)')
@@ -88,10 +87,9 @@ test.describe('User Management', () => {
       .getByRole('combobox')
     await selectRole.click({ force: true })
     await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
-    await page.waitForSelector('.vs__dropdown-option')
-    await selectRole.press('ArrowDown')
-    await page.waitForSelector('.vs__dropdown-option--highlight')
-    await selectRole.press('Enter')
+    const roleOption = activeModal.locator('.vs__dropdown-option').first()
+    await roleOption.waitFor({ state: 'visible' })
+    await roleOption.click()
 
     const selectContrato = activeModal
       .getByText(/^Tipo Contrato$/)
@@ -99,14 +97,12 @@ test.describe('User Management', () => {
       .getByRole('combobox')
     await selectContrato.click({ force: true })
     await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
-    await page.waitForSelector('.vs__dropdown-option')
-    await selectContrato.press('ArrowDown')
-    await page.waitForSelector('.vs__dropdown-option--highlight')
-    await selectContrato.press('Enter')
+    const contratoOption = activeModal.locator('.vs__dropdown-option').first()
+    await contratoOption.waitFor({ state: 'visible' })
+    await contratoOption.click()
 
     // Habilitado is now a switch, assert its state
     await expect(activeModal.getByText('Habilitado', { exact: true })).toBeVisible()
-    await activeModal.getByPlaceholder('Ej: Sebastián').press('Enter')
     await page.waitForTimeout(500)
 
     const saveBtn = activeModal.getByRole('button', { name: /Guardar Usuario/i })
