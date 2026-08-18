@@ -79,6 +79,19 @@ async function seed() {
       console.log("✅ Permisos del Rol Admin actualizados");
     }
 
+    // 1.6 Definir Rol Usuario (Nivel 10)
+    let userRole = await Role.findOne({ level: 10 });
+    if (!userRole) {
+      userRole = await Role.create({
+        name: "Usuario Estándar",
+        code: "USER",
+        level: 10,
+        hasSystemAccess: true,
+        permissions: ["users.view"],
+      });
+      console.log("✅ Rol Usuario creado");
+    }
+
     // 2. Definir y crear Position para el Admin
     let adminPosition = await Position.findOne({ position_code: "IT" });
     if (!adminPosition) {

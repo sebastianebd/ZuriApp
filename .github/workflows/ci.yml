@@ -104,8 +104,11 @@ jobs:
           npm ci --legacy-peer-deps
 
       - name: Install Playwright Browsers
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
           cd client
+          sudo apt-get update
           npx playwright install --with-deps chromium
 
       - name: Start Backend Server
