@@ -76,33 +76,24 @@ test.describe('User Management', () => {
       .locator('..')
       .getByRole('combobox')
     await selectCargo.click({ force: true })
-
-    // Wait for dropdown menu to open
-    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
-
-    const optionCargo = page.locator('.vs__dropdown-menu .vs__dropdown-option').first()
-    await optionCargo.waitFor({ state: 'visible' })
-    await optionCargo.click()
+    await selectCargo.press('ArrowDown')
+    await selectCargo.press('Enter')
 
     const selectRole = activeModal
       .getByText('Rol (Perfil de Acceso)')
       .locator('..')
       .getByRole('combobox')
     await selectRole.click({ force: true })
-
-    await page.waitForSelector('.vs__dropdown-menu', { state: 'visible', timeout: 5000 })
-
-    // Click the first option directly from the open dropdown menu
-    await page.locator('.vs__dropdown-menu .vs__dropdown-option').first().click()
+    await selectRole.press('ArrowDown')
+    await selectRole.press('Enter')
 
     const selectContrato = activeModal
       .getByText(/^Tipo Contrato$/)
       .locator('..')
       .getByRole('combobox')
-    await selectContrato.click()
-    const optionPlanta = page.locator('.vs__dropdown-option').filter({ hasText: /^PLANTA$/ })
-    await optionPlanta.waitFor({ state: 'visible' })
-    await optionPlanta.click()
+    await selectContrato.click({ force: true })
+    await selectContrato.press('ArrowDown')
+    await selectContrato.press('Enter')
 
     // Habilitado is now a switch, assert its state
     await expect(activeModal.getByText('Habilitado', { exact: true })).toBeVisible()
