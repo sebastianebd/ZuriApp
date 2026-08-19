@@ -11,7 +11,13 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
     const { fecha_inicio, id_entrante } = req.body;
     if (fecha_inicio && id_entrante) {
       const d = new Date(fecha_inicio);
-      const allowed = await checkPeriodLock(req, res, d.getMonth() + 1, d.getFullYear(), String(id_entrante));
+      const allowed = await checkPeriodLock(
+        req,
+        res,
+        d.getMonth() + 1,
+        d.getFullYear(),
+        String(id_entrante),
+      );
       if (!allowed) return;
     }
 
@@ -52,7 +58,12 @@ async function registerReemplazo(req: AuthRequest, res: Response) {
     res.sendStatus(201);
   } catch (error: any) {
     const statusCode = error.statusCode || error.status || 400;
-    res.status(statusCode).json({ message: error.message || "Error al registrar reemplazo", error });
+    res
+      .status(statusCode)
+      .json({
+        message: error.message || "Error al registrar reemplazo",
+        error,
+      });
   }
 }
 
@@ -69,12 +80,16 @@ async function mostrarReemplazos(req: Request, res: Response) {
     const servicio = (req.query.servicio as string) || "";
     const fechaInicio = req.query.fechaInicio as string;
     const fechaFin = req.query.fechaFin as string;
+    const rutSaliente = req.query.rutSaliente as string;
+    const rutEntrante = req.query.rutEntrante as string;
 
     const result = await replacementService.obtenerActivosPaginado({
       search,
       servicio,
       fechaInicio,
       fechaFin,
+      rutSaliente,
+      rutEntrante,
       page,
       limit,
     });
@@ -82,7 +97,9 @@ async function mostrarReemplazos(req: Request, res: Response) {
     res.json(result);
   } catch (error: any) {
     const statusCode = error.statusCode || error.status || 500;
-    res.status(statusCode).json({ message: error.message || "Error al mostrar reemplazos", error });
+    res
+      .status(statusCode)
+      .json({ message: error.message || "Error al mostrar reemplazos", error });
   }
 }
 
@@ -92,7 +109,9 @@ async function mostrarHistorial(req: Request, res: Response) {
     res.json(data);
   } catch (error: any) {
     const statusCode = error.statusCode || error.status || 500;
-    res.status(statusCode).json({ message: error.message || "Error al mostrar historial", error });
+    res
+      .status(statusCode)
+      .json({ message: error.message || "Error al mostrar historial", error });
   }
 }
 
@@ -123,7 +142,12 @@ async function actualizarReemplazo(req: AuthRequest, res: Response) {
     res.json(data);
   } catch (error: any) {
     const statusCode = error.statusCode || error.status || 400;
-    res.status(statusCode).json({ message: error.message || "Error al actualizar reemplazo", error });
+    res
+      .status(statusCode)
+      .json({
+        message: error.message || "Error al actualizar reemplazo",
+        error,
+      });
   }
 }
 
@@ -131,7 +155,10 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
   try {
     const original: any = await replacementService.obtenerPorId(req.params.id);
     const fechaTermino = req.body.fecha_termino;
-    const data = await replacementService.finalizarReemplazo(req.params.id, fechaTermino);
+    const data = await replacementService.finalizarReemplazo(
+      req.params.id,
+      fechaTermino,
+    );
 
     const nombreReemplazo = original
       ? `${original.id_negocio} para ${original.nombre_saliente} ${original.apellido_saliente}`
@@ -148,7 +175,12 @@ async function finalizarReemplazo(req: AuthRequest, res: Response) {
     res.json(data);
   } catch (error: any) {
     const statusCode = error.statusCode || error.status || 400;
-    res.status(statusCode).json({ message: error.message || "Error al finalizar reemplazo", error });
+    res
+      .status(statusCode)
+      .json({
+        message: error.message || "Error al finalizar reemplazo",
+        error,
+      });
   }
 }
 
@@ -172,19 +204,21 @@ async function anularReemplazo(req: AuthRequest, res: Response) {
     res.json(data);
   } catch (error: any) {
     const statusCode = error.statusCode || error.status || 400;
-    res.status(statusCode).json({ message: error.message || "Error al anular reemplazo", error });
+    res
+      .status(statusCode)
+      .json({ message: error.message || "Error al anular reemplazo", error });
   }
 }
 
 async function obtenerHistorialStaff(req: Request, res: Response) {
   try {
-    const data = await replacementService.obtenerHistorialStaff(
-      req.params.id,
-    );
+    const data = await replacementService.obtenerHistorialStaff(req.params.id);
     res.json(data);
   } catch (error: any) {
     const statusCode = error.statusCode || error.status || 400;
-    res.status(statusCode).json({ message: error.message || "Error al obtener historial", error });
+    res
+      .status(statusCode)
+      .json({ message: error.message || "Error al obtener historial", error });
   }
 }
 
@@ -214,7 +248,12 @@ async function procesarSustitucion(req: AuthRequest, res: Response) {
     });
   } catch (error: any) {
     const statusCode = error.statusCode || error.status || 400;
-    res.status(statusCode).json({ message: error.message || "Error al procesar sustitución", error });
+    res
+      .status(statusCode)
+      .json({
+        message: error.message || "Error al procesar sustitución",
+        error,
+      });
   }
 }
 
@@ -235,7 +274,8 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
   } catch (error: any) {
     const statusCode = error.statusCode || error.status || 500;
     res.status(statusCode).json({
-      message: error.message || "Error al cargar el historial paginado.", error
+      message: error.message || "Error al cargar el historial paginado.",
+      error,
     });
   }
 }

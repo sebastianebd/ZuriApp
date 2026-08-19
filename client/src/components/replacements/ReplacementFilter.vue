@@ -8,7 +8,8 @@
         >
         <input
           type="text"
-          v-model="store.filtroRutSaliente"
+          :value="localRutSaliente"
+          @input="handleRutSaliente"
           placeholder="Ingrese Rut"
           class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           id="filtroRutSaliente"
@@ -22,7 +23,8 @@
         >
         <input
           type="text"
-          v-model="store.filtroRutEntrante"
+          :value="localRutEntrante"
+          @input="handleRutEntrante"
           placeholder="Ingrese Rut"
           class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           id="filtroRutEntrante"
@@ -88,7 +90,7 @@
         >
           <!-- Personalizamos la opción seleccionada -->
           <template #selected-option="{ nombre }">
-            <span class="text-secondary small">{{ nombre }}</span>
+            <span :class="{ 'mock-placeholder': nombre === 'Todos' }">{{ nombre }}</span>
           </template>
         </v-select>
       </div>
@@ -100,6 +102,8 @@
 import { useReplacementStore } from '@/stores/replacement.store'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/dist/style.css'
+import { formatRut, cleanRutForStorage } from '@/utils/rut.util'
+import { ref } from 'vue'
 
 // 💡 Props: El componente de filtros recibe las opciones para el select
 defineProps({
@@ -124,6 +128,37 @@ const popoverConfig = {
       }
     }
   ]
+}
+
+const localRutSaliente = ref(store.filtroRutSaliente)
+const localRutEntrante = ref(store.filtroRutEntrante)
+
+const handleRutSaliente = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const rawValue = target.value.replace(/[^0-9kK]/gi, '')
+  if (rawValue.length > 9) {
+    target.value = formatRut(rawValue.slice(0, 9))
+    localRutSaliente.value = target.value
+    store.filtroRutSaliente = rawValue.slice(0, 9)
+    return
+  }
+  localRutSaliente.value = formatRut(rawValue)
+  target.value = localRutSaliente.value
+  store.filtroRutSaliente = rawValue
+}
+
+const handleRutEntrante = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const rawValue = target.value.replace(/[^0-9kK]/gi, '')
+  if (rawValue.length > 9) {
+    target.value = formatRut(rawValue.slice(0, 9))
+    localRutEntrante.value = target.value
+    store.filtroRutEntrante = rawValue.slice(0, 9)
+    return
+  }
+  localRutEntrante.value = formatRut(rawValue)
+  target.value = localRutEntrante.value
+  store.filtroRutEntrante = rawValue
 }
 </script>
 
@@ -183,5 +218,25 @@ const popoverConfig = {
 .custom-v-select :deep(.vs__dropdown-option--highlight) {
   background: #3b82f6;
   color: white;
+}
+
+input::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+  font-size: 0.8125rem !important;
+  font-style: italic !important;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
+.mock-placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+  font-style: italic !important;
 }
 </style>

@@ -48,7 +48,9 @@ async function registrar(data: Partial<IReplacement>) {
   */
   const { default: TurnTypeModel } = await import("../models/turn-type.model");
   const turnTypeDoc = await TurnTypeModel.findOne({
-    nombre: { $regex: new RegExp(`^${escapeRegex(data.tipo_turno || "")}$`, "i") },
+    nombre: {
+      $regex: new RegExp(`^${escapeRegex(data.tipo_turno || "")}$`, "i"),
+    },
     deleted_at: null,
   });
 
@@ -87,10 +89,12 @@ async function obtenerActivosPaginado(options: {
   servicio?: string;
   fechaInicio?: string;
   fechaFin?: string;
+  rutSaliente?: string;
+  rutEntrante?: string;
   page: number;
   limit: number;
 }) {
-  const { search, servicio, fechaInicio, fechaFin, page, limit } = options;
+  const { search, servicio, fechaInicio, fechaFin, rutSaliente, rutEntrante, page, limit } = options;
   const query: any = {
     status: { $in: ["EN CURSO", "PENDIENTE"] },
   };
@@ -102,16 +106,35 @@ async function obtenerActivosPaginado(options: {
   // Date filters
   if (fechaInicio || fechaFin) {
     query.$and = query.$and || [];
-    
+
     // Si hay fechaInicio, el reemplazo debe iniciar en o después de esta fecha
     if (fechaInicio) {
       query.$and.push({ fecha_inicio: { $gte: fechaInicio } });
     }
-    
+
     // Si hay fechaFin, el reemplazo debe terminar en o antes de esta fecha
     if (fechaFin) {
       query.$and.push({ fecha_termino: { $lte: fechaFin } });
     }
+  }
+
+  // Lógica segura de inyección condicional de guion (Clean Path)
+  if (rutSaliente) {
+    const rawRut = rutSaliente.replace(/[^0-9kK]/gi, '');
+    let regexStr = rawRut;
+    if (rawRut.length > 1) {
+      regexStr = rawRut.slice(0, -1) + '-?' + rawRut.slice(-1);
+    }
+    query.rut_saliente = new RegExp("^" + regexStr, "i");
+  }
+
+  if (rutEntrante) {
+    const rawRut = rutEntrante.replace(/[^0-9kK]/gi, '');
+    let regexStr = rawRut;
+    if (rawRut.length > 1) {
+      regexStr = rawRut.slice(0, -1) + '-?' + rawRut.slice(-1);
+    }
+    query.rut_entrante = new RegExp("^" + regexStr, "i");
   }
 
   // Búsqueda Optimizada:
@@ -131,7 +154,7 @@ async function obtenerActivosPaginado(options: {
     ];
   }
 
-  const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}:fi${fechaInicio || "none"}:ff${fechaFin || "none"}`;
+  const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}:fi${fechaInicio || "none"}:ff${fechaFin || "none"}:rs${rutSaliente || "none"}:re${rutEntrante || "none"}`;
   const cachedData = await get(cacheKey);
   if (cachedData) return cachedData;
 
@@ -141,7 +164,11 @@ async function obtenerActivosPaginado(options: {
   const [reemplazos, total] = await Promise.all([
     Replacement.find(query)
       .populate("creado_por", "firstName lastName")
-      .populate({ path: "id_entrante", select: "_id positionId firstName lastName rut", populate: { path: "positionId", select: "name" } })
+      .populate({
+        path: "id_entrante",
+        select: "_id positionId firstName lastName rut",
+        populate: { path: "positionId", select: "name" },
+      })
       .skip(skip)
       .limit(limit)
       .lean(),
@@ -175,29 +202,37 @@ async function obtenerInactivosPaginados(
   }
 
   if (filtros.rutSaliente) {
-    // C1 ReDoS fix: escape staff input before building RegExp
+    const rawRut = filtros.rutSaliente.replace(/[^0-9kK]/gi, '');
+    let regexStr = rawRut;
+    if (rawRut.length > 1) {
+      regexStr = rawRut.slice(0, -1) + '-?' + rawRut.slice(-1);
+    }
     query.rut_saliente = {
-      $regex: new RegExp(`^${escapeRegex(filtros.rutSaliente)}`),
+      $regex: new RegExp(`^${regexStr}`),
       $options: "i",
     };
   }
 
   if (filtros.rutEntrante) {
-    // C1 ReDoS fix: escape staff input before building RegExp
+    const rawRut = filtros.rutEntrante.replace(/[^0-9kK]/gi, '');
+    let regexStr = rawRut;
+    if (rawRut.length > 1) {
+      regexStr = rawRut.slice(0, -1) + '-?' + rawRut.slice(-1);
+    }
     query.rut_entrante = {
-      $regex: new RegExp(`^${escapeRegex(filtros.rutEntrante)}`),
+      $regex: new RegExp(`^${regexStr}`),
       $options: "i",
     };
   }
 
   if (filtros.fechaInicio || filtros.fechaFin) {
     query.$and = query.$and || [];
-    
+
     // Si hay fechaInicio, el reemplazo debe iniciar en o después de esta fecha
     if (filtros.fechaInicio) {
       query.$and.push({ fecha_inicio: { $gte: filtros.fechaInicio } });
     }
-    
+
     // Si hay fechaFin, el reemplazo debe terminar en o antes de esta fecha
     if (filtros.fechaFin) {
       query.$and.push({ fecha_termino: { $lte: filtros.fechaFin } });
@@ -239,26 +274,33 @@ async function obtenerPorId(id: string) {
 
 async function actualizar(id: string, data: Partial<IReplacement>) {
   if (data.tipo_turno) {
-    const { default: TurnTypeModel } = await import("../models/turn-type.model");
+    const { default: TurnTypeModel } =
+      await import("../models/turn-type.model");
     const turnTypeDoc = await TurnTypeModel.findOne({
       nombre: { $regex: new RegExp(`^${escapeRegex(data.tipo_turno)}$`, "i") },
       deleted_at: null,
     });
 
     if (!turnTypeDoc) {
-      const error = new Error(`El turno '${data.tipo_turno}' no existe o está inactivo.`);
+      const error = new Error(
+        `El turno '${data.tipo_turno}' no existe o está inactivo.`,
+      );
       (error as any).status = 400;
       throw error;
     }
 
     data.turn_type_id = turnTypeDoc._id as any;
-    data.snapshot_secuencia = turnTypeDoc.toObject().secuencia.map((item: any) => {
-      const { color, ...rest } = item;
-      return rest;
-    });
+    data.snapshot_secuencia = turnTypeDoc
+      .toObject()
+      .secuencia.map((item: any) => {
+        const { color, ...rest } = item;
+        return rest;
+      });
   }
 
-  const updatedReplacement = await Replacement.findByIdAndUpdate(id, data, { new: true });
+  const updatedReplacement = await Replacement.findByIdAndUpdate(id, data, {
+    new: true,
+  });
   await delPattern("replacements:*");
 
   if (updatedReplacement && updatedReplacement.id_entrante) {

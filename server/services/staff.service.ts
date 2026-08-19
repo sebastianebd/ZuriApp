@@ -1,8 +1,8 @@
-import mongoose, { FilterQuery } from 'mongoose';
-import Staff, { IStaff } from '../models/staff.model';
-import Account from '../models/account.model'; // TODO: To be removed, ensuring it doesn't break
-import Role from '../models/role.model';
-import accountService from './account.service';
+import mongoose, { FilterQuery } from "mongoose";
+import Staff, { IStaff } from "../models/staff.model";
+import Account from "../models/account.model"; // TODO: To be removed, ensuring it doesn't break
+import Role from "../models/role.model";
+import accountService from "./account.service";
 import { get, set, delPattern } from "../config/redis.config";
 import socketIO from "../config/socket";
 import { buildAccentInsensitiveRegex } from "../utils/formatters";
@@ -16,15 +16,17 @@ async function onboardStaff(payload: Partial<IStaff>, reqRoleLevel: number) {
   session.startTransaction();
 
   try {
-    if (!payload.rut) throw new Error('RUT is required');
-    if (!payload.roleId) throw new Error('Role ID is required');
+    if (!payload.rut) throw new Error("RUT is required");
+    if (!payload.roleId) throw new Error("Role ID is required");
 
     // IDOR Check
     const role = await Role.findById(payload.roleId).session(session);
-    if (!role) throw new Error('El rol especificado no existe');
-    
+    if (!role) throw new Error("El rol especificado no existe");
+
     if (reqRoleLevel <= role.level) {
-      const error: any = new Error("No tienes permisos para crear o restaurar un usuario con jerarquía igual o superior a la tuya");
+      const error: any = new Error(
+        "No tienes permisos para crear o restaurar un usuario con jerarquía igual o superior a la tuya",
+      );
       error.statusCode = 403;
       throw error;
     }
@@ -34,7 +36,7 @@ async function onboardStaff(payload: Partial<IStaff>, reqRoleLevel: number) {
 
     if (staff) {
       if (!staff.isDeleted) {
-        throw new Error('El RUT ya existe en los registros de personal activo');
+        throw new Error("El RUT ya existe en los registros de personal activo");
       }
       // Restaurar staff
       Object.assign(staff, payload);
@@ -53,7 +55,7 @@ async function onboardStaff(payload: Partial<IStaff>, reqRoleLevel: number) {
     }
 
     await session.commitTransaction();
-    
+
     await delPattern("staff:*");
     try {
       const io = socketIO.getIO();
@@ -74,39 +76,55 @@ async function onboardStaff(payload: Partial<IStaff>, reqRoleLevel: number) {
  * Si es promovido (de sin-acceso a con-acceso), crea una Cuenta.
  * Si es degradado (de con-acceso a sin-acceso), elimina permanentemente (hard-delete) la Cuenta.
  */
-async function updateStaff(staffId: string, payload: Partial<IStaff>, reqRoleLevel: number) {
+async function updateStaff(
+  staffId: string,
+  payload: Partial<IStaff>,
+  reqRoleLevel: number,
+) {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const staff = await Staff.findById(staffId).session(session).populate('roleId');
-    if (!staff) throw new Error('Staff no encontrado');
+    const staff = await Staff.findById(staffId)
+      .session(session)
+      .populate("roleId");
+    if (!staff) throw new Error("Staff no encontrado");
 
     const targetRole = staff.roleId as any;
     if (reqRoleLevel <= targetRole.level) {
-      const error: any = new Error("No tienes permisos para modificar a un usuario con jerarquía igual o superior a la tuya");
+      const error: any = new Error(
+        "No tienes permisos para modificar a un usuario con jerarquía igual o superior a la tuya",
+      );
       error.statusCode = 403;
       throw error;
     }
 
     // Verificar si el Rol está siendo cambiado
-    if (payload.roleId && payload.roleId.toString() !== staff.roleId._id.toString()) {
+    if (
+      payload.roleId &&
+      payload.roleId.toString() !== staff.roleId._id.toString()
+    ) {
       const oldRole = targetRole;
       const newRole = await Role.findById(payload.roleId).session(session);
 
-      if (!newRole) throw new Error('Rol no encontrado');
+      if (!newRole) throw new Error("Rol no encontrado");
 
       if (reqRoleLevel <= newRole.level) {
-        const error: any = new Error("No tienes permisos para asignar un rol con jerarquía igual o superior a la tuya");
+        const error: any = new Error(
+          "No tienes permisos para asignar un rol con jerarquía igual o superior a la tuya",
+        );
         error.statusCode = 403;
         throw error;
       }
 
       // Verificar Promoción
       if (!oldRole.hasSystemAccess && newRole.hasSystemAccess) {
-        await accountService.createAccountForStaff(Object.assign(staff, payload), session);
+        await accountService.createAccountForStaff(
+          Object.assign(staff, payload),
+          session,
+        );
       }
-      
+
       // Verificar Degradación
       if (oldRole.hasSystemAccess && !newRole.hasSystemAccess) {
         await accountService.revokeAccount(staff._id.toString(), session);
@@ -144,12 +162,16 @@ async function deleteStaff(staffId: string, reqRoleLevel: number) {
   session.startTransaction();
 
   try {
-    const staff = await Staff.findById(staffId).session(session).populate('roleId');
-    if (!staff) throw new Error('Staff no encontrado');
+    const staff = await Staff.findById(staffId)
+      .session(session)
+      .populate("roleId");
+    if (!staff) throw new Error("Staff no encontrado");
 
     const targetRole = staff.roleId as any;
     if (reqRoleLevel <= targetRole.level) {
-      const error: any = new Error("No tienes permisos para eliminar a un usuario con jerarquía igual o superior a la tuya");
+      const error: any = new Error(
+        "No tienes permisos para eliminar a un usuario con jerarquía igual o superior a la tuya",
+      );
       error.statusCode = 403;
       throw error;
     }
@@ -180,7 +202,10 @@ async function deleteStaff(staffId: string, reqRoleLevel: number) {
 }
 
 async function getStaffById(staffId: string) {
-  return await Staff.findById(staffId).populate('roleId').populate('positionId').lean();
+  return await Staff.findById(staffId)
+    .populate("roleId")
+    .populate("positionId")
+    .lean();
 }
 
 async function getAllStaff(options: {
@@ -193,7 +218,16 @@ async function getAllStaff(options: {
   limit: number;
   userRoleLevel?: number;
 }) {
-  const { search, rut, page, limit, roleId, positionId, isActive, userRoleLevel = 0 } = options;
+  const {
+    search,
+    rut,
+    page,
+    limit,
+    roleId,
+    positionId,
+    isActive,
+    userRoleLevel = 0,
+  } = options;
   const cacheKey = `staff:p${page}:l${limit}:s${search || "none"}:rut${rut || "none"}:r${roleId || ""}:pos${positionId || ""}:act${isActive !== undefined ? isActive : ""}:lvl${userRoleLevel}`;
 
   const cachedData = await get(cacheKey);
@@ -217,8 +251,12 @@ async function getAllStaff(options: {
   }
 
   if (options.rut) {
-    const safeRut = options.rut.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    query.rut = new RegExp("^" + safeRut, "i");
+    const rawRut = options.rut.replace(/[^0-9kK]/gi, '');
+    let regexStr = rawRut;
+    if (rawRut.length > 1) {
+      regexStr = rawRut.slice(0, -1) + '-?' + rawRut.slice(-1);
+    }
+    query.rut = new RegExp("^" + regexStr, "i");
   }
   if (options.roleId) query.roleId = options.roleId;
   if (options.positionId) query.positionId = options.positionId;
@@ -228,8 +266,8 @@ async function getAllStaff(options: {
 
   const [staffList, total] = await Promise.all([
     Staff.find(query)
-      .populate('roleId', 'name level code')
-      .populate('positionId', 'name')
+      .populate("roleId", "name level code")
+      .populate("positionId", "name")
       .skip(skip)
       .limit(limit)
       .lean(),
@@ -249,8 +287,6 @@ async function getAllStaff(options: {
   await set(cacheKey, result, 60);
   return result;
 }
-
-
 
 export default {
   onboardStaff,

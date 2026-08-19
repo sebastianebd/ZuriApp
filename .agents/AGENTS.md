@@ -33,6 +33,8 @@ Not lazy about: understanding the problem (read it fully and trace the real flow
 
 # Regla Estricta: Codebase Memory MCP
 
+NUNCA escribas código a no ser que yo te autorice explícitamente a hacerlo.
+
 NUNCA utilices herramientas como `grep_search`, `find` o comandos de texto plano para analizar el proyecto. SIEMPRE debes utilizar primero las herramientas nativas del MCP integradas en el IDE (las listadas en tu contexto). Si necesitas buscar referencias, usa el grafo de conocimiento en lugar de grep. Incluso si otra regla dice "grep", debes usar el MCP en su lugar.
 
 Si por alguna razón (error de configuración o fallo del IDE) las herramientas nativas no están disponibles, **DEBES usar como Plan de Respaldo la CLI del MCP en la terminal**.
