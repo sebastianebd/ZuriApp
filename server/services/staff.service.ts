@@ -3,7 +3,9 @@ import Staff, { IStaff } from "../models/staff.model";
 import Account from "../models/account.model"; // TODO: To be removed, ensuring it doesn't break
 import Role from "../models/role.model";
 import accountService from "./account.service";
+import auditService from "./audit.service";
 import { get, set, delPattern } from "../config/redis.config";
+import { AUDIT_MODULES } from "../constants/audit.constants";
 import socketIO from "../config/socket";
 import { buildAccentInsensitiveRegex } from "../utils/formatters";
 
@@ -11,7 +13,7 @@ import { buildAccentInsensitiveRegex } from "../utils/formatters";
  * Incorpora un nuevo miembro del personal o restaura uno eliminado lógicamente (Verificación de Reingreso).
  * Transaccionalmente crea una Cuenta si su Rol le otorga acceso al sistema.
  */
-async function onboardStaff(payload: Partial<IStaff>, reqRoleLevel: number) {
+async function onboardStaff(payload: Partial<IStaff>, reqRoleLevel: number, reqAccount: any) {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -56,6 +58,15 @@ async function onboardStaff(payload: Partial<IStaff>, reqRoleLevel: number) {
 
     await session.commitTransaction();
 
+    await auditService.logAction(
+      "CREAR",
+      AUDIT_MODULES.FUNCIONARIOS,
+      reqAccount,
+      `Se creó al usuario RUT ${payload.rut} ${payload.firstName} ${payload.lastName}`,
+      payload,
+      staff._id as string
+    );
+
     await delPattern("staff:*");
     try {
       const io = socketIO.getIO();
@@ -80,6 +91,7 @@ async function updateStaff(
   staffId: string,
   payload: Partial<IStaff>,
   reqRoleLevel: number,
+  reqAccount: any
 ) {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -132,10 +144,26 @@ async function updateStaff(
     }
 
     // Actualizar el documento staff
+    const original = staff.toObject();
     Object.assign(staff, payload);
     await staff.save({ session });
 
     await session.commitTransaction();
+
+    const diff = auditService.generateDiff(original, staff.toObject(), "Staff");
+    const nombreUsuario = `${original.firstName} ${original.lastName}`;
+    const descripcion = diff
+      ? `Se modificó al usuario ${nombreUsuario} (Cambios detectados)`
+      : `Se modificó al usuario ${nombreUsuario} (Sin cambios detectados)`;
+
+    await auditService.logAction(
+      "MODIFICAR",
+      AUDIT_MODULES.FUNCIONARIOS,
+      reqAccount,
+      descripcion,
+      diff,
+      staffId
+    );
 
     await delPattern("staff:*");
     try {
@@ -157,7 +185,7 @@ async function updateStaff(
  * Realiza un Soft Delete en Staff (isDeleted = true)
  * Realiza un Hard Delete en Account para revocar el acceso inmediatamente.
  */
-async function deleteStaff(staffId: string, reqRoleLevel: number) {
+async function deleteStaff(staffId: string, reqRoleLevel: number, reqAccount: any) {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -177,6 +205,7 @@ async function deleteStaff(staffId: string, reqRoleLevel: number) {
     }
 
     // 1. Soft Delete Staff
+    const original = staff.toObject();
     staff.isDeleted = true;
     staff.isActive = false;
     await staff.save({ session });
@@ -185,6 +214,15 @@ async function deleteStaff(staffId: string, reqRoleLevel: number) {
     await accountService.revokeAccount(staff._id.toString(), session);
 
     await session.commitTransaction();
+
+    await auditService.logAction(
+      "ELIMINAR",
+      AUDIT_MODULES.FUNCIONARIOS,
+      reqAccount,
+      `Se eliminó al usuario RUT ${original.rut} ${original.firstName} ${original.lastName}`,
+      null,
+      staffId
+    );
 
     await delPattern("staff:*");
     try {

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middleware/authentication.middleware';
 import logger from '../config/logger.config';
 import positionService from '../services/position.service';
 
@@ -12,10 +13,10 @@ export const getPositions = async (req: Request, res: Response) => {
   }
 };
 
-export const createPosition = async (req: Request, res: Response) => {
+export const createPosition = async (req: AuthRequest, res: Response) => {
   try {
     const { name, position_code, description, isActive } = req.body;
-    const position = await positionService.createPosition({ name, position_code, description, isActive });
+    const position = await positionService.createPosition({ name, position_code, description, isActive }, req.account);
     res.status(201).json(position);
   } catch (error: any) {
     logger.error(`Error in createPosition: ${error.message}`);
@@ -23,11 +24,11 @@ export const createPosition = async (req: Request, res: Response) => {
   }
 };
 
-export const updatePosition = async (req: Request, res: Response) => {
+export const updatePosition = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { name, position_code, description, isActive } = req.body;
-    const position = await positionService.updatePosition(id, { name, position_code, description, isActive });
+    const position = await positionService.updatePosition(id, { name, position_code, description, isActive }, req.account);
     res.status(200).json(position);
   } catch (error: any) {
     logger.error(`Error in updatePosition: ${error.message}`);
@@ -35,10 +36,10 @@ export const updatePosition = async (req: Request, res: Response) => {
   }
 };
 
-export const deletePosition = async (req: Request, res: Response) => {
+export const deletePosition = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const position = await positionService.deletePosition(id);
+    const position = await positionService.deletePosition(id, req.account);
     res.status(200).json({ success: true, position });
   } catch (error: any) {
     logger.error(`Error in deletePosition: ${error.message}`);

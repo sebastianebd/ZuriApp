@@ -3,7 +3,7 @@ import AuditLog, { IAuditLog } from "../models/audit.model";
 import "../models/staff.model";
 import logger from "../config/logger.config";
 import socketIO from "../config/socket";
-import { get, set } from "../config/redis.config";
+import { get, set, delPattern } from "../config/redis.config";
 import { AuditModelName, AUDIT_WHITELISTS } from "../config/audit.registry";
 
 async function logAction(
@@ -27,11 +27,9 @@ async function logAction(
 
     await logEntry.save();
 
-    // Cache Invalidation Eliminada:
-    // La auditoría se escribe frecuentemente y su lectura no requiere invalidación en tiempo real.
-    // Un TTL corto en el get es suficiente. Eliminar delPattern('audit:*') mejora el rendimiento y previene fallos por Redis.
-
-
+    // Invalidar caché general de auditoría para asegurar consistencia
+    // al listar desde la UI, ya que si no los nuevos registros no se ven.
+    await delPattern('audit:*');
     // Notificaciones en Tiempo Real (Fire-and-Forget):
     // Emitimos el evento vía Socket.IO para actualizar dashboards de administradores activos.
     // Envolvemos esto en try/catch independiente porque un fallo en el sistema de notificación (o si socketIO no está init)
@@ -74,7 +72,7 @@ async function getLogs(
 
   const query: FilterQuery<IAuditLog> = {};
 
-  if (filters.module) query.module = filters.module;
+  if (filters.module) query.module = filters.module.toUpperCase();
   if (filters.action) query.action = filters.action;
 
   if (filters.accountId && mongoose.Types.ObjectId.isValid(filters.accountId)) {
