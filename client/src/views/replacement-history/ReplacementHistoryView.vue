@@ -181,7 +181,7 @@
                       {{ formatTitleCase(reemplazo.status) }}
                     </span>
                     <small class="creator-text mt-1">
-                      {{ formatTitleCase(getCreatorName(reemplazo).split(' ')[0]) }}
+                      {{ formatTitleCase(getCreatorName(reemplazo)) }}
                     </small>
                   </div>
                 </td>

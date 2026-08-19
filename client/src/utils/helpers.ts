@@ -34,8 +34,10 @@ export function getColorByStatus(status: string) {
 /** Retorna el nombre completo del creador de un reemplazo */
 export const getCreatorName = (reemplazo: any): string => {
   const creator = reemplazo.creado_por
-  if (typeof creator !== 'string' && creator && 'nombre' in creator && 'apellido' in creator) {
-    return `${creator.nombre} ${creator.apellido}`
+  if (typeof creator !== 'string' && creator) {
+    if ('firstName' in creator && 'lastName' in creator) {
+      return `${creator.firstName} ${creator.lastName}`
+    }
   }
   return String(creator) || 'Usuario no asignado'
 }
