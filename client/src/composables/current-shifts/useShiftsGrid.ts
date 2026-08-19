@@ -31,6 +31,7 @@ export interface ShiftResult {
   assignmentId?: string
   assignmentName?: string
   replacementCode?: string
+  baseSigla?: string
 }
 
 export function useShiftsGrid(
@@ -192,6 +193,12 @@ export function useShiftsGrid(
 
             if (checkDate < sDate || checkDate > eDate) return null
 
+            const pattern = getPattern(rep as any, rep.tipo_turno)
+            if (!pattern || pattern.length === 0) return null
+
+            const result = calculateShift<ShiftResult>(date, rep.fecha_inicio, pattern)
+            const baseSigla = result?.sigla
+
             const exception = exceptionStore.findException(rep._id, date)
             if (exception) {
               const { sigla, color } = mapEnumToSigla(exception.override_type)
@@ -202,14 +209,10 @@ export function useShiftsGrid(
                 assignmentName:
                   turnTypeStore.turnTypes.find((t) => t._id === rep.tipo_turno)?.nombre ||
                   rep.tipo_turno,
-                replacementCode: rep.id_negocio
+                replacementCode: rep.id_negocio,
+                baseSigla
               }
             }
-
-            const pattern = getPattern(rep as any, rep.tipo_turno)
-            if (!pattern || pattern.length === 0) return null
-
-            const result = calculateShift<ShiftResult>(date, rep.fecha_inicio, pattern)
 
             if (result) {
               return {
@@ -218,7 +221,8 @@ export function useShiftsGrid(
                 assignmentName:
                   turnTypeStore.turnTypes.find((t) => t._id === rep.tipo_turno)?.nombre ||
                   rep.tipo_turno,
-                replacementCode: rep.id_negocio
+                replacementCode: rep.id_negocio,
+                baseSigla
               }
             }
             return null
@@ -282,20 +286,21 @@ export function useShiftsGrid(
                 turnTypeStore.turnTypes.find((t) => t._id === a.turn_type)?.nombre || a.turn_type
             }
 
-            const exception = exceptionStore.findException(a._id, date)
-            if (exception) {
-              const { sigla, color } = mapEnumToSigla(exception.override_type)
-              return { sigla, color, ...meta }
-            }
-
             const pattern = getPattern(a)
             if (pattern.length === 0) return null
 
             const aStart = parseAsLocal(a.start_date)
             const result = calculateShift<ShiftResult>(date, aStart, pattern)
+            const baseSigla = result?.sigla
+
+            const exception = exceptionStore.findException(a._id, date)
+            if (exception) {
+              const { sigla, color } = mapEnumToSigla(exception.override_type)
+              return { sigla, color, ...meta, baseSigla }
+            }
 
             if (result) {
-              return { ...result, ...meta }
+              return { ...result, ...meta, baseSigla }
             }
             return null
           }

@@ -201,6 +201,7 @@
       :assignment-name="selectedShiftData.assignmentName"
       :date="selectedShiftData.date"
       :current-shift="selectedShiftData.currentShift?.sigla || ''"
+      :base-sigla="selectedShiftData.currentShift?.baseSigla || ''"
       :has-exception="selectedShiftData.hasException"
       :loading="loadingExceptions"
       @cerrar="showModifyModal = false"

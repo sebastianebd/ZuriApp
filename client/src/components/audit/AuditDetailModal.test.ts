@@ -10,8 +10,8 @@ describe('AuditDetailModal.vue', () => {
     module: 'Funcionarios',
     description: 'Creación de nuevo funcionario',
     details: { foo: 'bar', nested: { value: 123 } },
-    user_id: 'user_123456',
-    user_name: 'Juan Perez',
+    accountId: 'user_123456',
+    accountName: 'Juan Perez',
     created_at: '2026-06-25T12:00:00Z'
   }
 
