@@ -103,6 +103,27 @@ async function mostrarReemplazos(req: Request, res: Response) {
   }
 }
 
+async function obtenerReemplazosGrilla(req: Request, res: Response) {
+  try {
+    const servicio = (req.query.servicio as string) || "";
+    const fechaInicio = req.query.fechaInicio as string;
+    const fechaFin = req.query.fechaFin as string;
+
+    const result = await replacementService.obtenerReemplazosGrilla({
+      servicio,
+      fechaInicio,
+      fechaFin,
+    });
+
+    res.json(result);
+  } catch (error: any) {
+    const statusCode = error.statusCode || error.status || 500;
+    res
+      .status(statusCode)
+      .json({ message: error.message || "Error al obtener reemplazos para la grilla", error });
+  }
+}
+
 async function mostrarHistorial(req: Request, res: Response) {
   try {
     const data = await replacementService.obtenerInactivosPaginados();
@@ -283,6 +304,7 @@ async function mostrarHistorialPaginado(req: Request, res: Response) {
 export default {
   registerReemplazo,
   mostrarReemplazos,
+  obtenerReemplazosGrilla,
   mostrarHistorial,
   actualizarReemplazo,
   finalizarReemplazo,

@@ -188,6 +188,49 @@ async function obtenerActivosPaginado(options: {
   return result;
 }
 
+async function obtenerReemplazosGrilla(options: {
+  servicio?: string;
+  fechaInicio: string;
+  fechaFin: string;
+}) {
+  const { servicio, fechaInicio, fechaFin } = options;
+  const query: any = {
+    status: { $nin: ["ANULADO", "CANCELADO"] },
+  };
+
+  if (servicio && servicio.trim().length > 0) {
+    query.servicio = servicio;
+  }
+
+  if (fechaInicio || fechaFin) {
+    query.$and = [];
+    if (fechaInicio) {
+      query.$and.push({
+        $or: [{ fecha_termino: { $gte: fechaInicio } }, { fecha_termino: null }],
+      });
+    }
+    if (fechaFin) {
+      query.$and.push({ fecha_inicio: { $lte: fechaFin } });
+    }
+  }
+
+  const cacheKey = `replacements:grid:${servicio || "none"}:${fechaInicio || "none"}:${fechaFin || "none"}`;
+  const cachedData = await get(cacheKey);
+  if (cachedData) return cachedData;
+
+  const reemplazos = await Replacement.find(query)
+    .populate("creado_por", "firstName lastName")
+    .populate({
+      path: "id_entrante",
+      select: "_id positionId firstName lastName rut",
+      populate: { path: "positionId", select: "name" },
+    })
+    .lean();
+
+  await set(cacheKey, reemplazos, 60);
+  return reemplazos;
+}
+
 async function obtenerInactivosPaginados(
   filtros: any = {},
   pagina: number = 1,
@@ -462,6 +505,7 @@ export default {
   registrar,
   obtenerActivos,
   obtenerActivosPaginado,
+  obtenerReemplazosGrilla,
   actualizar,
   finalizarReemplazo,
   anularReemplazo,

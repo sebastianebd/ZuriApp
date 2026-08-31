@@ -25,6 +25,9 @@ export const useReplacementStore = defineStore('replacement', {
       itemsPerPage: 10
     },
 
+    // NEW: Grid Replacements (for the Shifts Grid)
+    gridReplacements: [] as ReplacementRegistration[],
+
     // Legacy: Keep for backward compatibility
     reemplazosActivos: [] as ReplacementRegistration[],
 
@@ -225,6 +228,33 @@ export const useReplacementStore = defineStore('replacement', {
       } catch (error) {
         console.error('Error checking conflicts:', error)
         return []
+      }
+    },
+
+    async fetchGridReplacements(params: {
+      fechaInicio: string
+      fechaFin: string
+      servicio?: string
+    }) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      this.cargando = true
+      this.error = null
+
+      try {
+        const response = await ReplacementService.getGridReplacements(apiPrivate, params)
+        this.gridReplacements = response.map((r: ReplacementRegistration) => ({
+          ...r,
+          fecha_inicio: String(r.fecha_inicio).slice(0, 10),
+          fecha_termino: String(r.fecha_termino).slice(0, 10)
+        }))
+        return response
+      } catch (error: any) {
+        console.error('Error al cargar reemplazos de grilla:', error)
+        this.error = 'No se pudieron cargar los reemplazos de la grilla.'
+        throw error
+      } finally {
+        this.cargando = false
       }
     },
 

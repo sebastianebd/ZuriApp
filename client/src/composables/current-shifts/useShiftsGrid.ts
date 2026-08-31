@@ -109,7 +109,7 @@ export function useShiftsGrid(
 
     const userReplacementsMap = new Map<string, ReplacementRegistration[]>()
 
-    replacementStore.currentPageReplacements.forEach((r) => {
+    replacementStore.gridReplacements.forEach((r) => {
       if (!r.fecha_inicio || !r.id_entrante) return
       let uid = r.id_entrante
       if (typeof uid === 'object' && uid !== null) {
