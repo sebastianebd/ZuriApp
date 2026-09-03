@@ -3,8 +3,10 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 // We will implement this service next
 import RoleService from "../../../services/role.service";
 import Role from "../../../models/role.model";
+import auditService from "../../../services/audit.service";
 
 vi.mock("../../../models/role.model");
+vi.mock("../../../services/audit.service");
 
 describe("RoleService - AC-1: Role Creation & Update Logic", () => {
   beforeEach(() => {
@@ -20,7 +22,7 @@ describe("RoleService - AC-1: Role Creation & Update Logic", () => {
         permissions: [],
       };
 
-      await expect(RoleService.createRole(payload)).rejects.toThrow(
+      await expect(RoleService.createRole(payload, {})).rejects.toThrow(
         "Roles with system access must have at least 1 permission",
       );
     });
@@ -35,7 +37,7 @@ describe("RoleService - AC-1: Role Creation & Update Logic", () => {
 
       vi.mocked(Role.create).mockResolvedValue(payload as any);
 
-      const result = await RoleService.createRole(payload);
+      const result = await RoleService.createRole(payload, {});
       expect(result.name).toBe("Valid Admin");
       expect(Role.create).toHaveBeenCalledWith(payload);
     });
@@ -50,7 +52,7 @@ describe("RoleService - AC-1: Role Creation & Update Logic", () => {
 
       vi.mocked(Role.create).mockResolvedValue(payload as any);
 
-      const result = await RoleService.createRole(payload);
+      const result = await RoleService.createRole(payload, {});
       expect(result.name).toBe("TENS");
       expect(Role.create).toHaveBeenCalledWith(payload);
     });
@@ -73,7 +75,7 @@ describe("RoleService - AC-1: Role Creation & Update Logic", () => {
       };
 
       await expect(
-        RoleService.updateRole("123", updatePayload),
+        RoleService.updateRole("123", updatePayload, {}),
       ).rejects.toThrow(
         "The field hasSystemAccess is immutable and cannot be changed after creation",
       );
@@ -87,6 +89,7 @@ describe("RoleService - AC-1: Role Creation & Update Logic", () => {
         hasSystemAccess: true,
         permissions: ["users.view"],
         save: vi.fn().mockResolvedValue(true),
+        toObject: vi.fn().mockReturnThis(),
       };
 
       vi.mocked(Role.findById).mockResolvedValue(existingRole as any);
@@ -95,7 +98,7 @@ describe("RoleService - AC-1: Role Creation & Update Logic", () => {
         name: "Super Admin",
       };
 
-      const result = await RoleService.updateRole("123", updatePayload);
+      const result = await RoleService.updateRole("123", updatePayload, {});
       expect(existingRole.name).toBe("Super Admin");
       expect(existingRole.save).toHaveBeenCalled();
     });

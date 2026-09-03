@@ -55,6 +55,22 @@ export function useShiftsExceptions(state: any, grid: any, props: { readonly?: b
       return
     }
 
+    // Si el tipo seleccionado es igual al turno base original, lo tratamos como una restauración.
+    if (data.override_type === selectedShiftData.value.currentShift?.baseSigla) {
+      const exception = exceptionStore.findException(
+        selectedShiftData.value.assignmentId,
+        selectedShiftData.value.date
+      )
+      
+      if (exception) {
+        return handleRestorePattern()
+      } else {
+        // No hay excepción previa y eligen el mismo turno base, solo cerramos.
+        showModifyModal.value = false
+        return
+      }
+    }
+
     try {
       await exceptionStore.createException({
         assignment_id: selectedShiftData.value.assignmentId,

@@ -63,6 +63,12 @@ router.post(
 
 // --- Consultas / Lectura ---
 router.get(
+  "/grid",
+  requirePermission("shifts.view"),
+  replacementController.obtenerReemplazosGrilla,
+);
+
+router.get(
   "/",
   requirePermission("replacement.view"),
   replacementController.mostrarReemplazos,

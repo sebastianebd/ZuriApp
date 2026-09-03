@@ -64,7 +64,7 @@
           class="custom-v-select"
         >
           <template #selected-option="{ label }">
-            <span>{{ label }}</span>
+            <span :class="{ 'mock-placeholder': label?.includes('Todos') }">{{ label }}</span>
           </template>
         </v-select>
       </div>
@@ -87,7 +87,7 @@
           class="custom-v-select"
         >
           <template #selected-option="{ label }">
-            <span>{{ label }}</span>
+            <span :class="{ 'mock-placeholder': label?.includes('Todos') }">{{ label }}</span>
           </template>
         </v-select>
       </div>
@@ -159,8 +159,10 @@ const updateFilter = (key: keyof Filters, value: any) => {
   min-height: 31px;
 }
 .custom-date-input::placeholder {
-  color: #64748b;
-  font-weight: 400;
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+  font-size: 0.8125rem !important;
+  font-style: italic !important;
 }
 
 /* Custom v-select */
@@ -175,8 +177,8 @@ const updateFilter = (key: keyof Filters, value: any) => {
 
 .custom-v-select :deep(.vs__selected) {
   font-size: 0.8125rem;
-  color: #64748b;
-  font-weight: 400;
+  color: #1e293b;
+  font-weight: 500;
   margin: 0;
   padding: 0 0.5rem;
   white-space: nowrap;
@@ -212,5 +214,18 @@ const updateFilter = (key: keyof Filters, value: any) => {
 .custom-v-select :deep(.vs__dropdown-option--highlight) {
   background: #3b82f6;
   color: white;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
+.mock-placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+  font-style: italic !important;
 }
 </style>

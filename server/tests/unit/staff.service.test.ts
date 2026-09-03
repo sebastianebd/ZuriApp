@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import StaffService from "../../services/staff.service";
 import Staff from "../../models/staff.model";
 import accountService from "../../services/account.service";
+import auditService from "../../services/audit.service";
 
 vi.mock("../../models/staff.model");
 vi.mock("../../services/account.service");
+vi.mock("../../services/audit.service");
 vi.mock("../../queues/email.queue", () => ({
   emailQueue: {
     add: vi.fn(),
@@ -61,13 +63,14 @@ describe("Staff Service - Unit Tests", () => {
             _id: "staff123",
             roleId: { level: 0 },
             isDeleted: false,
-            save: vi.fn().mockResolvedValue(true)
+            save: vi.fn().mockResolvedValue(true),
+            toObject: vi.fn().mockReturnThis()
           })
         })
       });
       (accountService.revokeAccount as any).mockResolvedValue(true);
 
-      await StaffService.deleteStaff("staff123", 999);
+      await StaffService.deleteStaff("staff123", 999, {});
 
       // Check that soft delete fields were set
       // The staff mock was retrieved via session()

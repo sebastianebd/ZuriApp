@@ -1,20 +1,33 @@
 import Role, { IRole } from '../models/role.model';
+import auditService from './audit.service';
+import { AUDIT_MODULES } from '../constants/audit.constants';
 
 /**
  * Crea un nuevo Rol validando las reglas de acceso al sistema.
  */
-async function createRole(payload: Partial<IRole>): Promise<IRole> {
+async function createRole(payload: Partial<IRole>, reqAccount: any): Promise<IRole> {
   if (payload.hasSystemAccess === true && (!payload.permissions || payload.permissions.length === 0)) {
     throw new Error('Roles with system access must have at least 1 permission');
   }
 
-  return await Role.create(payload);
+  const role = await Role.create(payload);
+
+  await auditService.logAction(
+    'CREAR',
+    AUDIT_MODULES.ROLES,
+    reqAccount,
+    `Se creó el Rol "${role.name}"`,
+    null,
+    role._id as string
+  );
+
+  return role;
 }
 
 /**
  * Actualiza un Rol existente, forzando la inmutabilidad de hasSystemAccess.
  */
-async function updateRole(roleId: string, updatePayload: Partial<IRole>): Promise<IRole | null> {
+async function updateRole(roleId: string, updatePayload: Partial<IRole>, reqAccount: any): Promise<IRole | null> {
   const existingRole = await Role.findById(roleId);
   
   if (!existingRole) {
@@ -26,9 +39,24 @@ async function updateRole(roleId: string, updatePayload: Partial<IRole>): Promis
     throw new Error('The field hasSystemAccess is immutable and cannot be changed after creation');
   }
 
+  const oldData = existingRole.toObject();
   Object.assign(existingRole, updatePayload);
   await existingRole.save();
   
+  const diff = auditService.generateDiff(oldData, existingRole.toObject(), "Role");
+  const descripcion = diff
+      ? `Se actualizó el Rol "${existingRole.name}" (Cambios detectados)`
+      : `Se actualizó el Rol "${existingRole.name}" (Sin cambios detectados)`;
+
+  await auditService.logAction(
+    'MODIFICAR',
+    AUDIT_MODULES.ROLES,
+    reqAccount,
+    descripcion,
+    diff,
+    existingRole._id as string
+  );
+
   return existingRole;
 }
 
@@ -42,7 +70,7 @@ async function getRoles(): Promise<IRole[]> {
 /**
  * Realiza un Soft Delete de un Rol
  */
-async function deleteRole(roleId: string): Promise<IRole | null> {
+async function deleteRole(roleId: string, reqAccount: any): Promise<IRole | null> {
   const existingRole = await Role.findById(roleId);
   
   if (!existingRole) {
@@ -55,6 +83,16 @@ async function deleteRole(roleId: string): Promise<IRole | null> {
 
   existingRole.deleted_at = new Date();
   await existingRole.save();
+
+  await auditService.logAction(
+    'ELIMINAR',
+    AUDIT_MODULES.ROLES,
+    reqAccount,
+    `Se eliminó el Rol "${existingRole.name}"`,
+    null,
+    existingRole._id as string
+  );
+
   return existingRole;
 }
 

@@ -3,10 +3,10 @@
     <table class="table modern-table mb-0">
       <thead>
         <tr>
-          <th scope="col" class="ps-4">Code</th>
-          <th scope="col">Name</th>
-          <th scope="col" class="text-center">Level</th>
-          <th scope="col" class="text-center">Permissions</th>
+          <th scope="col" class="ps-4">Código</th>
+          <th scope="col">Nombre</th>
+          <th scope="col" class="text-center">Nivel</th>
+          <th scope="col" class="text-center">Permisos</th>
           <th scope="col" class="text-center">Acceso Sistema</th>
           <th scope="col" class="text-end pe-4">Acciones</th>
         </tr>
@@ -64,7 +64,10 @@
           <!-- Estado -->
           <td class="text-center">
             <div class="h-100 d-flex align-items-center justify-content-center">
-              <span class="status-glass" :class="role.hasSystemAccess ? 'glass-success' : 'glass-inactive'">
+              <span
+                class="status-glass"
+                :class="role.hasSystemAccess ? 'glass-success' : 'glass-inactive'"
+              >
                 {{ role.hasSystemAccess ? 'SÍ' : 'NO' }}
               </span>
             </div>

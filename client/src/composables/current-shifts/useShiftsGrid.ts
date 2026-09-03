@@ -31,6 +31,7 @@ export interface ShiftResult {
   assignmentId?: string
   assignmentName?: string
   replacementCode?: string
+  baseSigla?: string
 }
 
 export function useShiftsGrid(
@@ -108,7 +109,7 @@ export function useShiftsGrid(
 
     const userReplacementsMap = new Map<string, ReplacementRegistration[]>()
 
-    replacementStore.currentPageReplacements.forEach((r) => {
+    replacementStore.gridReplacements.forEach((r) => {
       if (!r.fecha_inicio || !r.id_entrante) return
       let uid = r.id_entrante
       if (typeof uid === 'object' && uid !== null) {
@@ -192,6 +193,12 @@ export function useShiftsGrid(
 
             if (checkDate < sDate || checkDate > eDate) return null
 
+            const pattern = getPattern(rep as any, rep.tipo_turno)
+            if (!pattern || pattern.length === 0) return null
+
+            const result = calculateShift<ShiftResult>(date, rep.fecha_inicio, pattern)
+            const baseSigla = result?.sigla
+
             const exception = exceptionStore.findException(rep._id, date)
             if (exception) {
               const { sigla, color } = mapEnumToSigla(exception.override_type)
@@ -202,14 +209,10 @@ export function useShiftsGrid(
                 assignmentName:
                   turnTypeStore.turnTypes.find((t) => t._id === rep.tipo_turno)?.nombre ||
                   rep.tipo_turno,
-                replacementCode: rep.id_negocio
+                replacementCode: rep.id_negocio,
+                baseSigla
               }
             }
-
-            const pattern = getPattern(rep as any, rep.tipo_turno)
-            if (!pattern || pattern.length === 0) return null
-
-            const result = calculateShift<ShiftResult>(date, rep.fecha_inicio, pattern)
 
             if (result) {
               return {
@@ -218,7 +221,8 @@ export function useShiftsGrid(
                 assignmentName:
                   turnTypeStore.turnTypes.find((t) => t._id === rep.tipo_turno)?.nombre ||
                   rep.tipo_turno,
-                replacementCode: rep.id_negocio
+                replacementCode: rep.id_negocio,
+                baseSigla
               }
             }
             return null
@@ -248,14 +252,11 @@ export function useShiftsGrid(
       )
         return
 
-      const userAssignments = userAssignmentsMap.get(IStaff._id) || []
-      const hasOverlap = userAssignments.some((assign) => {
-        const start = parseAsLocal(assign.start_date)
-        const end = assign.end_date ? parseAsLocal(assign.end_date) : new Date(9999, 11, 31)
-        return start <= endOfMonth && end >= startOfMonth
-      })
+      const start = parseAsLocal(a.start_date)
+      const end = a.end_date ? parseAsLocal(a.end_date) : new Date(9999, 11, 31)
+      const thisOverlaps = start <= endOfMonth && end >= startOfMonth
 
-      if (hasOverlap) {
+      if (thisOverlaps) {
         processedUsers.add(IStaff._id)
         rows.push({
           _id: a._id,
@@ -282,20 +283,21 @@ export function useShiftsGrid(
                 turnTypeStore.turnTypes.find((t) => t._id === a.turn_type)?.nombre || a.turn_type
             }
 
-            const exception = exceptionStore.findException(a._id, date)
-            if (exception) {
-              const { sigla, color } = mapEnumToSigla(exception.override_type)
-              return { sigla, color, ...meta }
-            }
-
             const pattern = getPattern(a)
             if (pattern.length === 0) return null
 
             const aStart = parseAsLocal(a.start_date)
             const result = calculateShift<ShiftResult>(date, aStart, pattern)
+            const baseSigla = result?.sigla
+
+            const exception = exceptionStore.findException(a._id, date)
+            if (exception) {
+              const { sigla, color } = mapEnumToSigla(exception.override_type)
+              return { sigla, color, ...meta, baseSigla }
+            }
 
             if (result) {
-              return { ...result, ...meta }
+              return { ...result, ...meta, baseSigla }
             }
             return null
           }

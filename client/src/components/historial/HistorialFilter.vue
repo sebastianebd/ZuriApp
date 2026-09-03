@@ -8,8 +8,8 @@
         >
         <input
           type="text"
-          :value="modelValue.rutSaliente"
-          @input="updateFilter('rutSaliente', $event)"
+          :value="localRutSaliente"
+          @input="handleRutSaliente"
           placeholder="Ingrese Rut"
           class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           id="filtroRutSaliente"
@@ -23,8 +23,8 @@
         >
         <input
           type="text"
-          :value="modelValue.rutEntrante"
-          @input="updateFilter('rutEntrante', $event)"
+          :value="localRutEntrante"
+          @input="handleRutEntrante"
           placeholder="Ingrese Rut"
           class="form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
           id="filtroRutEntrante"
@@ -80,10 +80,7 @@
           id="filtroServicio"
           :model-value="modelValue.servicio"
           @update:model-value="(newValue: any) => updateFilter('servicio', newValue)"
-          :options="[
-            { nombre: 'TODOS', _id: '' },
-            ...listaServicios
-          ]"
+          :options="[{ nombre: 'Todos los Servicios', _id: '' }, ...listaServicios]"
           :reduce="(option: any) => option._id"
           label="nombre"
           :clearable="false"
@@ -92,7 +89,9 @@
           class="custom-v-select"
         >
           <template #selected-option="{ nombre }">
-            <span class="text-secondary small">{{ nombre }}</span>
+            <span :class="{ 'mock-placeholder': nombre === 'Todos los Servicios' }">{{
+              nombre
+            }}</span>
           </template>
         </v-select>
       </div>
@@ -103,6 +102,8 @@
 <script setup lang="ts">
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/dist/style.css'
+import { formatRut, cleanRutForStorage } from '@/utils/rut.util'
+import { ref } from 'vue'
 
 interface HistoryFiltros {
   rutSaliente: string
@@ -146,6 +147,37 @@ const updateFilter = (key: keyof HistoryFiltros, valueOrEvent: any) => {
     ...props.modelValue,
     [key]: value
   })
+}
+
+const localRutSaliente = ref(props.modelValue.rutSaliente)
+const localRutEntrante = ref(props.modelValue.rutEntrante)
+
+const handleRutSaliente = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const rawValue = target.value.replace(/[^0-9kK]/gi, '')
+  if (rawValue.length > 9) {
+    target.value = formatRut(rawValue.slice(0, 9))
+    localRutSaliente.value = target.value
+    updateFilter('rutSaliente', rawValue.slice(0, 9))
+    return
+  }
+  localRutSaliente.value = formatRut(rawValue)
+  target.value = localRutSaliente.value
+  updateFilter('rutSaliente', rawValue)
+}
+
+const handleRutEntrante = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const rawValue = target.value.replace(/[^0-9kK]/gi, '')
+  if (rawValue.length > 9) {
+    target.value = formatRut(rawValue.slice(0, 9))
+    localRutEntrante.value = target.value
+    updateFilter('rutEntrante', rawValue.slice(0, 9))
+    return
+  }
+  localRutEntrante.value = formatRut(rawValue)
+  target.value = localRutEntrante.value
+  updateFilter('rutEntrante', rawValue)
 }
 </script>
 
@@ -206,5 +238,25 @@ const updateFilter = (key: keyof HistoryFiltros, valueOrEvent: any) => {
 .custom-v-select :deep(.vs__dropdown-option--highlight) {
   background: #3b82f6;
   color: white;
+}
+
+input::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+  font-size: 0.8125rem !important;
+  font-style: italic !important;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
+.mock-placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+  font-style: italic !important;
 }
 </style>
