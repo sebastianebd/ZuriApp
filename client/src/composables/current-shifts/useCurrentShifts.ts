@@ -61,9 +61,10 @@ export function useCurrentShifts(props: {
       }
 
       await Promise.all([
-        replacementStore.fetchActiveReplacementsPaginated({
+        replacementStore.fetchGridReplacements({
           servicio: activeServiceFilter,
-          limit: 1000
+          fechaInicio: startOfMonth.toISOString().split('T')[0],
+          fechaFin: endOfMonth.toISOString().split('T')[0]
         }),
         turnAssignmentStore.loadAssignments(),
         exceptionStore.loadExceptions(

@@ -19,6 +19,10 @@ async function createException(payload: any, currentUser: any) {
     created_by,
   } = payload;
 
+  if (original_type === override_type) {
+    throw new AppError(400, "El turno original y el nuevo no pueden ser iguales (excepción redundante).");
+  }
+
   let assignment_model = "TurnAssignment";
   const [turnAssignment, replacement] = await Promise.all([
     TurnAssignmentModel.findById(assignment_id),

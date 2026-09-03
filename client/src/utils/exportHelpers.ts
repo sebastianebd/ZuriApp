@@ -245,7 +245,7 @@ export const exportAuditToPDF = (logs: AuditLog[], filters: any) => {
       logs.forEach((log) => {
         const row = [
           new Date(log.created_at).toLocaleString('es-CL'),
-          log.user_name || 'Sistema',
+          log.accountName || 'Sistema',
           log.module,
           log.action,
           log.description
@@ -271,7 +271,7 @@ export const exportAuditToPDF = (logs: AuditLog[], filters: any) => {
 export const exportAuditToExcel = (logs: AuditLog[]) => {
       const data = logs.map((log) => ({
         Fecha: new Date(log.created_at).toLocaleString('es-CL'),
-        Usuario: log.user_name || 'Sistema',
+        Usuario: log.accountName || 'Sistema',
         Modulo: log.module,
         Accion: log.action,
         Descripcion: log.description,

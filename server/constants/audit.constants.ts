@@ -20,14 +20,11 @@ export const AUDIT_ACTIONS = {
 export const AUDIT_MODULES = {
   FUNCIONARIOS: "Funcionarios",
   REEMPLAZOS_ACTIVOS: "Reemplazos Activos",
-  GESTION_CARGOS: "Gestión de Cargos",
   TURNOS_ACTUALES: "Turnos Actuales",
   EXCEPCIONES_TURNO: "Excepciones de Turno",
   SERVICIOS: "Servicios",
   TIPOS_TURNO: "Tipos de Turno",
-  CUENTAS: "Cuentas",
-  ROLES: "Roles",
-  CARGOS: "Cargos",
+  ROLES: "Roles y Cargos",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

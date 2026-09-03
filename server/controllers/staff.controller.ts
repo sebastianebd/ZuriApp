@@ -1,21 +1,11 @@
 import { Request, Response } from 'express';
 import staffService from '../services/staff.service';
 import logger from '../config/logger.config';
-import auditService from "../services/audit.service";
 import { AuthRequest } from "../middleware/authentication.middleware";
 export const createStaff = async (req: AuthRequest, res: Response) => {
   try {
     const userRoleLevel = req.staff?.roleId?.level || 0;
-    const staff = await staffService.onboardStaff(req.body, userRoleLevel);
-    
-    await auditService.logAction(
-      "CREAR",
-      "Funcionarios",
-      req.account!,
-      `Se creó al usuario RUT ${req.body.rut} ${req.body.firstName} ${req.body.lastName}`,
-      req.body,
-      staff._id as string,
-    );
+    const staff = await staffService.onboardStaff(req.body, userRoleLevel, req.account);
     res.status(201).json(staff);
   } catch (error: any) {
     logger.error(`Error in createStaff: ${error.message}`);
@@ -28,24 +18,7 @@ export const updateStaff = async (req: AuthRequest, res: Response) => {
   try {
     const original: any = await staffService.getStaffById(req.params.id);
     const userRoleLevel = req.staff?.roleId?.level || 0;
-    const staff = await staffService.updateStaff(req.params.id, req.body, userRoleLevel);
-    
-    const diff = auditService.generateDiff(original, req.body, "Staff");
-    const nombreUsuario = original
-      ? `${original.firstName} ${original.lastName}`
-      : `ID ${req.params.id}`;
-    const descripcion = diff
-      ? `Se modificó al usuario ${nombreUsuario} (Cambios: ${diff})`
-      : `Se modificó al usuario ${nombreUsuario} (Sin cambios detectados)`;
-
-    await auditService.logAction(
-      "MODIFICAR",
-      "Funcionarios",
-      req.account!,
-      descripcion,
-      req.body,
-      req.params.id,
-    );
+    const staff = await staffService.updateStaff(req.params.id, req.body, userRoleLevel, req.account);
     res.status(200).json(staff);
   } catch (error: any) {
     logger.error(`Error in updateStaff: ${error.message}`);
@@ -58,18 +31,7 @@ export const deleteStaff = async (req: AuthRequest, res: Response) => {
   try {
     const staffToDelete: any = await staffService.getStaffById(req.params.id);
     const userRoleLevel = req.staff?.roleId?.level || 0;
-    const staff = await staffService.deleteStaff(req.params.id, userRoleLevel);
-    
-    await auditService.logAction(
-      "ELIMINAR",
-      "Funcionarios",
-      req.account!,
-      staffToDelete
-        ? `Se eliminó al usuario RUT ${staffToDelete.rut} ${staffToDelete.firstName} ${staffToDelete.lastName}`
-        : `Se eliminó al usuario ID ${req.params.id}`,
-      null,
-      req.params.id,
-    );
+    const staff = await staffService.deleteStaff(req.params.id, userRoleLevel, req.account);
     res.status(200).json(staff);
   } catch (error: any) {
     logger.error(`Error in deleteStaff: ${error.message}`);

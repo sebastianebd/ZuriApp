@@ -25,6 +25,7 @@ const StaffSchema: Schema = new Schema(
       required: true,
       unique: true,
       trim: true,
+      uppercase: true,
     },
     firstName: {
       type: String,

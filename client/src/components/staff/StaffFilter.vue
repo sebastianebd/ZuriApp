@@ -6,10 +6,10 @@
         <label class="form-label fw-semibold text-secondary small">Rut:</label>
         <input
           type="text"
-          v-model="filtroRutLocal"
+          :value="filtroRutLocal"
           placeholder="Ingrese Rut"
           class="custom-input form-control form-control-sm rounded-3 shadow-sm bg-light border-0"
-          @input="$emit('update:filtroRut', filtroRutLocal)"
+          @input="handleRutInput"
         />
       </div>
 
@@ -37,7 +37,7 @@
             }
           "
           :options="[
-            { label: 'Todos', value: '' },
+            { label: 'Todos los Cargos', value: '' },
             ...listaPositions.map((c) => ({ label: c.name, value: c._id }))
           ]"
           :reduce="(option: any) => option.value"
@@ -48,7 +48,7 @@
           class="custom-v-select"
         >
           <template #selected-option="{ label }">
-            <span :style="label === 'Todos' ? 'color: #94a3b8; font-weight: 400;' : ''">{{ label }}</span>
+            <span :class="{ 'mock-placeholder': label === 'Todos los Cargos' }">{{ label }}</span>
           </template>
         </v-select>
       </div>
@@ -76,7 +76,7 @@
           class="custom-v-select"
         >
           <template #selected-option="{ label }">
-            <span :style="label === 'Todos' ? 'color: #94a3b8; font-weight: 400;' : ''">{{ label }}</span>
+            <span :class="{ 'mock-placeholder': label === 'Todos' }">{{ label }}</span>
           </template>
         </v-select>
       </div>
@@ -86,6 +86,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { formatRut, cleanRutForStorage } from '@/utils/rut.util'
 
 defineProps<{
   listaPositions: any[]
@@ -96,7 +97,7 @@ defineProps<{
   filtroHabilitado: string
 }>()
 
-defineEmits([
+const emit = defineEmits([
   'update:filtroRut',
   'update:filtroNombre',
   'update:tipoCargo',
@@ -108,6 +109,20 @@ const filtroRutLocal = ref('')
 const filtroNombreLocal = ref('')
 const tipoCargoLocal = ref('')
 const filtroHabilitadoLocal = ref('')
+
+const handleRutInput = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const rawValue = target.value.replace(/[^0-9kK]/gi, '')
+  if (rawValue.length > 9) {
+    target.value = formatRut(rawValue.slice(0, 9))
+    filtroRutLocal.value = target.value
+    emit('update:filtroRut', rawValue.slice(0, 9))
+    return
+  }
+  filtroRutLocal.value = formatRut(rawValue)
+  target.value = filtroRutLocal.value
+  emit('update:filtroRut', rawValue)
+}
 </script>
 
 <style scoped>
@@ -132,6 +147,13 @@ const filtroHabilitadoLocal = ref('')
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+}
+
+.custom-v-select :deep(.vs__search::placeholder) {
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  font-style: italic;
 }
 
 .custom-v-select :deep(.vs__actions) {
@@ -167,7 +189,7 @@ const filtroHabilitadoLocal = ref('')
 .custom-input {
   background-color: #f8f9fa !important;
   font-size: 0.8125rem !important; /* Match v-select */
-  color: #1e293b !important;
+  color: #3b1e1e !important;
   font-weight: 500 !important;
   padding: 4px 10px !important;
   min-height: 31px;
@@ -177,5 +199,12 @@ const filtroHabilitadoLocal = ref('')
   color: #94a3b8;
   font-weight: 400;
   font-size: 0.8125rem;
+  font-style: italic;
+}
+
+.mock-placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+  font-style: italic !important;
 }
 </style>

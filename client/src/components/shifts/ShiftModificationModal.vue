@@ -132,6 +132,7 @@ const props = defineProps<{
   assignmentName: string
   date: Date
   currentShift: string | null
+  baseSigla?: string
   hasException: boolean
   loading?: boolean
 }>()
@@ -171,7 +172,8 @@ const shiftOptions = computed(() => {
       value: s.sigla,
       label: s.nombre,
       icon: getIconForSigla(s.sigla),
-      color: s.color || '#6c757d'
+      color: s.color || '#6c757d',
+      isBase: s.sigla === props.baseSigla
     }))
 })
 

@@ -11,8 +11,8 @@ describe('AuditTable.vue', () => {
       module: 'Funcionarios',
       description: 'Se creó funcionario Juan',
       details: { id: 'user1' },
-      user_id: 'admin1',
-      user_name: 'Administrador Sistema',
+      accountId: 'admin1',
+      accountName: 'Administrador Sistema',
       created_at: '2026-06-25T10:00:00Z'
     },
     {
@@ -21,8 +21,8 @@ describe('AuditTable.vue', () => {
       module: 'Servicios',
       description: 'Se eliminó servicio Pediatria',
       details: { id: 'serv1' },
-      user_id: 'admin2',
-      user_name: 'Maria Rojas',
+      accountId: 'admin2',
+      accountName: 'Maria Rojas',
       created_at: '2026-06-25T11:30:15Z'
     }
   ]

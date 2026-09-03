@@ -45,14 +45,11 @@
           <td>
             <div class="IStaff-node">
               <div class="avatar-modern bg-gradient-dark text-white shadow-sm">
-                {{ getInitials(log.user_name) }}
+                {{ getInitials(log.accountName) }}
               </div>
               <div class="IStaff-info ms-3">
                 <div class="fw-bold text-dark text-truncate">
-                  {{ formatTitleCase(log.user_name || 'Desconocido') }}
-                </div>
-                <div class="rut-text" v-if="log.user_id">
-                  ID: ...{{ truncateMongoId(log.user_id) }}
+                  {{ formatTitleCase(log.accountName || 'Desconocido') }}
                 </div>
               </div>
             </div>
@@ -102,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { formatTitleCase, getInitials, truncateMongoId } from '@/utils/text-formatters'
+import { formatTitleCase, getInitials } from '@/utils/text-formatters'
 import { formatDate, formatTime } from '@/utils/date-utils'
 import type { AuditLog } from '@/types/audit.types'
 

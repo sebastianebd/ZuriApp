@@ -145,3 +145,19 @@ export const procesarSustitucion = async (
     throw errorHandler(error)
   }
 }
+
+export const getGridReplacements = async (
+  apiPrivate: ReturnType<typeof useApiPrivate>,
+  params: {
+    fechaInicio: string
+    fechaFin: string
+    servicio?: string
+  }
+) => {
+  try {
+    const { data } = await apiPrivate.get('/reemplazos/grid', { params })
+    return data as ReplacementRegistration[]
+  } catch (error) {
+    throw errorHandler(error)
+  }
+}

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middleware/authentication.middleware';
 import roleService from '../services/role.service';
 import logger from '../config/logger.config';
 
@@ -13,10 +14,10 @@ export const getRoles = async (req: Request, res: Response) => {
   }
 };
 
-export const createRole = async (req: Request, res: Response) => {
+export const createRole = async (req: AuthRequest, res: Response) => {
   try {
     const { name, code, level, permissions, hasSystemAccess, description } = req.body;
-    const role = await roleService.createRole({ name, code, level, permissions, hasSystemAccess, description });
+    const role = await roleService.createRole({ name, code, level, permissions, hasSystemAccess, description }, req.account);
     res.status(201).json(role);
   } catch (error: any) {
     logger.error(`Error in createRole: ${error.message}`);
@@ -24,11 +25,11 @@ export const createRole = async (req: Request, res: Response) => {
   }
 };
 
-export const updateRole = async (req: Request, res: Response) => {
+export const updateRole = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { name, code, level, permissions, hasSystemAccess, description } = req.body;
-    const role = await roleService.updateRole(id, { name, code, level, permissions, hasSystemAccess, description });
+    const role = await roleService.updateRole(id, { name, code, level, permissions, hasSystemAccess, description }, req.account);
     res.status(200).json(role);
   } catch (error: any) {
     logger.error(`Error in updateRole: ${error.message}`);
@@ -36,10 +37,10 @@ export const updateRole = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteRole = async (req: Request, res: Response) => {
+export const deleteRole = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const role = await roleService.deleteRole(id);
+    const role = await roleService.deleteRole(id, req.account);
     res.status(200).json({ success: true, role });
   } catch (error: any) {
     logger.error(`Error in deleteRole: ${error.message}`);
