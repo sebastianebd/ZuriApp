@@ -106,7 +106,7 @@ describe("Audit Controller - Integration", () => {
       await request(app).get("/api/audit?module=Users");
 
       expect(AuditLog.find).toHaveBeenCalledWith(
-        { module: "Users" }
+        { module: "USERS" }
       );
     });
 

@@ -252,14 +252,11 @@ export function useShiftsGrid(
       )
         return
 
-      const userAssignments = userAssignmentsMap.get(IStaff._id) || []
-      const hasOverlap = userAssignments.some((assign) => {
-        const start = parseAsLocal(assign.start_date)
-        const end = assign.end_date ? parseAsLocal(assign.end_date) : new Date(9999, 11, 31)
-        return start <= endOfMonth && end >= startOfMonth
-      })
+      const start = parseAsLocal(a.start_date)
+      const end = a.end_date ? parseAsLocal(a.end_date) : new Date(9999, 11, 31)
+      const thisOverlaps = start <= endOfMonth && end >= startOfMonth
 
-      if (hasOverlap) {
+      if (thisOverlaps) {
         processedUsers.add(IStaff._id)
         rows.push({
           _id: a._id,

@@ -229,7 +229,7 @@ describe("Audit Service - getLogs", () => {
     await auditService.getLogs({ module: "Users" });
 
     expect(AuditLog.find).toHaveBeenCalledWith(
-      expect.objectContaining({ module: "Users" }),
+      expect.objectContaining({ module: "USERS" }),
     );
   });
 
