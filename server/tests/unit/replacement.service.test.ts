@@ -16,11 +16,13 @@ vi.mock("../../models/replacement.model", () => ({
       countDocuments: vi.fn(),
     },
   ),
+  REPLACEMENT_AUDIT_FIELDS: [],
 }));
 vi.mock("../../models/turn-type.model", () => ({
   default: {
     findOne: vi.fn(),
   },
+  TURN_TYPE_AUDIT_FIELDS: [],
 }));
 
 describe("Replacement Service - Unit Tests", () => {

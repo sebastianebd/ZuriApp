@@ -70,6 +70,17 @@ async function registrar(data: Partial<IReplacement>) {
 
   const saved = await nuevoReemplazo.save();
   await delPattern("replacements:*");
+  if (saved.servicio) {
+    const dashboardService = (await import("./dashboard.service")).default;
+    await dashboardService.invalidateDashboardCache(saved.servicio.toString());
+    const staffId = saved.id_entrante?.toString();
+    if (staffId) {
+      const alertService = (await import("./alert.service")).default;
+      alertService
+        .evaluateForStaff(staffId, saved.servicio.toString(), saved.fecha_inicio)
+        .catch((err) => console.error("Error evaluating alerts:", err));
+    }
+  }
   if (saved.id_entrante) {
     socketService.emitTurnUpdate(saved.id_entrante.toString());
   }
@@ -91,13 +102,27 @@ async function obtenerActivosPaginado(options: {
   fechaFin?: string;
   rutSaliente?: string;
   rutEntrante?: string;
+  status?: string;
+  motivo?: string;
   page: number;
   limit: number;
 }) {
-  const { search, servicio, fechaInicio, fechaFin, rutSaliente, rutEntrante, page, limit } = options;
-  const query: any = {
-    status: { $in: ["EN CURSO", "PENDIENTE"] },
-  };
+  const { search, servicio, fechaInicio, fechaFin, rutSaliente, rutEntrante, status, motivo, page, limit } = options;
+  const query: any = {};
+
+  if (status && status !== "all" && status !== "TODOS") {
+    if (status === "active" || status === "ACTIVOS") {
+      query.status = { $in: ["EN CURSO", "PENDIENTE", "CONFIRMADO"] };
+    } else if (status === "completed" || status === "FINALIZADOS") {
+      query.status = { $in: ["FINALIZADO", "INTERRUMPIDO"] };
+    } else if (status === "cancelled" || status === "ANULADOS") {
+      query.status = { $in: ["CANCELADO", "ANULADO", "RECHAZADO"] };
+    } else {
+      query.status = status.toUpperCase();
+    }
+  } else if (!status) {
+    query.status = { $in: ["EN CURSO", "PENDIENTE", "CONFIRMADO"] };
+  }
 
   if (servicio && servicio.trim().length > 0) {
     query.servicio = servicio;
@@ -154,7 +179,11 @@ async function obtenerActivosPaginado(options: {
     ];
   }
 
-  const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}:fi${fechaInicio || "none"}:ff${fechaFin || "none"}:rs${rutSaliente || "none"}:re${rutEntrante || "none"}`;
+  if (motivo && motivo.trim().length > 0) {
+    query.motivo = motivo.trim();
+  }
+
+  const cacheKey = `replacements:active:v2:p${page}:l${limit}:s${search || "none"}:serv${servicio || "none"}:fi${fechaInicio || "none"}:ff${fechaFin || "none"}:rs${rutSaliente || "none"}:re${rutEntrante || "none"}:st${status || "active"}:m${motivo || "none"}`;
   const cachedData = await get(cacheKey);
   if (cachedData) return cachedData;
 
@@ -346,6 +375,11 @@ async function actualizar(id: string, data: Partial<IReplacement>) {
   });
   await delPattern("replacements:*");
 
+  if (updatedReplacement && updatedReplacement.servicio) {
+    const dashboardService = (await import("./dashboard.service")).default;
+    await dashboardService.invalidateDashboardCache(updatedReplacement.servicio.toString());
+  }
+
   if (updatedReplacement && updatedReplacement.id_entrante) {
     socketService.emitTurnUpdate(updatedReplacement.id_entrante.toString());
   }
@@ -359,21 +393,33 @@ async function finalizarReemplazo(id: string, fechaTermino?: string) {
   // The frontend already formats dates with { timeZone: "America/Santiago" }.
   const fecha = fechaTermino ? new Date(fechaTermino) : new Date();
 
-  await Replacement.findByIdAndUpdate(
+  const finalized = await Replacement.findByIdAndUpdate(
     id,
     { status: "FINALIZADO", fecha_termino: fecha },
     { new: true },
   );
   await delPattern("replacements:*");
+  if (finalized && finalized.servicio) {
+    const dashboardService = (await import("./dashboard.service")).default;
+    await dashboardService.invalidateDashboardCache(finalized.servicio.toString());
+  }
   socketService.emitHistoryUpdate("finalize", id);
-  return await Replacement.findById(id);
+  return finalized;
 }
 
 async function anularReemplazo(id: string) {
-  await Replacement.findByIdAndUpdate(id, { status: "ANULADO" });
+  const annulled = await Replacement.findByIdAndUpdate(
+    id,
+    { status: "ANULADO" },
+    { new: true },
+  );
   await delPattern("replacements:*");
+  if (annulled && annulled.servicio) {
+    const dashboardService = (await import("./dashboard.service")).default;
+    await dashboardService.invalidateDashboardCache(annulled.servicio.toString());
+  }
   socketService.emitHistoryUpdate("annul", id);
-  return await Replacement.findById(id);
+  return annulled;
 }
 
 async function obtenerHistorialStaff(id: string) {
@@ -473,6 +519,8 @@ async function sustituir(payload: SustitucionPayload) {
         rut_saliente: datos_base_evento.rut_saliente,
         nombre_saliente: datos_base_evento.nombre_saliente,
         apellido_saliente: datos_base_evento.apellido_saliente,
+        motivo: registroA.motivo,
+        observaciones: registroA.observaciones,
         tipo_cargo: datos_base_evento.tipo_cargo,
         tipo_turno: datos_base_evento.tipo_turno,
         servicio: datos_base_evento.servicio,
@@ -495,6 +543,10 @@ async function sustituir(payload: SustitucionPayload) {
 
   if (registroA && registroB) {
     await delPattern("replacements:*");
+    if (registroA.servicio) {
+      const dashboardService = (await import("./dashboard.service")).default;
+      await dashboardService.invalidateDashboardCache(registroA.servicio.toString());
+    }
     socketService.emitHistoryUpdate("substitute", registroA._id);
   }
 

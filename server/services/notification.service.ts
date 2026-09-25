@@ -28,15 +28,19 @@ const WHATSAPP_VERSION = "v18.0";
 async function sendWhatsApp(to: string, message: string) {
   // Leemos env vars dinámicamente para asegurar que estén disponibles en tiempo de ejecución,
   // especialmente útil en scripts de seeding o workers que inicializan distintos contextos.
-  const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-  const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
+  const rawToken = process.env.WHATSAPP_TOKEN;
+  const rawPhoneId = process.env.WHATSAPP_PHONE_ID;
 
-  if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_ID) {
+  if (!rawToken || !rawPhoneId) {
     logger.warn(
       "[WhatsApp] Falta configuración (WHATSAPP_TOKEN o WHATSAPP_PHONE_ID). Envío omitido.",
     );
     return false;
   }
+
+  const cleanToken = rawToken.trim().replace(/^["']|["']$/g, '');
+  const cleanPhoneId = rawPhoneId.trim().replace(/^["']|["']$/g, '');
+  const version = (process.env.WHATSAPP_VERSION || WHATSAPP_VERSION || "v18.0").trim();
 
   try {
     // Sanitización de Teléfono:
@@ -45,7 +49,7 @@ async function sendWhatsApp(to: string, message: string) {
     // aunque soporta internacional. Limpiamos espacios y símbolos para maximizar compatibilidad.
     const cleanTo = to.replace(/\+/g, "").replace(/\s/g, "");
 
-    const url = `https://graph.facebook.com/${WHATSAPP_VERSION}/${WHATSAPP_PHONE_ID}/messages`;
+    const url = `https://graph.facebook.com/${version}/${cleanPhoneId}/messages`;
 
     const payload = {
       messaging_product: "whatsapp",
@@ -60,7 +64,7 @@ async function sendWhatsApp(to: string, message: string) {
 
     const response = await axios.post(url, payload, {
       headers: {
-        Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+        Authorization: `Bearer ${cleanToken}`,
         "Content-Type": "application/json",
       },
     });
@@ -196,8 +200,117 @@ async function notifyShiftAssignment(assignment: any) {
   }
 }
 
+async function sendWhatsAppTemplate(
+  to: string,
+  templateName: string,
+  languageCode: string = "es",
+  bodyParameters: Array<{ type: string; text: string }> = [],
+  buttonParameters?: Array<{ type: string; text?: string; payload?: string }>
+): Promise<boolean> {
+  const rawToken = process.env.WHATSAPP_TOKEN;
+  const rawPhoneId = process.env.WHATSAPP_PHONE_ID;
+
+  if (!rawToken || !rawPhoneId) {
+    logger.warn(
+      "[WhatsApp] Falta configuración (WHATSAPP_TOKEN o WHATSAPP_PHONE_ID). Envío omitido.",
+    );
+    return false;
+  }
+
+  const cleanToken = rawToken.trim().replace(/^["']|["']$/g, '');
+  const cleanPhoneId = rawPhoneId.trim().replace(/^["']|["']$/g, '');
+  const version = (process.env.WHATSAPP_VERSION || WHATSAPP_VERSION || "v18.0").trim();
+
+  try {
+    const cleanTo = to.replace(/\+/g, "").replace(/\s/g, "");
+    const url = `https://graph.facebook.com/${version}/${cleanPhoneId}/messages`;
+
+    const components: any[] = [];
+    if (bodyParameters && bodyParameters.length > 0) {
+      components.push({
+        type: "body",
+        parameters: bodyParameters,
+      });
+    }
+
+    if (buttonParameters && buttonParameters.length > 0) {
+      components.push({
+        type: "button",
+        sub_type: "url",
+        index: "0",
+        parameters: buttonParameters,
+      });
+    }
+
+    const payload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: cleanTo,
+      type: "template",
+      template: {
+        name: templateName,
+        language: { code: languageCode },
+        ...(components.length > 0 ? { components } : {}),
+      },
+    };
+
+    const response = await axios.post(url, payload, {
+      headers: {
+        Authorization: `Bearer ${cleanToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    logger.info(
+      `[WhatsApp] Plantilla '${templateName}' enviada a ${to}. ID: ${response.data.messages?.[0]?.id}`,
+    );
+    return true;
+  } catch (error: any) {
+    logger.error(
+      `[WhatsApp] Error enviando plantilla '${templateName}' a ${to}: ${
+        error.response?.data?.error?.message || error.message
+      }`,
+    );
+    if (error.response?.data) {
+      logger.error(
+        `[WhatsApp] Detalle Error Meta API: ${JSON.stringify(error.response.data)}`,
+      );
+    }
+    return false;
+  }
+}
+
+async function sendOTP(phone: string, otp: string): Promise<boolean> {
+  const templateName = process.env.WHATSAPP_OTP_TEMPLATE_NAME?.trim();
+  const templateLang = process.env.WHATSAPP_TEMPLATE_LANG?.trim() || "es";
+
+  if (templateName) {
+    return await sendWhatsAppTemplate(phone, templateName, templateLang, [
+      { type: "text", text: otp },
+    ]);
+  }
+
+  const message =
+    `🔐 *ZuriApp - Código de Acceso*\n\n` +
+    `Tu código de verificación para ingresar a ZuriApp es:\n\n` +
+    `*${otp}*\n\n` +
+    `Este código es válido por 10 minutos. No lo compartas con nadie.`;
+
+  return await sendWhatsApp(phone, message);
+}
+
+export {
+  sendWhatsApp,
+  sendWhatsAppTemplate,
+  notifyReplacement,
+  notifyShiftAssignment,
+  sendOTP,
+};
+
 export default {
   notifyReplacement,
   notifyShiftAssignment,
   sendWhatsApp,
+  sendWhatsAppTemplate,
+  sendOTP,
 };

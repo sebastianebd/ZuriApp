@@ -55,3 +55,12 @@ export const getAllStaff = async (
     throw errorHandler(error)
   }
 }
+
+export const getStaffById = async (apiPrivate: ReturnType<typeof useApiPrivate>, id: string) => {
+  try {
+    const { data } = await apiPrivate.get(`/staff/${id}`)
+    return data
+  } catch (error) {
+    throw errorHandler(error)
+  }
+}

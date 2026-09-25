@@ -68,6 +68,8 @@ describe("Replacement Controller - Integration", () => {
         rut_saliente: "12345678-9",
         nombre_saliente: "JUAN",
         apellido_saliente: "PEREZ",
+        motivo: "LICENCIA_MEDICA",
+        observaciones: "Licencia médica 15 días",
         tipo_turno: "DIURNO",
         servicio: "MEDICINA",
         fecha_inicio: "2024-01-01",

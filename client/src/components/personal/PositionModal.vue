@@ -2,7 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { Form, Field, ErrorMessage } from 'vee-validate'
 import * as yup from 'yup'
-import { type Position } from '@/stores/position.store'
+import { type Position, ESTAMENTOS_LABELS, type EstamentoType } from '@/stores/position.store'
 
 const props = defineProps<{
   visible: boolean
@@ -19,13 +19,21 @@ const btnLabel = computed(() => (isEditing.value ? 'Guardar Cambios' : 'Crear Ca
 const schema = yup.object({
   name: yup.string().required('El nombre es obligatorio').min(3, 'Mínimo 3 caracteres'),
   position_code: yup.string().required('El código es obligatorio'),
+  estamento: yup.string().required('El estamento es obligatorio'),
   description: yup.string().max(200, 'Máximo 200 caracteres'),
   isActive: yup.boolean()
 })
 
-const formData = ref({
+const formData = ref<{
+  name: string
+  position_code: string
+  estamento: EstamentoType
+  description: string
+  isActive: boolean
+}>({
   name: '',
   position_code: '',
+  estamento: 'PROFESIONAL',
   description: '',
   isActive: true
 })
@@ -38,6 +46,7 @@ watch(
       formData.value = {
         name: newVal.name,
         position_code: newVal.position_code || '',
+        estamento: newVal.estamento || 'PROFESIONAL',
         description: newVal.description || '',
         isActive: newVal.isActive ?? true
       }
@@ -45,6 +54,7 @@ watch(
       formData.value = {
         name: '',
         position_code: '',
+        estamento: 'PROFESIONAL',
         description: '',
         isActive: true
       }
@@ -106,6 +116,33 @@ function onSubmit() {
               placeholder="Ej: TENS, MÉDICO"
             />
             <ErrorMessage name="name" class="text-danger x-small fw-bold mt-1 d-block" />
+          </div>
+
+          <!-- Estamento Legal -->
+          <div class="mb-4">
+            <label class="form-label x-small fw-bold text-secondary text-uppercase"
+              >Estamento Legal <span class="text-danger">*</span></label
+            >
+            <Field
+              name="estamento"
+              v-model="formData.estamento"
+              as="select"
+              class="form-select form-select-lg custom-input"
+              :class="{ 'is-invalid': errors.estamento }"
+            >
+              <option value="" disabled>Selecciona el estamento...</option>
+              <option
+                v-for="(label, key) in ESTAMENTOS_LABELS"
+                :key="key"
+                :value="key"
+              >
+                {{ label }}
+              </option>
+            </Field>
+            <ErrorMessage name="estamento" class="text-danger x-small fw-bold mt-1 d-block" />
+            <small class="text-muted x-small mt-1 d-block">
+              Determina el marco legal del funcionario y las reglas de elegibilidad en reemplazos.
+            </small>
           </div>
 
           <!-- Descripcion -->

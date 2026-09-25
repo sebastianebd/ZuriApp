@@ -30,11 +30,14 @@ async function main() {
 
     if (success) {
       console.log("✅ ¡Mensaje enviado con éxito! Revisa tu WhatsApp.");
+      process.exit(0);
     } else {
       console.error("❌ Falló el envío del mensaje. Revisa los logs arriba.");
+      process.exit(1);
     }
   } catch (error) {
     console.error("❌ Error inesperado:", error);
+    process.exit(1);
   }
 }
 

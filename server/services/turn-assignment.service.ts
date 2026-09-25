@@ -93,6 +93,19 @@ async function createAssignment(payload: any, currentUser: any, userRoleLevel: n
       console.error("Error sending WhatsApp notification:", err)
     );
 
+  if (assignment.service) {
+    const dashboardService = (await import("./dashboard.service")).default;
+    await dashboardService.invalidateDashboardCache(assignment.service.toString());
+    const targetStaff = assignment.staffId as any;
+    const staffId = targetStaff?._id?.toString() || targetStaff?.toString();
+    if (staffId) {
+      const alertService = (await import("./alert.service")).default;
+      alertService
+        .evaluateForStaff(staffId, assignment.service.toString(), assignment.start_date)
+        .catch((err) => console.error("Error evaluating alerts:", err));
+    }
+  }
+
   return assignment;
 }
 
@@ -133,6 +146,20 @@ async function updateAssignment(id: string, payload: any, userRoleLevel: number)
   if (!assignment) {
     throw new AppError(404, "Assignment not found");
   }
+
+  if (assignment.service) {
+    const dashboardService = (await import("./dashboard.service")).default;
+    await dashboardService.invalidateDashboardCache(assignment.service.toString());
+    const targetStaff = assignment.staffId as any;
+    const staffId = targetStaff?._id?.toString() || targetStaff?.toString();
+    if (staffId) {
+      const alertService = (await import("./alert.service")).default;
+      alertService
+        .evaluateForStaff(staffId, assignment.service.toString(), assignment.start_date)
+        .catch((err) => console.error("Error evaluating alerts:", err));
+    }
+  }
+
   return assignment;
 }
 
@@ -154,6 +181,12 @@ async function deleteAssignment(id: string, userRoleLevel: number) {
   if (!assignment) {
     throw new AppError(404, "Assignment not found");
   }
+
+  if (assignment.service) {
+    const dashboardService = (await import("./dashboard.service")).default;
+    await dashboardService.invalidateDashboardCache(assignment.service.toString());
+  }
+
   return assignment;
 }
 

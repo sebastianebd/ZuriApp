@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, onUnmounted, onActivated } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useReportStore } from '../../stores/report.store'
 import { useStaffStore } from '../../stores/staff.store'
 import { useTurnSiglaStore } from '../../stores/turn-sigla.store'
 import { useReplacementStore } from '../../stores/replacement.store'
 import { useServiceStore } from '../../stores/service.store'
+import { formatTitleCase } from '../../utils/text-formatters'
 import socket from '../../plugins/socket'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
 import { debounce } from 'lodash-es'
 
+const route = useRoute()
+const router = useRouter()
 const reportStore = useReportStore()
 const staffStore = useStaffStore()
 const turnSiglaStore = useTurnSiglaStore()
@@ -63,8 +67,9 @@ const getUserLabel = (option: any) => `${option.firstName} ${option.lastName}`
 const fetchData = async () => {
   if (!selectedUser.value) return
 
-  // Silent Refresh: Only show loading if data is missing or belongs to another IStaff
-  const isDifferentUser = reportStore.reportData?.IStaff?._id !== selectedUser.value._id
+  // Silent Refresh: Only show loading if data is missing or belongs to another staff
+  const currentRepUserId = reportStore.reportData?.staff?._id || reportStore.reportData?.IStaff?._id
+  const isDifferentUser = currentRepUserId !== selectedUser.value._id
   if (!reportStore.reportData || isDifferentUser) {
     isLoading.value = true
   }
@@ -136,8 +141,9 @@ onMounted(async () => {
   if (!socket.connected) socket.connect()
   socket.on('turn:update', handleSocketUpdate)
 
-  // 1. Capture cached IStaff from Store (to persist selection)
-  const cachedUser = reportStore.reportData?.IStaff
+  // 1. Capture cached staff from Store (to persist selection)
+  const cachedUser = reportStore.reportData?.staff || reportStore.reportData?.IStaff
+  const targetStaffId = route.query.staffId ? String(route.query.staffId) : null
 
   // 2. Load Options
   const defaults = await staffStore.searchStaff({ search: '', limit: 1000 })
@@ -145,12 +151,55 @@ onMounted(async () => {
   await turnSiglaStore.fetchSiglas()
   await serviceStore.fetchServices()
 
-  // 3. Restore Selection (triggers watcher -> fetchData)
-  if (cachedUser) {
-    console.log('Restoring IStaff context...')
-    selectedUser.value = cachedUser
+  // 3. Preselección prioritaria por URL query (?staffId=...)
+  if (targetStaffId) {
+    const found = userOptions.value.find((u: any) => String(u._id) === targetStaffId)
+    if (found) {
+      selectedUser.value = found
+    } else {
+      try {
+        const specificStaff = await staffStore.getStaffById(targetStaffId)
+        if (specificStaff) {
+          userOptions.value.unshift(specificStaff)
+          selectedUser.value = specificStaff
+        }
+      } catch (e) {
+        console.warn('No se pudo encontrar el funcionario por staffId:', targetStaffId)
+      }
+    }
+  } else if (cachedUser) {
+    // 4. Restore Selection from cache if no URL param
+    console.log('Restoring staff context...')
+    const found = userOptions.value.find((u: any) => String(u._id) === String(cachedUser._id))
+    if (found) {
+      selectedUser.value = found
+    } else {
+      selectedUser.value = cachedUser
+    }
   }
 })
+
+// Sincronización reactiva si cambia el parámetro de URL staffId
+watch(
+  () => route.query.staffId,
+  async (newStaffId) => {
+    if (newStaffId) {
+      const targetId = String(newStaffId)
+      let found = userOptions.value.find((u: any) => String(u._id) === targetId)
+      if (!found) {
+        try {
+          found = await staffStore.getStaffById(targetId)
+          if (found) userOptions.value.unshift(found)
+        } catch (e) {
+          console.warn('No se pudo cargar el funcionario por staffId:', targetId)
+        }
+      }
+      if (found && selectedUser.value?._id !== found._id) {
+        selectedUser.value = found
+      }
+    }
+  }
+)
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -169,11 +218,37 @@ const startOffset = computed(() => {
   return firstDay === 0 ? 6 : firstDay - 1
 })
 
-import { formatTitleCase } from '../../utils/text-formatters'
+// Safe computed staff profile for reactive UI rendering
+const currentStaffProfile = computed(() => {
+  const repStaff = reportStore.reportData?.staff || reportStore.reportData?.IStaff
+  const user = selectedUser.value
 
-// ... existing imports ...
+  const firstName = user?.firstName || repStaff?.firstName || repStaff?.nombre || ''
+  const lastName = user?.lastName || repStaff?.lastName || repStaff?.apellido || ''
+  const rut = user?.rut || repStaff?.rut || ''
+  const cargo =
+    user?.positionId?.name ||
+    user?.roleId?.name ||
+    repStaff?.cargo ||
+    repStaff?.positionId?.name ||
+    repStaff?.roleId?.name ||
+    ''
 
-// ... inside script ...
+  if (!firstName && !lastName && !rut) return null
+
+  const firstLetter = firstName ? firstName.charAt(0).toUpperCase() : ''
+  const lastLetter = lastName ? lastName.charAt(0).toUpperCase() : ''
+  const initials = `${firstLetter}${lastLetter}` || '?'
+
+  return {
+    firstName,
+    lastName,
+    fullName: `${firstName} ${lastName}`.trim(),
+    rut,
+    cargo,
+    initials
+  }
+})
 
 const getShiftName = (sigla: string) => {
   const rawName = turnSiglaStore.mapSiglaToNombre(sigla) // e.g. "LARGO", "NOCHE"
@@ -244,6 +319,18 @@ const isToday = (dayNum: number) => {
   <div class="ficha-container">
     <!-- LEFT PANEL: PROFILE & METRICS -->
     <div class="panel-left">
+      <!-- Navegación de retorno -->
+      <div class="mb-3">
+        <button
+          type="button"
+          class="btn btn-sm btn-light border d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3 text-secondary fw-semibold shadow-xs"
+          @click="router.push({ name: 'personal-staff' })"
+          title="Regresar al listado de funcionarios"
+        >
+          <i class="bi bi-arrow-left"></i> Volver a Funcionarios
+        </button>
+      </div>
+
       <!-- Search -->
       <div class="search-section">
         <label class="section-label">Seleccionar Funcionario</label>
@@ -254,10 +341,10 @@ const isToday = (dayNum: number) => {
           @search="onSearch"
           :get-option-label="getUserLabel"
           placeholder="Buscar Funcionario (Nombre o RUT)..."
-          class="IStaff-select premium-select"
+          class="staff-select premium-select"
         >
           <template #option="{ firstName, lastName, rut, positionId, roleId }">
-            <div class="IStaff-option">
+            <div class="staff-option">
               <strong>{{ firstName }} {{ lastName }}</strong>
               <small>{{ rut }} - {{ positionId?.name || roleId?.name || '' }}</small>
             </div>
@@ -266,20 +353,20 @@ const isToday = (dayNum: number) => {
       </div>
 
       <!-- Profile Card -->
-      <div v-if="reportStore.reportData" class="profile-card fade-in">
+      <div v-if="currentStaffProfile" class="profile-card fade-in">
         <div class="profile-header">
           <div class="avatar-placeholder">
-            {{ reportStore.reportData.IStaff.firstName[0] }}{{ reportStore.reportData.IStaff.lastName[0] }}
+            {{ currentStaffProfile.initials }}
           </div>
           <div class="profile-info">
             <h3>
-              {{ reportStore.reportData.IStaff.firstName }} {{ reportStore.reportData.IStaff.lastName }}
+              {{ currentStaffProfile.fullName }}
             </h3>
-            <p class="role">{{ reportStore.reportData.IStaff.positionId?.name || reportStore.reportData.IStaff.roleId?.name || '' }}</p>
-            <p class="meta">{{ reportStore.reportData.IStaff.rut }}</p>
+            <p v-if="currentStaffProfile.cargo" class="role">{{ currentStaffProfile.cargo }}</p>
+            <p v-if="currentStaffProfile.rut" class="meta">{{ currentStaffProfile.rut }}</p>
           </div>
         </div>
-        <div class="profile-details">
+        <div class="profile-details" v-if="reportStore.reportData?.serviceStats?.length">
           <div class="detail-row">
             <span>Servicio</span>
             <strong>{{ serviceStore.getServiceName(reportStore.reportData.serviceStats[0]?.serviceName) || 'N/A' }}</strong>
@@ -287,7 +374,7 @@ const isToday = (dayNum: number) => {
         </div>
       </div>
 
-      <div v-if="reportStore.reportData" class="kpi-grid fade-in">
+      <div v-if="reportStore.reportData?.totals" class="kpi-grid fade-in">
         <div class="kpi-card total">
           <div class="kpi-icon">
             <!-- Clock (Total Hours) -->
@@ -308,7 +395,7 @@ const isToday = (dayNum: number) => {
             </svg>
           </div>
           <div class="kpi-content">
-            <span class="kpi-value">{{ reportStore.reportData.totals.hours }}</span>
+            <span class="kpi-value">{{ reportStore.reportData.totals.hours ?? 0 }}</span>
             <span class="kpi-label">Horas Totales</span>
           </div>
         </div>
@@ -339,7 +426,7 @@ const isToday = (dayNum: number) => {
             </svg>
           </div>
           <div class="kpi-content">
-            <span class="kpi-value">{{ reportStore.reportData.totals.dayHours }}</span>
+            <span class="kpi-value">{{ reportStore.reportData.totals.dayHours ?? 0 }}</span>
             <span class="kpi-label">Horas Diurnas</span>
           </div>
         </div>
@@ -362,14 +449,14 @@ const isToday = (dayNum: number) => {
             </svg>
           </div>
           <div class="kpi-content">
-            <span class="kpi-value">{{ reportStore.reportData.totals.nightHours }}</span>
+            <span class="kpi-value">{{ reportStore.reportData.totals.nightHours ?? 0 }}</span>
             <span class="kpi-label">Horas Nocturnas</span>
           </div>
         </div>
       </div>
 
       <!-- Service Distribution -->
-      <div v-if="reportStore.reportData" class="service-chart-card fade-in">
+      <div v-if="reportStore.reportData?.serviceStats?.length" class="service-chart-card fade-in">
         <h4>Distribución de Servicios</h4>
         <div class="service-bars">
           <div
@@ -381,7 +468,9 @@ const isToday = (dayNum: number) => {
               <span>{{ serviceStore.getServiceName(svc.serviceName) }}</span>
               <span
                 >{{
-                  Math.round((svc.stats.hours / reportStore.reportData.totals.hours) * 100)
+                  reportStore.reportData?.totals?.hours
+                    ? Math.round((svc.stats.hours / reportStore.reportData.totals.hours) * 100)
+                    : 0
                 }}%</span
               >
             </div>
@@ -389,7 +478,10 @@ const isToday = (dayNum: number) => {
               <div
                 class="progress-fill"
                 :style="{
-                  width: (svc.stats.hours / reportStore.reportData.totals.hours) * 100 + '%'
+                  width:
+                    (reportStore.reportData?.totals?.hours
+                      ? (svc.stats.hours / reportStore.reportData.totals.hours) * 100
+                      : 0) + '%'
                 }"
               ></div>
             </div>
@@ -470,6 +562,13 @@ const isToday = (dayNum: number) => {
           </div>
           <h4 class="text-muted fw-bold">Cargando Ficha...</h4>
         </div>
+        <div v-else-if="selectedUser" class="d-flex flex-column align-items-center text-center p-4">
+          <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
+          <h4 class="text-muted">Sin turnos asignados</h4>
+          <p class="text-muted">
+            {{ reportStore.error || 'No se encontraron registros de turnos para este funcionario en el período seleccionado.' }}
+          </p>
+        </div>
         <div v-else class="d-flex flex-column align-items-center">
           <i class="bi bi-person-badge display-1 text-muted mb-3"></i>
           <h4 class="text-muted">Seleccione un funcionario</h4>
@@ -516,18 +615,18 @@ const isToday = (dayNum: number) => {
   display: block;
 }
 
-/* IStaff Option Dropdown Item */
-.IStaff-option {
+/* Staff Option Dropdown Item */
+.staff-option {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
 }
-.IStaff-option strong {
+.staff-option strong {
   font-size: 0.9rem;
   color: #1e293b;
   text-transform: uppercase;
 }
-.IStaff-option small {
+.staff-option small {
   font-size: 0.75rem;
   color: #64748b;
 }

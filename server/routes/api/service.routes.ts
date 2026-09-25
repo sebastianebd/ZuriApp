@@ -4,6 +4,7 @@ import {
   createService,
   updateService,
   deleteService,
+  updateServiceStaffingHandler,
 } from "../../controllers/service.controller";
 import authMiddleware, {
   requirePermission,
@@ -22,4 +23,8 @@ router.post("/", requirePermission("service.create"), createService);
 router.put("/:id", requirePermission("service.update"), updateService);
 router.delete("/:id", requirePermission("service.delete"), deleteService);
 
+// --- Dotación Mínima y Gobernanza Contextual ---
+router.patch("/:id/staffing", updateServiceStaffingHandler);
+
 export default router;
+

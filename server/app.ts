@@ -21,11 +21,16 @@ import {
   reportClosureQueue,
   setupReportClosureWorker,
 } from "./queues/report.queue";
+import {
+  replacementOfferQueue,
+  setupReplacementOfferWorker,
+} from "./queues/replacement-offer.queue";
 import basicAuth from "express-basic-auth";
 import * as Sentry from "@sentry/node";
 
 import "./jobs/replacement.cron";
 import "./jobs/report-closure.cron";
+import "./jobs/alerts.cron";
 
 // IMPORT HOISTING
 import authRoutes from "./routes/api/auth.routes";
@@ -36,6 +41,7 @@ import accountRoutes from "./routes/api/account.routes";
 import roleRoutes from "./routes/api/role.routes";
 import positionRoutes from "./routes/api/position.routes";
 import replacementRoutes from "./routes/api/replacement.routes";
+import replacementOfferRoutes from "./routes/api/replacement-offer.routes";
 import auditRoutes from "./routes/api/audit.routes";
 import profileRoutes from "./routes/api/profile.routes";
 import calendarRoutes from "./routes/api/calendar.routes";
@@ -46,9 +52,14 @@ import turnSiglaRoutes from "./routes/api/turn-sigla.routes";
 import sentryRoutes from "./routes/api/sentry.routes";
 import reportRoutes from "./routes/api/report.routes";
 import periodRoutes from "./routes/api/period.routes";
+import dashboardRoutes from "./routes/api/dashboard.routes";
+import alertRoutes from "./routes/api/alert.routes";
+import portalRoutes from "./routes/api/portal.routes";
 
 // Inicializar Worker de cierre mensual (escucha la cola BullMQ)
 setupReportClosureWorker();
+// Inicializar Worker de expiración de ofertas de reemplazo
+setupReplacementOfferWorker();
 
 // Token personalizado de Morgan para incluir el nombre del Usuario autenticado en los logs.
 // Esto mejora la trazabilidad vinculando las solicitudes directamente a usuarios específicos.
@@ -93,6 +104,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/reemplazos", replacementRoutes);
+app.use("/api/replacement-offers", replacementOfferRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/public", publicRoutes);
@@ -108,6 +120,10 @@ app.use("/api/turn-types", turnTypeRoutes);
 app.use("/api/turn-siglas", turnSiglaRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/periods", periodRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/alerts", alertRoutes);
+app.use("/api/pwa", portalRoutes);
+
 
 // Sentry Tunnel (Consolidado y Unificado)
 app.use(
@@ -127,6 +143,7 @@ createBullBoard({
   queues: [
     new BullMQAdapter(emailQueue),
     new BullMQAdapter(reportClosureQueue), // Cierre mensual — visible en /admin/queues
+    new BullMQAdapter(replacementOfferQueue), // Convocatorias y expiraciones de reemplazo
   ],
   serverAdapter: serverAdapter,
 });

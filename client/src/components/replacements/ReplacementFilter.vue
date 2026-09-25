@@ -1,6 +1,6 @@
 <template>
   <div class="mb-4">
-    <div class="row row-cols-1 row-cols-md-5 g-3 align-items-end">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3 align-items-end">
       <!-- Filtro Rut Saliente -->
       <div class="col">
         <label for="filtroRutSaliente" class="form-label fw-semibold text-secondary small"
@@ -94,6 +94,50 @@
           </template>
         </v-select>
       </div>
+
+      <!-- Estado -->
+      <div class="col">
+        <label for="filtroEstado" class="form-label fw-semibold text-secondary small"
+          >Estado</label
+        >
+        <v-select
+          id="filtroEstado"
+          v-model="store.filtroEstado"
+          :options="[
+            { nombre: 'En curso / Activos', value: 'active' },
+            { nombre: 'Finalizados', value: 'completed' },
+            { nombre: 'Anulados', value: 'cancelled' },
+            { nombre: 'Todos', value: 'all' }
+          ]"
+          :reduce="(option: any) => option.value"
+          label="nombre"
+          :clearable="false"
+          :searchable="false"
+          placeholder="Estado..."
+          class="custom-v-select"
+        />
+      </div>
+
+      <!-- Causal de Ausencia -->
+      <div class="col">
+        <label for="filtroMotivo" class="form-label fw-semibold text-secondary small"
+          >Causal</label
+        >
+        <v-select
+          id="filtroMotivo"
+          v-model="store.filtroMotivo"
+          :options="[
+            { nombre: 'Todas', value: '' },
+            ...motivoOptions
+          ]"
+          :reduce="(option: any) => option.value"
+          label="nombre"
+          :clearable="false"
+          :searchable="false"
+          placeholder="Causal..."
+          class="custom-v-select"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -104,6 +148,12 @@ import { DatePicker } from 'v-calendar'
 import 'v-calendar/dist/style.css'
 import { formatRut, cleanRutForStorage } from '@/utils/rut.util'
 import { ref } from 'vue'
+import { MOTIVOS_AUSENCIA_LABELS, type AusenciaSalienteMotivo } from '@/types/replacement.types'
+
+const motivoOptions = (Object.keys(MOTIVOS_AUSENCIA_LABELS) as AusenciaSalienteMotivo[]).map((key) => ({
+  value: key,
+  nombre: MOTIVOS_AUSENCIA_LABELS[key]
+}))
 
 // 💡 Props: El componente de filtros recibe las opciones para el select
 defineProps({

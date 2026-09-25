@@ -50,6 +50,14 @@ export function useShiftsState() {
     return activeMonth < thisMonth
   })
 
+  const isPastMonth = computed(() => {
+    const today = new Date()
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    const activeMonth = new Date(currentYear.value, currentMonth.value, 1)
+
+    return activeMonth < thisMonth
+  })
+
   function nextMonth() {
     if (canGoNext.value) {
       currentDate.value = new Date(currentYear.value, currentMonth.value + 1, 1)
@@ -79,6 +87,7 @@ export function useShiftsState() {
     formattedMonth,
     daysInMonth,
     canGoNext,
+    isPastMonth,
     nextMonth,
     prevMonth,
     openModal,

@@ -82,6 +82,8 @@ async function mostrarReemplazos(req: Request, res: Response) {
     const fechaFin = req.query.fechaFin as string;
     const rutSaliente = req.query.rutSaliente as string;
     const rutEntrante = req.query.rutEntrante as string;
+    const status = (req.query.status as string) || "";
+    const motivo = (req.query.motivo as string) || "";
 
     const result = await replacementService.obtenerActivosPaginado({
       search,
@@ -90,6 +92,8 @@ async function mostrarReemplazos(req: Request, res: Response) {
       fechaFin,
       rutSaliente,
       rutEntrante,
+      status,
+      motivo,
       page,
       limit,
     });

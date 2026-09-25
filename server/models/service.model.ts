@@ -1,5 +1,16 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+export interface IDotacionMinima {
+  positionId: mongoose.Types.ObjectId;
+  minimo_dia: number;
+  minimo_noche: number;
+}
+
+export interface IUmbralesCobertura {
+  verde: number;
+  amarillo: number;
+}
+
 export interface IService extends Document {
   nombre: string;
   codigo: string;
@@ -11,6 +22,8 @@ export interface IService extends Document {
   ubicacion?: string;
   anexo?: string;
   email?: string;
+  dotacion_minima?: IDotacionMinima[];
+  umbrales_cobertura?: IUmbralesCobertura;
   activo: boolean; // Status
   deleted_at?: Date; // Soft Delete
   createdAt: Date;
@@ -70,6 +83,35 @@ const ServiceSchema: Schema = new Schema(
     email: {
       type: String,
       trim: true,
+    },
+    dotacion_minima: [
+      {
+        positionId: {
+          type: Schema.Types.ObjectId,
+          ref: "Position",
+          required: true,
+        },
+        minimo_dia: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
+        minimo_noche: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
+      },
+    ],
+    umbrales_cobertura: {
+      verde: {
+        type: Number,
+        default: 95,
+      },
+      amarillo: {
+        type: Number,
+        default: 85,
+      },
     },
     activo: {
       type: Boolean,

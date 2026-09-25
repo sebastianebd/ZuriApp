@@ -119,6 +119,18 @@ export const useStaffStore = defineStore('staff', {
       } finally {
         this.isSearching = false
       }
+    },
+
+    async getStaffById(id: string) {
+      const authStore = useAuthStore()
+      const apiPrivate: AxiosInstance = authStore.usePrivateApi()
+      try {
+        const data = await StaffService.getStaffById(apiPrivate, id)
+        return data
+      } catch (error) {
+        console.error('Error al obtener funcionario por ID:', error)
+        throw error
+      }
     }
   }
 })

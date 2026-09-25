@@ -96,6 +96,7 @@ describe("Turn Assignment Controller - Integration", () => {
         staffId: "user123",
         turn_type: "INVALID",
         start_date: "2024-01-01T00:00:00.000Z",
+        end_date: "2024-12-31T23:59:59.999Z",
         service: "UCI",
       });
 
@@ -155,7 +156,7 @@ describe("Turn Assignment Controller - Integration", () => {
       expect(response.body).toEqual(mockAssignments);
     });
 
-    it("debería filtrar asignaciones por user_id", async () => {
+    it("debería filtrar asignaciones por staffId", async () => {
       const mockQuery = {
         populate: vi.fn().mockReturnThis(),
         sort: vi.fn().mockResolvedValue([]),
@@ -164,6 +165,21 @@ describe("Turn Assignment Controller - Integration", () => {
       (TurnAssignmentModel.find as any).mockReturnValue(mockQuery);
 
       await request(app).get("/api/assignments?staffId=user123");
+
+      expect(TurnAssignmentModel.find).toHaveBeenCalledWith({
+        staffId: "user123",
+      });
+    });
+
+    it("debería filtrar asignaciones por user_id (compatibilidad con cliente)", async () => {
+      const mockQuery = {
+        populate: vi.fn().mockReturnThis(),
+        sort: vi.fn().mockResolvedValue([]),
+      };
+
+      (TurnAssignmentModel.find as any).mockReturnValue(mockQuery);
+
+      await request(app).get("/api/assignments?user_id=user123");
 
       expect(TurnAssignmentModel.find).toHaveBeenCalledWith({
         staffId: "user123",

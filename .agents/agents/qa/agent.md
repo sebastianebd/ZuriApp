@@ -4,6 +4,8 @@ description: Especialista en testing, aseguramiento de calidad, suites de prueba
 mainAgent: true
 subagent: true
 inheritMcp: true
+allowed-tools: Read, Write, Glob, Grep, Bash, Task
+
 ---
 
 # QA Engineer Persona

@@ -1,5 +1,26 @@
 import type { IStaff } from './staff.types'
 
+export type AusenciaSalienteMotivo =
+  | 'LICENCIA_MEDICA'
+  | 'PRE_POST_NATAL'
+  | 'PERMISO_ADMINISTRATIVO'
+  | 'FERIADO_LEGAL'
+  | 'DIA_COMPENSATORIO'
+  | 'COMISION_SERVICIO'
+  | 'PERMISO_GREMIAL'
+  | 'OTRO'
+
+export const MOTIVOS_AUSENCIA_LABELS: Record<AusenciaSalienteMotivo, string> = {
+  LICENCIA_MEDICA: 'Licencia Médica',
+  PRE_POST_NATAL: 'Pre / Postnatal y Parental',
+  PERMISO_ADMINISTRATIVO: 'Permiso Administrativo',
+  FERIADO_LEGAL: 'Feriado Legal (Vacaciones)',
+  DIA_COMPENSATORIO: 'Día Compensatorio',
+  COMISION_SERVICIO: 'Comisión de Servicio',
+  PERMISO_GREMIAL: 'Permiso Gremial',
+  OTRO: 'Otro Motivo',
+}
+
 export interface ReplacementRegistration {
   id_negocio: string
   _id: string
@@ -7,6 +28,8 @@ export interface ReplacementRegistration {
   rut_saliente: string
   nombre_saliente: string
   apellido_saliente: string
+  motivo?: AusenciaSalienteMotivo
+  observaciones?: string
   id_entrante: string
   rut_entrante: string
   nombre_entrante: string

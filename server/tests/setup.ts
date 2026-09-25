@@ -79,3 +79,15 @@ vi.mock("../queues/report.queue", () => ({
   },
   setupReportClosureWorker: vi.fn(),
 }));
+
+vi.mock("../queues/replacement-offer.queue", () => ({
+  REPLACEMENT_OFFER_QUEUE: "replacement-offer-queue",
+  replacementOfferQueue: {
+    add: vi.fn().mockResolvedValue({ id: "mock_job_id" }),
+    process: vi.fn(),
+    on: vi.fn(),
+    name: "replacementOfferQueue",
+    getName: vi.fn().mockReturnValue("replacementOfferQueue"),
+  },
+  setupReplacementOfferWorker: vi.fn(),
+}));

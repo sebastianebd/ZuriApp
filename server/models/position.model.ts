@@ -4,6 +4,7 @@ export interface IPosition extends Document {
   name: string;
   position_code: string;
   description?: string;
+  estamento: 'MEDICO' | 'PROFESIONAL' | 'TECNICO' | 'ADMINISTRATIVO' | 'AUXILIAR';
   isActive: boolean;
   deleted_at?: Date;
   createdAt: Date;
@@ -28,6 +29,12 @@ const PositionSchema: Schema = new Schema(
       type: String,
       trim: true,
     },
+    estamento: {
+      type: String,
+      enum: ['MEDICO', 'PROFESIONAL', 'TECNICO', 'ADMINISTRATIVO', 'AUXILIAR'],
+      required: true,
+      default: 'PROFESIONAL',
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -46,6 +53,7 @@ export const POSITION_AUDIT_FIELDS = [
   "name",
   "position_code",
   "description",
+  "estamento",
   "isActive",
 ];
 

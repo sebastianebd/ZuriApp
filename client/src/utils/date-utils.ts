@@ -63,3 +63,59 @@ export const formatReportDate = (dateStr: string | Date): string => {
   const yr = d.getUTCFullYear()
   return `${day}/${mn}/${yr}`
 }
+
+/**
+ * Encuentra el primer día disponible a partir de una fecha base (por defecto hoy)
+ * que no se encuentre dentro de los rangos o fechas bloqueadas proporcionadas.
+ *
+ * @param fromDate Fecha base desde donde iniciar la búsqueda.
+ * @param blockedItems Lista de bloqueos: Date individuales, objetos { start: Date, end?: Date }, o strings 'YYYY-MM-DD'.
+ * @param maxDaysToSearch Límite de días a buscar para evitar bucles infinitos (por defecto 365 días).
+ * @returns La primera Date disponible (a las 00:00:00 local).
+ */
+export function findNextAvailableDate(
+  fromDate: Date = new Date(),
+  blockedItems: any[] = [],
+  maxDaysToSearch: number = 365
+): Date {
+  const candidate = new Date(fromDate)
+  candidate.setHours(0, 0, 0, 0)
+
+  if (!blockedItems || blockedItems.length === 0) {
+    return candidate
+  }
+
+  // Pre-normalizar los rangos bloqueados para comparación en milisegundos
+  const ranges = blockedItems
+    .filter(Boolean)
+    .map((item) => {
+      let start: Date
+      let end: Date
+      if (item && item.start) {
+        start = new Date(item.start)
+        end = item.end ? new Date(item.end) : new Date(start)
+      } else if (typeof item === 'string') {
+        const [y, m, d] = item.split('-').map(Number)
+        start = new Date(y, m - 1, d)
+        end = new Date(y, m - 1, d)
+      } else {
+        start = new Date(item)
+        end = new Date(item)
+      }
+      start.setHours(0, 0, 0, 0)
+      end.setHours(23, 59, 59, 999)
+      return { start: start.getTime(), end: end.getTime() }
+    })
+
+  for (let i = 0; i < maxDaysToSearch; i++) {
+    const time = candidate.getTime()
+    const isBlocked = ranges.some((r) => time >= r.start && time <= r.end)
+    if (!isBlocked) {
+      return candidate
+    }
+    candidate.setDate(candidate.getDate() + 1)
+  }
+
+  return candidate
+}
+

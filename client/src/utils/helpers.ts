@@ -17,7 +17,8 @@ export function getActionClass(action: string) {
 /** Retorna la clase de color CSS o código HEX según el estado de un reemplazo.
  *  Usado en: ReplacementCalendarView (eventos del calendario). */
 export function getColorByStatus(status: string) {
-  switch (status) {
+  const s = (status || '').toUpperCase()
+  switch (s) {
     case 'EN CURSO':
       return '#10b981'
     case 'PENDIENTE':

@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { computed, type Ref } from 'vue'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 
@@ -9,15 +9,15 @@ interface CalendarConfigOptions {
 }
 
 export function useCalendarConfig(options: CalendarConfigOptions) {
-  const calendarOptions = ref({
+  const calendarOptions = computed(() => ({
     plugins: [dayGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth',
     locale: 'es',
     firstDay: 1,
-    events: options.events,
+    events: options.events.value,
     views: {
       dayGridMonth: {
-        dayMaxEvents: 2
+        dayMaxEvents: 3
       },
       dayGridWeek: {
         dayMaxEvents: false
@@ -40,14 +40,13 @@ export function useCalendarConfig(options: CalendarConfigOptions) {
       week: 'Semana',
       day: 'Día'
     },
-    height: '100%',
-    contentHeight: '100%',
+    height: 'auto',
     eventClick: options.onEventClick,
     dateClick: options.onDateClick,
     eventDisplay: 'block',
     themeSystem: 'standard',
-    noEventsContent: 'Seleccione un servicio para ver turnos'
-  })
+    noEventsContent: 'No hay reemplazos activos para mostrar'
+  }))
 
   return {
     calendarOptions

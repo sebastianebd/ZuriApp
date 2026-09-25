@@ -250,6 +250,7 @@ import { useReplacementStore } from '@/stores/replacement.store'
 import { useServiceStore } from '@/stores/service.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import { type IStaff } from '@/types/staff.types'
+import { findNextAvailableDate } from '@/utils/date-utils'
 
 const props = defineProps<{
   visible: boolean
@@ -313,20 +314,6 @@ const searchUser = (query: string, loading: (isLoading: boolean) => void) => {
   }, 300)
 }
 
-// Watch selectedUser and update form
-watch(selectedUser, async (newUser) => {
-  if (newUser) {
-    form.value.staffId = newUser._id
-    if (errors.value.staffId) delete errors.value.staffId
-
-    // Fetch assignments for date blocking
-    const assignments = await turnAssignmentStore.fetchAssignmentsByUser(newUser._id)
-    blockedDates.value = getBlockedDates(assignments)
-  } else {
-    form.value.staffId = ''
-    blockedDates.value = []
-  }
-})
 
 // Options
 const turnTypeOptions = computed(() => {
@@ -414,31 +401,45 @@ const vCalendarDisabledDates = computed(() => {
 
 watch(selectedUser, async (newUser) => {
   if (newUser) {
-    // 1. Fetch Assignments (shifts)
-    const assignments = await turnAssignmentStore.fetchAssignmentsByUser(newUser._id)
-    const shiftBlocks = getBlockedDates(assignments)
+    form.value.staffId = newUser._id
+    if (errors.value.staffId) delete errors.value.staffId
 
-    // 2. Fetch Active Replacements (Absences)
-    // Use non-mutating checkConflicts to avoid filtering the background table
-    const replacements = await replacementStore.checkConflicts({
-      search: newUser.rut,
-      limit: 100
-    })
+    try {
+      // 1. Fetch Assignments (shifts)
+      const assignments = await turnAssignmentStore.fetchAssignmentsByUser(newUser._id)
+      const shiftBlocks = getBlockedDates(assignments)
 
-    // 3. Get Absence Dates (IStaff is SALIENTE)
-    const absenceDateStrings = replacementStore.getFechasAusencia(newUser._id, replacements)
-    // Convert string "YYYY-MM-DD" to range { start, end }
-    const absenceBlocks = absenceDateStrings.map((dateStr: string) => {
-      // Parse UTC to avoid timezone shifts.
-      // Assuming dateStr is YYYY-MM-DD.
-      const [y, m, d] = dateStr.split('-').map(Number)
-      const dateObj = new Date(Date.UTC(y, m - 1, d, 12, 0, 0))
-      return { start: dateObj, end: dateObj } // Single day block
-    })
+      // 2. Fetch Active Replacements (Absences)
+      // Use non-mutating checkConflicts to avoid filtering the background table
+      const replacements = await replacementStore.checkConflicts({
+        search: newUser.rut,
+        limit: 100
+      })
 
-    // Merge blocks
-    blockedDates.value = [...shiftBlocks, ...absenceBlocks]
+      // 3. Get Absence Dates (IStaff is SALIENTE)
+      const absenceDateStrings = replacementStore.getFechasAusencia(newUser._id, replacements)
+      // Convert string "YYYY-MM-DD" to range { start, end }
+      const absenceBlocks = absenceDateStrings.map((dateStr: string) => {
+        // Parse UTC to avoid timezone shifts.
+        // Assuming dateStr is YYYY-MM-DD.
+        const [y, m, d] = dateStr.split('-').map(Number)
+        const dateObj = new Date(Date.UTC(y, m - 1, d, 12, 0, 0))
+        return { start: dateObj, end: dateObj } // Single day block
+      })
+
+      // Merge blocks
+      blockedDates.value = [...shiftBlocks, ...absenceBlocks]
+
+      // Auto-posicionar fecha en el primer día disponible más cercano a partir de hoy
+      const nextAvailable = findNextAvailableDate(new Date(), blockedDates.value)
+      form.value.start_date = nextAvailable
+      form.value.end_date = nextAvailable
+    } catch (err) {
+      console.error('Error fetching user blocked dates:', err)
+      blockedDates.value = []
+    }
   } else {
+    form.value.staffId = ''
     blockedDates.value = []
   }
 })

@@ -29,11 +29,9 @@
         </ul>
 
         <ul class="navbar-nav align-items-center">
-          <!-- Notification / Help icons placeholder -->
-          <li class="nav-item me-3 d-none d-md-block">
-            <button class="btn btn-link text-muted p-2 nav-icon">
-              <i class="bi bi-bell"></i>
-            </button>
+          <!-- Alerts Bell Notification System -->
+          <li class="nav-item me-2 me-md-3">
+            <AlertsBell />
           </li>
 
           <!-- IStaff Dropdown -->
@@ -99,12 +97,29 @@
       </div>
     </div>
   </nav>
+  <AlertDetailModal />
 </template>
 
 <script setup lang="ts">
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useAuth } from '../../composables/login/useAuth'
+import AlertsBell from '../layout/AlertsBell.vue'
+import AlertDetailModal from '../alerts/AlertDetailModal.vue'
+import { useAlertStore } from '../../stores/alert.store'
+import { useDashboardStore } from '../../stores/dashboard.store'
 
 const { IStaff, authReady, isAuthenticated, logout } = useAuth()
+const alertStore = useAlertStore()
+
+onMounted(() => {
+  // Carga global de todas las alertas activas para la campana de notificaciones
+  alertStore.fetchAlerts()
+  alertStore.initSocketListeners()
+})
+
+onUnmounted(() => {
+  alertStore.removeSocketListeners()
+})
 </script>
 
 <style scoped>

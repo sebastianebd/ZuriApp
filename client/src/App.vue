@@ -10,7 +10,10 @@ onMounted(() => {
   // Reconnect socket on App reload if authenticated
   if (authStore.isAuthenticated && authStore.IStaff && authStore.IStaff._id) {
     if (socket.connected) socket.disconnect()
-    socket.auth = { userId: authStore.IStaff._id }
+    socket.auth = {
+      token: authStore.accessToken,
+      userId: authStore.IStaff._id,
+    }
     socket.connect()
 
     // Bind Real-time Permission Updates

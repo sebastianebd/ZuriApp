@@ -1,28 +1,61 @@
 <template>
   <div class="reemplazos-view p-4">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
       <div class="d-flex align-items-center gap-3">
         <div class="icon-square bg-white shadow-sm text-primary">
-          <i class="bi bi-arrow-repeat fs-4"></i>
+          <i class="bi" :class="viewMode === 'calendar' ? 'bi-calendar3 fs-4' : 'bi-arrow-repeat fs-4'"></i>
         </div>
         <div>
           <h4 class="fw-bold mb-0 text-dark">Gestión de Reemplazos</h4>
           <p class="text-secondary small mb-0">
-            Administra los reemplazos activos en el sistema ({{
-              replacementStore.reemplazosFiltrados.length
-            }}
-            registros)
+            <span v-if="viewMode === 'table'">
+              Administra los reemplazos en el sistema ({{ replacementStore.reemplazosFiltrados.length }} registros)
+            </span>
+            <span v-else>
+              Visualiza y gestiona la programación de turnos en calendario
+            </span>
           </p>
         </div>
       </div>
-      <div class="d-flex gap-2">
+
+      <div class="d-flex align-items-center gap-3">
+        <!-- Switcher de Vistas: Tabla / Calendario (Deep Linking) -->
+        <div class="btn-group p-1 bg-white border rounded-pill shadow-sm">
+          <button
+            type="button"
+            class="btn btn-sm px-3 rounded-pill fw-semibold border-0"
+            :class="viewMode === 'table' ? 'btn-primary text-white shadow-sm' : 'text-secondary bg-transparent'"
+            @click="setViewMode('table')"
+          >
+            <i class="bi bi-table me-1"></i> Tabla
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm px-3 rounded-pill fw-semibold border-0"
+            :class="viewMode === 'calendar' ? 'btn-primary text-white shadow-sm' : 'text-secondary bg-transparent'"
+            @click="setViewMode('calendar')"
+          >
+            <i class="bi bi-calendar3 me-1"></i> Calendario
+          </button>
+        </div>
+
+        <div class="vr my-1 text-secondary opacity-25" v-if="viewMode === 'table'"></div>
+
         <button
+          v-if="viewMode === 'table'"
           @click="replacementStore.limpiarFiltros()"
           class="btn btn-light border fw-semibold shadow-sm px-3"
         >
           <i class="bi bi-eraser me-2"></i>Limpiar Filtros
         </button>
+        <router-link
+          to="/app/operaciones/bolsa-reemplazos"
+          class="btn btn-outline-primary fw-semibold shadow-sm px-3 d-flex align-items-center gap-2"
+        >
+          <i class="bi bi-megaphone"></i>
+          <span>Bolsa de Reemplazos</span>
+        </router-link>
         <button
           v-if="authStore.hasPermission('replacement.create')"
           @click="initCreateReplacement"
@@ -33,8 +66,8 @@
       </div>
     </div>
 
-    <!-- Main Content Card -->
-    <div class="card border-0 shadow-sm rounded-4">
+    <!-- VISTA TABLA -->
+    <div v-if="viewMode === 'table'" class="card border-0 shadow-sm rounded-4">
       <div class="card-body p-4">
         <!-- Filter Section -->
         <div class="">
@@ -76,6 +109,9 @@
       </div>
     </div>
 
+    <!-- VISTA CALENDARIO (Montaje limpio con v-if para FullCalendar) -->
+    <ReplacementCalendarTab v-else />
+
     <!-- MODAL CREAR -->
     <ReplacementModalCreate
       :visible="createModalVisible"
@@ -100,6 +136,7 @@
       @update:registro="(nuevoRegistro) => (registroActual = nuevoRegistro)"
     />
 
+    <!-- MODAL SUSTITUIR -->
     <ReplacementModalSubstitute
       :visible="substituteModalVisible"
       :registro-actual="registroActual"
@@ -114,6 +151,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { exportReplacementToPDF } from '@/utils/exportHelpers'
 import { useReplacements } from '@/composables/active-replacements/useActiveReplacements'
 import {
@@ -121,13 +160,28 @@ import {
   ReplacementTable,
   ReplacementModalUpdate,
   ReplacementModalCreate,
-  ReplacementModalSubstitute
+  ReplacementModalSubstitute,
+  ReplacementCalendarTab
 } from '@/components/replacements'
 import TableLoader from '@/components/common/TableLoader.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
 import { useAuthStore } from '@/stores/auth.store'
 
+const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
+
+// Sincronización reactiva con URL Query Parameter (?view=table|calendar)
+const viewMode = computed(() => (route.query.view === 'calendar' ? 'calendar' : 'table'))
+
+const setViewMode = (mode: 'table' | 'calendar') => {
+  router.replace({
+    query: {
+      ...route.query,
+      view: mode === 'table' ? undefined : mode
+    }
+  })
+}
 
 const {
   replacementStore,
@@ -179,10 +233,9 @@ const {
 
 .reemplazos-view {
   background-color: #f8fafc;
-}
-
-.filter-section {
-  background-color: #f1f5f9 !important;
+  min-height: calc(100vh - 71px);
+  display: flex;
+  flex-direction: column;
 }
 
 .empty-state {
@@ -216,10 +269,6 @@ const {
 
 .pagination .page-item.disabled .page-link {
   opacity: 0.5;
-}
-
-.shadow-xs {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 /* Modal hacks */

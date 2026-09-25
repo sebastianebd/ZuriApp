@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useShiftExceptionStore } from '@/stores/shift-exception.store'
 import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
+import { useAlertStore } from '@/stores/alert.store'
 import { formatTitleCase } from '@/utils/text-formatters'
 import type { GridRow, ShiftResult } from './useShiftsGrid'
 
@@ -9,6 +10,7 @@ export function useShiftsExceptions(state: any, grid: any, props: { readonly?: b
   const authStore = useAuthStore()
   const exceptionStore = useShiftExceptionStore()
   const turnSiglaStore = useTurnSiglaStore()
+  const alertStore = useAlertStore()
 
   const showModifyModal = ref(false)
   const selectedShiftData = ref<{
@@ -93,6 +95,7 @@ export function useShiftsExceptions(state: any, grid: any, props: { readonly?: b
 
       showModifyModal.value = false
       state.alertComponent.value.show('Éxito', 'Turno modificado correctamente', 'success')
+      alertStore.fetchAlerts(state.selectedService.value || undefined)
       // loadData is generally handled by the grid if needed, or by reactive store
     } catch (error) {
       console.error(error)
@@ -113,6 +116,7 @@ export function useShiftsExceptions(state: any, grid: any, props: { readonly?: b
         await exceptionStore.deleteException(exception._id)
         showModifyModal.value = false
         state.alertComponent.value.show('Éxito', 'Patrón restaurado correctamente', 'success')
+        alertStore.fetchAlerts(state.selectedService.value || undefined)
       }
     } catch (error) {
       console.error(error)

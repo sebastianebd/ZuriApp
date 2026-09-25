@@ -5,7 +5,7 @@ export interface ITurnAssignment extends Document {
   service: mongoose.Types.ObjectId;
   turn_type: string;
   start_date: Date;
-  end_date?: Date;
+  end_date: Date;
   snapshot_secuencia?: Array<{
     dia: number;
     turno_entrada?: string;
@@ -40,6 +40,7 @@ const turnAssignmentSchema = new Schema(
     },
     end_date: {
       type: Date,
+      required: true,
     },
     snapshot_secuencia: [
       {
@@ -58,7 +59,15 @@ const turnAssignmentSchema = new Schema(
   },
 );
 
+turnAssignmentSchema.index(
+  { service: 1, start_date: 1, end_date: 1 },
+  { name: "idx_turn_assignment_service_range" }
+);
+
 export const TurnAssignmentModel = mongoose.model<ITurnAssignment>(
   "TurnAssignment",
   turnAssignmentSchema,
 );
+
+export default TurnAssignmentModel;
+

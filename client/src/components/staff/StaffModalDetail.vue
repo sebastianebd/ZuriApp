@@ -189,6 +189,9 @@
                     <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-2 px-2">
                       Saliente
                     </th>
+                    <th scope="col" class="smaller fw-bold text-uppercase tracking-wider py-2 px-2">
+                      Motivo
+                    </th>
                     <th
                       scope="col"
                       class="smaller fw-bold text-uppercase tracking-wider py-2 px-2 text-center"
@@ -223,6 +226,15 @@
                       <div class="fw-medium text-primary">
                         {{ rep.nombre_saliente }} {{ rep.apellido_saliente }}
                       </div>
+                    </td>
+                    <td class="small px-2 py-1">
+                      <span
+                        class="badge bg-light text-secondary border text-truncate"
+                        style="max-width: 140px;"
+                        :title="rep.observaciones ? `${getMotivoLabel(rep.motivo)}: ${rep.observaciones}` : getMotivoLabel(rep.motivo)"
+                      >
+                        {{ getMotivoLabel(rep.motivo) }}
+                      </span>
                     </td>
                     <td class="small text-center px-2 py-1">
                       <span class="badge rounded-pill border" :class="getStatusClass(rep.status)">
@@ -264,10 +276,16 @@ const props = defineProps<{
 }>()
 
 import { useServiceStore } from '@/stores/service.store'
+import { MOTIVOS_AUSENCIA_LABELS, type AusenciaSalienteMotivo } from '@/types/replacement.types'
 const serviceStore = useServiceStore()
 
 const getServiceName = (id: any) => {
   return serviceStore.getServiceName(id)
+}
+
+const getMotivoLabel = (motivo?: string) => {
+  if (!motivo) return 'No especificado'
+  return MOTIVOS_AUSENCIA_LABELS[motivo as AusenciaSalienteMotivo] || motivo
 }
 
 const reduceService = (s: any) => s._id

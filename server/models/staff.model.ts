@@ -13,6 +13,17 @@ export interface IStaff extends Document {
   isActive: boolean;
   roleId: mongoose.Types.ObjectId;
   positionId: mongoose.Types.ObjectId;
+  notificationPreferences?: {
+    shiftReminders: boolean;
+    shiftChanges: boolean;
+    openCallsEnabled: boolean;
+    preferredServices: mongoose.Types.ObjectId[];
+    quietHours: {
+      enabled: boolean;
+      start: string;
+      end: string;
+    };
+  };
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -57,6 +68,17 @@ const StaffSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Position",
       required: true,
+    },
+    notificationPreferences: {
+      shiftReminders: { type: Boolean, default: true },
+      shiftChanges: { type: Boolean, default: true },
+      openCallsEnabled: { type: Boolean, default: true },
+      preferredServices: [{ type: Schema.Types.ObjectId, ref: "Service" }],
+      quietHours: {
+        enabled: { type: Boolean, default: true },
+        start: { type: String, default: "22:00" },
+        end: { type: String, default: "07:00" },
+      },
     },
     isDeleted: {
       type: Boolean,

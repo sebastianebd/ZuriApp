@@ -37,6 +37,8 @@ export const useReplacementStore = defineStore('replacement', {
     filtroRutSaliente: '' as string,
     filtroRutEntrante: '' as string,
     filtroServicio: '' as string,
+    filtroEstado: 'active' as string,
+    filtroMotivo: '' as string,
     fechaInicio: '' as string,
     fechaFin: '' as string
   }),
@@ -69,8 +71,9 @@ export const useReplacementStore = defineStore('replacement', {
         // 1. Filtrar los reemplazos donde este funcionario es el ENTRANTE (Ya está trabajando)
         const reemplazosDelFuncionario = data.filter(
           (r) =>
-            String(getId(r.id_entrante)) === String(funcionarioId) ||
-            r.rut_entrante === funcionarioId
+            !['ANULADO', 'CANCELADO', 'RECHAZADO'].includes((r.status || '').toUpperCase()) &&
+            (String(getId(r.id_entrante)) === String(funcionarioId) ||
+            r.rut_entrante === funcionarioId)
         )
 
         // 2. Expandir los rangos de fechas de cada reemplazo a días individuales
@@ -94,8 +97,9 @@ export const useReplacementStore = defineStore('replacement', {
         // 1. Filtrar reemplazos donde es SALIENTE
         const ausencias = data.filter(
           (r) =>
-            String(getId(r.id_saliente)) === String(funcionarioId) ||
-            r.rut_saliente === funcionarioId
+            !['ANULADO', 'CANCELADO', 'RECHAZADO'].includes((r.status || '').toUpperCase()) &&
+            (String(getId(r.id_saliente)) === String(funcionarioId) ||
+            r.rut_saliente === funcionarioId)
         )
 
         // 2. Expand ranges
@@ -123,6 +127,8 @@ export const useReplacementStore = defineStore('replacement', {
       fechaFin?: string | Date | null
       rutSaliente?: string
       rutEntrante?: string
+      status?: string
+      motivo?: string
     }) {
       const authStore = useAuthStore()
       const apiPrivate: AxiosInstance = authStore.usePrivateApi()
@@ -138,6 +144,8 @@ export const useReplacementStore = defineStore('replacement', {
 
       const queryParams = {
         ...params,
+        status: params.status !== undefined ? params.status : (this.filtroEstado || undefined),
+        motivo: params.motivo !== undefined ? params.motivo : (this.filtroMotivo || undefined),
         fechaInicio: formatDate(params.fechaInicio),
         fechaFin: formatDate(params.fechaFin)
       }
@@ -205,8 +213,11 @@ export const useReplacementStore = defineStore('replacement', {
           allReplacements = response
         }
 
-        // Filter: Match normalized RUT or ID in either role
+        // Filter: Exclude cancelled/annulled/rejected and match normalized RUT or ID in either role
         const matches = allReplacements.filter((r) => {
+          if (['ANULADO', 'CANCELADO', 'RECHAZADO'].includes((r.status || '').toUpperCase())) {
+            return false
+          }
           const sRut = normalize(r.rut_saliente)
           const eRut = normalize(r.rut_entrante)
           const sId = String(r.id_saliente)
@@ -504,6 +515,8 @@ export const useReplacementStore = defineStore('replacement', {
       this.filtroRutEntrante = ''
       this.fechaInicio = ''
       this.fechaFin = ''
+      this.filtroEstado = 'active'
+      this.filtroMotivo = ''
     },
 
     clearState() {

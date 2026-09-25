@@ -1,12 +1,24 @@
 import mongoose, { Schema, Document } from "mongoose";
 import Counter from "./counter.model";
 
+export type AusenciaSalienteMotivo =
+  | 'LICENCIA_MEDICA'
+  | 'PRE_POST_NATAL'
+  | 'PERMISO_ADMINISTRATIVO'
+  | 'FERIADO_LEGAL'
+  | 'DIA_COMPENSATORIO'
+  | 'COMISION_SERVICIO'
+  | 'PERMISO_GREMIAL'
+  | 'OTRO';
+
 export interface IReplacement extends Document {
   id_negocio?: string;
   id_saliente: mongoose.Types.ObjectId;
   rut_saliente: string;
   nombre_saliente: string;
   apellido_saliente: string;
+  motivo: AusenciaSalienteMotivo;
+  observaciones?: string;
   id_entrante: mongoose.Types.ObjectId;
   rut_entrante: string;
   nombre_entrante: string;
@@ -55,6 +67,26 @@ const replacementSchema: Schema = new Schema(
       type: String,
       required: true,
       uppercase: true,
+    },
+    motivo: {
+      type: String,
+      enum: [
+        "LICENCIA_MEDICA",
+        "PRE_POST_NATAL",
+        "PERMISO_ADMINISTRATIVO",
+        "FERIADO_LEGAL",
+        "DIA_COMPENSATORIO",
+        "COMISION_SERVICIO",
+        "PERMISO_GREMIAL",
+        "OTRO",
+      ],
+      required: true,
+      default: "OTRO",
+    },
+    observaciones: {
+      type: String,
+      trim: true,
+      maxlength: 500,
     },
     id_entrante: {
       type: Schema.Types.ObjectId,
@@ -116,6 +148,7 @@ const replacementSchema: Schema = new Schema(
         "CONFIRMADO",
         "RECHAZADO",
         "CANCELADO",
+        "ANULADO",
         "FINALIZADO",
         "EN CURSO",
         "INTERRUMPIDO",
@@ -136,6 +169,11 @@ const replacementSchema: Schema = new Schema(
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
     versionKey: false,
   },
+);
+
+replacementSchema.index(
+  { servicio: 1, fecha_inicio: 1, fecha_termino: 1 },
+  { name: "idx_replacement_service_range" }
 );
 
 // Pre-save hook for Counter
@@ -169,6 +207,8 @@ export const REPLACEMENT_AUDIT_FIELDS = [
   "rut_saliente",
   "nombre_saliente",
   "apellido_saliente",
+  "motivo",
+  "observaciones",
   "rut_entrante",
   "nombre_entrante",
   "apellido_entrante",

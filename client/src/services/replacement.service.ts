@@ -102,6 +102,12 @@ export const mostrarReemplazos = async (
     limit?: number
     search?: string
     servicio?: string
+    fechaInicio?: string
+    fechaFin?: string
+    rutSaliente?: string
+    rutEntrante?: string
+    status?: string
+    motivo?: string
   }
 ) => {
   try {

@@ -5,6 +5,7 @@ import ReplacementModalUsers from './ReplacementModalUsers.vue';
 import ReplacementModalCreate from './ReplacementModalCreate.vue';
 import ConfirmationModal from '../common/ConfirmationModal.vue';
 import ReplacementModalSubstitute from './ReplacementModalSubstitute.vue';
+import ReplacementCalendarTab from './ReplacementCalendarTab.vue';
 
 export { 
     ReplacementFilter,
@@ -13,6 +14,6 @@ export {
     ReplacementModalUsers,
     ReplacementModalCreate,
     ConfirmationModal,
-    ReplacementModalSubstitute
-    
+    ReplacementModalSubstitute,
+    ReplacementCalendarTab
 }

@@ -52,7 +52,9 @@ export function useActiveReplacementsState(deps?: StateDependencies) {
         fechaFin: replacementStore.fechaFin,
         rutSaliente: replacementStore.filtroRutSaliente,
         rutEntrante: replacementStore.filtroRutEntrante,
-        servicio: replacementStore.filtroServicio
+        servicio: replacementStore.filtroServicio,
+        status: replacementStore.filtroEstado,
+        motivo: replacementStore.filtroMotivo
       })
     } catch (error) {
       console.error('[useReplacements] Error loading data:', error)
@@ -75,7 +77,9 @@ export function useActiveReplacementsState(deps?: StateDependencies) {
       fechaFin: replacementStore.fechaFin,
       rutSaliente: replacementStore.filtroRutSaliente,
       rutEntrante: replacementStore.filtroRutEntrante,
-      servicio: replacementStore.filtroServicio
+      servicio: replacementStore.filtroServicio,
+      status: replacementStore.filtroEstado,
+      motivo: replacementStore.filtroMotivo
     })
   })
 
@@ -86,7 +90,9 @@ export function useActiveReplacementsState(deps?: StateDependencies) {
       () => replacementStore.fechaFin,
       () => replacementStore.filtroRutSaliente,
       () => replacementStore.filtroRutEntrante,
-      () => replacementStore.filtroServicio
+      () => replacementStore.filtroServicio,
+      () => replacementStore.filtroEstado,
+      () => replacementStore.filtroMotivo
     ],
     async () => {
       currentPage.value = 1
@@ -97,7 +103,9 @@ export function useActiveReplacementsState(deps?: StateDependencies) {
         fechaFin: replacementStore.fechaFin,
         rutSaliente: replacementStore.filtroRutSaliente,
         rutEntrante: replacementStore.filtroRutEntrante,
-        servicio: replacementStore.filtroServicio
+        servicio: replacementStore.filtroServicio,
+        status: replacementStore.filtroEstado,
+        motivo: replacementStore.filtroMotivo
       })
     }
   )

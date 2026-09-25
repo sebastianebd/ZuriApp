@@ -1,19 +1,23 @@
-import { ref, onMounted, computed, watch } from 'vue'
-import { useReplacementStore } from '@/stores/replacement.store'
+import { ref, onMounted, computed, watch, getCurrentInstance } from 'vue'
+import { useAuthStore } from '@/stores/auth.store'
 import { useServiceStore } from '@/stores/service.store'
+import * as ReplacementService from '@/services/replacement.service'
 import { formatTitleCase } from '@/utils/text-formatters'
 import { getColorByStatus } from '@/utils/helpers'
 
 export function useCalendarState() {
-  const replacementStore = useReplacementStore()
+  const authStore = useAuthStore()
   const serviceStore = useServiceStore()
 
   const calendarEvents = ref<any[]>([])
-  const selectedService = ref<string | null>(null)
+  const selectedService = ref<string>('')
   const loading = ref(false)
 
-  // Service Options from Service Store
-  const serviceOptions = computed(() => serviceStore.services || [])
+  // Service Options con opción "Todos los Servicios"
+  const serviceOptions = computed(() => [
+    { nombre: 'Todos los Servicios', _id: '' },
+    ...(serviceStore.services || [])
+  ])
 
   // Modal State
   const modalVisible = ref(false)
@@ -36,42 +40,48 @@ export function useCalendarState() {
   }
 
   /** FullCalendar requiere que `end` sea exclusivo (RFC 5545).
-   *  Nuestra BD guarda fecha_termino como inclusivo, por eso sumamos +1 día. */
+   *  Nuestra BD guarda fecha_termino como inclusivo, por eso sumamos +1 día de forma segura en UTC. */
   function toExclusiveEndDate(fechaIso: string): string {
     if (!fechaIso) return ''
-    const date = new Date(fechaIso)
+    const cleanDateStr = fechaIso.slice(0, 10)
+    const [year, month, day] = cleanDateStr.split('-').map(Number)
+    if (!year || !month || !day) return ''
+    const date = new Date(Date.UTC(year, month - 1, day))
     date.setUTCDate(date.getUTCDate() + 1)
     return date.toISOString().slice(0, 10)
   }
 
   const loadReplacementsByService = async () => {
-    if (!selectedService.value) {
-      calendarEvents.value = []
-      return
-    }
-
     loading.value = true
     try {
-      // Fetch only replacements for selected service (server-side filtering)
-      await replacementStore.fetchActiveReplacementsPaginated({
-        servicio: selectedService.value,
-        limit: 500 // High limit for calendar view (sufficient for single service)
-      })
+      const apiPrivate = authStore.usePrivateApi()
+      const queryParams: any = {
+        limit: 1000,
+        status: 'active'
+      }
 
-      // Get filtered replacements from store
-      const replacements = replacementStore.currentPageReplacements
+      if (selectedService.value && selectedService.value.trim() !== '') {
+        queryParams.servicio = selectedService.value
+      }
 
-      // Transform to calendar events
+      // Consulta directa aislada: NO sobreescribe el estado de la tabla (currentPageReplacements)
+      const response = await ReplacementService.mostrarReemplazos(apiPrivate, queryParams)
+      const replacements =
+        response?.reemplazos ||
+        (Array.isArray(response) ? response : response?.data?.reemplazos || [])
+
       calendarEvents.value = replacements.map((r: any) => {
-        const start = r.fecha_inicio ? r.fecha_inicio.slice(0, 10) : ''
-        const end = r.fecha_termino ? toExclusiveEndDate(r.fecha_termino) : ''
-
-        const titleName = formatTitleCase(`${r.nombre_entrante} ${r.apellido_entrante}`)
+        const start = r.fecha_inicio ? String(r.fecha_inicio).slice(0, 10) : ''
+        const rawEnd = r.fecha_termino ? String(r.fecha_termino).slice(0, 10) : start
+        const end = rawEnd ? toExclusiveEndDate(rawEnd) : ''
+        const titleName = formatTitleCase(`${r.nombre_entrante || ''} ${r.apellido_entrante || ''}`)
 
         return {
-          title: `${titleName} - ${r.tipo_turno}`,
+          id: String(r._id || r.id_negocio || Math.random()),
+          title: `${titleName} - ${r.tipo_turno || 'Turno'}`,
           start: start,
           end: end,
+          allDay: true,
           backgroundColor: getColorByStatus(r.status),
           borderColor: 'transparent',
           extendedProps: { ...r },
@@ -86,34 +96,23 @@ export function useCalendarState() {
     }
   }
 
-  // Watch for service changes (server-side filtering)
+  // Watch for service changes
   watch(selectedService, () => {
     loadReplacementsByService()
   })
 
-  onMounted(async () => {
-    try {
-      // Set default service if available
-      if (serviceOptions.value.length > 0) {
-        selectedService.value = serviceOptions.value[0]._id
-      }
-
-      // Load replacements for default service
-      if (selectedService.value) {
+  if (getCurrentInstance()) {
+    onMounted(async () => {
+      try {
+        if (serviceStore.services.length === 0) {
+          await serviceStore.fetchServices()
+        }
         await loadReplacementsByService()
+      } catch (error) {
+        console.error('Error cargando eventos iniciales del calendario:', error)
       }
-    } catch (error) {
-      console.error('Error cargando eventos al calendario:', error)
-    }
-  })
-
-  // Watch options to set default if initial load was empty
-  watch(serviceOptions, async (newOptions) => {
-    if (!selectedService.value && newOptions.length > 0) {
-      selectedService.value = newOptions[0]._id
-      await loadReplacementsByService()
-    }
-  })
+    })
+  }
 
   return {
     calendarEvents,
@@ -122,11 +121,12 @@ export function useCalendarState() {
     modalVisible,
     eventoSeleccionado,
     loading,
-    
+
     handleDateClick,
     handleEventClick,
     closeModal,
-    
+    refreshCalendar: loadReplacementsByService,
+
     getServiceName: (id: string) => serviceStore.getServiceName(id)
   }
 }

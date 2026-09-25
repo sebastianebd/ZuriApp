@@ -34,7 +34,8 @@ export const createAssignment = async (req: Request, res: Response) => {
 export const getAssignments = async (req: Request, res: Response) => {
   try {
     const filters: any = {};
-    if (req.query.staffId) filters.staffId = req.query.staffId;
+    const staffId = (req.query.staffId || req.query.user_id) as string;
+    if (staffId) filters.staffId = staffId;
     if (req.query.service) filters.service = req.query.service;
 
     const assignments = await turnAssignmentService.getAssignments(filters);

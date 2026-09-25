@@ -59,7 +59,7 @@ export const useTurnAssignmentStore = defineStore('turnAssignment', () => {
 
   const fetchAssignmentsByUser = async (userId: string) => {
     try {
-      return await fetchAssignments(apiPrivate, { user_id: userId })
+      return await fetchAssignments(apiPrivate, { staffId: userId, user_id: userId })
     } catch (err: any) {
       console.error('Error fetching IStaff assignments', err)
       return []

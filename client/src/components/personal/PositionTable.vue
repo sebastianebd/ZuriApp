@@ -5,13 +5,14 @@
         <tr>
           <th scope="col" class="ps-4">Código</th>
           <th scope="col">Nombre</th>
+          <th scope="col">Estamento</th>
           <th scope="col" class="text-center">Estado</th>
           <th scope="col" class="text-end pe-4">Acciones</th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="positions.length === 0">
-          <td colspan="4" class="text-center py-5 text-muted small">No hay cargos registrados</td>
+          <td colspan="5" class="text-center py-5 text-muted small">No hay cargos registrados</td>
         </tr>
         <tr
           v-for="(position, index) in positions"
@@ -35,6 +36,17 @@
                 position.description
               }}</span>
             </div>
+          </td>
+
+          <!-- Estamento -->
+          <td>
+            <span
+              class="badge rounded-pill text-truncate px-2 py-1"
+              :class="getEstamentoBadgeClass(position.estamento)"
+              style="font-size: 0.75rem;"
+            >
+              {{ getEstamentoLabel(position.estamento) }}
+            </span>
           </td>
 
           <!-- Estado -->
@@ -75,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { type Position } from '@/stores/position.store'
+import { type Position, ESTAMENTOS_LABELS, type EstamentoType } from '@/stores/position.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatTitleCase } from '@/utils/text-formatters'
 
@@ -85,6 +97,28 @@ defineProps<{
 
 defineEmits(['edit', 'delete'])
 const authStore = useAuthStore()
+
+function getEstamentoLabel(estamento?: EstamentoType | string) {
+  if (!estamento) return 'PROFESIONAL'
+  return ESTAMENTOS_LABELS[estamento as EstamentoType] || estamento
+}
+
+function getEstamentoBadgeClass(estamento?: EstamentoType | string) {
+  switch (estamento) {
+    case 'MEDICO':
+      return 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25'
+    case 'PROFESIONAL':
+      return 'bg-info bg-opacity-10 text-info border border-info border-opacity-25'
+    case 'TECNICO':
+      return 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
+    case 'ADMINISTRATIVO':
+      return 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'
+    case 'AUXILIAR':
+      return 'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25'
+    default:
+      return 'bg-light text-muted border'
+  }
+}
 </script>
 
 <style scoped>

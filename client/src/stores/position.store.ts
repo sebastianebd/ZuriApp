@@ -1,10 +1,21 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth.store'
 
+export type EstamentoType = 'MEDICO' | 'PROFESIONAL' | 'TECNICO' | 'ADMINISTRATIVO' | 'AUXILIAR'
+
+export const ESTAMENTOS_LABELS: Record<EstamentoType, string> = {
+  MEDICO: 'Médico (Ley 19.664 / 15.076)',
+  PROFESIONAL: 'Profesional (Ley 18.834)',
+  TECNICO: 'Técnico / Paramédico (TENS)',
+  ADMINISTRATIVO: 'Administrativo',
+  AUXILIAR: 'Auxiliar de Servicio'
+}
+
 export interface Position {
   _id: string
   name: string
   position_code: string
+  estamento?: EstamentoType
   description?: string
   isActive: boolean
   createdAt?: Date

@@ -4,6 +4,7 @@ description: Especialista en APIs REST, Node.js, Express, TypeScript, MongoDB, R
 mainAgent: true
 subagent: true
 inheritMcp: true
+tools: ["view_file", "write_to_file", "run_command", "replace_file_content", "multi_replace_file_content", "grep_search", "list_dir"]
 ---
 
 # Backend Developer Persona

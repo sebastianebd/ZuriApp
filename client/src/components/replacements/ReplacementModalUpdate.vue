@@ -62,6 +62,44 @@
                         </div>
                       </div>
                     </div>
+
+                    <!-- Causal de Ausencia (Saliente) -->
+                    <div class="mt-3 pt-2 border-top border-danger border-opacity-25">
+                      <label class="form-label x-small fw-bold text-danger text-uppercase mb-1" for="update-motivo-select">
+                        Causal de Ausencia
+                      </label>
+                      <select
+                        id="update-motivo-select"
+                        :value="registro.motivo || 'OTRO'"
+                        @change="(e: any) => $emit('update:registro', { ...registro, motivo: e.target.value })"
+                        class="form-select form-select-sm border-danger border-opacity-50"
+                        data-testid="update-motivo-select"
+                      >
+                        <option
+                          v-for="(label, key) in MOTIVOS_AUSENCIA_LABELS"
+                          :key="key"
+                          :value="key"
+                        >
+                          {{ label }}
+                        </option>
+                      </select>
+
+                      <div class="mt-2">
+                        <label class="form-label x-small fw-bold text-secondary text-uppercase mb-1" for="update-observaciones-input">
+                          Observaciones
+                        </label>
+                        <textarea
+                          id="update-observaciones-input"
+                          :value="registro.observaciones || ''"
+                          @input="(e: any) => $emit('update:registro', { ...registro, observaciones: e.target.value })"
+                          class="form-control form-control-sm"
+                          rows="2"
+                          maxlength="500"
+                          placeholder="Observaciones de la ausencia..."
+                          data-testid="update-observaciones-textarea"
+                        ></textarea>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -398,7 +436,7 @@
 
 <script setup lang="ts">
 import { getInitials } from '@/utils/text-formatters'
-import { type ReplacementRegistration } from '@/types/replacement.types'
+import { type ReplacementRegistration, MOTIVOS_AUSENCIA_LABELS } from '@/types/replacement.types'
 import { type IStaff } from '@/types/staff.types'
 import { ref, computed, watch } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'

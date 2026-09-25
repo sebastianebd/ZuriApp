@@ -4,6 +4,7 @@ description: Especialista en arquitectura e implementacion de interfaces de usua
 mainAgent: true
 subagent: true
 inheritMcp: true
+tools: ["view_file", "write_to_file", "run_command", "replace_file_content", "multi_replace_file_content", "grep_search", "list_dir"]
 ---
 
 # Frontend Developer Persona

@@ -7,6 +7,7 @@
           <th scope="col">
             Transacción (Saliente <i class="bi bi-arrow-right mx-1 text-muted"></i> Entrante)
           </th>
+          <th scope="col">Causal Saliente</th>
           <th scope="col">Contexto</th>
           <th scope="col">Línea de Tiempo</th>
           <th scope="col" class="text-center">Estado</th>
@@ -78,6 +79,28 @@
                   <div class="rut-text">{{ reemplazo.rut_entrante }}</div>
                 </div>
               </div>
+            </div>
+          </td>
+
+          <!-- Causal Saliente -->
+          <td>
+            <div class="d-flex flex-column justify-content-center h-100">
+              <span
+                class="badge rounded-pill text-truncate px-2 py-1"
+                :class="getCausalBadgeClass(reemplazo.motivo)"
+                style="max-width: 170px; font-size: 0.75rem;"
+                :title="reemplazo.observaciones ? `${getCausalLabel(reemplazo.motivo)}: ${reemplazo.observaciones}` : getCausalLabel(reemplazo.motivo)"
+              >
+                {{ getCausalLabel(reemplazo.motivo) }}
+              </span>
+              <small
+                v-if="reemplazo.observaciones"
+                class="text-secondary text-truncate mt-1"
+                style="max-width: 170px; font-size: 0.65rem;"
+                :title="reemplazo.observaciones"
+              >
+                <i class="bi bi-chat-left-text me-1"></i>{{ reemplazo.observaciones }}
+              </small>
             </div>
           </td>
 
@@ -188,7 +211,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
-import { type ReplacementRegistration } from '@/types/replacement.types'
+import { type ReplacementRegistration, MOTIVOS_AUSENCIA_LABELS, type AusenciaSalienteMotivo } from '@/types/replacement.types'
 import { type IStaff } from '@/types/staff.types'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatTitleCase } from '@/utils/text-formatters'
@@ -197,6 +220,33 @@ import { useServiceStore } from '@/stores/service.store'
 const serviceStore = useServiceStore()
 const getServiceName = (id: any) => {
   return serviceStore.getServiceName(id)
+}
+
+function getCausalLabel(motivo?: AusenciaSalienteMotivo | string) {
+  if (!motivo) return 'No especificado'
+  return MOTIVOS_AUSENCIA_LABELS[motivo as AusenciaSalienteMotivo] || motivo
+}
+
+function getCausalBadgeClass(motivo?: AusenciaSalienteMotivo | string) {
+  switch (motivo) {
+    case 'LICENCIA_MEDICA':
+      return 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25'
+    case 'PRE_POST_NATAL':
+      return 'bg-info bg-opacity-10 text-info border border-info border-opacity-25'
+    case 'PERMISO_ADMINISTRATIVO':
+      return 'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25'
+    case 'FERIADO_LEGAL':
+      return 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
+    case 'DIA_COMPENSATORIO':
+      return 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'
+    case 'COMISION_SERVICIO':
+      return 'bg-indigo bg-opacity-10 text-indigo border border-indigo border-opacity-25'
+    case 'PERMISO_GREMIAL':
+      return 'bg-dark bg-opacity-10 text-dark border border-dark border-opacity-25'
+    case 'OTRO':
+    default:
+      return 'bg-light text-muted border'
+  }
 }
 
 const authStore = useAuthStore()

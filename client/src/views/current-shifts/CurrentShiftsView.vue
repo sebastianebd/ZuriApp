@@ -1,56 +1,126 @@
 <template>
   <div class="shifts-view p-4">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4" v-if="!historyMode">
+    <!-- Header Unificado -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3" v-if="!historyMode">
       <div class="d-flex align-items-center gap-3">
         <div class="icon-square bg-white shadow-sm text-primary">
-          <i class="bi bi-calendar-range fs-4"></i>
+          <i
+            class="bi"
+            :class="
+              activeTab === 'excepciones'
+                ? 'bi-exclamation-triangle fs-4 text-warning'
+                : 'bi-calendar-range fs-4 text-primary'
+            "
+          ></i>
         </div>
         <div>
-          <h4 class="fw-bold mb-0 text-dark">Grilla de Turnos</h4>
-          <p class="text-secondary small mb-0">Visualiza y gestiona los turnos operativos.</p>
+          <h4 class="fw-bold mb-0 text-dark">Gestión de Turnos</h4>
+          <p class="text-secondary small mb-0">
+            <span v-if="activeTab === 'grilla'">
+              Visualiza y gestiona la programación operativa en la grilla mensual.
+            </span>
+            <span v-else>
+              Fiscalización y registro de modificaciones manuales de turnos.
+            </span>
+          </p>
         </div>
       </div>
 
-      <!-- Filters & Controls -->
-      <div class="d-flex gap-3 align-items-center">
-        <!-- Service Filter -->
-        <div style="min-width: 200px">
-          <v-select
-            v-model="selectedService"
-            :options="serviceOptions"
-            label="nombre"
-            :reduce="(s: any) => s._id"
-            placeholder="Filtrar por Servicio"
-            class="bg-white rounded shadow-sm custom-v-select"
-            :clearable="true"
-          />
+      <!-- Filters, Switcher & Controls -->
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <!-- Switcher de Vistas: Grilla Mensual / Excepciones Vigentes -->
+        <div class="btn-group p-1 bg-white border rounded-pill shadow-sm">
+          <button
+            type="button"
+            class="btn btn-sm px-3 rounded-pill fw-semibold border-0"
+            :class="
+              activeTab === 'grilla'
+                ? 'btn-primary text-white shadow-sm'
+                : 'text-secondary bg-transparent'
+            "
+            @click="setTab('grilla')"
+          >
+            <i class="bi bi-grid-3x3 me-1"></i> Grilla Mensual
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm px-3 rounded-pill fw-semibold border-0"
+            :class="
+              activeTab === 'excepciones'
+                ? 'btn-primary text-white shadow-sm'
+                : 'text-secondary bg-transparent'
+            "
+            @click="setTab('excepciones')"
+          >
+            <i class="bi bi-exclamation-triangle me-1"></i> Excepciones Vigentes
+          </button>
         </div>
 
-        <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm">
+        <!-- Controles contextuales para Grilla Mensual -->
+        <template v-if="activeTab === 'grilla'">
+          <div class="vr my-1 text-secondary opacity-25"></div>
+
+          <!-- Service Filter -->
+          <div style="min-width: 200px">
+            <v-select
+              v-model="selectedService"
+              :options="serviceOptions"
+              label="nombre"
+              :reduce="(s: any) => s._id"
+              placeholder="Filtrar por Servicio"
+              class="bg-white rounded shadow-sm custom-v-select"
+              :clearable="true"
+            />
+          </div>
+
+          <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm">
+            <button
+              v-if="hasCreatePermission && !isPastMonth"
+              class="btn btn-sm btn-primary d-flex align-items-center gap-2 px-3 fw-bold border-0 text-white shadow-sm"
+              @click="openModal"
+            >
+              <i class="bi bi-plus-lg"></i> Asignar Planta
+            </button>
+            <div
+              v-if="hasCreatePermission && !isPastMonth"
+              class="vr mx-1 text-secondary opacity-25"
+            ></div>
+            <button
+              class="btn btn-sm btn-outline-secondary border-0"
+              @click="prevMonth"
+              title="Mes Anterior"
+            >
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            <span class="fw-bold px-3 text-capitalize">{{ formattedMonth }}</span>
+            <button
+              class="btn btn-sm btn-outline-secondary border-0"
+              @click="nextMonth"
+              :disabled="!canGoNext"
+              title="Mes Siguiente"
+            >
+              <i class="bi bi-chevron-right"></i>
+            </button>
+            <button
+              class="btn btn-sm btn-primary ms-2"
+              @click="loadData"
+              title="Actualizar datos"
+            >
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
+        </template>
+
+        <!-- Controles contextuales para Excepciones -->
+        <template v-else>
+          <div class="vr my-1 text-secondary opacity-25"></div>
           <button
-            v-if="hasCreatePermission"
-            class="btn btn-sm btn-primary d-flex align-items-center gap-2 px-3 fw-bold border-0 text-white"
-            @click="openModal"
+            @click="exceptionsTabRef?.clearFilters()"
+            class="btn btn-light border fw-semibold shadow-sm px-3"
           >
-            <i class="bi bi-plus-lg"></i> Asignar Planta
+            <i class="bi bi-eraser me-2"></i>Limpiar Filtros
           </button>
-          <div v-if="hasCreatePermission" class="vr mx-1 text-secondary opacity-25"></div>
-          <button class="btn btn-sm btn-outline-secondary border-0" @click="prevMonth">
-            <i class="bi bi-chevron-left"></i>
-          </button>
-          <span class="fw-bold px-3 text-capitalize">{{ formattedMonth }}</span>
-          <button
-            class="btn btn-sm btn-outline-secondary border-0"
-            @click="nextMonth"
-            :disabled="!canGoNext"
-          >
-            <i class="bi bi-chevron-right"></i>
-          </button>
-          <button class="btn btn-sm btn-primary ms-2" @click="loadData">
-            <i class="bi bi-arrow-clockwise"></i>
-          </button>
-        </div>
+        </template>
       </div>
     </div>
 
@@ -84,8 +154,31 @@
       </div>
     </div>
 
-    <!-- Grid Container -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <!-- Banner Período Histórico / Cerrado -->
+    <div
+      v-if="activeTab === 'grilla' && isPastMonth && !historyMode"
+      class="alert alert-info border-0 shadow-sm rounded-4 p-3 mb-4 d-flex align-items-center gap-3"
+    >
+      <div
+        class="rounded-circle bg-info bg-opacity-25 p-2 d-flex align-items-center justify-content-center text-info"
+        style="width: 40px; height: 40px"
+      >
+        <i class="bi bi-lock-fill fs-5"></i>
+      </div>
+      <div>
+        <h6 class="fw-bold mb-0 text-dark">Período Histórico / Cerrado</h6>
+        <p class="small text-secondary mb-0">
+          Estás visualizando un mes anterior en modo consulta. Las modificaciones operativas están
+          bloqueadas para garantizar la trazabilidad de auditoría.
+        </p>
+      </div>
+    </div>
+
+    <!-- SUB-VISTA 1: GRILLA MENSUAL -->
+    <div
+      v-if="activeTab === 'grilla'"
+      class="card border-0 shadow-sm rounded-4 overflow-hidden"
+    >
       <div class="table-responsive">
         <table class="table mb-0 shift-table">
           <thead class="bg-light">
@@ -160,7 +253,7 @@
                   :date="day.date"
                   :get-shift-class="getShiftClass"
                   :get-shift-style="getShiftStyle"
-                  :readonly="readonly"
+                  :readonly="readonly || isPastMonth"
                   :history-mode="historyMode"
                   :has-update-permission="hasUpdatePermission"
                   :is-editable-date="isEditableDate"
@@ -176,6 +269,9 @@
         </table>
       </div>
     </div>
+
+    <!-- SUB-VISTA 2: EXCEPCIONES VIGENTES -->
+    <ShiftExceptionsTab v-else ref="exceptionsTabRef" />
 
     <!-- Custom Tooltip -->
     <div v-if="tooltipState.show" class="custom-tooltip" :style="tooltipState.style">
@@ -213,13 +309,33 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useCurrentShifts } from '@/composables/current-shifts/useCurrentShifts'
 import { formatTitleCase, getInitials } from '@/utils/text-formatters'
 import TurnAssignmentModal from '@/components/shifts/TurnAssignmentModal.vue'
 import ShiftModificationModal from '@/components/shifts/ShiftModificationModal.vue'
+import ShiftExceptionsTab from '@/components/shifts/ShiftExceptionsTab.vue'
 import ShiftCell from '@/components/shifts/ShiftCell.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
+
+const route = useRoute()
+const router = useRouter()
+const exceptionsTabRef = ref<any>(null)
+
+// Sincronización bidireccional con Query Parameter (?tab=grilla|excepciones)
+const activeTab = computed<'grilla' | 'excepciones'>(() => {
+  return route.query.tab === 'excepciones' ? 'excepciones' : 'grilla'
+})
+
+const setTab = (tab: 'grilla' | 'excepciones') => {
+  router.replace({
+    query: {
+      ...route.query,
+      tab: tab === 'grilla' ? undefined : tab
+    }
+  })
+}
 
 // Props
 const props = withDefaults(
@@ -248,6 +364,7 @@ const {
   formattedMonth,
   daysInMonth,
   canGoNext,
+  isPastMonth,
   nextMonth,
   prevMonth,
   openModal,
@@ -293,6 +410,11 @@ defineExpose({
 </script>
 
 <style scoped>
+.shifts-view {
+  background-color: #f8fafc;
+  min-height: calc(100vh - 71px);
+}
+
 /* --- Animation Keyframes --- */
 @keyframes fadeIn {
   from {

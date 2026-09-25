@@ -7,6 +7,9 @@ const positionBodySchema = z.object({
   name: z.string().min(1, "El nombre del cargo es requerido").transform(toTitleCase),
   position_code: z.string().min(1, "El código del cargo es requerido"),
   description: z.string().optional().transform((v) => (v ? toSentenceCase(v) : v)),
+  estamento: z
+    .enum(['MEDICO', 'PROFESIONAL', 'TECNICO', 'ADMINISTRATIVO', 'AUXILIAR'])
+    .default('PROFESIONAL'),
   isActive: z.boolean().default(true),
 });
 

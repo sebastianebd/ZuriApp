@@ -12,6 +12,7 @@ import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useShiftExceptionStore } from '@/stores/shift-exception.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import { useTurnSiglaStore } from '@/stores/turn-sigla.store'
+import { useAlertStore } from '@/stores/alert.store'
 
 
 export function useCurrentShifts(props: {
@@ -19,6 +20,7 @@ export function useCurrentShifts(props: {
   historyMode?: boolean
   externalFilters?: any
 }) {
+  const alertStore = useAlertStore()
   const serviceStore = useServiceStore()
   const replacementStore = useReplacementStore()
   const turnAssignmentStore = useTurnAssignmentStore()
@@ -87,6 +89,7 @@ export function useCurrentShifts(props: {
 
   watch(activeServiceComputed, (newService, oldService) => {
     if (newService !== oldService) {
+      alertStore.fetchAlerts(newService || undefined)
       loadData()
     }
   })
@@ -97,6 +100,7 @@ export function useCurrentShifts(props: {
   })
 
   onMounted(() => {
+    alertStore.fetchAlerts(activeServiceComputed.value || undefined)
     loadData()
   })
 

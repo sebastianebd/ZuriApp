@@ -12,7 +12,7 @@ export const createTurnAssignmentSchema = z.object({
     // DateTime Strict:
     // Exigimos formato ISO completo para evitar ambigüedades de zona horaria en la asignación.
     start_date: z.string().datetime(),
-    end_date: z.string().datetime().optional(),
+    end_date: z.string().datetime(),
   }),
 });
 

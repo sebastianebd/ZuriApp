@@ -112,6 +112,28 @@ async function createException(payload: any, currentUser: any) {
     }
   }
 
+  const relatedService =
+    (turnAssignment as any)?.service || (replacement as any)?.servicio;
+  if (relatedService) {
+    const dashboardService = (await import("./dashboard.service")).default;
+    await dashboardService.invalidateDashboardCache(relatedService.toString());
+    let targetStaffId = "";
+    const assignmentObj: any = exception.assignment_id;
+    if (exception.assignment_model === "TurnAssignment" && assignmentObj?.staffId) {
+      targetStaffId = assignmentObj.staffId._id
+        ? assignmentObj.staffId._id.toString()
+        : assignmentObj.staffId.toString();
+    } else if (exception.assignment_model === "Replacement" && assignmentObj?.id_entrante) {
+      targetStaffId = assignmentObj.id_entrante.toString();
+    }
+    if (targetStaffId) {
+      const alertService = (await import("./alert.service")).default;
+      alertService
+        .evaluateForStaff(targetStaffId, relatedService.toString(), new Date(date))
+        .catch((err) => console.error("Error evaluating alerts:", err));
+    }
+  }
+
   return exception;
 }
 
@@ -222,6 +244,42 @@ async function deleteException(id: string, currentUser: any) {
   }
 
   await ShiftExceptionModel.findByIdAndDelete(id);
+
+  const relatedService =
+    (exception.assignment_id as any)?.service ||
+    (exception.assignment_id as any)?.servicio;
+  if (relatedService) {
+    const dashboardService = (await import("./dashboard.service")).default;
+    await dashboardService.invalidateDashboardCache(relatedService.toString());
+
+    let targetStaffId = "";
+    const assignmentObj: any = exception.assignment_id;
+    if (
+      exception.assignment_model === "TurnAssignment" &&
+      (assignmentObj?.staffId || assignmentObj?.user_id)
+    ) {
+      const staff = assignmentObj.staffId || assignmentObj.user_id;
+      targetStaffId = staff._id ? staff._id.toString() : staff.toString();
+    } else if (
+      exception.assignment_model === "Replacement" &&
+      assignmentObj?.id_entrante
+    ) {
+      targetStaffId = assignmentObj.id_entrante.toString();
+    }
+
+    if (targetStaffId) {
+      const alertService = (await import("./alert.service")).default;
+      alertService
+        .evaluateForStaff(
+          targetStaffId,
+          relatedService.toString(),
+          new Date(exception.date),
+        )
+        .catch((err) =>
+          console.error("Error evaluating alerts on deleteException:", err),
+        );
+    }
+  }
 }
 
 export default {

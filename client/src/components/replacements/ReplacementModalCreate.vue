@@ -41,6 +41,32 @@
               </div>
             </div>
 
+            <!-- SELECTOR DE MODO: DIRECTO VS BOLSA DE REEMPLAZOS -->
+            <div class="d-flex align-items-center justify-content-between p-3 mb-4 bg-white rounded-4 border shadow-sm">
+              <div>
+                <span class="fw-bold text-dark d-block">Modalidad de Reemplazo</span>
+                <span class="small text-muted">Asignación directa o convocatoria pública en bolsa de reemplazos.</span>
+              </div>
+              <div class="btn-group">
+                <button
+                  type="button"
+                  class="btn btn-sm px-3"
+                  :class="!isBolsaMode ? 'btn-dark text-white shadow-sm fw-semibold' : 'btn-outline-secondary'"
+                  @click="isBolsaMode = false"
+                >
+                  Modo Directo
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm px-3"
+                  :class="isBolsaMode ? 'btn-dark text-white shadow-sm fw-semibold' : 'btn-outline-secondary'"
+                  @click="isBolsaMode = true"
+                >
+                  📢 Publicar en Bolsa de Reemplazos
+                </button>
+              </div>
+            </div>
+
             <!-- SECCIÓN TRANSACCIÓN (Saliente -> Entrante) -->
             <div class="transaction-container bg-white rounded-4 shadow-sm p-4 mb-4 border">
               <div class="row align-items-center g-0">
@@ -110,6 +136,55 @@
                         </template>
                       </v-select>
                     </div>
+
+                    <!-- Causal de Ausencia (Saliente) -->
+                    <div class="mt-3 pt-2 border-top border-danger border-opacity-25">
+                      <label class="form-label small fw-semibold text-danger mb-1" for="causal-saliente-select">
+                        <i class="bi bi-file-earmark-medical me-1"></i>Causal de Ausencia <span class="text-danger">*</span>
+                      </label>
+                      <select
+                        id="causal-saliente-select"
+                        v-model="registroLocal.motivo"
+                        class="form-select form-select-sm border-danger border-opacity-50"
+                        data-testid="motivo-select"
+                        required
+                      >
+                        <option value="" disabled>Seleccione causal de ausencia...</option>
+                        <option
+                          v-for="(label, key) in MOTIVOS_AUSENCIA_LABELS"
+                          :key="key"
+                          :value="key"
+                        >
+                          {{ label }}
+                        </option>
+                      </select>
+
+                      <!-- Observaciones -->
+                      <div class="mt-2">
+                        <label
+                          class="form-label small fw-semibold mb-1"
+                          :class="registroLocal.motivo === 'OTRO' ? 'text-danger' : 'text-secondary'"
+                          for="observaciones-saliente"
+                        >
+                          Observaciones
+                          <span v-if="registroLocal.motivo === 'OTRO'" class="text-danger">* (Obligatorio)</span>
+                          <span v-else class="text-muted fw-normal">(Opcional)</span>
+                        </label>
+                        <textarea
+                          id="observaciones-saliente"
+                          v-model="registroLocal.observaciones"
+                          class="form-control form-control-sm"
+                          :class="{ 'border-danger border-opacity-50': registroLocal.motivo === 'OTRO' && (!registroLocal.observaciones || !registroLocal.observaciones.trim()) }"
+                          rows="2"
+                          maxlength="500"
+                          placeholder="Detalles sobre la ausencia..."
+                          data-testid="observaciones-textarea"
+                        ></textarea>
+                        <div class="text-end text-muted x-small mt-1">
+                          {{ (registroLocal.observaciones || '').length }} / 500
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -123,9 +198,10 @@
                   </div>
                 </div>
 
-                <!-- ENTRANTE CARD -->
+                <!-- ENTRANTE CARD / BOLSA PRESETS -->
                 <div class="col-md-5">
                   <div
+                    v-if="!isBolsaMode"
                     class="IStaff-card incoming p-3 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10 position-relative"
                   >
                     <div
@@ -190,6 +266,71 @@
                       </v-select>
                     </div>
                   </div>
+
+                  <!-- MODO BOLSA: PRESETS DE VENCIMIENTO -->
+                  <div
+                    v-else
+                    class="IStaff-card bolsa p-3 rounded-3 border border-primary border-opacity-25 bg-primary bg-opacity-10 position-relative"
+                    data-testid="bolsa-presets-container"
+                  >
+                    <div
+                      class="badge bg-primary text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
+                    >
+                      BOLSA DE REEMPLAZOS
+                    </div>
+                    <div class="mt-4">
+                      <label class="form-label small fw-semibold text-primary mb-2">
+                        <i class="bi bi-clock-history me-1"></i>Vencimiento de Postulación
+                      </label>
+                      <div class="d-flex flex-wrap gap-2 mb-2">
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          :class="expirationPreset === '2h' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark'"
+                          @click="expirationPreset = '2h'"
+                        >
+                          En 2 horas
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          :class="expirationPreset === '4h' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark'"
+                          @click="expirationPreset = '4h'"
+                        >
+                          En 4 horas
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          :class="expirationPreset === 'eod' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark'"
+                          @click="expirationPreset = 'eod'"
+                        >
+                          Fin del día (18:00)
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm"
+                          :class="expirationPreset === 'custom' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark'"
+                          @click="expirationPreset = 'custom'"
+                        >
+                          Personalizado
+                        </button>
+                      </div>
+
+                      <div v-if="expirationPreset === 'custom'" class="mt-2">
+                        <input
+                          type="datetime-local"
+                          v-model="customExpiresAt"
+                          class="form-control form-control-sm"
+                        />
+                      </div>
+
+                      <div class="small text-muted mt-2">
+                        <span>Límite calculado: </span>
+                        <strong class="text-dark">{{ formatExpirationDisplay() }}</strong>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -208,7 +349,7 @@
                   >
                   <v-select
                     v-model="registroLocal.servicio"
-                    :options="listaDeServicios"
+                    :options="computedListaDeServicios"
                     label="nombre"
                     :reduce="(s: any) => s._id"
                     placeholder="Seleccione servicio"
@@ -222,7 +363,7 @@
                   <v-select
                     id="tipo_turno"
                     v-model="registroLocal.tipo_turno"
-                    :options="listaDeTurnos"
+                    :options="computedListaDeTurnos"
                     :clearable="false"
                     :filterable="true"
                     placeholder="Tipo de turno..."
@@ -329,10 +470,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive, computed } from 'vue'
-import { type ReplacementRegistration } from '@/types/replacement.types'
+import { ref, watch, reactive, computed, onMounted } from 'vue'
+import { type ReplacementRegistration, MOTIVOS_AUSENCIA_LABELS, type AusenciaSalienteMotivo } from '@/types/replacement.types'
 import { type IStaff } from '@/types/staff.types'
 import { useStaffStore } from '@/stores/staff.store'
+import { useServiceStore } from '@/stores/service.store'
+import { useTurnTypeStore } from '@/stores/turn-type.store'
 import ConfirmationModal from '../common/ConfirmationModal.vue'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
@@ -341,14 +484,26 @@ import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
 import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
 import { useReplacementStore } from '@/stores/replacement.store'
+import { useReplacementOfferStore } from '@/stores/replacement-offer.store'
+import { findNextAvailableDate } from '@/utils/date-utils'
 
-const props = defineProps<{
-  visible: boolean
-  listaDeTurnos: string[]
-  listaDeServicios: any[]
-  registro: Partial<ReplacementRegistration>
-  fechasBloqueadas: string[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    visible: boolean
+    listaDeTurnos?: string[]
+    listaDeServicios?: any[]
+    registro?: Partial<ReplacementRegistration>
+    fechasBloqueadas?: string[]
+    initialBolsaMode?: boolean
+  }>(),
+  {
+    listaDeTurnos: () => [],
+    listaDeServicios: () => [],
+    registro: () => ({}),
+    fechasBloqueadas: () => [],
+    initialBolsaMode: false,
+  }
+)
 
 const emit = defineEmits<{
   (e: 'cerrar'): void
@@ -356,10 +511,86 @@ const emit = defineEmits<{
 }>()
 
 const staffStore = useStaffStore()
+const serviceStore = useServiceStore()
+const turnTypeStore = useTurnTypeStore()
 const turnAssignmentStore = useTurnAssignmentStore()
 const replacementStore = useReplacementStore()
 
-const registroLocal = reactive({ ...props.registro })
+const computedListaDeServicios = computed(() => {
+  if (props.listaDeServicios && props.listaDeServicios.length > 0) {
+    return props.listaDeServicios
+  }
+  return serviceStore.services
+})
+
+const computedListaDeTurnos = computed(() => {
+  if (props.listaDeTurnos && props.listaDeTurnos.length > 0) {
+    return props.listaDeTurnos
+  }
+  return turnTypeStore.turnTypes.map((t: any) => t.nombre || t.name)
+})
+
+const isBolsaMode = ref<boolean>(props.initialBolsaMode ?? false)
+
+onMounted(async () => {
+  if (props.initialBolsaMode) {
+    isBolsaMode.value = true
+  }
+  if (props.visible) {
+    if (serviceStore.services.length === 0) {
+      await serviceStore.fetchServices()
+    }
+    if (turnTypeStore.turnTypes.length === 0) {
+      await turnTypeStore.fetchTurnTypes(true)
+    }
+  }
+})
+
+const expirationPreset = ref<'2h' | '4h' | 'eod' | 'custom'>('2h')
+const customExpiresAt = ref<string>('')
+
+const computeExpirationDate = (): Date => {
+  const now = new Date()
+  if (expirationPreset.value === '2h') {
+    return new Date(now.getTime() + 2 * 3600000)
+  }
+  if (expirationPreset.value === '4h') {
+    return new Date(now.getTime() + 4 * 3600000)
+  }
+  if (expirationPreset.value === 'eod') {
+    const eod = new Date(now)
+    eod.setHours(18, 0, 0, 0)
+    if (eod.getTime() <= now.getTime()) {
+      eod.setDate(eod.getDate() + 1)
+    }
+    return eod
+  }
+  if (customExpiresAt.value) {
+    const d = new Date(customExpiresAt.value)
+    if (!isNaN(d.getTime())) return d
+  }
+  return new Date(now.getTime() + 2 * 3600000)
+}
+
+const computedExpiresAt = computed(() => {
+  return computeExpirationDate().toISOString()
+})
+
+const formatExpirationDisplay = () => {
+  const d = computeExpirationDate()
+  return d.toLocaleTimeString('es-CL', {
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+  })
+}
+
+const registroLocal = reactive({
+  ...props.registro,
+  motivo: (props.registro.motivo || '') as AusenciaSalienteMotivo,
+  observaciones: props.registro.observaciones || ''
+})
 const showConfirmacion = ref(false)
 
 // 🏢 ENTERPRISE: IStaff selection with server-side search
@@ -451,23 +682,35 @@ const parseDateStr = (str: string) => {
   return new Date(y, m - 1, d)
 }
 
-// Shared helper to fetch ALL blocked dates for a IStaff (Absence + Working + Shifts)
-const fetchAllBlockedDates = async (IStaff: IStaff) => {
+// Helper para actualizar fecha_inicio al primer día disponible si hay fechas bloqueadas
+const updateDateToNextAvailable = () => {
+  if (combinedDisabledDates.value.length === 0) return
+  const nextAvailable = findNextAvailableDate(new Date(), combinedDisabledDates.value)
+  const yyyy = nextAvailable.getFullYear()
+  const mm = String(nextAvailable.getMonth() + 1).padStart(2, '0')
+  const dd = String(nextAvailable.getDate()).padStart(2, '0')
+  const dateStr = `${yyyy}-${mm}-${dd}`
+  registroLocal.fecha_inicio = dateStr
+  registroLocal.fecha_termino = dateStr
+}
+
+// Shared helper to fetch blocked dates for a Staff (Absence + Working + Shifts)
+const fetchBlockedDates = async (IStaff: IStaff) => {
   try {
-    const [replacements, assignments] = await Promise.all([
+    const [replacements, assignments = []] = await Promise.all([
       replacementStore.checkConflicts({ search: IStaff.rut, limit: 100 }),
       turnAssignmentStore.fetchAssignmentsByUser(IStaff._id)
     ])
 
-    // 1. Absences (IStaff is Saliente)
+    // 1. Absences (IStaff is Saliente en otro reemplazo activo)
     const absenceStrs = replacementStore.getFechasAusencia(IStaff._id, replacements)
     const absenceDates = absenceStrs.map(parseDateStr)
 
-    // 2. Occupied as Replacement (IStaff is Entrante)
+    // 2. Occupied as Replacement (IStaff is Entrante en otro reemplazo activo)
     const occupiedStrs = replacementStore.getFechasOcupadas(IStaff._id, replacements)
     const occupiedDates = occupiedStrs.map(parseDateStr)
 
-    // 3. Occupied by Shift Assignment
+    // 3. Occupied by Shift Assignment (bloquea fechas con turnos asignados)
     const shiftRanges = assignments.map((a: any) => ({
       start: new Date(a.start_date),
       end: a.end_date ? new Date(a.end_date) : new Date(2100, 0, 1)
@@ -489,7 +732,8 @@ watch(selectedSaliente, async (IStaff) => {
       nombre_saliente: IStaff.firstName,
       apellido_saliente: IStaff.lastName
     })
-    salienteBlockedDates.value = await fetchAllBlockedDates(IStaff)
+    salienteBlockedDates.value = await fetchBlockedDates(IStaff)
+    updateDateToNextAvailable()
   } else {
     registroLocal.id_saliente = undefined
     registroLocal.rut_saliente = undefined
@@ -508,7 +752,8 @@ watch(selectedEntrante, async (IStaff) => {
       nombre_entrante: IStaff.firstName,
       apellido_entrante: IStaff.lastName
     })
-    entranteBlockedRanges.value = await fetchAllBlockedDates(IStaff)
+    entranteBlockedRanges.value = await fetchBlockedDates(IStaff)
+    updateDateToNextAvailable()
   } else {
     registroLocal.id_entrante = undefined
     registroLocal.rut_entrante = undefined
@@ -579,50 +824,103 @@ const validationError = computed(() => {
       end = startEnd
     }
 
-    // Default to Check Overlap
-    // combinedDisabledDates is ref<Date[]>
-    const hasConflict = combinedDisabledDates.value.some((blockedDate) => {
-      const b = new Date(blockedDate)
-      b.setHours(0, 0, 0, 0)
-      const bEnd = new Date(blockedDate)
+    // Default to Check Overlap (supports Date or range { start, end })
+    const hasConflict = combinedDisabledDates.value.some((blockedDate: any) => {
+      let bStart: Date
+      let bEnd: Date
+      if (blockedDate && blockedDate.start) {
+        bStart = new Date(blockedDate.start)
+        bEnd = blockedDate.end ? new Date(blockedDate.end) : bStart
+      } else {
+        bStart = new Date(blockedDate)
+        bEnd = new Date(blockedDate)
+      }
+      bStart.setHours(0, 0, 0, 0)
       bEnd.setHours(23, 59, 59, 999)
 
-      // Check if blocked date is within [start, end]
-      // Since blockedDate is a specific day (00:00:00 usually), checking if it falls in range.
-      return b >= start && b <= end
+      return start <= bEnd && end >= bStart
     })
 
     if (hasConflict) {
       return 'El rango de fechas seleccionado entra en conflicto con un turno o ausencia existente.'
     }
   }
+
+  // 3. Validar Causal de Ausencia y Observaciones
+  if (registroLocal.motivo === 'OTRO') {
+    if (!registroLocal.observaciones || !registroLocal.observaciones.trim()) {
+      return "Las observaciones son obligatorias cuando el motivo es 'OTRO'"
+    }
+  }
+  if (registroLocal.observaciones && registroLocal.observaciones.length > 500) {
+    return 'Las observaciones no pueden superar los 500 caracteres.'
+  }
+
   return ''
 })
 
 const isFormComplete = computed(() => {
-  return (
+  if (isBolsaMode.value) {
+    const bolsaComplete = Boolean(
+      registroLocal.rut_saliente &&
+      registroLocal.tipo_turno &&
+      registroLocal.servicio &&
+      registroLocal.fecha_inicio &&
+      registroLocal.fecha_termino &&
+      registroLocal.motivo
+    )
+    if (!bolsaComplete) return false
+    if (registroLocal.motivo === 'OTRO') {
+      return Boolean(registroLocal.observaciones && registroLocal.observaciones.trim().length > 0)
+    }
+    return true
+  }
+
+  const baseComplete = Boolean(
     registroLocal.rut_saliente &&
     registroLocal.rut_entrante &&
     registroLocal.tipo_turno &&
     registroLocal.servicio &&
     registroLocal.fecha_inicio &&
-    registroLocal.fecha_termino
+    registroLocal.fecha_termino &&
+    registroLocal.motivo
   )
+
+  if (!baseComplete) return false
+
+  if (registroLocal.motivo === 'OTRO') {
+    return Boolean(registroLocal.observaciones && registroLocal.observaciones.trim().length > 0)
+  }
+
+  return true
 })
 
 // --- Watchers ---
 watch(
   () => props.registro,
   (nuevo) => {
-    Object.assign(registroLocal, nuevo)
+    Object.assign(registroLocal, {
+      ...nuevo,
+      motivo: nuevo.motivo || '',
+      observaciones: nuevo.observaciones || ''
+    })
   },
   { deep: true }
 )
 
 watch(
   () => props.visible,
-  (nuevoValor) => {
+  async (nuevoValor) => {
     if (nuevoValor) {
+      if (props.initialBolsaMode) {
+        isBolsaMode.value = true
+      }
+      if (serviceStore.services.length === 0) {
+        await serviceStore.fetchServices()
+      }
+      if (turnTypeStore.turnTypes.length === 0) {
+        await turnTypeStore.fetchTurnTypes(true)
+      }
       // Reset logic if needed
       if (!registroLocal.fecha_inicio) registroLocal.fecha_inicio = todayString()
       if (!registroLocal.fecha_termino) registroLocal.fecha_termino = todayString()
@@ -745,6 +1043,33 @@ function confirmarGuardar() {
   if (typeof payload.id_saliente === 'object' && payload.id_saliente?._id) payload.id_saliente = payload.id_saliente._id
   if (typeof payload.id_entrante === 'object' && payload.id_entrante?._id) payload.id_entrante = payload.id_entrante._id
   if (typeof payload.servicio === 'object' && payload.servicio?._id) payload.servicio = payload.servicio._id
+
+  payload.motivo = registroLocal.motivo
+  payload.observaciones = registroLocal.observaciones && registroLocal.observaciones.trim() ? registroLocal.observaciones.trim() : undefined
+
+  if (isBolsaMode.value) {
+    const offerPayload = {
+      serviceId: payload.servicio,
+      positionId: (selectedSaliente.value?.positionId as any)?._id || selectedSaliente.value?.positionId,
+      id_saliente: payload.id_saliente,
+      motivo: payload.motivo,
+      observaciones: payload.observaciones,
+      tipo_turno: payload.tipo_turno,
+      fecha_inicio: payload.fecha_inicio,
+      fecha_termino: payload.fecha_termino,
+      expiresAt: computedExpiresAt.value,
+    }
+
+    try {
+      const offerStore = useReplacementOfferStore()
+      offerStore.createOffer(offerPayload)
+    } catch {
+      // Graceful fallback
+    }
+
+    emit('cerrar')
+    return
+  }
 
   emit('guardar', payload as ReplacementRegistration)
 }

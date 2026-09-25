@@ -13,26 +13,15 @@
 
     <div class="menu-container">
       <!-- Personal Section -->
-      <div class="menu-group">
+      <div class="menu-group" v-if="can('users.view') || can('staff.view')">
         <h3>Personal</h3>
         <router-link
           :to="{ name: 'personal-staff' }"
           class="menu-item"
           title="Funcionarios"
-          v-if="can('users.view')"
         >
-          <i class="bi bi-person-badge"></i>
+          <i class="bi bi-people"></i>
           <span class="text">Funcionarios</span>
-        </router-link>
-
-        <router-link
-          :to="{ name: 'personal-ficha-turnos' }"
-          class="menu-item"
-          title="Ficha de Turnos"
-          v-if="can('shifts.view')"
-        >
-          <i class="bi bi-person-lines-fill"></i>
-          <span class="text">Ficha de Turnos</span>
         </router-link>
       </div>
 
@@ -40,73 +29,55 @@
       <div class="menu-group" v-if="can('shifts.view') || can('replacement.view')">
         <h3>Operaciones</h3>
         <router-link
-          :to="{ name: 'operaciones-reemplazos' }"
+          :to="{ name: 'dashboard' }"
           class="menu-item"
-          title="Reemplazos Activos"
-          v-if="can('replacement.view')"
+          title="Dashboard"
+          v-if="can('shifts.view')"
         >
-          <i class="bi bi-arrow-repeat"></i>
-          <span class="text">Reemplazos Activos</span>
-        </router-link>
-        <router-link
-          :to="{ name: 'operaciones-calendario-reemplazos' }"
-          class="menu-item"
-          title="Calendario de Reemplazos"
-          v-if="can('replacement.view')"
-        >
-          <i class="bi bi-calendar3"></i>
-          <span class="text">Calendario Reemplazos</span>
+          <i class="bi bi-speedometer2"></i>
+          <span class="text">Dashboard</span>
         </router-link>
         <router-link
           :to="{ name: 'operaciones-turnos' }"
           class="menu-item"
-          title="Turnos Actuales"
+          title="Turnos"
           v-if="can('shifts.view')"
         >
-          <i class="bi bi-calendar-range"></i>
-          <span class="text">Turnos Actuales</span>
+          <i class="bi bi-calendar2-week"></i>
+          <span class="text">Turnos</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'operaciones-reemplazos' }"
+          class="menu-item"
+          title="Reemplazos"
+          v-if="can('replacement.view')"
+        >
+          <i class="bi bi-arrow-left-right"></i>
+          <span class="text">Reemplazos</span>
+        </router-link>
+        <router-link
+          :to="{ name: 'operaciones-bolsa-reemplazos' }"
+          class="menu-item d-flex justify-content-between align-items-center"
+          title="Bolsa de Reemplazos"
+          v-if="can('replacement.view') || can('shifts.view')"
+        >
+          <div class="d-flex align-items-center">
+            <i class="bi bi-megaphone"></i>
+            <span class="text">Bolsa de Reemplazos</span>
+          </div>
+          <span
+            v-if="openOffersCount > 0"
+            class="badge rounded-pill bg-danger ms-auto"
+            style="font-size: 0.75rem;"
+          >
+            {{ openOffersCount }}
+          </span>
         </router-link>
       </div>
 
-      <!-- Historial & Reportes Section -->
-      <div class="menu-group">
-        <h3>Historial & Reportes</h3>
-        <router-link
-          :to="{ name: 'historial-reemplazos' }"
-          class="menu-item"
-          title="Reemplazos Finalizados"
-          v-if="can('replacement.view')"
-        >
-          <i class="bi bi-archive"></i>
-          <span class="text">Reemplazos Finalizados</span>
-        </router-link>
-        <router-link
-          :to="{ name: 'historial-turnos' }"
-          class="menu-item"
-          title="Turnos Anteriores"
-          v-if="can('shifts.view')"
-        >
-          <i class="bi bi-calendar-x"></i>
-          <span class="text">Turnos Anteriores</span>
-        </router-link>
-        <router-link
-          :to="{ name: 'historial-excepciones' }"
-          class="menu-item"
-          title="Excepciones de Turno"
-          v-if="can('shifts.view')"
-        >
-          <i class="bi bi-exclamation-triangle"></i>
-          <span class="text">Excepciones de Turno</span>
-        </router-link>
-        <router-link
-          :to="{ name: 'historial-auditoria' }"
-          class="menu-item"
-          title="Auditoría de Cambios"
-          v-if="can('audit.view')"
-        >
-          <i class="bi bi-journal-text"></i>
-          <span class="text">Auditoría de Cambios</span>
-        </router-link>
+      <!-- Reportes & Auditoría Section -->
+      <div class="menu-group" v-if="can('audit.view') || can('shifts.view')">
+        <h3>Reportes & Auditoría</h3>
         <router-link
           :to="{ name: 'reportes' }"
           class="menu-item"
@@ -116,37 +87,27 @@
           <i class="bi bi-file-earmark-bar-graph"></i>
           <span class="text">Centro de Reportes</span>
         </router-link>
+        <router-link
+          :to="{ name: 'historial-auditoria' }"
+          class="menu-item"
+          title="Auditoría de Cambios"
+          v-if="can('audit.view')"
+        >
+          <i class="bi bi-shield-check"></i>
+          <span class="text">Auditoría de Cambios</span>
+        </router-link>
       </div>
 
       <!-- Configuración Section -->
-      <div class="menu-group" v-if="can('service.view') || can('turn-type.view') || can('role.view') || can('position.view')">
+      <div class="menu-group" v-if="can('service.view') || can('turn-type.view') || can('turn-sigla.view') || can('role.view') || can('position.view')">
         <h3>Configuración</h3>
         <router-link
-          :to="{ name: 'configuracion-servicios' }"
+          :to="{ name: 'configuracion' }"
           class="menu-item"
-          title="Servicios"
-          v-if="can('service.view')"
+          title="Configuración"
         >
-          <i class="bi bi-hospital"></i>
-          <span class="text">Servicios</span>
-        </router-link>
-        <router-link
-          :to="{ name: 'configuracion-tipos-turno' }"
-          class="menu-item"
-          title="Tipos de Turno"
-          v-if="can('turn-type.view')"
-        >
-          <i class="bi bi-clock"></i>
-          <span class="text">Tipos de Turno</span>
-        </router-link>
-        <router-link
-          :to="{ name: 'personal-cargos' }"
-          class="menu-item"
-          title="Roles y Cargos"
-          v-if="can('role.view') || can('position.view')"
-        >
-          <i class="bi bi-briefcase"></i>
-          <span class="text">Roles y Cargos</span>
+          <i class="bi bi-gear"></i>
+          <span class="text">Configuración</span>
         </router-link>
       </div>
     </div>
@@ -154,11 +115,21 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import logoURL from '../../assets/images/logo-zuri.png'
 import { useAuth } from '../../composables/login/useAuth'
+import { useReplacementOfferStore } from '../../stores/replacement-offer.store'
 
 const { can, isAuthenticated } = useAuth()
+
+let replacementOfferStore: any = null
+try {
+  replacementOfferStore = useReplacementOfferStore()
+} catch {
+  // Graceful fallback if Pinia is not active in unit tests
+}
+
+const openOffersCount = computed(() => replacementOfferStore?.openOffersCount || 0)
 
 const is_expanded = ref(sessionStorage.getItem('is_expanded') !== 'false')
 

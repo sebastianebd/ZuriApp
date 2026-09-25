@@ -122,6 +122,15 @@
               </button>
 
               <button
+                v-if="canViewFicha"
+                @click="goToFicha(usuario._id)"
+                class="btn-glass btn-ficha"
+                title="Ver Ficha de Turnos"
+              >
+                <i class="bi bi-person-lines-fill"></i>
+              </button>
+
+              <button
                 @click="$emit('detalle', usuario)"
                 class="btn-glass btn-history"
                 title="Ver Historial"
@@ -156,7 +165,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRoleStore } from '@/stores/role.store'
@@ -168,8 +178,19 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['editar', 'eliminar', 'detalle'])
+const router = useRouter()
 const roleStore = useRoleStore()
 const authStore = useAuthStore()
+
+// Permiso para ver ficha de turnos
+const canViewFicha = computed(() => authStore.hasPermission('shifts.view'))
+
+function goToFicha(id: string) {
+  router.push({
+    name: 'personal-ficha-turnos',
+    query: { staffId: id }
+  })
+}
 
 // Refs
 const mostrarModal = ref(false)
@@ -459,6 +480,10 @@ async function copyCode(code: string) {
 .btn-edit:hover {
   background: #eff6ff;
   color: #3b82f6;
+}
+.btn-ficha:hover {
+  background: #f5f3ff;
+  color: #7c3aed;
 }
 .btn-history:hover {
   background: #f0f9ff;

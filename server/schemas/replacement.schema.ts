@@ -5,35 +5,61 @@ import { toTitleCase } from "../utils/formatters";
 // Estandarizamos la validación de ObjectIDs de MongoDB para consistencia en todos los esquemas.
 const objectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, "ID inválido");
 
+export const ausenciaSalienteMotivosEnum = z.enum([
+  "LICENCIA_MEDICA",
+  "PRE_POST_NATAL",
+  "PERMISO_ADMINISTRATIVO",
+  "FERIADO_LEGAL",
+  "DIA_COMPENSATORIO",
+  "COMISION_SERVICIO",
+  "PERMISO_GREMIAL",
+  "OTRO",
+]);
+
 /**
  * Esquema de Creación de Reemplazos
  * Define la estructura rigurosa requerida para iniciar un proceso de suplencia.
  * Se validan tanto los actores (Saliente/Entrante) como la temporalidad del evento.
  */
 export const createReplacementSchema = z.object({
-  body: z.object({
-    id_negocio: z.string().optional(),
-    id_saliente: objectIdSchema,
-    rut_saliente: z.string().min(8, "RUT saliente inválido"),
-    nombre_saliente: z.string().min(2).transform(toTitleCase),
-    apellido_saliente: z.string().min(2).transform(toTitleCase),
-    id_entrante: objectIdSchema,
-    rut_entrante: z.string().min(8, "RUT entrante inválido"),
-    nombre_entrante: z.string().min(2).transform(toTitleCase),
-    apellido_entrante: z.string().min(2).transform(toTitleCase),
-    tipo_turno: z.string().min(1),
-    // Coerción de Fechas:
-    // Zod transforma strings ISO8601 a objetos Date nativos automáticamente.
-    // Esto asegura que el servicio reciba fechas válidas listas para operar.
-    fecha_inicio: z.coerce.date(),
-    fecha_termino: z.coerce.date(),
-    servicio: z.string().min(1),
-    status: z
-      .enum(["PENDIENTE", "APROBADO", "RECHAZADO", "FINALIZADO", "ANULADO"])
-      .optional(),
-    creado_por: objectIdSchema,
-    corte_anticipado: z.boolean().optional(),
-  }),
+  body: z
+    .object({
+      id_negocio: z.string().optional(),
+      id_saliente: objectIdSchema,
+      rut_saliente: z.string().min(8, "RUT saliente inválido"),
+      nombre_saliente: z.string().min(2).transform(toTitleCase),
+      apellido_saliente: z.string().min(2).transform(toTitleCase),
+      motivo: ausenciaSalienteMotivosEnum,
+      observaciones: z.string().max(500, "Máximo 500 caracteres").optional(),
+      id_entrante: objectIdSchema,
+      rut_entrante: z.string().min(8, "RUT entrante inválido"),
+      nombre_entrante: z.string().min(2).transform(toTitleCase),
+      apellido_entrante: z.string().min(2).transform(toTitleCase),
+      tipo_turno: z.string().min(1),
+      // Coerción de Fechas:
+      // Zod transforma strings ISO8601 a objetos Date nativos automáticamente.
+      // Esto asegura que el servicio reciba fechas válidas listas para operar.
+      fecha_inicio: z.coerce.date(),
+      fecha_termino: z.coerce.date(),
+      servicio: z.string().min(1),
+      status: z
+        .enum(["PENDIENTE", "APROBADO", "RECHAZADO", "FINALIZADO", "ANULADO"])
+        .optional(),
+      creado_por: objectIdSchema,
+      corte_anticipado: z.boolean().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.motivo === "OTRO") {
+          return !!data.observaciones && data.observaciones.trim().length > 0;
+        }
+        return true;
+      },
+      {
+        message: "Las observaciones son obligatorias cuando el motivo es 'OTRO'",
+        path: ["observaciones"],
+      }
+    ),
 });
 
 export const updateReplacementSchema = z.object({
@@ -43,6 +69,8 @@ export const updateReplacementSchema = z.object({
   body: z
     .object({
       rut_saliente: z.string().min(8).optional(),
+      motivo: ausenciaSalienteMotivosEnum.optional(),
+      observaciones: z.string().max(500, "Máximo 500 caracteres").optional(),
       rut_entrante: z.string().min(8).optional(),
       tipo_turno: z.string().min(1).optional(),
       servicio: z.string().min(1).optional(),
