@@ -1,27 +1,27 @@
 <template>
-  <div class="portal-notifications p-3">
+  <div class="portal-notifications">
     <!-- Header -->
-    <div class="mb-3">
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <h5 class="fw-bold mb-0 text-dark">Avisos</h5>
+    <section class="notif-header">
+      <div class="notif-header-top">
+        <h2 class="page-title">Avisos</h2>
         <span
           v-if="unreadCount > 0"
-          class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1"
+          class="unread-chip"
           data-test="unread-counter-badge"
         >
           {{ unreadCount }} no leído{{ unreadCount > 1 ? 's' : '' }}
         </span>
       </div>
-      <p class="text-muted small mb-3">
+      <p class="page-desc">
         Comunicaciones oficiales, rol mensual y asignaciones operativas.
       </p>
 
-      <!-- Filtros: Todos - No leídos -->
-      <div class="btn-group btn-group-sm w-100 shadow-sm rounded-pill p-1 bg-white border">
+      <!-- Filtros -->
+      <div class="filter-bar">
         <button
           type="button"
-          class="btn rounded-pill px-3"
-          :class="currentFilter === 'all' ? 'btn-primary' : 'btn-light text-muted'"
+          class="filter-chip"
+          :class="{ 'filter-chip--active': currentFilter === 'all' }"
           data-test="filter-all"
           @click="currentFilter = 'all'"
         >
@@ -29,92 +29,82 @@
         </button>
         <button
           type="button"
-          class="btn rounded-pill px-3"
-          :class="currentFilter === 'unread' ? 'btn-primary' : 'btn-light text-muted'"
+          class="filter-chip"
+          :class="{ 'filter-chip--active': currentFilter === 'unread' }"
           data-test="filter-unread"
           @click="currentFilter = 'unread'"
         >
           No leídos ({{ unreadCount }})
         </button>
       </div>
-    </div>
+    </section>
 
     <!-- Lista de Avisos -->
-    <div v-if="filteredNotifications.length > 0" class="notifications-list d-flex flex-column gap-3">
+    <div v-if="filteredNotifications.length > 0" class="notif-list">
       <div
         v-for="notif in filteredNotifications"
         :key="notif.id"
-        class="card border-0 shadow-sm rounded-4 notification-card position-relative"
-        :class="notif.acknowledged ? 'notification-read' : 'notification-unread'"
+        class="notif-card"
+        :class="[
+          notif.acknowledged ? 'notif-card--read notification-read' : 'notif-card--unread notification-unread'
+        ]"
         data-test="notification-card"
       >
-        <div class="card-body p-3">
-          <!-- Fila superior: Icono, Título, Fecha y Botón Eliminar (x) -->
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div class="d-flex align-items-center gap-2">
-              <span
-                class="badge rounded-circle p-2 d-flex align-items-center justify-content-center notif-icon-badge"
-                :class="getIconBadgeClass(notif.type, notif.acknowledged)"
+        <!-- Top row -->
+        <div class="notif-top">
+          <div class="notif-left">
+            <span
+              class="notif-icon"
+              :class="getIconBadgeClass(notif.type, notif.acknowledged)"
+            >
+              <i :class="getIconClass(notif.type)"></i>
+            </span>
+            <div>
+              <h3
+                class="notif-title"
+                :class="notif.acknowledged ? 'notif-title--read' : ''"
               >
-                <i :class="getIconClass(notif.type)"></i>
+                {{ notif.title }}
+              </h3>
+              <span class="notif-date">
+                {{ formatDate(notif.date) }}
               </span>
-              <div>
-                <h6
-                  class="mb-0"
-                  :class="notif.acknowledged ? 'fw-normal text-secondary' : 'fw-bold text-dark'"
-                  style="font-size: 0.95rem;"
-                >
-                  {{ notif.title }}
-                </h6>
-                <small class="text-muted" style="font-size: 0.72rem;">
-                  {{ formatDate(notif.date) }}
-                </small>
-              </div>
-            </div>
-
-            <div class="d-flex align-items-center gap-2">
-              <span
-                v-if="!notif.acknowledged"
-                class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill"
-                style="font-size: 0.65rem;"
-              >
-                No leído
-              </span>
-              <!-- Botón X para eliminar el aviso -->
-              <button
-                type="button"
-                class="btn-close delete-notif-btn"
-                style="font-size: 0.65rem;"
-                aria-label="Eliminar aviso"
-                title="Eliminar aviso"
-                data-test="delete-notif-btn"
-                @click.stop="handleDelete(notif.id)"
-              ></button>
             </div>
           </div>
 
-          <!-- Cuerpo del Mensaje -->
-          <p
-            class="small mb-3"
-            :class="notif.acknowledged ? 'text-muted' : 'text-secondary'"
-          >
-            {{ notif.message }}
-          </p>
-
-          <!-- Acción Operativa: Botón OK solo en No Leídos -->
-          <div
-            v-if="!notif.acknowledged"
-            class="d-flex justify-content-end align-items-center pt-2 border-top"
-          >
+          <div class="notif-right">
+            <span v-if="!notif.acknowledged" class="new-dot"></span>
             <button
               type="button"
-              class="btn btn-primary btn-sm fw-semibold px-4 rounded-pill"
-              data-test="acknowledge-btn"
-              @click="handleAcknowledge(notif.id)"
+              class="notif-dismiss"
+              aria-label="Eliminar aviso"
+              title="Eliminar aviso"
+              data-test="delete-notif-btn"
+              @click.stop="handleDelete(notif.id)"
             >
-              OK
+              <i class="bi bi-x"></i>
             </button>
           </div>
+        </div>
+
+        <!-- Body -->
+        <p
+          class="notif-body"
+          :class="notif.acknowledged ? 'notif-body--read' : ''"
+        >
+          {{ notif.message }}
+        </p>
+
+        <!-- Action -->
+        <div v-if="!notif.acknowledged" class="notif-action">
+          <button
+            type="button"
+            class="ack-btn"
+            data-test="acknowledge-btn"
+            @click="handleAcknowledge(notif.id)"
+          >
+            OK
+          </button>
         </div>
       </div>
     </div>
@@ -122,16 +112,16 @@
     <!-- Empty State -->
     <div
       v-else
-      class="card border-0 bg-light rounded-4 text-center p-4 my-3"
+      class="empty-state-card"
       data-test="empty-notifications"
     >
-      <i class="bi bi-bell-slash fs-1 text-muted mb-2"></i>
-      <h6 class="fw-bold mb-1">
+      <div class="empty-icon"><i class="bi bi-bell-slash"></i></div>
+      <h3 class="empty-title">
         {{ currentFilter === 'unread' ? 'No tienes avisos sin leer' : 'No tienes avisos en tu bandeja' }}
-      </h6>
-      <small class="text-muted">
+      </h3>
+      <p class="empty-desc">
         {{ currentFilter === 'unread' ? 'Estás al día con todas las notificaciones.' : 'Tu bandeja de avisos está vacía.' }}
-      </small>
+      </p>
     </div>
   </div>
 </template>
@@ -165,17 +155,17 @@ function handleDelete(id: string) {
 
 function getIconBadgeClass(type: string, isAcknowledged: boolean) {
   if (isAcknowledged) {
-    return 'bg-light text-secondary border'
+    return 'notif-icon--muted'
   }
   switch (type) {
     case 'schedule_published':
-      return 'bg-primary-subtle text-primary'
+      return 'notif-icon--brand'
     case 'replacement_assigned':
-      return 'bg-warning-subtle text-warning-emphasis'
+      return 'notif-icon--warning'
     case 'offer_published':
-      return 'bg-info-subtle text-info-emphasis border border-info-subtle'
+      return 'notif-icon--accent'
     default:
-      return 'bg-secondary-subtle text-secondary'
+      return 'notif-icon--muted'
   }
 }
 
@@ -209,39 +199,263 @@ function formatDate(dateStr: string): string {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/styles/portal-theme' as t;
+
 .portal-notifications {
-  max-width: 540px;
+  max-width: t.$portal-max-width;
   margin: 0 auto;
+  padding: t.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: t.$space-4;
 }
 
-.notification-card {
-  transition: all 0.2s ease-in-out;
+// --- Header ---
+.notif-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: t.$space-1;
 }
 
-/* Diferencia visual clara entre No leídos y Leídos */
-.notification-unread {
-  background-color: #ffffff;
-  border-left: 4px solid #0d6efd !important;
+.page-title {
+  font-size: t.$font-size-xl;
+  font-weight: t.$font-weight-bold;
+  color: t.$zuri-text-heading;
+  margin: 0;
 }
 
-.notification-read {
-  background-color: #f8f9fa;
-  border-left: 4px solid #dee2e6 !important;
-  opacity: 0.85;
+.unread-chip {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-danger;
+  background: t.$zuri-danger-subtle;
+  padding: 2px t.$space-2;
+  border-radius: t.$radius-sm;
+  font-variant-numeric: tabular-nums;
 }
 
-.notif-icon-badge {
-  width: 36px;
-  height: 36px;
-  font-size: 1.1rem;
+.page-desc {
+  font-size: t.$font-size-sm;
+  color: t.$zuri-text-muted;
+  margin: 0 0 t.$space-3;
 }
 
-.delete-notif-btn {
-  opacity: 0.5;
-  transition: opacity 0.15s ease-in-out;
+// --- Filters ---
+.filter-bar {
+  display: flex;
+  gap: t.$space-2;
+  padding: 4px;
+  background: t.$zuri-divider;
+  border-radius: t.$radius-md;
+}
+
+.filter-chip {
+  flex: 1;
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-medium;
+  padding: t.$space-2;
+  border: none;
+  border-radius: t.$radius-sm;
+  background: transparent;
+  color: t.$zuri-text-muted;
+  cursor: pointer;
+  transition: all t.$transition-base;
+  text-align: center;
+
+  &--active {
+    background: t.$zuri-surface-raised;
+    color: t.$zuri-brand;
+    font-weight: t.$font-weight-semi;
+    box-shadow: t.$shadow-xs;
+  }
+}
+
+// --- Notification Cards ---
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: t.$space-3;
+}
+
+.notif-card {
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-lg;
+  padding: t.$space-4;
+  transition: all t.$transition-base;
+
+  &--unread {
+    box-shadow: t.$shadow-sm;
+    border-left: 3px solid t.$zuri-brand;
+  }
+
+  &--read {
+    opacity: 0.7;
+    border-left: 3px solid t.$zuri-border;
+  }
+}
+
+.notif-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: t.$space-3;
+}
+
+.notif-left {
+  display: flex;
+  align-items: flex-start;
+  gap: t.$space-3;
+}
+
+.notif-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: t.$radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+
+  &--brand {
+    background: t.$zuri-accent-subtle;
+    color: t.$zuri-brand;
+  }
+
+  &--warning {
+    background: t.$zuri-warning-subtle;
+    color: t.$zuri-warning;
+  }
+
+  &--accent {
+    background: t.$zuri-accent-subtle;
+    color: t.$zuri-accent;
+  }
+
+  &--muted {
+    background: t.$zuri-divider;
+    color: t.$zuri-text-subtle;
+  }
+}
+
+.notif-title {
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-heading;
+  margin: 0 0 2px;
+  line-height: 1.3;
+
+  &--read {
+    font-weight: t.$font-weight-normal;
+    color: t.$zuri-text-muted;
+  }
+}
+
+.notif-date {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-subtle;
+}
+
+.notif-right {
+  display: flex;
+  align-items: center;
+  gap: t.$space-2;
+  flex-shrink: 0;
+}
+
+.new-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: t.$zuri-brand;
+}
+
+.notif-dismiss {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: t.$zuri-text-subtle;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: t.$radius-xs;
+  font-size: 1rem;
+  transition: all t.$transition-fast;
 
   &:hover {
-    opacity: 1;
+    background: t.$zuri-danger-subtle;
+    color: t.$zuri-danger;
   }
+}
+
+.notif-body {
+  font-size: t.$font-size-sm;
+  color: t.$zuri-text-body;
+  margin: 0;
+  line-height: 1.5;
+
+  &--read {
+    color: t.$zuri-text-muted;
+  }
+}
+
+.notif-action {
+  margin-top: t.$space-3;
+  padding-top: t.$space-3;
+  border-top: 1px solid t.$zuri-divider;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ack-btn {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-brand;
+  background: t.$zuri-accent-subtle;
+  border: none;
+  padding: t.$space-2 t.$space-4;
+  border-radius: t.$radius-sm;
+  cursor: pointer;
+  transition: all t.$transition-base;
+
+  &:hover {
+    background: t.$zuri-brand;
+    color: #ffffff;
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+// --- Empty State ---
+.empty-state-card {
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-lg;
+  padding: t.$space-8 t.$space-4;
+  text-align: center;
+  border: 1px dashed t.$zuri-border;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  color: t.$zuri-text-subtle;
+  margin-bottom: t.$space-3;
+}
+
+.empty-title {
+  font-size: t.$font-size-base;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-body;
+  margin: 0 0 t.$space-1;
+}
+
+.empty-desc {
+  font-size: t.$font-size-sm;
+  color: t.$zuri-text-muted;
+  margin: 0;
 }
 </style>

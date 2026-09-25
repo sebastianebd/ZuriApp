@@ -34,7 +34,7 @@ export function useCurrentShifts(props: {
   const loadingExceptions = computed(() => exceptionStore.loading)
   const loadingAssignments = computed(() => turnAssignmentStore.loading)
 
-  const state = useShiftsState()
+  const state = useShiftsState(props)
   const grid = useShiftsGrid(state, props)
   const exceptions = useShiftsExceptions(state, grid, props)
   const tooltip = useShiftsTooltip(grid.getShiftTooltip)
@@ -47,6 +47,21 @@ export function useCurrentShifts(props: {
       const endOfMonth = new Date(state.currentYear.value, state.currentMonth.value + 1, 0)
 
       await serviceStore.fetchServices()
+
+      // Validate that the restored service still exists in fetched services
+      if (state.selectedService.value && !props.historyMode && (serviceStore.services?.length || 0) > 0) {
+        const serviceExists = serviceStore.services.some(
+          (s: any) => s._id === state.selectedService.value
+        )
+        if (!serviceExists) {
+          state.selectedService.value = null
+          if (typeof localStorage !== 'undefined') {
+            try {
+              localStorage.removeItem('zuriapp_shifts_selected_service')
+            } catch {}
+          }
+        }
+      }
 
       const activeServiceFilter = props.historyMode
         ? props.externalFilters?.service

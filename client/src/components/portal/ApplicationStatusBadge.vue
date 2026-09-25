@@ -1,21 +1,21 @@
 <template>
   <span
-    :class="['application-status-badge badge', badgeClass]"
+    :class="['application-status-badge status-badge badge', badgeClass]"
     data-test="application-status-badge"
   >
-    <span class="d-inline-flex align-items-center">
-      <i :class="['bi me-1', iconClass]"></i>
+    <span class="status-inner">
+      <i :class="['bi', iconClass]"></i>
       {{ statusText }}
     </span>
 
-    <div
+    <span
       v-if="status === 'withdrawn_conflict' && showExplanation"
       data-test="conflict-explanation"
-      class="conflict-explanation small mt-1 text-wrap fw-normal text-start"
+      class="conflict-note"
     >
-      <i class="bi bi-info-circle me-1"></i>
+      <i class="bi bi-info-circle"></i>
       Fuiste seleccionado para otro turno en el mismo horario. Postulación cancelada automáticamente.
-    </div>
+    </span>
   </span>
 </template>
 
@@ -63,20 +63,20 @@ const statusText = computed(() => {
 
 const badgeClass = computed(() => {
   if (props.offerStatus === 'cancelled') {
-    return 'bg-dark text-white'
+    return 'status-badge--cancelled'
   }
   switch (props.status) {
     case 'selected':
-      return 'bg-success text-white'
+      return 'status-badge--success'
     case 'not_selected':
-      return 'bg-secondary text-white'
+      return 'status-badge--muted'
     case 'withdrawn_conflict':
-      return 'bg-danger text-white'
+      return 'status-badge--danger'
     case 'cancelled_by_staff':
-      return 'bg-secondary text-white'
+      return 'status-badge--muted'
     case 'pending':
     default:
-      return isEvaluating.value ? 'bg-secondary text-white' : 'bg-warning text-dark'
+      return isEvaluating.value ? 'status-badge--evaluating' : 'status-badge--pending'
   }
 })
 
@@ -100,17 +100,64 @@ const iconClass = computed(() => {
 })
 </script>
 
-<style scoped>
-.application-status-badge {
-  font-size: 0.82rem;
-  padding: 0.4em 0.65em;
+<style scoped lang="scss">
+@use '@/assets/styles/portal-theme' as t;
+
+.status-badge {
+  display: inline-flex;
+  flex-direction: column;
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-semi;
+  padding: 3px t.$space-2;
+  border-radius: t.$radius-sm;
   white-space: normal;
+
+  &--success {
+    background: t.$zuri-success-subtle;
+    color: t.$zuri-success;
+  }
+
+  &--muted {
+    background: t.$zuri-divider;
+    color: t.$zuri-text-muted;
+  }
+
+  &--danger {
+    background: t.$zuri-danger-subtle;
+    color: t.$zuri-danger;
+  }
+
+  &--cancelled {
+    background: t.$zuri-text-heading;
+    color: #ffffff;
+  }
+
+  &--evaluating {
+    background: t.$zuri-divider;
+    color: t.$zuri-text-muted;
+  }
+
+  &--pending {
+    background: t.$zuri-warning-subtle;
+    color: darken(t.$zuri-warning, 15%);
+  }
 }
-.conflict-explanation {
-  font-size: 0.75rem;
-  line-height: 1.25;
-  background-color: rgba(255, 255, 255, 0.15);
-  padding: 4px 6px;
-  border-radius: 4px;
+
+.status-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.conflict-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  font-weight: t.$font-weight-normal;
+  line-height: 1.3;
+  opacity: 0.85;
+  padding: 3px 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
 }
 </style>

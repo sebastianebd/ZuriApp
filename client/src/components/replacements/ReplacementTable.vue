@@ -5,7 +5,7 @@
         <tr>
           <th scope="col" class="ps-4">Código</th>
           <th scope="col">
-            Transacción (Saliente <i class="bi bi-arrow-right mx-1 text-muted"></i> Entrante)
+            Transacción (Saliente <i class="bi bi-arrow-right mx-1 text-primary"></i> Entrante)
           </th>
           <th scope="col">Causal Saliente</th>
           <th scope="col">Contexto</th>
@@ -20,7 +20,7 @@
           v-for="(reemplazo, index) in reemplazos"
           :key="reemplazo._id"
           class="data-row"
-          :style="{ animationDelay: `${index * 50}ms` }"
+          :style="{ animationDelay: `${index * 30}ms` }"
         >
           <!-- Código -->
           <td class="ps-4 first-cell">
@@ -30,7 +30,7 @@
                 @click.stop="copyCode(reemplazo.id_negocio)"
                 title="Copiar Código"
               >
-                <span :class="{ 'text-success': copiedId === reemplazo.id_negocio }">
+                <span :class="{ 'text-success fw-bold': copiedId === reemplazo.id_negocio }">
                   {{ reemplazo.id_negocio }}
                 </span>
                 <i
@@ -38,9 +38,9 @@
                   :class="
                     copiedId === reemplazo.id_negocio
                       ? 'bi-check-lg text-success'
-                      : 'bi-clipboard opacity-50'
+                      : 'bi-clipboard opacity-75'
                   "
-                  style="font-size: 0.7rem"
+                  style="font-size: 0.75rem"
                 ></i>
               </button>
             </div>
@@ -50,12 +50,12 @@
           <td>
             <div class="d-flex align-items-center py-2 h-100">
               <!-- Saliente -->
-              <div class="IStaff-node position-relative">
+              <div class="staff-node position-relative">
                 <div class="avatar-modern bg-gradient-danger text-white shadow-sm">
                   {{ getInitials(reemplazo.nombre_saliente + ' ' + reemplazo.apellido_saliente) }}
                 </div>
-                <div class="IStaff-info ms-3">
-                  <div class="fw-bold text-dark text-truncate">
+                <div class="staff-info ms-3">
+                  <div class="fw-bold text-dark text-truncate staff-name-truncate">
                     {{ formatShortName(reemplazo.nombre_saliente, reemplazo.apellido_saliente) }}
                   </div>
                   <div class="rut-text">{{ reemplazo.rut_saliente }}</div>
@@ -64,16 +64,16 @@
 
               <!-- Connector -->
               <div class="connector-line mx-3 d-flex align-items-center justify-content-center">
-                <i class="bi bi-chevron-right text-muted opacity-25"></i>
+                <i class="bi bi-arrow-right text-primary opacity-50"></i>
               </div>
 
               <!-- Entrante -->
-              <div class="IStaff-node">
+              <div class="staff-node">
                 <div class="avatar-modern bg-gradient-success text-white shadow-sm">
                   {{ getInitials(reemplazo.nombre_entrante + ' ' + reemplazo.apellido_entrante) }}
                 </div>
-                <div class="IStaff-info ms-3">
-                  <div class="fw-bold text-dark text-truncate">
+                <div class="staff-info ms-3">
+                  <div class="fw-bold text-dark text-truncate staff-name-truncate">
                     {{ formatShortName(reemplazo.nombre_entrante, reemplazo.apellido_entrante) }}
                   </div>
                   <div class="rut-text">{{ reemplazo.rut_entrante }}</div>
@@ -86,20 +86,20 @@
           <td>
             <div class="d-flex flex-column justify-content-center h-100">
               <span
-                class="badge rounded-pill text-truncate px-2 py-1"
+                class="badge rounded-pill text-truncate px-3 py-1.5 causal-pill"
                 :class="getCausalBadgeClass(reemplazo.motivo)"
-                style="max-width: 170px; font-size: 0.75rem;"
+                style="max-width: 180px; font-size: 0.75rem;"
                 :title="reemplazo.observaciones ? `${getCausalLabel(reemplazo.motivo)}: ${reemplazo.observaciones}` : getCausalLabel(reemplazo.motivo)"
               >
                 {{ getCausalLabel(reemplazo.motivo) }}
               </span>
               <small
                 v-if="reemplazo.observaciones"
-                class="text-secondary text-truncate mt-1"
-                style="max-width: 170px; font-size: 0.65rem;"
+                class="text-secondary text-truncate mt-1 d-flex align-items-center gap-1"
+                style="max-width: 180px; font-size: 0.7rem;"
                 :title="reemplazo.observaciones"
               >
-                <i class="bi bi-chat-left-text me-1"></i>{{ reemplazo.observaciones }}
+                <i class="bi bi-chat-left-text text-muted"></i>{{ reemplazo.observaciones }}
               </small>
             </div>
           </td>
@@ -108,22 +108,22 @@
           <td>
             <div class="d-flex flex-column justify-content-center h-100">
               <span class="badge-modern-context mb-1">
-                <i class="bi bi-hospital me-1"></i> {{ formatTitleCase(getServiceName(reemplazo.servicio)) }}
+                <i class="bi bi-hospital me-1 text-primary"></i> {{ formatTitleCase(getServiceName(reemplazo.servicio)) }}
               </span>
-              <span class="text-secondary x-small ms-1">
+              <span class="shift-type-pill text-secondary x-small">
                 {{ formatTitleCase(reemplazo.tipo_turno) }}
               </span>
             </div>
           </td>
 
-          <!-- Período -->
+          <!-- Línea de Tiempo -->
           <td>
             <div
-              class="d-flex flex-column justify-content-center h-100 border-start ps-3 border-light-subtle"
+              class="d-flex flex-column justify-content-center h-100 border-start ps-3 border-slate-200"
             >
               <div class="d-flex align-items-center mb-1">
                 <span class="date-dot start me-2"></span>
-                <span class="date-text fw-medium">{{
+                <span class="date-text fw-semibold text-dark">{{
                   formatearFecha(reemplazo.fecha_inicio)
                 }}</span>
               </div>
@@ -142,20 +142,20 @@
               <span class="status-glass" :class="getStatusClass(reemplazo.status)">
                 {{ formatTitleCase(reemplazo.status) }}
               </span>
-              <small class="creator-text mt-1">
-                {{ getCreatorName(reemplazo) }}
+              <small class="creator-text mt-1.5" :title="`Registrado por: ${getCreatorName(reemplazo)}`">
+                <i class="bi bi-person-check me-0.5 opacity-50"></i> {{ getCreatorName(reemplazo) }}
               </small>
             </div>
           </td>
 
           <!-- Acciones -->
           <td class="pe-4 text-end last-cell">
-            <div class="actions-wrapper h-100 d-flex align-items-center justify-content-end gap-2">
+            <div class="actions-wrapper h-100 d-flex align-items-center justify-content-end gap-1.5">
               <button
                 v-if="authStore.hasPermission('replacement.update')"
                 @click="$emit('modificar', reemplazo)"
                 class="btn-glass btn-edit"
-                title="Editar"
+                title="Editar Reemplazo"
               >
                 <i class="bi bi-pencil-fill"></i>
               </button>
@@ -163,12 +163,12 @@
               <button
                 @click="$emit('exportar', reemplazo)"
                 class="btn-glass btn-export"
-                title="Exportar"
+                title="Exportar a PDF"
               >
                 <i class="bi bi-file-earmark-pdf-fill"></i>
               </button>
 
-              <div class="vr mx-1 opacity-25"></div>
+              <div class="vr mx-1 opacity-25" v-if="authStore.hasPermission('replacement.update')"></div>
 
               <template v-if="authStore.hasPermission('replacement.update')">
                 <button
@@ -183,7 +183,7 @@
                   v-else
                   @click="confirmarAnular(reemplazo._id)"
                   class="btn-glass btn-delete"
-                  title="Anular"
+                  title="Anular Reemplazo"
                 >
                   <i class="bi bi-x-lg"></i>
                 </button>
@@ -230,22 +230,22 @@ function getCausalLabel(motivo?: AusenciaSalienteMotivo | string) {
 function getCausalBadgeClass(motivo?: AusenciaSalienteMotivo | string) {
   switch (motivo) {
     case 'LICENCIA_MEDICA':
-      return 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25'
+      return 'causal-medical'
     case 'PRE_POST_NATAL':
-      return 'bg-info bg-opacity-10 text-info border border-info border-opacity-25'
+      return 'causal-maternal'
     case 'PERMISO_ADMINISTRATIVO':
-      return 'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25'
+      return 'causal-admin'
     case 'FERIADO_LEGAL':
-      return 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
+      return 'causal-vacation'
     case 'DIA_COMPENSATORIO':
-      return 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'
+      return 'causal-compensatory'
     case 'COMISION_SERVICIO':
-      return 'bg-indigo bg-opacity-10 text-indigo border border-indigo border-opacity-25'
+      return 'causal-commission'
     case 'PERMISO_GREMIAL':
-      return 'bg-dark bg-opacity-10 text-dark border border-dark border-opacity-25'
+      return 'causal-union'
     case 'OTRO':
     default:
-      return 'bg-light text-muted border'
+      return 'causal-default'
   }
 }
 
@@ -261,7 +261,6 @@ defineProps({
 function turnoEnCurso(reemplazo: ReplacementRegistration) {
   if (!reemplazo.status) return false
   const s = String(reemplazo.status).trim().toUpperCase()
-  // console.log('DEBUG Status:', s, s === 'EN CURSO')
   return s === 'EN CURSO'
 }
 
@@ -383,7 +382,7 @@ async function copyCode(code: string) {
 @keyframes slideUpFade {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -393,245 +392,333 @@ async function copyCode(code: string) {
 
 /* --- Container & Table Reset --- */
 .modern-table-container {
-  padding: 0 4px 10px 4px; /* Space for shadows + bottom padding, NO MAX-HEIGHT */
+  padding: 0 4px 6px 4px;
 }
 
 .modern-table {
   border-collapse: separate;
-  border-spacing: 0 8px; /* Vertical gap between rows */
+  border-spacing: 0 8px;
   width: 100%;
 }
 
 .modern-table thead th {
   border: none;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   font-weight: 700;
-  color: #94a3b8; /* slate-400 */
-  padding-bottom: 8px;
-  background: transparent;
+  color: #64748b;
+  padding: 10px 14px 10px 14px;
+  background: #f8fafc;
+  border-radius: 8px;
 }
 
 /* --- Row Styling --- */
 .data-row {
-  animation: slideUpFade 0.5s ease-out forwards;
-  opacity: 0; /* Init hidden for animation */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  animation: slideUpFade 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  opacity: 0;
 }
 
 .data-row td {
   background-color: white;
-  border-top: 1px solid rgba(0, 0, 0, 0.02);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.02);
-  padding: 1rem 0.5rem;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.95rem 0.75rem;
   vertical-align: middle;
-  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .data-row td.first-cell {
-  border-left: 1px solid rgba(0, 0, 0, 0.02);
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
+  border-left: 1px solid #e2e8f0;
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
 }
 
 .data-row td.last-cell {
-  border-right: 1px solid rgba(0, 0, 0, 0.02);
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
+  border-right: 1px solid #e2e8f0;
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
 }
 
 .data-row:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-  z-index: 10;
-  position: relative;
+}
+
+.data-row:hover td {
+  background-color: #fdfdfd;
+  box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.06);
+  border-color: #cbd5e1;
 }
 
 /* --- Typography & Components --- */
 .code-badge {
-  color: #64748b;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   background: #f1f5f9;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  border: 1px solid #e2e8f0 !important;
+  padding: 4px 9px;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
   cursor: pointer;
+  font-variant-numeric: tabular-nums;
 }
 
 .code-badge:hover {
   background: #e2e8f0;
-  color: #334155;
+  color: #0f172a;
+  transform: translateY(-1px);
 }
 
-.IStaff-node {
+.staff-node {
   display: flex;
   align-items: center;
-  width: 180px; /* Fixed width for alignment */
-  flex-shrink: 0; /* Don't shrink */
+  width: 175px;
+  flex-shrink: 0;
 }
 
 .avatar-modern {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px; /* Squircle */
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .bg-gradient-danger {
-  background: linear-gradient(135deg, #fecaca 0%, #ef4444 100%);
-  color: white;
-}
-.bg-gradient-success {
-  background: linear-gradient(135deg, #bbf7d0 0%, #22c55e 100%);
-  color: white;
+  background: linear-gradient(135deg, #fecaca 0%, #f87171 100%);
+  color: #7f1d1d;
+  border: 1px solid rgba(248, 113, 113, 0.4);
 }
 
-.IStaff-info {
-  line-height: 1.2;
+.bg-gradient-success {
+  background: linear-gradient(135deg, #bbf7d0 0%, #4ade80 100%);
+  color: #14532d;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+}
+
+.staff-info {
+  line-height: 1.25;
+}
+
+.staff-name-truncate {
+  max-width: 125px;
+  font-size: 0.875rem;
 }
 
 .rut-text {
-  font-size: 0.7rem;
-  color: #94a3b8;
-  font-family: monospace;
+  font-size: 0.72rem;
+  color: #64748b;
+  font-family: var(--bs-font-monospace, monospace);
+  font-variant-numeric: tabular-nums;
 }
 
+.connector-line {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  flex-shrink: 0;
+}
+
+/* Causal Pills */
+.causal-pill {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.causal-medical {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.causal-maternal {
+  background-color: #fdf2f8;
+  color: #9d174d;
+  border: 1px solid #fbcfe8;
+}
+
+.causal-admin {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.causal-vacation {
+  background-color: #fefce8;
+  color: #854d0e;
+  border: 1px solid #fef08a;
+}
+
+.causal-compensatory {
+  background-color: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.causal-commission {
+  background-color: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+
+.causal-union {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.causal-default {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* Context Badges */
 .badge-modern-context {
   display: inline-flex;
   align-items: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #334155;
-  background-color: #f1f5f9;
-  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1e293b;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 3px 8px;
   border-radius: 6px;
   max-width: fit-content;
 }
 
-.x-small {
+.shift-type-pill {
   font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-left: 2px;
 }
 
 /* Timeline */
 .date-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-}
-.date-dot.start {
-  background-color: #22c55e;
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
-}
-.date-dot.end {
-  background-color: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
-}
-.date-text {
-  font-size: 0.78rem;
-  width: 80px;
+  flex-shrink: 0;
 }
 
-/* Glass Status Pills */
+.date-dot.start {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.date-dot.end {
+  background-color: #f43f5e;
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.2);
+}
+
+.date-text {
+  font-size: 0.78rem;
+  width: 82px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Status Glass Pills */
 .status-glass {
-  padding: 6px 12px;
-  border-radius: 99px;
-  font-size: 0.7rem;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  letter-spacing: 0.02em;
 }
 
 .glass-success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #15803d;
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
+
 .glass-warning {
-  background: rgba(234, 179, 8, 0.1);
-  color: #a16207;
-  border: 1px solid rgba(234, 179, 8, 0.2);
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
 }
+
 .glass-danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: #b91c1c;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
 }
+
 .glass-primary {
-  background: rgba(59, 130, 246, 0.1);
+  background: #eff6ff;
   color: #1d4ed8;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid #bfdbfe;
 }
+
 .glass-secondary {
-  background: rgba(148, 163, 184, 0.1);
+  background: #f1f5f9;
   color: #475569;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid #e2e8f0;
 }
 
 .creator-text {
-  font-size: 0.65rem;
-  color: #cbd5e1;
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 500;
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Glass Buttons */
 .btn-glass {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
-  border: none;
-  background: transparent;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-  color: #cbd5e1; /* Hidden-ish by default */
-}
-
-.data-row:hover .btn-glass {
-  color: #64748b; /* Visible on row hover */
-  background: #f8fafc;
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 .btn-glass:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+.btn-glass:active {
+  transform: scale(0.96);
 }
 
 .btn-edit:hover {
   background: #eff6ff;
-  color: #3b82f6;
-}
-.btn-export:hover {
-  background: #fef2f2;
-  color: #ef4444;
-}
-.btn-finalize:hover {
-  background: #f0fdf4;
-  color: #22c55e;
-}
-.btn-delete:hover {
-  background: #fef2f2;
-  color: #ef4444;
+  border-color: #bfdbfe;
+  color: #2563eb;
 }
 
-/* Custom Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+.btn-export:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+
+.btn-finalize:hover {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #059669;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 20px;
+
+.btn-delete:hover {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #e11d48;
 }
 </style>

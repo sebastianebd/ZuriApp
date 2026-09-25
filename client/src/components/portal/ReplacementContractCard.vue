@@ -1,83 +1,79 @@
 <template>
-  <div class="card border-0 shadow-sm rounded-4 mb-3 contract-card">
-    <div class="card-body p-3">
-      <!-- Header de la tarjeta -->
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-primary-subtle text-primary border border-primary px-2 py-1 rounded-pill">
-            <i class="bi bi-file-earmark-text-fill me-1"></i>
-            <span data-test="contract-code">{{ contract.businessCode }}</span>
-          </span>
-          <button
-            type="button"
-            class="btn btn-sm btn-light p-1 rounded-circle copy-btn"
-            title="Copiar código de reemplazo"
-            data-test="copy-code-btn"
-            @click="handleCopyCode"
-          >
-            <i class="bi bi-clipboard"></i>
-          </button>
-          <span
-            v-if="showCopyFeedback"
-            class="badge bg-success-subtle text-success small"
-            data-test="copy-feedback"
-          >
-            ¡Copiado!
-          </span>
-        </div>
-
-        <span
-          class="badge rounded-pill px-2 py-1"
-          :class="getStatusBadgeClass(contract.status)"
-          data-test="contract-status"
+  <div class="contract-card">
+    <!-- Header -->
+    <div class="cc-header">
+      <div class="cc-code-group">
+        <span class="cc-code" data-test="contract-code">
+          <i class="bi bi-file-earmark-text-fill"></i>
+          {{ contract.businessCode }}
+        </span>
+        <button
+          type="button"
+          class="cc-copy"
+          title="Copiar código de reemplazo"
+          data-test="copy-code-btn"
+          @click="handleCopyCode"
         >
-          {{ contract.status }}
+          <i class="bi bi-clipboard"></i>
+        </button>
+        <span
+          v-if="showCopyFeedback"
+          class="cc-copied"
+          data-test="copy-feedback"
+        >
+          Copiado
         </span>
       </div>
 
-      <!-- Servicio y Vigencia -->
-      <h6 class="fw-bold text-dark mb-1" data-test="contract-service">
-        {{ contract.serviceName }}
-      </h6>
+      <span
+        class="cc-status"
+        :class="getStatusClass(contract.status)"
+        data-test="contract-status"
+      >
+        {{ contract.status }}
+      </span>
+    </div>
 
-      <div class="text-muted small mb-2" data-test="contract-dates">
-        <i class="bi bi-calendar-range me-1"></i>
-        {{ formatDate(contract.startDate) }} al {{ formatDate(contract.endDate) }}
-        ({{ contract.totalDays }} días)
+    <!-- Service & Dates -->
+    <h3 class="cc-service" data-test="contract-service">
+      {{ contract.serviceName }}
+    </h3>
+
+    <div class="cc-dates" data-test="contract-dates">
+      <i class="bi bi-calendar-range"></i>
+      {{ formatDate(contract.startDate) }} al {{ formatDate(contract.endDate) }}
+      ({{ contract.totalDays }} días)
+    </div>
+
+    <!-- Stats grid -->
+    <div class="cc-stats">
+      <div class="cc-stat">
+        <span class="cc-stat-label">Jornadas comprometidas</span>
+        <strong class="cc-stat-value" data-test="contract-shifts-count">
+          {{ contract.shiftsCommittedCount }} turnos
+        </strong>
       </div>
-
-      <!-- Detalles y Estadísticas -->
-      <div class="row g-2 py-2 border-top border-bottom text-muted small my-2">
-        <div class="col-6">
-          <span class="d-block text-secondary">Jornadas Comprometidas</span>
-          <strong class="text-dark" data-test="contract-shifts-count">
-            {{ contract.shiftsCommittedCount }} turnos
-          </strong>
-        </div>
-        <div class="col-6">
-          <span class="d-block text-secondary">Origen</span>
-          <strong class="text-dark">{{ contract.origin }}</strong>
-        </div>
-      </div>
-
-      <!-- Acción: Descargar Comprobante PDF -->
-      <div class="d-grid mt-3">
-        <button
-          type="button"
-          class="btn btn-outline-primary btn-sm py-2 fw-semibold"
-          :disabled="isDownloading"
-          data-test="download-voucher-btn"
-          @click="handleDownloadVoucher"
-        >
-          <span
-            v-if="isDownloading"
-            class="spinner-border spinner-border-sm me-2"
-          ></span>
-          <i v-else class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>
-          Descargar Comprobante (PDF)
-        </button>
+      <div class="cc-stat">
+        <span class="cc-stat-label">Origen</span>
+        <strong class="cc-stat-value">{{ contract.origin }}</strong>
       </div>
     </div>
+
+    <!-- Download action -->
+    <button
+      type="button"
+      class="cc-download"
+      :disabled="isDownloading"
+      data-test="download-voucher-btn"
+      @click="handleDownloadVoucher"
+    >
+      <span
+        v-if="isDownloading"
+        class="spinner-border spinner-border-sm me-2"
+      ></span>
+      <i v-else class="bi bi-file-earmark-arrow-down me-2"></i>
+      Descargar comprobante (PDF)
+    </button>
   </div>
 </template>
 
@@ -103,16 +99,16 @@ function formatDate(dateStr: string): string {
   return dateStr
 }
 
-function getStatusBadgeClass(status: string) {
+function getStatusClass(status: string) {
   switch (status) {
     case 'Activo':
-      return 'bg-success-subtle text-success border border-success'
+      return 'cc-status--active'
     case 'Finalizado':
-      return 'bg-secondary-subtle text-secondary border border-secondary'
+      return 'cc-status--done'
     case 'Corte Anticipado':
-      return 'bg-warning-subtle text-warning-emphasis border border-warning'
+      return 'cc-status--early'
     default:
-      return 'bg-light text-dark'
+      return 'cc-status--default'
   }
 }
 
@@ -143,21 +139,168 @@ async function handleDownloadVoucher() {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/styles/portal-theme' as t;
+
 .contract-card {
-  background: #ffffff;
-  border-left: 4px solid #0d6efd !important;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-lg;
+  padding: t.$space-4;
+  box-shadow: t.$shadow-sm;
+  border-left: 3px solid t.$zuri-accent;
+  transition: box-shadow t.$transition-base;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: t.$shadow-md;
+  }
+}
+
+.cc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: t.$space-3;
+}
+
+.cc-code-group {
+  display: flex;
+  align-items: center;
+  gap: t.$space-2;
+}
+
+.cc-code {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-semi;
+  font-family: t.$font-family-mono;
+  color: t.$zuri-brand;
+  background: t.$zuri-accent-subtle;
+  padding: 2px t.$space-2;
+  border-radius: t.$radius-xs;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cc-copy {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: t.$zuri-text-subtle;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: t.$radius-xs;
+  font-size: 0.8rem;
+  transition: all t.$transition-fast;
+
+  &:hover {
+    background: t.$zuri-surface;
+    color: t.$zuri-brand;
+  }
+}
+
+.cc-copied {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-medium;
+  color: t.$zuri-success;
+}
+
+.cc-status {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-semi;
+  padding: 2px t.$space-2;
+  border-radius: t.$radius-xs;
+
+  &--active {
+    background: t.$zuri-success-subtle;
+    color: t.$zuri-success;
   }
 
-  .copy-btn {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  &--done {
+    background: t.$zuri-divider;
+    color: t.$zuri-text-muted;
+  }
+
+  &--early {
+    background: t.$zuri-warning-subtle;
+    color: darken(t.$zuri-warning, 15%);
+  }
+
+  &--default {
+    background: t.$zuri-surface;
+    color: t.$zuri-text-muted;
+  }
+}
+
+.cc-service {
+  font-size: t.$font-size-base;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-heading;
+  margin: 0 0 t.$space-1;
+}
+
+.cc-dates {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: t.$space-3;
+}
+
+.cc-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: t.$space-3;
+  padding: t.$space-3 0;
+  border-top: 1px solid t.$zuri-divider;
+  border-bottom: 1px solid t.$zuri-divider;
+  margin-bottom: t.$space-3;
+}
+
+.cc-stat-label {
+  display: block;
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-subtle;
+  letter-spacing: t.$letter-spacing-wide;
+  margin-bottom: 2px;
+}
+
+.cc-stat-value {
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-medium;
+  color: t.$zuri-text-heading;
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-download {
+  width: 100%;
+  padding: t.$space-3;
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-brand;
+  background: transparent;
+  border: 1.5px solid t.$zuri-brand;
+  border-radius: t.$radius-md;
+  cursor: pointer;
+  transition: all t.$transition-base;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    background: t.$zuri-brand;
+    color: #ffffff;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 </style>

@@ -1,11 +1,44 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useServiceStore } from '@/stores/service.store'
 
-export function useShiftsState() {
+const SHIFTS_SERVICE_KEY = 'zuriapp_shifts_selected_service'
+const PREFERRED_SERVICE_KEY = 'zuriapp_preferred_service'
+
+export function useShiftsState(props?: { historyMode?: boolean; externalFilters?: any }) {
   const currentDate = ref(new Date())
   const loading = ref(false)
   const showModal = ref(false)
-  const selectedService = ref<string | null>(null)
+
+  // Initialize selectedService from localStorage if available and not in historyMode
+  let initialService: string | null = null
+  if (!props?.historyMode && typeof localStorage !== 'undefined') {
+    try {
+      initialService =
+        localStorage.getItem(SHIFTS_SERVICE_KEY) ||
+        localStorage.getItem(PREFERRED_SERVICE_KEY) ||
+        null
+    } catch {
+      initialService = null
+    }
+  }
+
+  const selectedService = ref<string | null>(initialService)
+
+  // Persist selectedService whenever it changes
+  watch(selectedService, (newVal) => {
+    if (props?.historyMode || typeof localStorage === 'undefined') return
+    try {
+      if (newVal) {
+        localStorage.setItem(SHIFTS_SERVICE_KEY, newVal)
+        localStorage.setItem(PREFERRED_SERVICE_KEY, newVal)
+      } else {
+        localStorage.removeItem(SHIFTS_SERVICE_KEY)
+      }
+    } catch {
+      // Ignore storage errors in restricted environments
+    }
+  })
+
   const alertComponent = ref()
   const serviceStore = useServiceStore()
 

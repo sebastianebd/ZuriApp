@@ -1,87 +1,86 @@
 <template>
-  <div class="card offer-card shadow-sm border-0 mb-3 rounded-3" data-test="offer-card">
-    <div class="card-body p-3">
-      <!-- Encabezado con Servicio y Countdown -->
-      <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-        <div>
-          <h6 class="card-title fw-bold text-dark mb-0" data-test="service-name">
-            {{ offer.serviceName }}
-          </h6>
-          <span v-if="offer.serviceLocation" class="text-muted small">
-            <i class="bi bi-geo-alt me-1"></i>{{ offer.serviceLocation }}
-          </span>
-        </div>
-
-        <!-- Badge Countdown -->
-        <span
-          :class="['badge rounded-pill', countdownBadgeClass]"
-          data-test="countdown-badge"
-        >
-          <i class="bi bi-hourglass-split me-1"></i>
-          {{ countdownText }}
+  <div class="offer-card" data-test="offer-card">
+    <!-- Top row: Service + Countdown -->
+    <div class="offer-top">
+      <div>
+        <h3 class="offer-service" data-test="service-name">
+          {{ offer.serviceName }}
+        </h3>
+        <span v-if="offer.serviceLocation" class="offer-location">
+          <i class="bi bi-geo-alt"></i> {{ offer.serviceLocation }}
         </span>
       </div>
 
-      <!-- Cargo y Tipo de Turno -->
-      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-        <span class="badge bg-light text-primary border" data-test="position-name">
-          <i class="bi bi-person-badge me-1"></i>{{ offer.positionName }}
-        </span>
-
-        <span class="badge bg-primary-subtle text-primary border-0" data-test="shift-badge">
-          <i class="bi bi-clock me-1"></i>{{ offer.tipo_turno }}
-          <span v-if="offer.entryTime && offer.exitTime" class="ms-1">
-            ({{ offer.entryTime }} - {{ offer.exitTime }})
-          </span>
-        </span>
-      </div>
-
-      <!-- Rango de Fechas -->
-      <div class="dates-info text-secondary small mb-2" data-test="offer-dates">
-        <i class="bi bi-calendar-event me-1 text-primary"></i>
-        <span>{{ formattedDates }}</span>
-        <span v-if="offer.totalShifts && offer.totalShifts > 1" class="ms-1 text-muted">
-          ({{ offer.totalShifts }} turnos)
-        </span>
-      </div>
-
-      <!-- Observaciones Clínicas -->
-      <div
-        v-if="offer.observaciones"
-        class="offer-notes small text-muted bg-light p-2 rounded mb-3"
-        data-test="offer-notes"
+      <span
+        :class="['countdown-chip', countdownChipClass]"
+        data-test="countdown-badge"
       >
-        <i class="bi bi-info-circle me-1 text-secondary"></i>
-        {{ offer.observaciones }}
-      </div>
+        <i class="bi bi-hourglass-split"></i>
+        {{ countdownText }}
+      </span>
+    </div>
 
-      <!-- Acción en 1-Toque -->
-      <div class="offer-actions mt-3 pt-2 border-top">
-        <button
-          type="button"
-          class="btn w-100 fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-2"
-          :class="isApplied ? 'btn-secondary text-white' : 'btn-primary'"
-          data-test="apply-btn"
-          :disabled="loading || isExpired || isApplied"
-          @click="emit('apply', offer.id)"
-        >
-          <span v-if="loading" class="spinner-border spinner-border-sm" role="status"></span>
-          <template v-else>
-            <i v-if="isApplied" class="bi bi-check-circle-fill"></i>
-            <i v-else-if="isExpired" class="bi bi-lock-fill"></i>
-            <i v-else class="bi bi-hand-index-thumb"></i>
-            <span>
-              {{
-                isApplied
-                  ? 'Ya aplicaste a este Reemplazo'
-                  : isExpired
-                  ? 'Convocatoria Cerrada'
-                  : 'Aplicar a Reemplazo'
-              }}
-            </span>
-          </template>
-        </button>
-      </div>
+    <!-- Details row -->
+    <div class="offer-details">
+      <span class="detail-chip" data-test="position-name">
+        <i class="bi bi-person-badge"></i> {{ offer.positionName }}
+      </span>
+      <span class="detail-chip detail-chip--accent" data-test="shift-badge">
+        <i class="bi bi-clock"></i> {{ offer.tipo_turno }}
+        <span v-if="offer.entryTime && offer.exitTime">
+          ({{ offer.entryTime }} - {{ offer.exitTime }})
+        </span>
+      </span>
+    </div>
+
+    <!-- Date range -->
+    <div class="offer-dates" data-test="offer-dates">
+      <i class="bi bi-calendar-event"></i>
+      {{ formattedDates }}
+      <span v-if="offer.totalShifts && offer.totalShifts > 1" class="total-shifts">
+        ({{ offer.totalShifts }} turnos)
+      </span>
+    </div>
+
+    <!-- Notes -->
+    <div
+      v-if="offer.observaciones"
+      class="offer-notes"
+      data-test="offer-notes"
+    >
+      <i class="bi bi-info-circle"></i>
+      {{ offer.observaciones }}
+    </div>
+
+    <!-- CTA Button -->
+    <div class="offer-cta">
+      <button
+        type="button"
+        class="apply-btn"
+        :class="{
+          'btn-secondary apply-btn--applied': isApplied,
+          'apply-btn--expired': isExpired && !isApplied,
+        }"
+        data-test="apply-btn"
+        :disabled="loading || isExpired || isApplied"
+        @click="emit('apply', offer.id)"
+      >
+        <span v-if="loading" class="spinner-border spinner-border-sm" role="status"></span>
+        <template v-else>
+          <i v-if="isApplied" class="bi bi-check-circle-fill"></i>
+          <i v-else-if="isExpired" class="bi bi-lock-fill"></i>
+          <i v-else class="bi bi-hand-index-thumb"></i>
+          <span>
+            {{
+              isApplied
+                ? 'Ya aplicaste a este Reemplazo'
+                : isExpired
+                ? 'Convocatoria Cerrada'
+                : 'Aplicar a Reemplazo'
+            }}
+          </span>
+        </template>
+      </button>
     </div>
   </div>
 </template>
@@ -142,11 +141,11 @@ const countdownText = computed(() => {
   return remMins > 0 ? `Cierra en ${hours}h ${remMins}m` : `Cierra en ${hours}h`
 })
 
-const countdownBadgeClass = computed(() => {
-  if (isExpired.value) return 'bg-secondary text-white'
-  if (remainingMinutes.value < 30) return 'bg-danger text-white'
-  if (remainingMinutes.value < 120) return 'bg-warning text-dark'
-  return 'bg-info text-dark'
+const countdownChipClass = computed(() => {
+  if (isExpired.value) return 'countdown-chip--expired'
+  if (remainingMinutes.value < 30) return 'countdown-chip--urgent'
+  if (remainingMinutes.value < 120) return 'countdown-chip--warning'
+  return 'countdown-chip--default'
 })
 
 const formattedDates = computed(() => {
@@ -174,17 +173,175 @@ const formattedDates = computed(() => {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/styles/portal-theme' as t;
+
 .offer-card {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  background: #ffffff;
-  border-left: 4px solid #0d6efd !important;
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-lg;
+  padding: t.$space-4;
+  box-shadow: t.$shadow-sm;
+  border-left: 3px solid t.$zuri-brand;
+  margin-bottom: t.$space-3;
+  transition: transform t.$transition-fast, box-shadow t.$transition-base;
 
   &:active {
-    transform: scale(0.99);
+    transform: scale(0.995);
+  }
+}
+
+.offer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: t.$space-2;
+  margin-bottom: t.$space-3;
+}
+
+.offer-service {
+  font-size: t.$font-size-base;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-heading;
+  margin: 0 0 2px;
+}
+
+.offer-location {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+// --- Countdown ---
+.countdown-chip {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-semi;
+  padding: 2px t.$space-2;
+  border-radius: t.$radius-sm;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+
+  &--default {
+    background: t.$zuri-accent-subtle;
+    color: t.$zuri-brand;
+  }
+
+  &--warning {
+    background: t.$zuri-warning-subtle;
+    color: darken(t.$zuri-warning, 15%);
+  }
+
+  &--urgent {
+    background: t.$zuri-danger-subtle;
+    color: t.$zuri-danger;
+  }
+
+  &--expired {
+    background: t.$zuri-divider;
+    color: t.$zuri-text-subtle;
+  }
+}
+
+// --- Details ---
+.offer-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: t.$space-2;
+  margin-bottom: t.$space-3;
+}
+
+.detail-chip {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-medium;
+  color: t.$zuri-text-body;
+  background: t.$zuri-surface;
+  border: 1px solid t.$zuri-border;
+  padding: 2px t.$space-2;
+  border-radius: t.$radius-xs;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  &--accent {
+    background: t.$zuri-accent-subtle;
+    border-color: t.$zuri-accent-muted;
+    color: t.$zuri-brand;
+  }
+}
+
+.offer-dates {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: t.$space-2;
+
+  .total-shifts {
+    color: t.$zuri-text-subtle;
   }
 }
 
 .offer-notes {
-  border-left: 3px solid #6c757d;
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+  background: t.$zuri-surface;
+  padding: t.$space-2 t.$space-3;
+  border-radius: t.$radius-sm;
+  border-left: 2px solid t.$zuri-text-subtle;
+  margin-bottom: t.$space-3;
+  display: flex;
+  align-items: flex-start;
+  gap: t.$space-2;
+  line-height: 1.4;
+}
+
+// --- CTA ---
+.offer-cta {
+  padding-top: t.$space-3;
+  border-top: 1px solid t.$zuri-divider;
+}
+
+.apply-btn {
+  width: 100%;
+  padding: t.$space-3;
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-semi;
+  color: #ffffff;
+  background: t.$zuri-brand;
+  border: none;
+  border-radius: t.$radius-md;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: t.$space-2;
+  transition: all t.$transition-base;
+
+  &:hover:not(:disabled) {
+    background: t.$zuri-brand-light;
+    box-shadow: t.$shadow-md;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  &--applied {
+    background: t.$zuri-text-subtle;
+    opacity: 0.7;
+  }
+
+  &--expired {
+    background: t.$zuri-divider;
+    color: t.$zuri-text-subtle;
+  }
 }
 </style>

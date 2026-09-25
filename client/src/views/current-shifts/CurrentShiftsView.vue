@@ -26,101 +26,105 @@
         </div>
       </div>
 
-      <!-- Filters, Switcher & Controls -->
-      <div class="d-flex align-items-center gap-3 flex-wrap">
-        <!-- Switcher de Vistas: Grilla Mensual / Excepciones Vigentes -->
-        <div class="btn-group p-1 bg-white border rounded-pill shadow-sm">
-          <button
-            type="button"
-            class="btn btn-sm px-3 rounded-pill fw-semibold border-0"
-            :class="
-              activeTab === 'grilla'
-                ? 'btn-primary text-white shadow-sm'
-                : 'text-secondary bg-transparent'
-            "
-            @click="setTab('grilla')"
-          >
-            <i class="bi bi-grid-3x3 me-1"></i> Grilla Mensual
-          </button>
-          <button
-            type="button"
-            class="btn btn-sm px-3 rounded-pill fw-semibold border-0"
-            :class="
-              activeTab === 'excepciones'
-                ? 'btn-primary text-white shadow-sm'
-                : 'text-secondary bg-transparent'
-            "
-            @click="setTab('excepciones')"
-          >
-            <i class="bi bi-exclamation-triangle me-1"></i> Excepciones Vigentes
-          </button>
+      <!-- Switcher de Vistas: Grilla Mensual / Excepciones Vigentes (Fijo en fila superior derecha) -->
+      <div class="btn-group p-1 bg-white border rounded-pill shadow-sm">
+        <button
+          type="button"
+          class="btn btn-sm px-3 rounded-pill fw-semibold border-0"
+          :class="
+            activeTab === 'grilla'
+              ? 'btn-primary text-white shadow-sm'
+              : 'text-secondary bg-transparent'
+          "
+          @click="setTab('grilla')"
+        >
+          <i class="bi bi-grid-3x3 me-1"></i> Grilla Mensual
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm px-3 rounded-pill fw-semibold border-0"
+          :class="
+            activeTab === 'excepciones'
+              ? 'btn-primary text-white shadow-sm'
+              : 'text-secondary bg-transparent'
+          "
+          @click="setTab('excepciones')"
+        >
+          <i class="bi bi-exclamation-triangle me-1"></i> Excepciones Vigentes
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de Herramientas Contextual (Fila 2: Controles específicos de cada vista) -->
+    <div v-if="!historyMode" class="mb-4">
+      <!-- Toolbar Grilla Mensual -->
+      <div
+        v-if="activeTab === 'grilla'"
+        class="d-flex justify-content-between align-items-center flex-wrap gap-3"
+      >
+        <!-- Filtro por Servicio -->
+        <div style="min-width: 240px; max-width: 320px;" class="flex-grow-1 flex-md-grow-0">
+          <v-select
+            v-model="selectedService"
+            :options="serviceOptions"
+            label="nombre"
+            :reduce="(s: any) => s._id"
+            placeholder="Filtrar por Servicio"
+            class="bg-white rounded shadow-sm custom-v-select"
+            :clearable="true"
+          />
         </div>
 
-        <!-- Controles contextuales para Grilla Mensual -->
-        <template v-if="activeTab === 'grilla'">
-          <div class="vr my-1 text-secondary opacity-25"></div>
-
-          <!-- Service Filter -->
-          <div style="min-width: 200px">
-            <v-select
-              v-model="selectedService"
-              :options="serviceOptions"
-              label="nombre"
-              :reduce="(s: any) => s._id"
-              placeholder="Filtrar por Servicio"
-              class="bg-white rounded shadow-sm custom-v-select"
-              :clearable="true"
-            />
-          </div>
-
-          <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm">
-            <button
-              v-if="hasCreatePermission && !isPastMonth"
-              class="btn btn-sm btn-primary d-flex align-items-center gap-2 px-3 fw-bold border-0 text-white shadow-sm"
-              @click="openModal"
-            >
-              <i class="bi bi-plus-lg"></i> Asignar Planta
-            </button>
-            <div
-              v-if="hasCreatePermission && !isPastMonth"
-              class="vr mx-1 text-secondary opacity-25"
-            ></div>
-            <button
-              class="btn btn-sm btn-outline-secondary border-0"
-              @click="prevMonth"
-              title="Mes Anterior"
-            >
-              <i class="bi bi-chevron-left"></i>
-            </button>
-            <span class="fw-bold px-3 text-capitalize">{{ formattedMonth }}</span>
-            <button
-              class="btn btn-sm btn-outline-secondary border-0"
-              @click="nextMonth"
-              :disabled="!canGoNext"
-              title="Mes Siguiente"
-            >
-              <i class="bi bi-chevron-right"></i>
-            </button>
-            <button
-              class="btn btn-sm btn-primary ms-2"
-              @click="loadData"
-              title="Actualizar datos"
-            >
-              <i class="bi bi-arrow-clockwise"></i>
-            </button>
-          </div>
-        </template>
-
-        <!-- Controles contextuales para Excepciones -->
-        <template v-else>
-          <div class="vr my-1 text-secondary opacity-25"></div>
+        <!-- Acciones y Navegación de Mes -->
+        <div class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm ms-auto">
           <button
-            @click="exceptionsTabRef?.clearFilters()"
-            class="btn btn-light border fw-semibold shadow-sm px-3"
+            v-if="hasCreatePermission && !isPastMonth"
+            class="btn btn-sm btn-primary d-flex align-items-center gap-2 px-3 fw-bold border-0 text-white shadow-sm"
+            @click="openModal"
           >
-            <i class="bi bi-eraser me-2"></i>Limpiar Filtros
+            <i class="bi bi-plus-lg"></i> Asignar Planta
           </button>
-        </template>
+          <div
+            v-if="hasCreatePermission && !isPastMonth"
+            class="vr mx-1 text-secondary opacity-25"
+          ></div>
+          <button
+            class="btn btn-sm btn-outline-secondary border-0"
+            @click="prevMonth"
+            title="Mes Anterior"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <span class="fw-bold px-3 text-capitalize">{{ formattedMonth }}</span>
+          <button
+            class="btn btn-sm btn-outline-secondary border-0"
+            @click="nextMonth"
+            :disabled="!canGoNext"
+            title="Mes Siguiente"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button
+            class="btn btn-sm btn-primary ms-2"
+            @click="loadData"
+            title="Actualizar datos"
+          >
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Toolbar Excepciones Vigentes -->
+      <div
+        v-else
+        class="d-flex justify-content-end align-items-center"
+      >
+        <button
+          @click="exceptionsTabRef?.clearFilters()"
+          class="btn btn-white bg-white border fw-semibold shadow-sm px-3 d-flex align-items-center gap-2"
+        >
+          <i class="bi bi-eraser text-secondary"></i> Limpiar Filtros
+        </button>
       </div>
     </div>
 
@@ -177,10 +181,23 @@
     <!-- SUB-VISTA 1: GRILLA MENSUAL -->
     <div
       v-if="activeTab === 'grilla'"
-      class="card border-0 shadow-sm rounded-4 overflow-hidden"
+      class="card border-0 shadow-sm rounded-4 overflow-hidden position-relative"
     >
+      <!-- Anti-Flicker & Anti-Jump Loading Overlay -->
+      <transition name="fade-overlay">
+        <div v-if="loading" class="grid-loading-overlay">
+          <div class="grid-loading-backdrop"></div>
+          <div class="spinner-box">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <span class="loading-label text-muted small mt-2 fw-semibold">Cargando programación...</span>
+          </div>
+        </div>
+      </transition>
+
       <div class="table-responsive">
-        <table class="table mb-0 shift-table">
+        <table class="table mb-0 shift-table" :class="{ 'table-loading-active': loading }">
           <thead class="bg-light">
             <tr>
               <th
@@ -205,28 +222,24 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-if="loading" class="text-center">
-              <td :colspan="daysInMonth.length + 1" class="py-5">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Cargando...</span>
-                </div>
-              </td>
-            </tr>
-            <tr v-else-if="filteredShifts.length === 0" class="text-center">
+            <tr v-if="filteredShifts.length === 0" class="text-center">
               <td :colspan="daysInMonth.length + 1" class="py-5 text-muted fst-italic fs-5">
-                {{
-                  selectedServiceName && selectedServiceName !== '—'
-                    ? `No hay turnos para ${selectedServiceName}`
-                    : 'Seleccione un servicio'
-                }}
+                <span v-if="!loading">
+                  {{
+                    selectedServiceName && selectedServiceName !== '—'
+                      ? `No hay turnos para ${selectedServiceName}`
+                      : 'Seleccione un servicio'
+                  }}
+                </span>
               </td>
             </tr>
-            <tr
-              v-for="(item, index) in filteredShifts"
-              :key="item._id"
-              class="fade-in-row"
-              :style="{ animationDelay: `${index * 20}ms` }"
-            >
+            <template v-else>
+              <tr
+                v-for="(item, index) in filteredShifts"
+                :key="item._id"
+                class="fade-in-row"
+                :style="{ animationDelay: `${index * 20}ms` }"
+              >
               <td class="sticky-col first-col bg-white border-end align-middle">
                 <div class="d-flex align-items-center">
                   <div class="avatar-circle bg-primary text-white me-2 small">
@@ -265,7 +278,8 @@
                 />
               </td>
             </tr>
-          </tbody>
+          </template>
+        </tbody>
         </table>
       </div>
     </div>
@@ -603,6 +617,10 @@ thead .sticky-col {
   padding: 6px 4px; /* Tighter padding for cells */
 }
 
+.shift-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 /* --- IStaff Cell Styling --- */
 .avatar-circle {
   width: 36px;
@@ -741,5 +759,67 @@ thead .sticky-col {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Anti-Flicker & Anti-Jump Loading Overlay */
+.grid-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  border-radius: 16px;
+  pointer-events: auto;
+}
+
+.grid-loading-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(2px);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.spinner-box {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  padding: 1.25rem 2rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  z-index: 1050;
+  pointer-events: none;
+}
+
+@media (min-width: 992px) {
+  .spinner-box {
+    left: calc(50% + 3.5rem);
+  }
+}
+
+.table-loading-active {
+  user-select: none;
+}
+
+.fade-overlay-enter-active,
+.fade-overlay-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-overlay-enter-from,
+.fade-overlay-leave-to {
+  opacity: 0;
 }
 </style>

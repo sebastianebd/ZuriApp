@@ -1,30 +1,40 @@
 <template>
   <div class="reemplazos-view p-4">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <!-- Header Vanguardista (Clinical Double-Bezel & Island CTAs) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 header-container">
       <div class="d-flex align-items-center gap-3">
-        <div class="icon-square bg-white shadow-sm text-primary">
-          <i class="bi" :class="viewMode === 'calendar' ? 'bi-calendar3 fs-4' : 'bi-arrow-repeat fs-4'"></i>
+        <!-- Clinical Squircle Icon -->
+        <div class="header-icon-box shadow-sm">
+          <i
+            class="bi fs-4 text-primary"
+            :class="viewMode === 'calendar' ? 'bi-calendar3' : 'bi-arrow-left-right'"
+          ></i>
         </div>
         <div>
-          <h4 class="fw-bold mb-0 text-dark">Gestión de Reemplazos</h4>
-          <p class="text-secondary small mb-0">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <h4 class="fw-bold mb-0 text-dark header-title">Gestión de Reemplazos</h4>
+            <span class="live-counter-badge">
+              {{ replacementStore.reemplazosFiltrados.length }} registros
+            </span>
+          </div>
+          <p class="text-secondary small mb-0 mt-1">
             <span v-if="viewMode === 'table'">
-              Administra los reemplazos en el sistema ({{ replacementStore.reemplazosFiltrados.length }} registros)
+              Administra, audita y fiscaliza los reemplazos y coberturas en el sistema.
             </span>
             <span v-else>
-              Visualiza y gestiona la programación de turnos en calendario
+              Visualiza y gestiona la programación de turnos en calendario interactivo.
             </span>
           </p>
         </div>
       </div>
 
-      <div class="d-flex align-items-center gap-3">
+      <!-- Action Islands & Switcher -->
+      <div class="d-flex align-items-center gap-2 flex-wrap">
         <!-- Switcher de Vistas: Tabla / Calendario (Deep Linking) -->
-        <div class="btn-group p-1 bg-white border rounded-pill shadow-sm">
+        <div class="btn-group p-1 bg-white border rounded-pill shadow-sm view-mode-switcher">
           <button
             type="button"
-            class="btn btn-sm px-3 rounded-pill fw-semibold border-0"
+            class="btn btn-sm px-3 rounded-pill fw-semibold border-0 switcher-pill"
             :class="viewMode === 'table' ? 'btn-primary text-white shadow-sm' : 'text-secondary bg-transparent'"
             @click="setViewMode('table')"
           >
@@ -32,7 +42,7 @@
           </button>
           <button
             type="button"
-            class="btn btn-sm px-3 rounded-pill fw-semibold border-0"
+            class="btn btn-sm px-3 rounded-pill fw-semibold border-0 switcher-pill"
             :class="viewMode === 'calendar' ? 'btn-primary text-white shadow-sm' : 'text-secondary bg-transparent'"
             @click="setViewMode('calendar')"
           >
@@ -40,53 +50,46 @@
           </button>
         </div>
 
-        <div class="vr my-1 text-secondary opacity-25" v-if="viewMode === 'table'"></div>
+        <div class="vr my-1 text-secondary opacity-25 d-none d-md-block"></div>
 
-        <button
-          v-if="viewMode === 'table'"
-          @click="replacementStore.limpiarFiltros()"
-          class="btn btn-light border fw-semibold shadow-sm px-3"
-        >
-          <i class="bi bi-eraser me-2"></i>Limpiar Filtros
-        </button>
-        <router-link
-          to="/app/operaciones/bolsa-reemplazos"
-          class="btn btn-outline-primary fw-semibold shadow-sm px-3 d-flex align-items-center gap-2"
-        >
-          <i class="bi bi-megaphone"></i>
-          <span>Bolsa de Reemplazos</span>
-        </router-link>
+        <!-- Botón Nuevo Reemplazo -->
         <button
           v-if="authStore.hasPermission('replacement.create')"
           @click="initCreateReplacement"
-          class="btn btn-primary fw-bold shadow-sm px-4"
+          class="btn btn-primary-pill d-flex align-items-center gap-2"
         >
-          <i class="bi bi-plus-lg me-2"></i>Nuevo Reemplazo
+          <span class="btn-icon-wrap primary"><i class="bi bi-plus-lg"></i></span>
+          <span>Nuevo Reemplazo</span>
         </button>
       </div>
     </div>
 
     <!-- VISTA TABLA -->
-    <div v-if="viewMode === 'table'" class="card border-0 shadow-sm rounded-4">
-      <div class="card-body p-4">
+    <div v-if="viewMode === 'table'" class="vanguard-card shadow-sm border-0">
+      <div class="vanguard-card-body p-4">
         <!-- Filter Section -->
-        <div class="">
-          <ReplacementFilter :lista-servicios="listaDeServicios" />
-        </div>
+        <ReplacementFilter :lista-servicios="listaDeServicios" />
 
         <!-- Table Section -->
-        <div class="table-container position-relative">
+        <div class="table-container position-relative mt-2">
           <TableLoader v-if="replacementStore.cargando" text="Actualizando registros..." />
 
           <div
             v-else-if="replacementStore.reemplazosFiltrados.length === 0"
-            class="empty-state text-center py-5"
+            class="empty-state-container text-center py-5"
           >
-            <div class="empty-icon-container mb-3 mx-auto">
-              <i class="bi bi-search fs-1 text-muted opacity-50"></i>
+            <div class="empty-icon-capsule mb-3 mx-auto">
+              <i class="bi bi-search fs-2 text-secondary opacity-75"></i>
             </div>
             <h5 class="fw-bold text-dark mb-1">No se encontraron resultados</h5>
-            <p class="text-muted">Prueba ajustando los filtros de búsqueda</p>
+            <p class="text-secondary small mb-3">Prueba ajustando o limpiando los filtros de búsqueda</p>
+            <button
+              type="button"
+              class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm fw-semibold"
+              @click="replacementStore.limpiarFiltros()"
+            >
+              <i class="bi bi-arrow-counterclockwise me-1"></i> Restablecer filtros
+            </button>
           </div>
 
           <template v-else>
@@ -99,11 +102,13 @@
             />
 
             <!-- Pagination -->
-            <AppPagination
-              :currentPage="currentPage"
-              :totalPages="totalPages"
-              @changePage="changePage"
-            />
+            <div class="mt-4 pt-3 border-top">
+              <AppPagination
+                :currentPage="currentPage"
+                :totalPages="totalPages"
+                @changePage="changePage"
+              />
+            </div>
           </template>
         </div>
       </div>
@@ -222,14 +227,9 @@ const {
 </script>
 
 <style scoped>
-.icon-square {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* ==========================================================================
+   VANGUARD CLINICAL DESIGN SYSTEM - GESTIÓN DE REEMPLAZOS
+   ========================================================================== */
 
 .reemplazos-view {
   background-color: #f8fafc;
@@ -238,37 +238,108 @@ const {
   flex-direction: column;
 }
 
-.empty-state {
-  min-height: 300px;
+/* --- Header & Eyebrow --- */
+.header-container {
+  padding-bottom: 0.25rem;
 }
 
-.empty-icon-container {
-  width: 80px;
-  height: 80px;
-  background-color: #f1f5f9;
-  border-radius: 50%;
+.header-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(191, 219, 254, 0.6);
 }
 
-.pagination .page-link {
+.live-counter-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
   color: #475569;
-  font-weight: 500;
-  width: 32px;
-  height: 32px;
+  background-color: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  font-variant-numeric: tabular-nums;
+}
+
+.header-title {
+  letter-spacing: -0.02em;
+}
+
+/* --- Switcher & Island Actions --- */
+.view-mode-switcher {
+  border-color: #e2e8f0 !important;
+}
+
+.switcher-pill {
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-primary-pill {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  padding: 0.45rem 1.25rem 0.45rem 0.65rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-primary-pill:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  color: white;
+}
+
+.btn-primary-pill:active {
+  transform: scale(0.98);
+}
+
+.btn-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #475569;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.8rem;
 }
 
-.pagination .active .page-link {
-  background-color: #3b82f6 !important;
-  color: white !important;
+.btn-icon-wrap.primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
-.pagination .page-item.disabled .page-link {
-  opacity: 0.5;
+/* --- Vanguard Card Container --- */
+.vanguard-card {
+  background: white;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 4px 8px -2px rgba(15, 23, 42, 0.02) !important;
+}
+
+/* --- Empty State --- */
+.empty-state-container {
+  padding: 3.5rem 1rem;
+}
+
+.empty-icon-capsule {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
 }
 
 /* Modal hacks */

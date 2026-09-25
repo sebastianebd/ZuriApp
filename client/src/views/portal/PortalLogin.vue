@@ -1,127 +1,150 @@
 <template>
-  <div class="portal-login-view d-flex flex-column justify-content-center align-items-center min-vh-100 p-3">
-    <div class="card border-0 shadow-sm rounded-4 w-100 login-card p-4">
-      <!-- Header -->
-      <div class="text-center mb-4">
-        <div class="logo-circle mx-auto mb-3">
-          <i class="bi bi-hospital-fill text-primary fs-2"></i>
-        </div>
-        <h4 class="fw-bold text-dark mb-1">ZuriApp</h4>
-        <p class="text-muted small mb-0">Portal del Funcionario de Turno</p>
-      </div>
+  <div class="portal-login-view">
+    <!-- Decorative background -->
+    <div class="login-bg-pattern"></div>
 
-      <!-- PASO 1: Ingreso de RUT -->
-      <div v-if="step === 'rut'">
-        <div class="mb-3">
-          <label for="rutInput" class="form-label fw-semibold">
-            RUT del Funcionario
-          </label>
-          <input
-            id="rutInput"
-            v-model="rut"
-            type="text"
-            class="form-control form-control-lg text-center fw-bold"
-            placeholder="12.345.678-9"
-            data-test="rut-input"
-            @keyup.enter="handleRequestOtp"
-          />
-          <div
-            v-if="rutError"
-            class="text-danger small mt-1"
-            data-test="rut-error"
-          >
-            {{ rutError }}
+    <div class="login-container">
+      <!-- Header / Branding -->
+      <header class="login-header">
+        <div class="brand-mark">
+          <div class="brand-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/>
+              <path d="M3 9V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"/>
+              <line x1="12" y1="13" x2="12" y2="17"/>
+              <line x1="10" y1="15" x2="14" y2="15"/>
+            </svg>
           </div>
         </div>
+        <h1 class="brand-name">ZuriApp</h1>
+        <p class="brand-tagline">Portal del Funcionario de Turno</p>
+      </header>
 
-        <button
-          type="button"
-          class="btn btn-primary btn-lg w-100 fw-semibold py-2 mb-3"
-          :disabled="isSubmitting"
-          data-test="request-otp-btn"
-          @click="handleRequestOtp"
-        >
-          <span
-            v-if="isSubmitting"
-            class="spinner-border spinner-border-sm me-2"
-          ></span>
-          <i v-else class="bi bi-whatsapp me-2"></i>
-          Solicitar Código WhatsApp
-        </button>
-
-        <p class="text-muted text-center small mb-0">
-          Enviaremos un código de seguridad de 6 dígitos a tu número registrado.
-        </p>
-      </div>
-
-      <!-- PASO 2: Ingreso de OTP -->
-      <div v-else-if="step === 'otp'" data-test="otp-step">
-        <div class="alert alert-light border rounded-3 text-center mb-4 py-2">
-          <span class="text-muted small d-block">Código enviado a:</span>
-          <strong class="text-dark" data-test="masked-phone">{{ maskedPhone || 'tu número registrado' }}</strong>
-        </div>
-
-        <div class="mb-3">
-          <label for="otpInput" class="form-label fw-semibold text-center d-block">
-            Ingresa el Código de 6 Dígitos
-          </label>
-          <input
-            id="otpInput"
-            v-model="otp"
-            type="text"
-            maxlength="6"
-            class="form-control form-control-lg text-center fw-bold letter-spacing-lg"
-            placeholder="000000"
-            data-test="otp-input"
-            @keyup.enter="handleVerifyOtp"
-          />
-          <div v-if="otpError" class="text-danger small text-center mt-1">
-            {{ otpError }}
+      <!-- Login Card -->
+      <div class="login-card">
+        <!-- PASO 1: Ingreso de RUT -->
+        <div v-if="step === 'rut'">
+          <div class="input-group-custom">
+            <label for="rutInput" class="input-label">
+              RUT del Funcionario
+            </label>
+            <input
+              id="rutInput"
+              v-model="rut"
+              type="text"
+              class="input-field"
+              placeholder="12.345.678-9"
+              autocomplete="off"
+              inputmode="numeric"
+              data-test="rut-input"
+              @keyup.enter="handleRequestOtp"
+            />
+            <div
+              v-if="rutError"
+              class="input-error"
+              data-test="rut-error"
+            >
+              <i class="bi bi-exclamation-circle me-1"></i>
+              {{ rutError }}
+            </div>
           </div>
-        </div>
 
-        <button
-          type="button"
-          class="btn btn-success btn-lg w-100 fw-semibold py-2 mb-3"
-          :disabled="isSubmitting || otp.length < 6"
-          data-test="verify-otp-btn"
-          @click="handleVerifyOtp"
-        >
-          <span
-            v-if="isSubmitting"
-            class="spinner-border spinner-border-sm me-2"
-          ></span>
-          <i v-else class="bi bi-shield-check me-2"></i>
-          Ingresar al Portal
-        </button>
-
-        <div class="text-center">
-          <div class="small text-muted mb-2">
-            ¿No recibiste el código?
-          </div>
           <button
             type="button"
-            class="btn btn-link btn-sm text-decoration-none p-0"
-            :disabled="resendCooldown > 0 || isSubmitting"
+            class="btn-primary-custom"
+            :disabled="isSubmitting"
+            data-test="request-otp-btn"
             @click="handleRequestOtp"
           >
-            <span v-if="resendCooldown > 0" data-test="resend-timer">
-              Reenviar en {{ resendCooldown }}s
-            </span>
-            <span v-else>Reenviar código por WhatsApp</span>
+            <span
+              v-if="isSubmitting"
+              class="spinner-border spinner-border-sm me-2"
+            ></span>
+            <i v-else class="bi bi-whatsapp me-2"></i>
+            Solicitar código WhatsApp
           </button>
+
+          <p class="login-hint">
+            Enviaremos un código de seguridad de 6 dígitos a tu número registrado.
+          </p>
         </div>
 
-        <div class="text-center mt-3 pt-3 border-top">
+        <!-- PASO 2: Ingreso de OTP -->
+        <div v-else-if="step === 'otp'" data-test="otp-step">
+          <div class="otp-sent-banner">
+            <span class="otp-sent-label">Código enviado a</span>
+            <strong data-test="masked-phone">{{ maskedPhone || 'tu número registrado' }}</strong>
+          </div>
+
+          <div class="input-group-custom">
+            <label for="otpInput" class="input-label text-center d-block">
+              Ingresa el código de 6 dígitos
+            </label>
+            <input
+              id="otpInput"
+              v-model="otp"
+              type="text"
+              maxlength="6"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              class="input-field otp-input"
+              placeholder="000000"
+              data-test="otp-input"
+              @keyup.enter="handleVerifyOtp"
+            />
+            <div v-if="otpError" class="input-error text-center">
+              <i class="bi bi-exclamation-circle me-1"></i>
+              {{ otpError }}
+            </div>
+          </div>
+
           <button
             type="button"
-            class="btn btn-link btn-sm text-secondary text-decoration-none"
-            @click="step = 'rut'; otp = ''; otpError = ''"
+            class="btn-primary-custom btn-verify"
+            :disabled="isSubmitting || otp.length < 6"
+            data-test="verify-otp-btn"
+            @click="handleVerifyOtp"
           >
-            ← Cambiar RUT
+            <span
+              v-if="isSubmitting"
+              class="spinner-border spinner-border-sm me-2"
+            ></span>
+            <i v-else class="bi bi-shield-check me-2"></i>
+            Ingresar al portal
           </button>
+
+          <div class="resend-section">
+            <span class="resend-label">¿No recibiste el código?</span>
+            <button
+              type="button"
+              class="resend-btn"
+              :disabled="resendCooldown > 0 || isSubmitting"
+              @click="handleRequestOtp"
+            >
+              <span v-if="resendCooldown > 0" data-test="resend-timer">
+                Reenviar en {{ resendCooldown }}s
+              </span>
+              <span v-else>Reenviar código por WhatsApp</span>
+            </button>
+          </div>
+
+          <div class="back-section">
+            <button
+              type="button"
+              class="back-btn"
+              @click="step = 'rut'; otp = ''; otpError = ''"
+            >
+              <i class="bi bi-arrow-left me-1"></i>
+              Cambiar RUT
+            </button>
+          </div>
         </div>
       </div>
+
+      <!-- Footer -->
+      <footer class="login-footer">
+        <span>Hospital Base San José de Osorno</span>
+      </footer>
     </div>
   </div>
 </template>
@@ -214,26 +237,265 @@ async function handleVerifyOtp() {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/styles/portal-theme' as t;
+
 .portal-login-view {
-  background: linear-gradient(180deg, #f0f4f8 0%, #e2e8f0 100%);
-}
-
-.login-card {
-  max-width: 420px;
-  background: #ffffff;
-}
-
-.logo-circle {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: #e7f1ff;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: t.$zuri-brand;
+  position: relative;
+  overflow: hidden;
+  padding: t.$space-4;
 }
 
-.letter-spacing-lg {
-  letter-spacing: 0.35rem;
+// Subtle texture pattern instead of flat gradient
+.login-bg-pattern {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(98, 182, 203, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(98, 182, 203, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.login-container {
+  width: 100%;
+  max-width: t.$portal-max-width;
+  position: relative;
+  z-index: 1;
+}
+
+// --- Brand Header ---
+.login-header {
+  text-align: center;
+  margin-bottom: t.$space-8;
+}
+
+.brand-mark {
+  margin-bottom: t.$space-4;
+}
+
+.brand-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+  border-radius: t.$radius-lg;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.brand-name {
+  font-family: t.$font-family-base;
+  font-size: t.$font-size-2xl;
+  font-weight: t.$font-weight-bold;
+  letter-spacing: t.$letter-spacing-tight;
+  color: #ffffff;
+  margin: 0 0 t.$space-1;
+}
+
+.brand-tagline {
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-medium;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  letter-spacing: t.$letter-spacing-wide;
+}
+
+// --- Login Card ---
+.login-card {
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-xl;
+  padding: t.$space-6;
+  box-shadow: t.$shadow-xl;
+}
+
+// --- Input System ---
+.input-group-custom {
+  margin-bottom: t.$space-5;
+}
+
+.input-label {
+  display: block;
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-body;
+  margin-bottom: t.$space-2;
+  letter-spacing: t.$letter-spacing-wide;
+}
+
+.input-field {
+  width: 100%;
+  padding: t.$space-3 t.$space-4;
+  font-size: t.$font-size-lg;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-heading;
+  background: t.$zuri-surface;
+  border: 1.5px solid t.$zuri-border;
+  border-radius: t.$radius-md;
+  outline: none;
+  transition: border-color t.$transition-base, box-shadow t.$transition-base;
+  text-align: center;
+
+  &::placeholder {
+    color: t.$zuri-text-subtle;
+    font-weight: t.$font-weight-normal;
+  }
+
+  &:focus {
+    border-color: t.$zuri-accent;
+    box-shadow: 0 0 0 3px rgba(98, 182, 203, 0.15);
+  }
+}
+
+.otp-input {
+  letter-spacing: 0.4em;
+  font-family: t.$font-family-mono;
+  font-size: t.$font-size-xl;
+}
+
+.input-error {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-danger;
+  margin-top: t.$space-2;
+}
+
+// --- Button System ---
+.btn-primary-custom {
+  width: 100%;
+  padding: t.$space-3 t.$space-4;
+  font-size: t.$font-size-base;
+  font-weight: t.$font-weight-semi;
+  color: #ffffff;
+  background: t.$zuri-brand;
+  border: none;
+  border-radius: t.$radius-md;
+  cursor: pointer;
+  transition: background t.$transition-base, transform t.$transition-fast, box-shadow t.$transition-base;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: t.$space-4;
+
+  &:hover:not(:disabled) {
+    background: t.$zuri-brand-light;
+    box-shadow: t.$shadow-md;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98) translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.btn-verify {
+  background: t.$zuri-success;
+
+  &:hover:not(:disabled) {
+    background: darken(t.$zuri-success, 5%);
+  }
+}
+
+// --- Supporting Elements ---
+.login-hint {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.otp-sent-banner {
+  background: t.$zuri-accent-subtle;
+  border: 1px solid t.$zuri-accent-muted;
+  border-radius: t.$radius-md;
+  padding: t.$space-3;
+  text-align: center;
+  margin-bottom: t.$space-5;
+
+  .otp-sent-label {
+    display: block;
+    font-size: t.$font-size-xs;
+    color: t.$zuri-text-muted;
+    margin-bottom: t.$space-1;
+  }
+
+  strong {
+    font-size: t.$font-size-base;
+    color: t.$zuri-text-heading;
+  }
+}
+
+.resend-section {
+  text-align: center;
+  margin-bottom: t.$space-4;
+
+  .resend-label {
+    display: block;
+    font-size: t.$font-size-xs;
+    color: t.$zuri-text-muted;
+    margin-bottom: t.$space-1;
+  }
+
+  .resend-btn {
+    background: none;
+    border: none;
+    font-size: t.$font-size-sm;
+    font-weight: t.$font-weight-medium;
+    color: t.$zuri-accent;
+    cursor: pointer;
+    padding: 0;
+    transition: color t.$transition-base;
+
+    &:hover:not(:disabled) {
+      color: t.$zuri-brand;
+    }
+
+    &:disabled {
+      color: t.$zuri-text-subtle;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.back-section {
+  text-align: center;
+  padding-top: t.$space-4;
+  border-top: 1px solid t.$zuri-divider;
+
+  .back-btn {
+    background: none;
+    border: none;
+    font-size: t.$font-size-sm;
+    font-weight: t.$font-weight-medium;
+    color: t.$zuri-text-muted;
+    cursor: pointer;
+    padding: 0;
+    transition: color t.$transition-base;
+
+    &:hover {
+      color: t.$zuri-text-body;
+    }
+  }
+}
+
+// --- Footer ---
+.login-footer {
+  text-align: center;
+  margin-top: t.$space-6;
+  font-size: t.$font-size-xs;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: t.$letter-spacing-wide;
 }
 </style>

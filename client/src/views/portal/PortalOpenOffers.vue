@@ -1,15 +1,15 @@
 <template>
-  <div class="portal-open-offers p-3">
-    <!-- Header del Módulo -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="portal-open-offers">
+    <!-- Header -->
+    <section class="offers-header">
       <div>
-        <h5 class="fw-bold text-dark mb-0">Bolsa de Reemplazos</h5>
-        <small class="text-muted">Convocatorias para funcionarios a honorarios</small>
+        <h2 class="page-title">Bolsa de Reemplazos</h2>
+        <span class="page-desc">Convocatorias para funcionarios a honorarios</span>
       </div>
 
       <button
         type="button"
-        class="btn btn-sm btn-light border rounded-circle p-2"
+        class="refresh-btn"
         data-test="refresh-btn"
         :disabled="isLoading"
         aria-label="Refrescar convocatorias"
@@ -17,63 +17,57 @@
       >
         <i :class="['bi bi-arrow-clockwise', { 'spin-icon': isLoading }]"></i>
       </button>
-    </div>
+    </section>
 
     <!-- Feedback / Alerta de Acción -->
     <div
       v-if="feedbackMessage"
-      :class="['alert alert-dismissible fade show py-2 px-3 mb-3 small shadow-sm', feedbackClass]"
+      :class="['feedback-toast', feedbackClassComputed]"
       role="alert"
       data-test="feedback-alert"
     >
-      <i :class="['bi me-2', feedbackIcon]"></i>
-      {{ feedbackMessage }}
+      <i :class="['bi', feedbackIcon]"></i>
+      <span>{{ feedbackMessage }}</span>
       <button
         type="button"
-        class="btn-close py-2"
+        class="feedback-close"
         aria-label="Cerrar"
         @click="feedbackMessage = null"
-      ></button>
+      >
+        <i class="bi bi-x"></i>
+      </button>
     </div>
 
-    <!-- Control Segmentado Superior (Pestañas) -->
-    <div class="segmented-control bg-light p-1 rounded-pill mb-3 d-flex" role="tablist">
+    <!-- Segmented Tabs -->
+    <div class="segmented-tabs" role="tablist">
       <button
         type="button"
-        class="btn btn-sm flex-fill rounded-pill py-2 text-center position-relative"
-        :class="activeTab === 'open' ? 'btn-primary shadow-sm fw-bold' : 'btn-light text-muted'"
+        class="seg-tab"
+        :class="{ 'seg-tab--active': activeTab === 'open' }"
         data-test="tab-open-offers"
         role="tab"
         :aria-selected="activeTab === 'open'"
         @click="setActiveTab('open')"
       >
-        <i class="bi bi-megaphone-fill me-1"></i>
-        Convocatorias
-        <span
-          v-if="openOffers.length > 0"
-          class="badge bg-white text-primary ms-1 rounded-pill"
-          data-test="open-count-badge"
-        >
+        <i class="bi bi-megaphone-fill"></i>
+        <span>Convocatorias</span>
+        <span v-if="openOffers.length > 0" class="seg-count" data-test="open-count-badge">
           {{ openOffers.length }}
         </span>
       </button>
 
       <button
         type="button"
-        class="btn btn-sm flex-fill rounded-pill py-2 text-center position-relative"
-        :class="activeTab === 'my-applications' ? 'btn-primary shadow-sm fw-bold' : 'btn-light text-muted'"
+        class="seg-tab"
+        :class="{ 'seg-tab--active': activeTab === 'my-applications' }"
         data-test="tab-my-applications"
         role="tab"
         :aria-selected="activeTab === 'my-applications'"
         @click="setActiveTab('my-applications')"
       >
-        <i class="bi bi-person-check-fill me-1"></i>
-        Mis Postulaciones
-        <span
-          v-if="myApplications.length > 0"
-          class="badge bg-white text-primary ms-1 rounded-pill"
-          data-test="my-apps-count-badge"
-        >
+        <i class="bi bi-person-check-fill"></i>
+        <span>Mis Postulaciones</span>
+        <span v-if="myApplications.length > 0" class="seg-count" data-test="my-apps-count-badge">
           {{ myApplications.length }}
         </span>
       </button>
@@ -81,28 +75,23 @@
 
     <!-- TAB 1: Convocatorias Abiertas -->
     <div v-if="activeTab === 'open'" class="tab-content" role="tabpanel">
-      <!-- Loading State -->
-      <div v-if="loadingOffers" class="text-center py-5 text-muted">
-        <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
-        <p class="small mb-0">Buscando convocatorias compatibles...</p>
+      <div v-if="loadingOffers" class="loading-state">
+        <div class="spinner-border spinner-border-sm" role="status"></div>
+        <span>Buscando convocatorias compatibles...</span>
       </div>
 
-      <!-- Empty State -->
       <div
         v-else-if="openOffers.length === 0"
-        class="card border-0 shadow-sm text-center py-5 px-3 rounded-3"
+        class="empty-state-card"
         data-test="empty-offers"
       >
-        <div class="empty-state-icon text-muted mb-2">
-          <i class="bi bi-inbox fs-1"></i>
-        </div>
-        <h6 class="fw-bold text-dark">No hay convocatorias abiertas</h6>
-        <p class="text-muted small mb-0">
+        <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+        <h3 class="empty-title">No hay convocatorias abiertas</h3>
+        <p class="empty-desc">
           En este momento no hay solicitudes de reemplazo disponibles para tu estamento o cargo.
         </p>
       </div>
 
-      <!-- Lista de Convocatorias -->
       <div v-else class="offers-list">
         <OfferCard
           v-for="offer in openOffers"
@@ -117,81 +106,68 @@
 
     <!-- TAB 2: Mis Postulaciones -->
     <div v-else-if="activeTab === 'my-applications'" class="tab-content" role="tabpanel">
-      <!-- Loading State -->
-      <div v-if="loadingMyApps" class="text-center py-5 text-muted">
-        <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
-        <p class="small mb-0">Cargando tus postulaciones...</p>
+      <div v-if="loadingMyApps" class="loading-state">
+        <div class="spinner-border spinner-border-sm" role="status"></div>
+        <span>Cargando tus postulaciones...</span>
       </div>
 
-      <!-- Empty State -->
       <div
         v-else-if="myApplications.length === 0"
-        class="card border-0 shadow-sm text-center py-5 px-3 rounded-3"
+        class="empty-state-card"
         data-test="empty-applications"
       >
-        <div class="empty-state-icon text-muted mb-2">
-          <i class="bi bi-file-earmark-check fs-1"></i>
-        </div>
-        <h6 class="fw-bold text-dark">Sin postulaciones registradas</h6>
-        <p class="text-muted small mb-0">
-          Aún no has postulado a ninguna convocatoria de reemplazo. Revisa la pestaña "Convocatorias" para ver turnos disponibles.
+        <div class="empty-icon"><i class="bi bi-file-earmark-check"></i></div>
+        <h3 class="empty-title">Sin postulaciones registradas</h3>
+        <p class="empty-desc">
+          Aún no has postulado a ninguna convocatoria. Revisa la pestaña "Convocatorias" para ver turnos disponibles.
         </p>
       </div>
 
-      <!-- Lista de Postulaciones -->
       <div v-else class="applications-list">
         <div
           v-for="app in myApplications"
           :key="app.offerId"
-          class="card border-0 shadow-sm mb-3 rounded-3 application-item"
+          class="app-card"
           data-test="application-item"
         >
-          <div class="card-body p-3">
-            <!-- Encabezado de la postulación: Servicio y Badge -->
-            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-              <div>
-                <h6 class="fw-bold text-dark mb-0">{{ app.serviceName }}</h6>
-                <small class="text-muted">
-                  <i class="bi bi-person-badge me-1"></i>{{ app.positionName }}
-                </small>
-              </div>
-
-              <!-- Badge de estado hospitalario -->
-              <ApplicationStatusBadge
-                :status="app.status"
-                :offer-status="app.offerStatus"
-              />
-            </div>
-
-            <!-- Detalles del Turno -->
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-2 text-secondary small">
-              <span class="badge bg-light text-dark border">
-                <i class="bi bi-clock me-1 text-primary"></i>{{ app.tipo_turno }}
-              </span>
-              <span>
-                <i class="bi bi-calendar-event me-1 text-primary"></i>
-                {{ formatDate(app.fecha_inicio) }} - {{ formatDate(app.fecha_termino) }}
+          <div class="app-card-top">
+            <div>
+              <h3 class="app-service">{{ app.serviceName }}</h3>
+              <span class="app-position">
+                <i class="bi bi-person-badge me-1"></i>{{ app.positionName }}
               </span>
             </div>
+            <ApplicationStatusBadge
+              :status="app.status"
+              :offer-status="app.offerStatus"
+            />
+          </div>
 
-            <!-- Fecha de postulación -->
-            <div class="text-muted small mb-2 fst-italic">
-              <i class="bi bi-send me-1"></i>
-              Postulado el {{ formatDateTime(app.appliedAt) }}
-            </div>
+          <div class="app-details">
+            <span class="detail-chip">
+              <i class="bi bi-clock"></i> {{ app.tipo_turno }}
+            </span>
+            <span class="detail-date">
+              <i class="bi bi-calendar-event"></i>
+              {{ formatDate(app.fecha_inicio) }} - {{ formatDate(app.fecha_termino) }}
+            </span>
+          </div>
 
-            <!-- Botón de acción: Si fue adjudicado -> Ir a Mis Turnos -->
-            <div v-if="app.status === 'selected'" class="mt-3 pt-2 border-top">
-              <button
-                type="button"
-                class="btn btn-success btn-sm w-100 fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-2"
-                data-test="go-to-my-shifts-btn"
-                @click="goToMyShifts"
-              >
-                <i class="bi bi-calendar-check-fill"></i>
-                <span>¡Adjudicado! Ir a Mis Turnos</span>
-              </button>
-            </div>
+          <div class="app-meta">
+            <i class="bi bi-send"></i>
+            Postulado el {{ formatDateTime(app.appliedAt) }}
+          </div>
+
+          <div v-if="app.status === 'selected'" class="app-action">
+            <button
+              type="button"
+              class="awarded-btn"
+              data-test="go-to-my-shifts-btn"
+              @click="goToMyShifts"
+            >
+              <i class="bi bi-calendar-check-fill"></i>
+              Adjudicado — Ir a Mis Turnos
+            </button>
           </div>
         </div>
       </div>
@@ -222,25 +198,25 @@ const feedbackType = ref<'success' | 'danger' | 'info'>('success')
 
 const isLoading = computed(() => loadingOffers.value || loadingMyApps.value)
 
-const feedbackClass = computed(() => {
+const feedbackClassComputed = computed(() => {
   switch (feedbackType.value) {
     case 'success':
-      return 'alert-success text-success-emphasis border-success-subtle'
+      return 'feedback-toast--success'
     case 'danger':
-      return 'alert-danger text-danger-emphasis border-danger-subtle'
+      return 'feedback-toast--danger'
     default:
-      return 'alert-info text-info-emphasis border-info-subtle'
+      return 'feedback-toast--info'
   }
 })
 
 const feedbackIcon = computed(() => {
   switch (feedbackType.value) {
     case 'success':
-      return 'bi-check-circle-fill text-success'
+      return 'bi-check-circle-fill'
     case 'danger':
-      return 'bi-exclamation-triangle-fill text-danger'
+      return 'bi-exclamation-triangle-fill'
     default:
-      return 'bi-info-circle-fill text-info'
+      return 'bi-info-circle-fill'
   }
 })
 
@@ -299,14 +275,12 @@ const handleApply = async (offerId: string) => {
   actionLoadingId.value = offerId
   try {
     await portalService.applyToOffer(offerId)
-    showFeedback('¡Postulación enviada exitosamente!', 'success')
-    // Actualizar estado local inmediato
+    showFeedback('Postulación enviada exitosamente', 'success')
     const found = openOffers.value.find((o) => o.id === offerId)
     if (found) {
       found.alreadyApplied = true
       found.hasApplied = true
     }
-    // Refrescar en background
     fetchOffers()
   } catch (err: any) {
     showFeedback(err.response?.data?.message || 'No fue posible registrar tu postulación', 'danger')
@@ -320,7 +294,6 @@ const handleWithdraw = async (offerId: string) => {
   try {
     await portalService.withdrawApplication(offerId)
     showFeedback('Postulación retirada voluntariamente', 'info')
-    // Actualizar estado local inmediato
     const found = openOffers.value.find((o) => o.id === offerId)
     if (found) {
       found.alreadyApplied = false
@@ -370,23 +343,57 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/styles/portal-theme' as t;
+
 .portal-open-offers {
-  max-width: 540px;
+  max-width: t.$portal-max-width;
   margin: 0 auto;
+  padding: t.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: t.$space-4;
 }
 
-.segmented-control {
-  background-color: #e9ecef !important;
+// --- Header ---
+.offers-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
 
-  .btn {
-    font-size: 0.85rem;
-    transition: all 0.2s ease;
+.page-title {
+  font-size: t.$font-size-xl;
+  font-weight: t.$font-weight-bold;
+  color: t.$zuri-text-heading;
+  margin: 0 0 2px;
+}
+
+.page-desc {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+}
+
+.refresh-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid t.$zuri-border;
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: t.$zuri-text-muted;
+  cursor: pointer;
+  transition: all t.$transition-base;
+
+  &:hover {
+    border-color: t.$zuri-accent;
+    color: t.$zuri-brand;
   }
-}
 
-.application-item {
-  background: #ffffff;
-  border-left: 4px solid #0d6efd !important;
+  &:disabled {
+    opacity: 0.5;
+  }
 }
 
 .spin-icon {
@@ -394,11 +401,243 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+// --- Feedback Toast ---
+.feedback-toast {
+  display: flex;
+  align-items: center;
+  gap: t.$space-2;
+  padding: t.$space-3 t.$space-4;
+  border-radius: t.$radius-md;
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-medium;
+
+  &--success {
+    background: t.$zuri-success-subtle;
+    color: t.$zuri-success;
   }
-  to {
-    transform: rotate(360deg);
+
+  &--danger {
+    background: t.$zuri-danger-subtle;
+    color: t.$zuri-danger;
   }
+
+  &--info {
+    background: t.$zuri-accent-subtle;
+    color: t.$zuri-brand;
+  }
+}
+
+.feedback-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+
+  &:hover { opacity: 1; }
+}
+
+// --- Segmented Tabs ---
+.segmented-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: t.$zuri-divider;
+  border-radius: t.$radius-md;
+}
+
+.seg-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: t.$space-1;
+  padding: t.$space-2 t.$space-2;
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-medium;
+  color: t.$zuri-text-muted;
+  background: transparent;
+  border: none;
+  border-radius: t.$radius-sm;
+  cursor: pointer;
+  transition: all t.$transition-base;
+
+  &--active {
+    background: t.$zuri-surface-raised;
+    color: t.$zuri-brand;
+    font-weight: t.$font-weight-semi;
+    box-shadow: t.$shadow-xs;
+  }
+}
+
+.seg-count {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-bold;
+  background: t.$zuri-brand;
+  color: #ffffff;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: t.$radius-pill;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+// --- Loading ---
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: t.$space-3;
+  padding: t.$space-10;
+  color: t.$zuri-text-muted;
+  font-size: t.$font-size-sm;
+
+  .spinner-border {
+    color: t.$zuri-brand;
+  }
+}
+
+// --- Applications List ---
+.applications-list {
+  display: flex;
+  flex-direction: column;
+  gap: t.$space-3;
+}
+
+.app-card {
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-lg;
+  padding: t.$space-4;
+  box-shadow: t.$shadow-sm;
+  border-left: 3px solid t.$zuri-accent;
+}
+
+.app-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: t.$space-2;
+  margin-bottom: t.$space-3;
+}
+
+.app-service {
+  font-size: t.$font-size-base;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-heading;
+  margin: 0 0 2px;
+}
+
+.app-position {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+}
+
+.app-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: t.$space-2;
+  margin-bottom: t.$space-2;
+}
+
+.detail-chip {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-medium;
+  color: t.$zuri-text-body;
+  background: t.$zuri-surface;
+  border: 1px solid t.$zuri-border;
+  padding: 2px t.$space-2;
+  border-radius: t.$radius-xs;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.detail-date {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-meta {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-subtle;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-action {
+  margin-top: t.$space-3;
+  padding-top: t.$space-3;
+  border-top: 1px solid t.$zuri-divider;
+}
+
+.awarded-btn {
+  width: 100%;
+  padding: t.$space-3;
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-semi;
+  color: #ffffff;
+  background: t.$zuri-success;
+  border: none;
+  border-radius: t.$radius-md;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: t.$space-2;
+  transition: all t.$transition-base;
+
+  &:hover {
+    background: darken(t.$zuri-success, 5%);
+    box-shadow: t.$shadow-md;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// --- Shared Empty State ---
+.empty-state-card {
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-lg;
+  padding: t.$space-8 t.$space-4;
+  text-align: center;
+  border: 1px dashed t.$zuri-border;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  color: t.$zuri-text-subtle;
+  margin-bottom: t.$space-3;
+}
+
+.empty-title {
+  font-size: t.$font-size-base;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-body;
+  margin: 0 0 t.$space-1;
+}
+
+.empty-desc {
+  font-size: t.$font-size-sm;
+  color: t.$zuri-text-muted;
+  margin: 0;
 }
 </style>

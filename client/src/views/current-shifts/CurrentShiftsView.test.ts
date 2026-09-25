@@ -21,6 +21,7 @@ vi.mock('vue-router', () => ({
 // Mock useCurrentShifts composable
 const mockIsPastMonth = ref(false)
 const mockHasCreatePermission = ref(true)
+const mockLoading = ref(false)
 
 vi.mock('@/composables/current-shifts/useCurrentShifts', () => ({
   useCurrentShifts: () => ({
@@ -39,7 +40,7 @@ vi.mock('@/composables/current-shifts/useCurrentShifts', () => ({
     prevMonth: vi.fn(),
     openModal: vi.fn(),
     closeModal: vi.fn(),
-    loading: ref(false),
+    loading: mockLoading,
     filteredShifts: ref([]),
     getShiftStyle: vi.fn(() => ({})),
     getShiftClass: vi.fn(() => ''),
@@ -108,6 +109,7 @@ describe('CurrentShiftsView (Épica 2: Turnos & Excepciones)', () => {
     mockRoute.query = {}
     mockIsPastMonth.value = false
     mockHasCreatePermission.value = true
+    mockLoading.value = false
   })
 
   it('renders Grilla Mensual by default when no tab query is present', () => {
@@ -164,5 +166,22 @@ describe('CurrentShiftsView (Épica 2: Turnos & Excepciones)', () => {
 
     expect(wrapper.text()).toContain('Asignar Planta')
     expect(wrapper.text()).not.toContain('Período Histórico / Cerrado')
+  })
+
+  it('muestra el overlay de carga anti-flicker cuando loading es true', () => {
+    mockLoading.value = true
+    const wrapper = mountComponent()
+
+    const overlay = wrapper.find('.grid-loading-overlay')
+    expect(overlay.exists()).toBe(true)
+    expect(overlay.find('.spinner-border').exists()).toBe(true)
+    expect(overlay.text()).toContain('Cargando programación...')
+  })
+
+  it('no muestra el overlay de carga cuando loading es false', () => {
+    mockLoading.value = false
+    const wrapper = mountComponent()
+
+    expect(wrapper.find('.grid-loading-overlay').exists()).toBe(false)
   })
 })

@@ -1,97 +1,89 @@
 <template>
   <div
     v-if="modelValue && shift"
-    class="bottom-sheet-backdrop"
+    class="sheet-backdrop"
     @click.self="close"
   >
-    <div class="bottom-sheet-content show" data-test="shift-day-detail-sheet">
-      <div class="bottom-sheet-handle"></div>
+    <div class="sheet-panel" data-test="shift-day-detail-sheet">
+      <div class="sheet-handle"></div>
 
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="d-flex align-items-center gap-2">
+      <!-- Header with sigla + date -->
+      <div class="sheet-header">
+        <div class="sheet-header-left">
           <span
-            class="badge rounded-circle p-2 d-flex align-items-center justify-content-center sigla-badge"
+            class="sigla-badge"
             :class="getSiglaClass(shift.sigla)"
           >
             {{ shift.sigla }}
           </span>
           <div>
-            <h6 class="mb-0 fw-bold" data-test="detail-date">
+            <h2 class="sheet-title" data-test="detail-date">
               {{ formatDate(shift.date) }}
-            </h6>
-            <small class="text-muted">{{ getShiftName(shift.sigla) }}</small>
+            </h2>
+            <span class="sheet-subtitle">{{ getShiftName(shift.sigla) }}</span>
           </div>
         </div>
 
-        <button
-          type="button"
-          class="btn-close"
-          aria-label="Close"
-          @click="close"
-        ></button>
+        <button type="button" class="sheet-close" aria-label="Close" @click="close">
+          <i class="bi bi-x-lg"></i>
+        </button>
       </div>
 
-      <!-- Detalle Operativo -->
-      <div class="card border-0 bg-light rounded-3 p-3 mb-3">
-        <div class="mb-2">
-          <span class="d-block text-secondary small">Servicio Asignado</span>
-          <strong class="text-dark fs-6" data-test="detail-service">
+      <!-- Detail card -->
+      <div class="detail-card">
+        <div class="detail-field detail-field--full">
+          <span class="field-label">Servicio asignado</span>
+          <strong class="field-value" data-test="detail-service">
             {{ shift.serviceName }}
           </strong>
         </div>
 
-        <div class="row g-2 pt-2 border-top small text-muted">
-          <div class="col-6">
-            <span class="d-block text-secondary">Horario de Turno</span>
-            <strong class="text-dark" data-test="detail-hours">
-              {{ shift.entryTime && shift.exitTime ? `${shift.entryTime} - ${shift.exitTime}` : 'Jornada Libre' }}
+        <div class="detail-grid">
+          <div class="detail-field">
+            <span class="field-label">Horario de turno</span>
+            <strong class="field-value" data-test="detail-hours">
+              {{ shift.entryTime && shift.exitTime ? `${shift.entryTime} - ${shift.exitTime}` : 'Jornada libre' }}
             </strong>
           </div>
-          <div class="col-6">
-            <span class="d-block text-secondary">Estado Confirmación</span>
+          <div class="detail-field">
+            <span class="field-label">Estado confirmación</span>
             <strong
-              class="d-block"
-              :class="shift.confirmationStatus === 'confirmed' ? 'text-success' : 'text-secondary'"
+              class="field-value"
+              :class="getConfirmationClass(shift.confirmationStatus)"
               data-test="detail-confirmation"
             >
-              {{ shift.confirmationStatus === 'confirmed' ? 'Asistencia Confirmada' : (shift.confirmationStatus === 'unavailable' ? 'Indisponibilidad' : 'Pendiente') }}
+              {{ getConfirmationText(shift.confirmationStatus) }}
             </strong>
           </div>
         </div>
       </div>
 
-      <!-- Banner si es reemplazo -->
+      <!-- Replacement Banner -->
       <div
         v-if="shift.isReplacement"
-        class="alert alert-warning border border-warning d-flex justify-content-between align-items-center p-3 rounded-3 mb-3"
+        class="replacement-banner"
         data-test="replacement-contract-banner"
       >
-        <div>
-          <span class="badge bg-warning text-dark me-1">🤝 Reemplazo</span>
-          <small class="d-block fw-semibold mt-1">
-            Turno cubierto bajo Contrato {{ shift.replacementBusinessCode || 'REP-OFICIAL' }}
-          </small>
+        <div class="banner-left">
+          <span class="banner-tag">🤝 Reemplazo</span>
+          <span class="banner-code">
+            Contrato {{ shift.replacementBusinessCode || 'REP-OFICIAL' }}
+          </span>
         </div>
 
         <button
           type="button"
-          class="btn btn-sm btn-outline-dark fw-semibold"
+          class="banner-btn"
           data-test="view-contract-link"
           @click="handleViewContract"
         >
-          Ver Contrato ➔
+          Ver contrato →
         </button>
       </div>
 
-      <div class="d-grid mt-3">
-        <button
-          type="button"
-          class="btn btn-outline-secondary py-2"
-          @click="close"
-        >
-          Cerrar
-        </button>
-      </div>
+      <button type="button" class="btn-cancel" @click="close">
+        Cerrar
+      </button>
     </div>
   </div>
 </template>
@@ -125,13 +117,13 @@ function formatDate(dateStr: string): string {
 function getSiglaClass(sigla: string) {
   switch (sigla) {
     case 'L':
-      return 'bg-primary text-white'
+      return 'sigla--largo'
     case 'N':
-      return 'bg-dark text-white'
+      return 'sigla--noche'
     case 'X':
-      return 'bg-light text-muted border'
+      return 'sigla--libre'
     default:
-      return 'bg-secondary text-white'
+      return 'sigla--default'
   }
 }
 
@@ -148,6 +140,18 @@ function getShiftName(sigla: string) {
   }
 }
 
+function getConfirmationText(status: string | undefined) {
+  if (status === 'confirmed') return 'Asistencia confirmada'
+  if (status === 'unavailable') return 'Indisponibilidad'
+  return 'Pendiente'
+}
+
+function getConfirmationClass(status: string | undefined) {
+  if (status === 'confirmed') return 'field-value--success'
+  if (status === 'unavailable') return 'field-value--danger'
+  return ''
+}
+
 function handleViewContract() {
   if (props.shift?.replacementId) {
     emit('view-contract', props.shift.replacementId)
@@ -157,51 +161,224 @@ function handleViewContract() {
 </script>
 
 <style scoped lang="scss">
-.bottom-sheet-backdrop {
+@use '@/assets/styles/portal-theme' as t;
+
+.sheet-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background-color: t.$zuri-backdrop;
   z-index: 1050;
   display: flex;
   justify-content: center;
   align-items: flex-end;
 }
 
-.bottom-sheet-content {
-  background: #ffffff;
+.sheet-panel {
+  background: t.$zuri-surface-raised;
   width: 100%;
-  max-width: 540px;
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
-  animation: slideUp 0.25s ease-out;
+  max-width: t.$portal-max-width;
+  border-radius: t.$radius-sheet t.$radius-sheet 0 0;
+  padding: t.$space-5 t.$space-4 calc(#{t.$space-5} + #{t.$safe-area-bottom});
+  box-shadow: t.$shadow-xl;
+  animation: sheetUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
-  .bottom-sheet-handle {
-    width: 40px;
-    height: 4px;
-    background: #dee2e6;
-    border-radius: 2px;
-    margin: -0.5rem auto 1rem auto;
-  }
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: t.$zuri-border;
+  border-radius: 2px;
+  margin: -#{t.$space-2} auto t.$space-4 auto;
+}
+
+// --- Header ---
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: t.$space-4;
+}
+
+.sheet-header-left {
+  display: flex;
+  align-items: center;
+  gap: t.$space-3;
 }
 
 .sigla-badge {
   width: 38px;
   height: 38px;
-  font-weight: 700;
-  font-size: 1rem;
+  border-radius: t.$radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: t.$font-weight-bold;
+  font-size: t.$font-size-base;
+  flex-shrink: 0;
+
+  &.sigla--largo {
+    background: t.$sigla-largo-bg;
+    color: t.$sigla-largo-text;
+  }
+
+  &.sigla--noche {
+    background: t.$sigla-noche-bg;
+    color: t.$sigla-noche-text;
+  }
+
+  &.sigla--libre {
+    background: t.$sigla-libre-bg;
+    color: t.$sigla-libre-text;
+  }
+
+  &.sigla--default {
+    background: t.$zuri-divider;
+    color: t.$zuri-text-muted;
+  }
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
+.sheet-title {
+  font-size: t.$font-size-base;
+  font-weight: t.$font-weight-bold;
+  color: t.$zuri-text-heading;
+  margin: 0;
+}
+
+.sheet-subtitle {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+}
+
+.sheet-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: t.$zuri-surface;
+  border-radius: t.$radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: t.$zuri-text-muted;
+  cursor: pointer;
+  transition: all t.$transition-base;
+
+  &:hover {
+    background: t.$zuri-danger-subtle;
+    color: t.$zuri-danger;
   }
-  to {
-    transform: translateY(0);
+}
+
+// --- Detail Card ---
+.detail-card {
+  background: t.$zuri-surface;
+  border-radius: t.$radius-md;
+  padding: t.$space-4;
+  margin-bottom: t.$space-4;
+}
+
+.detail-field--full {
+  margin-bottom: t.$space-3;
+  padding-bottom: t.$space-3;
+  border-bottom: 1px solid t.$zuri-divider;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: t.$space-3;
+}
+
+.field-label {
+  display: block;
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-subtle;
+  letter-spacing: t.$letter-spacing-wide;
+  margin-bottom: 2px;
+}
+
+.field-value {
+  display: block;
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-medium;
+  color: t.$zuri-text-heading;
+
+  &--success {
+    color: t.$zuri-success;
   }
+
+  &--danger {
+    color: t.$zuri-danger;
+  }
+}
+
+// --- Replacement Banner ---
+.replacement-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: t.$space-3 t.$space-4;
+  background: t.$zuri-warning-subtle;
+  border: 1px solid t.$zuri-warning;
+  border-radius: t.$radius-md;
+  margin-bottom: t.$space-4;
+}
+
+.banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.banner-tag {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-semi;
+  color: darken(t.$zuri-warning, 15%);
+}
+
+.banner-code {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-medium;
+  color: t.$zuri-text-body;
+}
+
+.banner-btn {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-heading;
+  background: transparent;
+  border: 1px solid t.$zuri-text-heading;
+  padding: t.$space-1 t.$space-3;
+  border-radius: t.$radius-sm;
+  cursor: pointer;
+  transition: all t.$transition-base;
+  white-space: nowrap;
+
+  &:hover {
+    background: t.$zuri-text-heading;
+    color: #ffffff;
+  }
+}
+
+// --- Bottom Action ---
+.btn-cancel {
+  width: 100%;
+  padding: t.$space-3;
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-medium;
+  color: t.$zuri-text-muted;
+  background: transparent;
+  border: 1px solid t.$zuri-border;
+  border-radius: t.$radius-md;
+  cursor: pointer;
+  transition: all t.$transition-base;
+
+  &:hover {
+    background: t.$zuri-surface;
+  }
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }
 </style>

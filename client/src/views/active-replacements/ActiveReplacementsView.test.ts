@@ -100,7 +100,7 @@ describe('ActiveReplacementsView - Consolidated Navigation', () => {
     expect(wrapper.find('.mock-calendar-tab').exists()).toBe(false)
     expect(wrapper.text()).toContain('Tabla')
     expect(wrapper.text()).toContain('Calendario')
-    expect(wrapper.text()).toContain('Bolsa de Reemplazos')
+    expect(wrapper.text()).toContain('Nuevo Reemplazo')
   })
 
   it('debería renderizar la Vista Calendario cuando view=calendar', () => {

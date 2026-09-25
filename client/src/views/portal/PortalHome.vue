@@ -1,136 +1,137 @@
 <template>
-  <div class="portal-home p-3">
+  <div class="portal-home">
     <!-- Saludo -->
-    <div class="mb-3 d-flex justify-content-between align-items-center">
+    <section class="greeting-section">
       <div>
-        <h5 class="fw-bold mb-0 text-dark" data-test="portal-user-greeting">
+        <h2 class="greeting-name" data-test="portal-user-greeting">
           Hola, {{ userDisplayName }}
-        </h5>
-        <small class="text-muted">{{ user?.positionName || 'Personal de Turno' }}</small>
+        </h2>
+        <span class="greeting-role">{{ user?.positionName || 'Personal de Turno' }}</span>
       </div>
-      <span class="badge bg-light text-secondary border px-2 py-1">
+      <span class="month-chip">
         {{ currentMonthName }} {{ new Date().getFullYear() }}
       </span>
-    </div>
+    </section>
 
-    <!-- 1. Tarjeta Destacada: Tu Próximo Turno (Informativa) -->
-    <div
+    <!-- 1. Tarjeta Destacada: Tu Próximo Turno -->
+    <section
       v-if="nextShift"
-      class="card border-0 shadow-sm rounded-4 mb-4 next-shift-card"
+      class="next-shift-card"
       data-test="next-shift-card"
     >
-      <div class="card-body p-3">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="badge bg-primary px-2 py-1 rounded-pill">
-            Próximo Turno
-          </span>
-        </div>
-
-        <h5 class="fw-bold text-dark mb-1" data-test="next-shift-service">
-          {{ nextShift.serviceName }}
-        </h5>
-        <div class="text-muted small mb-3">
-          <i class="bi bi-calendar-event me-1"></i>
-          {{ formatDate(nextShift.date) }} &bull;
-          <span data-test="next-shift-hours">
-            {{ nextShift.entryTime }} - {{ nextShift.exitTime }}
-          </span>
-        </div>
-
-        <div v-if="nextShift.serviceLocation" class="text-muted small">
-          <i class="bi bi-geo-alt-fill text-danger me-1"></i>
-          {{ nextShift.serviceLocation }}
-        </div>
+      <div class="next-shift-header">
+        <span class="next-shift-label">Próximo turno</span>
       </div>
-    </div>
 
-    <!-- Si no hay turno próximo -->
-    <div
+      <h3 class="next-shift-service" data-test="next-shift-service">
+        {{ nextShift.serviceName }}
+      </h3>
+
+      <div class="next-shift-meta">
+        <span class="meta-item">
+          <i class="bi bi-calendar-event"></i>
+          {{ formatDate(nextShift.date) }}
+        </span>
+        <span class="meta-divider">&bull;</span>
+        <span class="meta-item" data-test="next-shift-hours">
+          <i class="bi bi-clock"></i>
+          {{ nextShift.entryTime }} - {{ nextShift.exitTime }}
+        </span>
+      </div>
+
+      <div v-if="nextShift.serviceLocation" class="next-shift-location">
+        <i class="bi bi-geo-alt-fill"></i>
+        {{ nextShift.serviceLocation }}
+      </div>
+    </section>
+
+    <!-- Sin turno próximo -->
+    <section
       v-else
-      class="card border-0 bg-light rounded-4 text-center p-4 mb-4"
+      class="empty-shift-card"
     >
-      <i class="bi bi-calendar-check fs-1 text-muted mb-2"></i>
-      <h6 class="fw-bold mb-1">Sin turnos en los próximos días</h6>
-      <small class="text-muted">No tienes turnos programados en los próximos 7 días.</small>
-    </div>
+      <div class="empty-icon">
+        <i class="bi bi-calendar-check"></i>
+      </div>
+      <h3 class="empty-title">Sin turnos en los próximos días</h3>
+      <p class="empty-desc">No tienes turnos programados en los próximos 7 días.</p>
+    </section>
 
     <!-- 2. Mini-Dashboard de KPIs Personales -->
-    <div class="mb-4">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="fw-bold mb-0 text-dark">Mi Resumen Mensual</h6>
+    <section class="kpi-section">
+      <div class="section-header">
+        <h3 class="section-title">Mi resumen mensual</h3>
         <button
           type="button"
-          class="btn btn-link btn-sm p-0 text-decoration-none fw-semibold"
+          class="download-link"
           data-test="download-advance-btn"
           @click="handleDownloadAdvance"
         >
-          <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>
-          Descargar Avance (PDF)
+          <i class="bi bi-file-earmark-arrow-down me-1"></i>
+          PDF
         </button>
       </div>
 
-      <div class="row g-2">
-        <div class="col-4">
-          <div class="kpi-card bg-white p-2 rounded-3 text-center shadow-sm">
-            <span class="d-block text-muted small">Horas Totales</span>
-            <strong class="fs-5 text-primary" data-test="kpi-total-hours">
-              {{ kpis?.totalHours ?? 0 }} hrs
-            </strong>
-          </div>
+      <div class="kpi-grid">
+        <div class="kpi-item">
+          <span class="kpi-value kpi-value--primary" data-test="kpi-total-hours">
+            {{ kpis?.totalHours ?? 0 }}
+          </span>
+          <span class="kpi-label">Horas totales</span>
         </div>
-        <div class="col-4">
-          <div class="kpi-card bg-white p-2 rounded-3 text-center shadow-sm">
-            <span class="d-block text-muted small">Horas Diurnas</span>
-            <strong class="fs-5 text-warning-emphasis" data-test="kpi-day-hours">
-              {{ kpis?.dayHours ?? 0 }} hrs
-            </strong>
-          </div>
+        <div class="kpi-item">
+          <span class="kpi-value kpi-value--warm" data-test="kpi-day-hours">
+            {{ kpis?.dayHours ?? 0 }}
+          </span>
+          <span class="kpi-label">Diurnas</span>
         </div>
-        <div class="col-4">
-          <div class="kpi-card bg-white p-2 rounded-3 text-center shadow-sm">
-            <span class="d-block text-muted small">Horas Nocturnas</span>
-            <strong class="fs-5 text-info-emphasis" data-test="kpi-night-hours">
-              {{ kpis?.nightHours ?? 0 }} hrs
-            </strong>
-          </div>
+        <div class="kpi-item">
+          <span class="kpi-value kpi-value--cool" data-test="kpi-night-hours">
+            {{ kpis?.nightHours ?? 0 }}
+          </span>
+          <span class="kpi-label">Nocturnas</span>
         </div>
       </div>
-      <div class="mt-2 text-center text-muted small bg-light py-1 px-2 rounded-2 border">
-        <span>Turnos del mes: </span>
-        <strong class="text-primary" data-test="kpi-shifts-completed">{{ kpis?.shiftsCompleted ?? 0 }}</strong> cumplidos
-        <span class="mx-1">&bull;</span>
-        <strong class="text-secondary" data-test="kpi-shifts-remaining">{{ kpis?.shiftsRemaining ?? 0 }}</strong> restantes
+
+      <div class="shifts-summary">
+        <span>Turnos del mes:</span>
+        <strong class="shifts-done" data-test="kpi-shifts-completed">{{ kpis?.shiftsCompleted ?? 0 }}</strong>
+        <span>cumplidos</span>
+        <span class="summary-dot">&bull;</span>
+        <strong class="shifts-pending" data-test="kpi-shifts-remaining">{{ kpis?.shiftsRemaining ?? 0 }}</strong>
+        <span>restantes</span>
       </div>
-    </div>
+    </section>
 
     <!-- 3. Agenda Semanal (Próximos 7 días) -->
-    <div class="mb-4">
-      <h6 class="fw-bold mb-2 text-dark">Agenda de los Próximos 7 Días</h6>
-      <div class="agenda-list bg-white rounded-4 shadow-sm p-2">
+    <section class="agenda-section">
+      <h3 class="section-title">Agenda próximos 7 días</h3>
+      <div class="agenda-list">
         <div
           v-for="item in weeklyAgenda"
           :key="item.date"
-          class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom-subtle agenda-item"
+          class="agenda-row"
           data-test="agenda-item"
         >
-          <div class="d-flex align-items-center gap-3">
+          <div class="agenda-left">
             <span
-              class="badge rounded-circle p-2 d-flex align-items-center justify-content-center sigla-badge"
+              class="sigla-badge sigla-dot"
               :class="getSiglaClass(item.sigla)"
             >
               {{ item.sigla }}
             </span>
-            <div>
-              <div class="fw-semibold text-dark small">{{ item.dayName }} ({{ item.date.slice(5) }})</div>
-              <div class="text-muted" style="font-size: 0.75rem;">
-                {{ item.shiftName }} &bull; {{ item.serviceName }}
-              </div>
+            <div class="agenda-text">
+              <span class="agenda-day">{{ item.dayName }} {{ item.date.slice(8) }}/{{ item.date.slice(5, 7) }}</span>
+              <span class="agenda-detail">{{ item.shiftName }} &bull; {{ item.serviceName }}</span>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
+        <div v-if="!weeklyAgenda?.length" class="agenda-empty">
+          Sin turnos en la próxima semana
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -204,54 +205,319 @@ async function handleDownloadAdvance() {
 </script>
 
 <style scoped lang="scss">
+@use '@/assets/styles/portal-theme' as t;
+
 .portal-home {
-  max-width: 540px;
+  max-width: t.$portal-max-width;
   margin: 0 auto;
+  padding: t.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: t.$space-5;
 }
 
+// --- Greeting ---
+.greeting-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.greeting-name {
+  font-size: t.$font-size-xl;
+  font-weight: t.$font-weight-bold;
+  color: t.$zuri-text-heading;
+  letter-spacing: t.$letter-spacing-tight;
+  margin: 0 0 2px;
+}
+
+.greeting-role {
+  font-size: t.$font-size-sm;
+  color: t.$zuri-text-muted;
+}
+
+.month-chip {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-medium;
+  color: t.$zuri-text-muted;
+  background: t.$zuri-surface-raised;
+  border: 1px solid t.$zuri-border;
+  padding: t.$space-1 t.$space-3;
+  border-radius: t.$radius-sm;
+  white-space: nowrap;
+}
+
+// --- Next Shift Card ---
 .next-shift-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
-  border-left: 5px solid #0d6efd !important;
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-lg;
+  padding: t.$space-5;
+  box-shadow: t.$shadow-sm;
+  border-left: 4px solid t.$zuri-brand;
 }
 
-.kpi-card {
-  border: 1px solid #e9ecef;
+.next-shift-header {
+  margin-bottom: t.$space-3;
 }
 
-.agenda-list {
-  .agenda-item:last-child {
-    border-bottom: none !important;
+.next-shift-label {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-brand;
+  text-transform: uppercase;
+  letter-spacing: t.$letter-spacing-label;
+}
+
+.next-shift-service {
+  font-size: t.$font-size-lg;
+  font-weight: t.$font-weight-bold;
+  color: t.$zuri-text-heading;
+  margin: 0 0 t.$space-2;
+}
+
+.next-shift-meta {
+  display: flex;
+  align-items: center;
+  gap: t.$space-2;
+  font-size: t.$font-size-sm;
+  color: t.$zuri-text-muted;
+  margin-bottom: t.$space-2;
+
+  .meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .meta-divider {
+    color: t.$zuri-text-subtle;
   }
 }
 
-.sigla-badge {
+.next-shift-location {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  i {
+    color: t.$zuri-danger;
+    font-size: 0.7rem;
+  }
+}
+
+// --- Empty Shift ---
+.empty-shift-card {
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-lg;
+  padding: t.$space-8 t.$space-4;
+  text-align: center;
+  border: 1px dashed t.$zuri-border;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  color: t.$zuri-text-subtle;
+  margin-bottom: t.$space-3;
+}
+
+.empty-title {
+  font-size: t.$font-size-base;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-body;
+  margin: 0 0 t.$space-1;
+}
+
+.empty-desc {
+  font-size: t.$font-size-sm;
+  color: t.$zuri-text-muted;
+  margin: 0;
+}
+
+// --- KPI Section ---
+.kpi-section {
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-lg;
+  padding: t.$space-5;
+  box-shadow: t.$shadow-sm;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: t.$space-4;
+}
+
+.section-title {
+  font-size: t.$font-size-base;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-heading;
+  margin: 0;
+}
+
+.download-link {
+  background: none;
+  border: none;
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-accent;
+  cursor: pointer;
+  padding: t.$space-1 t.$space-2;
+  border-radius: t.$radius-xs;
+  transition: all t.$transition-base;
+
+  &:hover {
+    background: t.$zuri-accent-subtle;
+    color: t.$zuri-brand;
+  }
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: t.$space-3;
+  margin-bottom: t.$space-4;
+}
+
+.kpi-item {
+  text-align: center;
+  padding: t.$space-3 t.$space-2;
+  background: t.$zuri-surface;
+  border-radius: t.$radius-md;
+  border: 1px solid t.$zuri-divider;
+}
+
+.kpi-value {
+  display: block;
+  font-size: t.$font-size-xl;
+  font-weight: t.$font-weight-bold;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: t.$letter-spacing-tight;
+  line-height: 1.2;
+  margin-bottom: 2px;
+
+  &--primary { color: t.$zuri-brand; }
+  &--warm    { color: t.$zuri-warning; }
+  &--cool    { color: t.$zuri-accent; }
+}
+
+.kpi-label {
+  font-size: t.$font-size-xs;
+  font-weight: t.$font-weight-medium;
+  color: t.$zuri-text-muted;
+  letter-spacing: t.$letter-spacing-wide;
+}
+
+.shifts-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: t.$space-1;
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+  padding: t.$space-3;
+  background: t.$zuri-surface;
+  border-radius: t.$radius-sm;
+
+  .shifts-done   { color: t.$zuri-success; font-variant-numeric: tabular-nums; }
+  .shifts-pending { color: t.$zuri-text-body; font-variant-numeric: tabular-nums; }
+  .summary-dot   { color: t.$zuri-text-subtle; }
+}
+
+// --- Agenda ---
+.agenda-section {
+  .section-title {
+    margin-bottom: t.$space-3;
+  }
+}
+
+.agenda-list {
+  background: t.$zuri-surface-raised;
+  border-radius: t.$radius-lg;
+  overflow: hidden;
+  box-shadow: t.$shadow-sm;
+}
+
+.agenda-row {
+  display: flex;
+  align-items: center;
+  padding: t.$space-3 t.$space-4;
+  border-bottom: 1px solid t.$zuri-divider;
+  transition: background t.$transition-fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: t.$zuri-surface;
+  }
+}
+
+.agenda-left {
+  display: flex;
+  align-items: center;
+  gap: t.$space-3;
+}
+
+.sigla-dot {
   width: 32px;
   height: 32px;
-  font-weight: 700;
-  font-size: 0.85rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: t.$font-weight-bold;
+  font-size: t.$font-size-sm;
+  flex-shrink: 0;
 }
 
 .sigla-largo {
-  background-color: #fef08a !important;
-  color: #854d0e !important;
-  border: 1px solid #fde047 !important;
+  background-color: t.$sigla-largo-bg;
+  color: t.$sigla-largo-text;
+  border: 1px solid t.$sigla-largo-border;
 }
 
 .sigla-noche {
-  background-color: #dbeafe !important;
-  color: #1e40af !important;
-  border: 1px solid #bfdbfe !important;
+  background-color: t.$sigla-noche-bg;
+  color: t.$sigla-noche-text;
+  border: 1px solid t.$sigla-noche-border;
 }
 
 .sigla-libre {
-  background-color: #dcfce7 !important;
-  color: #166534 !important;
-  border: 1px solid #bbf7d0 !important;
+  background-color: t.$sigla-libre-bg;
+  color: t.$sigla-libre-text;
+  border: 1px solid t.$sigla-libre-border;
 }
 
 .sigla-default {
-  background-color: #f1f5f9 !important;
-  color: #475569 !important;
-  border: 1px solid #cbd5e1 !important;
+  background-color: t.$zuri-divider;
+  color: t.$zuri-text-muted;
+  border: 1px solid t.$zuri-border;
+}
+
+.agenda-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.agenda-day {
+  font-size: t.$font-size-sm;
+  font-weight: t.$font-weight-semi;
+  color: t.$zuri-text-heading;
+}
+
+.agenda-detail {
+  font-size: t.$font-size-xs;
+  color: t.$zuri-text-muted;
+}
+
+.agenda-empty {
+  padding: t.$space-6;
+  text-align: center;
+  font-size: t.$font-size-sm;
+  color: t.$zuri-text-subtle;
 }
 </style>
