@@ -28,8 +28,21 @@ export const useDashboardStore = defineStore('dashboard', () => {
     refresh = false,
   ) => {
     if (serviceId) selectedServiceId.value = serviceId
-    if (month) selectedMonth.value = month
-    if (year) selectedYear.value = year
+    if (month !== undefined && month !== null) {
+      const m = typeof month === 'object' ? (month as any).value : month
+      selectedMonth.value = Number(m)
+    }
+    if (year !== undefined && year !== null) {
+      const y = typeof year === 'object' ? (year as any).value : year
+      selectedYear.value = Number(y)
+    }
+
+    if (typeof selectedMonth.value === 'object' && selectedMonth.value !== null) {
+      selectedMonth.value = Number((selectedMonth.value as any).value)
+    }
+    if (typeof selectedYear.value === 'object' && selectedYear.value !== null) {
+      selectedYear.value = Number((selectedYear.value as any).value)
+    }
 
     if (!selectedServiceId.value) return
 

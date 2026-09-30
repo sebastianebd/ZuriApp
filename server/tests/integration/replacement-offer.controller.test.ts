@@ -607,6 +607,7 @@ describe('Replacement Offer Controller - Integration & Cascade Flow (TDD RED)', 
         positionId: mockPositionId,
         fecha_inicio: new Date('2026-10-15T08:00:00.000Z'),
         fecha_termino: new Date('2026-10-15T20:00:00.000Z'),
+        status: 'open',
         applicants: [],
       };
 

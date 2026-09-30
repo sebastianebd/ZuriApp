@@ -133,14 +133,33 @@ function handleSubmit() {
       <!-- Body -->
       <div class="modal-body-custom custom-scrollbar">
         <form @submit.prevent="handleSubmit">
-          <!-- Row 1: Sigla & Color -->
-          <div class="row g-3 mb-4">
-            <!-- Col 1: Sigla & Estado -->
-            <div class="col-5">
+          <!-- SECCIÓN 1: IDENTIFICACIÓN -->
+          <div class="vanguard-section-card mb-3 p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <span class="section-indicator bg-primary"></span>
+                <h6 class="fw-bold text-dark mb-0 section-heading">Identidad Visual</h6>
+              </div>
+              <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+                <label class="form-check-label x-small fw-bold text-muted mb-0" for="siglaActiveSwitch">{{
+                  formData.activo ? 'Activa' : 'Inactiva'
+                }}</label>
+                <input
+                  class="form-check-input mt-0"
+                  type="checkbox"
+                  role="switch"
+                  id="siglaActiveSwitch"
+                  v-model="formData.activo"
+                  style="cursor: pointer;"
+                />
+              </div>
+            </div>
+
+            <div class="row g-3">
               <!-- Sigla -->
-              <div class="mb-3">
+              <div class="col-md-3">
                 <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                  >Sigla</label
+                  >Sigla <span class="text-danger">*</span></label
                 >
                 <input
                   type="text"
@@ -155,128 +174,105 @@ function handleSubmit() {
                 </div>
               </div>
 
-              <!-- Estado -->
-              <div>
-                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-1"
-                  >Estado</label
+              <!-- Nombre -->
+              <div class="col-md-5">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Nombre de Referencia <span class="text-danger">*</span></label
                 >
-                <div class="form-check form-switch">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                    id="siglaActiveSwitch"
-                    v-model="formData.activo"
-                  />
-                  <label class="form-check-label x-small fw-bold ms-2" for="siglaActiveSwitch">{{
-                    formData.activo ? 'Activa' : 'Inactiva'
-                  }}</label>
+                <input
+                  type="text"
+                  class="form-control custom-input"
+                  v-model="formData.nombre"
+                  placeholder="Ej: Libre"
+                  :class="{ 'is-invalid': errors.nombre }"
+                />
+                <div v-if="errors.nombre" class="text-danger x-small fw-bold mt-1">
+                  {{ errors.nombre }}
                 </div>
               </div>
-            </div>
 
-            <!-- Col 2: Color -->
-            <div class="col-7">
-              <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                >Color Distintivo</label
-              >
-              <div class="d-flex gap-2 align-items-start">
-                <!-- Color Input Wrapper -->
-                <div
-                  class="rounded-circle shadow-sm flex-shrink-0"
-                  style="
-                    width: 48px;
-                    height: 48px;
-                    overflow: hidden;
-                    cursor: pointer;
-                    border: 1px solid rgba(0, 0, 0, 0.1);
-                  "
+              <!-- Color -->
+              <div class="col-md-4">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Color Base</label
                 >
-                  <input
-                    type="color"
-                    class="border-0 p-0 m-0"
-                    style="
-                      width: 150%;
-                      height: 150%;
-                      transform: translate(-15%, -15%);
-                      cursor: pointer;
-                    "
-                    v-model="formData.color"
-                    title="Elegir color"
-                  />
-                </div>
-
-                <!-- Pastel Presets -->
-                <div class="d-flex gap-1 flex-wrap align-content-start pt-1">
-                  <button
-                    v-for="c in presets"
-                    :key="c"
-                    type="button"
-                    class="btn btn-sm rounded-circle border shadow-sm"
-                    style="width: 24px; height: 24px"
-                    :style="{ backgroundColor: c }"
-                    @click="formData.color = c"
-                  ></button>
+                <div class="d-flex gap-2 align-items-center">
+                  <div
+                    class="rounded-circle shadow-sm flex-shrink-0"
+                    style="width: 38px; height: 38px; overflow: hidden; cursor: pointer; border: 1px solid rgba(0, 0, 0, 0.1);"
+                  >
+                    <input
+                      type="color"
+                      class="border-0 p-0 m-0"
+                      style="width: 150%; height: 150%; transform: translate(-15%, -15%); cursor: pointer;"
+                      v-model="formData.color"
+                      title="Elegir color"
+                    />
+                  </div>
+                  <div class="d-flex gap-1 flex-wrap align-content-start">
+                    <button
+                      v-for="c in presets"
+                      :key="c"
+                      type="button"
+                      class="btn btn-sm rounded-circle border shadow-sm p-0"
+                      style="width: 20px; height: 20px"
+                      :style="{ backgroundColor: c }"
+                      @click="formData.color = c"
+                    ></button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Nombre -->
-          <div class="mb-4">
-            <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-              >Nombre Referencia</label
-            >
-            <input
-              type="text"
-              class="form-control custom-input"
-              v-model="formData.nombre"
-              placeholder="Ej: Turno Largo (08-20)"
-              :class="{ 'is-invalid': errors.nombre }"
-            />
-            <div v-if="errors.nombre" class="text-danger x-small fw-bold mt-1">
-              {{ errors.nombre }}
+          <!-- SECCIÓN 2: HORARIOS Y NOTAS -->
+          <div class="vanguard-section-card mb-3 p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <span class="section-indicator bg-info"></span>
+                <h6 class="fw-bold text-dark mb-0 section-heading">Horarios por Defecto & Notas</h6>
+              </div>
             </div>
-          </div>
 
-          <!-- Horarios Default -->
-          <div class="row g-3 mb-4">
-            <div class="col-6">
-              <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                >Entrada (Defecto)</label
-              >
-              <input
-                type="time"
-                class="form-control custom-input text-center"
-                v-model="formData.turno_entrada"
-              />
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Entrada (Opcional)</label
+                >
+                <input
+                  type="time"
+                  class="form-control custom-input text-center"
+                  v-model="formData.turno_entrada"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Salida (Opcional)</label
+                >
+                <input
+                  type="time"
+                  class="form-control custom-input text-center"
+                  v-model="formData.turno_salida"
+                />
+              </div>
+              <div class="col-12">
+                <div class="form-text x-small text-muted m-0">
+                  * Estos horarios se cargarán automáticamente al seleccionar la sigla.
+                </div>
+              </div>
+              
+              <div class="col-12 mt-3">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Notas Adicionales</label
+                >
+                <textarea
+                  class="form-control custom-input"
+                  v-model="formData.descripcion"
+                  rows="2"
+                  placeholder="Detalles sobre el uso de esta sigla..."
+                ></textarea>
+              </div>
             </div>
-            <div class="col-6">
-              <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                >Salida (Defecto)</label
-              >
-              <input
-                type="time"
-                class="form-control custom-input text-center"
-                v-model="formData.turno_salida"
-              />
-            </div>
-            <div class="form-text x-small text-muted mt-1">
-              * Estos horarios se cargarán automáticamente al usar esta sigla.
-            </div>
-          </div>
-
-          <!-- Descripcion -->
-          <div class="mb-4">
-            <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-              >Descripción</label
-            >
-            <textarea
-              class="form-control custom-input"
-              rows="2"
-              v-model="formData.descripcion"
-              placeholder="Notas adicionales..."
-            ></textarea>
           </div>
 
           <!-- Footer -->
@@ -362,6 +358,25 @@ function handleSubmit() {
   background: #e2e8f0;
   color: #0f172a;
   transform: rotate(90deg);
+}
+
+.vanguard-section-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+
+.section-indicator {
+  width: 6px;
+  height: 18px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.section-heading {
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
 }
 
 .custom-input {

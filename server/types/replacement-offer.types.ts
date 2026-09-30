@@ -30,6 +30,9 @@ export interface ReplacementOfferListItemDTO {
   rut_saliente?: string;
   motivo?: string;
   observaciones?: string;
+  awardedStaffId?: string;
+  createdAt?: string;
+  createdBy?: string;
 }
 
 export interface AwardOfferDTO {
@@ -42,13 +45,9 @@ export interface ApplyOfferDTO {
 }
 
 export interface CandidateScoreBreakdown {
-  previousReplacements: number;        // +30 pts (experiencia previa en el servicio)
-  accumulatedHoursMonthly: number;     // +25 pts (menor carga acumulada en el mes)
-  hoursSinceLastShift: number;         // +20 pts (descanso post-turno > 24h)
-  matchesPosition: boolean;            // +15 pts (cargo exacto)
-  cleanRecord: boolean;                // +10 pts (sin avisos de indisponibilidad)
-  nearWeeklyCapPenalty: boolean;       // -20 pts (cercano al límite de 44h semanales)
-  nightShiftAdjacencyPenalty: boolean; // -30 pts (noche inmediata contigua)
+  matchesPosition: boolean;            // +30 pts (cargo exacto)
+  hoursSinceLastShift: number;         // +20 pts (descanso post-turno >= 24h)
+  historicalHoursInService: number;    // +1 pt por cada 12 hrs trabajadas (fidelidad)
 }
 
 export interface ScoredCandidateDTO {
@@ -59,6 +58,8 @@ export interface ScoredCandidateDTO {
   positionName: string;
   score: number;
   breakdown: CandidateScoreBreakdown;
+  isValid?: boolean;
+  violations?: string[];
 }
 
 export interface OfferScoringResponseDTO {

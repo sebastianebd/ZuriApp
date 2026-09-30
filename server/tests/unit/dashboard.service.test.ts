@@ -87,6 +87,46 @@ describe("Dashboard Service - Unit Tests (TDD RED)", () => {
     });
   });
 
+  describe("calculateAbsenteeismReasons", () => {
+    it("debería calcular correctamente conteos, porcentajes ordenados descendentemente y mapear colores/etiquetas", () => {
+      const reasonsMap = new Map<string, number>([
+        ["LICENCIA_MEDICA", 6],
+        ["FERIADO_LEGAL", 3],
+        ["PERMISO_ADMINISTRATIVO", 1],
+      ]);
+
+      const reasons = dashboardService.calculateAbsenteeismReasons(reasonsMap, 10);
+
+      expect(reasons).toHaveLength(3);
+      expect(reasons[0]).toEqual({
+        motivo: "LICENCIA_MEDICA",
+        label: "Licencia Médica",
+        color: "#ef4444",
+        count: 6,
+        percentage: 60.0,
+      });
+      expect(reasons[1]).toEqual({
+        motivo: "FERIADO_LEGAL",
+        label: "Feriado Legal",
+        color: "#10b981",
+        count: 3,
+        percentage: 30.0,
+      });
+      expect(reasons[2]).toEqual({
+        motivo: "PERMISO_ADMINISTRATIVO",
+        label: "Permiso Administrativo",
+        color: "#3b82f6",
+        count: 1,
+        percentage: 10.0,
+      });
+    });
+
+    it("debería retornar array vacío y no fallar si no hay reemplazos", () => {
+      const reasons = dashboardService.calculateAbsenteeismReasons(new Map(), 0);
+      expect(reasons).toEqual([]);
+    });
+  });
+
   describe("calculateCoverageMetrics", () => {
     it("debería retornar configured: false, overallPercentage: null y status: optimal si dotacion_minima no está configurada", () => {
       const serviceWithoutStaffing: any = {

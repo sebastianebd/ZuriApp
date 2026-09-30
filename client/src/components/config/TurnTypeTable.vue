@@ -1,95 +1,90 @@
 <template>
-  <div class="modern-table-container">
-    <table class="table modern-table mb-0">
-      <thead>
-        <tr>
-          <th scope="col" class="ps-4" style="width: 10%">Código</th>
-          <th scope="col" style="width: 25%">Turno</th>
-          <th scope="col" style="width: 25%">Detalles</th>
-          <th scope="col" style="width: 15%">Ciclo</th>
-          <th scope="col" style="width: 10%">Estado</th>
-          <th scope="col" class="text-end pe-4" style="width: 15%">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Empty State -->
-        <tr v-if="turnTypes.length === 0">
-          <td colspan="6" class="text-center py-5 text-muted small">
-            No hay tipos de turno registrados
-          </td>
-        </tr>
+  <div class="d-flex flex-column gap-3 pb-4 px-2 mt-2">
+    <!-- Empty State -->
+    <div v-if="turnTypes.length === 0" class="text-center py-5">
+      <div class="d-flex flex-column align-items-center justify-content-center text-slate-400">
+        <div class="empty-icon-box mb-3"><i class="bi bi-clock-history display-6"></i></div>
+        <span class="text-sm fw-medium">No hay tipos de turno registrados en el sistema</span>
+      </div>
+    </div>
 
-        <tr
-          v-for="(item, index) in turnTypes"
-          :key="item._id"
-          class="data-row"
-          :class="{ 'row-inactive': !item.activo }"
-          :style="{ animationDelay: `${index * 50}ms` }"
-        >
-          <!-- Código (New First Column) -->
-          <td class="ps-4 first-cell">
-            <span class="badge bg-light text-secondary border small font-monospace">
-              {{ item.codigo || '---' }}
+    <!-- Stacked Card List -->
+    <div
+      v-for="item in turnTypes"
+      :key="item._id"
+      class="vanguard-list-card"
+      :class="{ 'opacity-75 grayscale-card': !item.activo }"
+    >
+      <div class="card-accent-line" :class="item.activo ? 'bg-indigo-500' : 'bg-slate-300'"></div>
+      
+      <div class="card-grid-layout p-4 w-100">
+        <!-- 1. Identificación -->
+        <div class="d-flex flex-column justify-content-center">
+          <span class="text-xs text-slate-400 font-monospace mb-1"><i class="bi bi-upc-scan me-1"></i>{{ item.codigo || 'S/N' }}</span>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <h6 class="m-0 text-slate-900 fw-bold fs-6">{{ formatTitleCase(item.nombre) }}</h6>
+            <span v-if="item.alias" class="badge bg-indigo-50 text-indigo-600 border border-indigo-200" style="font-size: 0.65rem;">
+              {{ item.alias }}
             </span>
-          </td>
+          </div>
+          <span class="text-xs text-slate-500 d-flex align-items-center gap-1" style="max-width: 250px; line-height: 1.3">
+            {{ item.descripcion || 'Sin descripción' }}
+          </span>
+        </div>
 
-          <!-- Turno (Info Only) -->
-          <td>
-            <div class="d-flex flex-column">
-              <span class="fw-bold text-dark">{{ formatTitleCase(item.nombre) }}</span>
-              <div class="d-flex gap-2 align-items-center mt-1">
-                <span
-                  v-if="item.alias"
-                  class="badge bg-info bg-opacity-10 text-info border border-info small"
-                >
-                  {{ item.alias }}
-                </span>
-              </div>
+        <!-- 2. Detalles & Ciclo -->
+        <div class="d-flex flex-column justify-content-center gap-2 border-start ps-4">
+          <div class="d-flex align-items-center gap-3">
+            <div class="bento-avatar bg-slate-50 text-slate-500 border">
+              <i class="bi bi-calendar2-week-fill"></i>
             </div>
-          </td>
-
-          <!-- Detalles -->
-          <td>
-            <div class="d-flex flex-column gap-1">
-              <span class="text-dark small fw-medium" v-if="item.jornada">
-                {{ item.jornada }}
+            <div class="lh-1">
+              <span class="text-sm fw-bold d-block mb-1 text-slate-700">
+                {{ item.jornada || 'N/A' }}
               </span>
-              <span class="text-muted x-small text-truncate" style="max-width: 200px">
-                {{ item.descripcion || 'Sin descripción' }}
+              <span class="text-xxs text-slate-500 text-uppercase letter-spacing-1">Tipo de Jornada</span>
+            </div>
+          </div>
+          
+          <div class="d-flex align-items-center gap-3">
+            <div class="bento-avatar bg-slate-50 text-slate-500 border">
+              <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <div class="lh-1">
+              <span class="text-sm fw-bold text-slate-700 d-block mb-1">
+                {{ item.cantidad_dias }} Días
               </span>
+              <span class="text-xxs text-slate-500 text-uppercase letter-spacing-1">Duración del Ciclo</span>
             </div>
-          </td>
+          </div>
+        </div>
 
-          <!-- Ciclo -->
-          <td>
-            <span class="badge bg-light text-dark border fw-normal px-3 py-1">
-              {{ item.cantidad_dias }} Días
-            </span>
-          </td>
-
-          <!-- Estado -->
-          <td>
-            <div class="h-100 d-flex align-items-center justify-content-center">
-              <span class="status-glass" :class="item.activo ? 'glass-success' : 'glass-inactive'">
-                {{ item.activo ? 'ACTIVO' : 'INACTIVO' }}
-              </span>
-            </div>
-          </td>
-
-          <!-- Acciones -->
-          <td class="pe-4 text-end last-cell">
-            <div class="actions-wrapper h-100 d-flex align-items-center justify-content-end gap-2">
-              <button class="btn-glass btn-edit" @click="$emit('edit', item)" title="Editar">
-                <i class="bi bi-pencil-fill"></i>
-              </button>
-              <button class="btn-glass btn-delete" @click="$emit('delete', item)" title="Eliminar">
-                <i class="bi bi-trash3-fill"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+        <!-- 3. Acciones & Estado -->
+        <div class="d-flex flex-column align-items-end justify-content-center gap-3 ms-auto">
+          <span class="status-bento-badge" :class="item.activo ? 'badge-active-indigo' : 'badge-inactive'">
+            <span class="pulse-dot-indigo" v-if="item.activo"></span>
+            {{ item.activo ? 'Jornada Activa' : 'Inactiva' }}
+          </span>
+          
+          <div class="d-flex gap-2">
+            <button
+              class="bento-action-btn bg-white"
+              @click="$emit('edit', item)"
+              title="Editar"
+            >
+              <i class="bi bi-pencil-square text-slate-600"></i>
+            </button>
+            <button
+              class="bento-action-btn bg-white text-danger-hover"
+              @click="$emit('delete', item)"
+              title="Eliminar"
+            >
+              <i class="bi bi-trash3 text-slate-400"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -105,137 +100,145 @@ defineEmits(['edit', 'delete'])
 </script>
 
 <style scoped>
-/* --- Animation Keyframes --- */
-@keyframes slideUpFade {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Colors mapped to standard slate palette */
+.text-slate-900 { color: #0f172a; }
+.text-slate-800 { color: #1e293b; }
+.text-slate-700 { color: #334155; }
+.text-slate-600 { color: #475569; }
+.text-slate-500 { color: #64748b; }
+.text-slate-400 { color: #94a3b8; }
+.bg-slate-50 { background-color: #f8fafc; }
+.bg-slate-100 { background-color: #f1f5f9; }
+.bg-slate-300 { background-color: #cbd5e1; }
+.bg-indigo-500 { background-color: #6366f1; }
+.bg-indigo-50 { background-color: #eef2ff; }
+.border-indigo-200 { border-color: #c7d2fe; }
+.text-indigo-600 { color: #4f46e5; }
 
-/* --- Container & Table Reset --- */
-.modern-table-container {
-  padding: 0 4px 10px 4px;
-}
+.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+.text-xxs { font-size: 0.65rem; }
+.letter-spacing-1 { letter-spacing: 0.05em; }
 
-.modern-table {
-  border-collapse: separate;
-  border-spacing: 0 8px; /* Vertical gap */
-  width: 100%;
-}
-
-.modern-table thead th {
-  border: none;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  color: #94a3b8;
-  padding-bottom: 8px;
-  background: transparent;
-}
-
-/* --- Row Styling --- */
-.data-row {
-  animation: slideUpFade 0.5s ease-out forwards;
-  opacity: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-}
-
-.data-row td {
-  background-color: white;
-  border-top: 1px solid rgba(0, 0, 0, 0.02);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.02);
-  padding: 1rem 0.5rem;
-  vertical-align: middle;
-  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.data-row td.first-cell {
-  border-left: 1px solid rgba(0, 0, 0, 0.02);
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
-}
-
-.data-row td.last-cell {
-  border-right: 1px solid rgba(0, 0, 0, 0.02);
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
-}
-
-.data-row:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-  z-index: 10;
+/* Stacked Card Layout */
+.vanguard-list-card {
   position: relative;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  display: flex;
+  overflow: hidden;
+  transition: all 0.2s ease-in-out;
 }
 
-.row-inactive td {
-  opacity: 0.6;
-  background-color: #f8fafc;
+.vanguard-list-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
 }
 
-.x-small {
-  font-size: 0.75rem;
+.grayscale-card {
+  filter: grayscale(100%);
 }
 
-/* Glass Status */
-.status-glass {
-  padding: 6px 12px;
-  border-radius: 99px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+.card-accent-line {
+  width: 4px;
+  flex-shrink: 0;
 }
 
-.glass-success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #15803d;
-  border: 1px solid rgba(34, 197, 94, 0.2);
-}
-.glass-inactive {
-  background: rgba(100, 116, 139, 0.1); /* Slate */
-  color: #475569;
-  border: 1px solid rgba(100, 116, 139, 0.2);
+.card-grid-layout {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 200px;
+  gap: 1.5rem;
+  align-items: stretch;
 }
 
-/* Glass Buttons */
-.btn-glass {
+/* Typography & Avatars */
+.bento-avatar {
   width: 34px;
   height: 34px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
   font-size: 0.9rem;
-  color: #cbd5e1;
+  font-weight: 700;
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
-.data-row:hover .btn-glass {
+/* Status Badge */
+.status-bento-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-active-indigo {
+  background-color: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #c7d2fe;
+}
+
+.badge-inactive {
+  background-color: #f1f5f9;
   color: #64748b;
-  background: #f8fafc;
+  border: 1px solid #e2e8f0;
 }
 
-.btn-glass:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.pulse-dot-indigo {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #6366f1;
+  box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+  animation: pulse-indigo 2s infinite;
 }
 
-.btn-edit:hover {
-  background: #eff6ff;
-  color: #3b82f6;
+@keyframes pulse-indigo {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
 }
-.btn-delete:hover {
-  background: #fef2f2;
-  color: #ef4444;
+
+/* Actions */
+.bento-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.bento-action-btn:hover {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.bento-action-btn.text-danger-hover:hover i {
+  color: #ef4444 !important;
+}
+
+.empty-icon-box {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
 }
 </style>

@@ -227,7 +227,7 @@ function onSubmit() {
 
 <template>
   <div v-if="visible" class="modal-backdrop-custom">
-    <div class="modal-content-custom slide-up-fade">
+    <div class="modal-content-custom slide-up-fade modal-custom-width">
       <!-- Header -->
       <div class="modal-header-custom">
         <h5 class="fw-bold m-0 text-dark">{{ modalTitle }}</h5>
@@ -239,29 +239,38 @@ function onSubmit() {
       <!-- Body -->
       <div class="modal-body-custom">
         <Form @submit="onSubmit" :validation-schema="schema" v-slot="{ errors }">
-          <!-- GENERAL SECTION -->
-          <div class="section-block mb-4">
-            <h6 class="section-title">Información General</h6>
+          
+          <!-- SECCIÓN 1: INFORMACIÓN GENERAL -->
+          <div class="vanguard-section-card mb-3 p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <span class="section-indicator bg-primary"></span>
+                <h6 class="fw-bold text-dark mb-0 section-heading">Información General</h6>
+              </div>
+            </div>
 
-            <!-- Código + Nombre -->
-            <div class="row g-3 mb-3">
-              <div class="col-md-3" v-if="formData.codigo">
-                <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                  >CODIGO</label
-                >
-                <div class="p-2 bg-light rounded border text-center font-monospace fw-bold">
+            <div class="row g-3">
+              <div class="col-md-4" v-if="formData.codigo">
+                <label class="form-label staff-field-label d-flex align-items-center gap-1 mb-1">
+                  <i class="bi bi-upc-scan text-secondary"></i>
+                  <span>Código</span>
+                </label>
+                <div class="p-2 bg-light rounded-3 border text-center font-monospace fw-bold small">
                   {{ formData.codigo }}
                 </div>
               </div>
-              <div :class="formData.codigo ? 'col-md-9' : 'col-12'">
-                <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                  >Nombre del Servicio</label
-                >
+              
+              <div :class="formData.codigo ? 'col-md-8' : 'col-12'">
+                <label class="form-label staff-field-label d-flex align-items-center gap-1 mb-1">
+                  <i class="bi bi-hospital text-secondary"></i>
+                  <span>Nombre del Servicio</span>
+                  <span class="text-danger">*</span>
+                </label>
                 <Field
                   name="nombre"
                   v-model="formData.nombre"
                   type="text"
-                  class="form-control custom-input"
+                  class="form-control form-control-sm modern-input"
                   :class="{ 'is-invalid': errors.nombre }"
                   placeholder="Ej: UCI Pediátrica"
                 />
@@ -270,40 +279,41 @@ function onSubmit() {
             </div>
 
             <!-- Activo Switch -->
-            <div v-if="isEditing" class="d-flex align-items-center mb-2">
-              <div class="form-check form-switch custom-switch">
+            <div v-if="isEditing" class="mt-3 pt-3 border-top d-flex align-items-center justify-content-between">
+              <div>
+                <span class="d-block text-dark fw-bold small">Estado Operativo</span>
+                <span class="d-block text-muted x-small">Determina si el servicio está habilitado</span>
+              </div>
+              <div class="form-check form-switch m-0">
                 <input
                   type="checkbox"
                   class="form-check-input"
                   v-model="formData.activo"
-                  id="activoSw"
+                  style="width: 2.5rem; height: 1.25rem; cursor: pointer;"
                 />
-                <label class="form-check-label fw-bold ms-2 text-dark" for="activoSw"
-                  >Servicio Activo</label
-                >
               </div>
             </div>
           </div>
 
-          <!-- LIDERAZGO SECTION -->
-          <div class="section-block mb-4">
-            <h6 class="section-title text-primary">
-              <i class="bi bi-people-fill me-2"></i>Liderazgo & Gestión
-            </h6>
+          <!-- SECCIÓN 2: LIDERAZGO Y GESTIÓN -->
+          <div class="vanguard-section-card mb-3 p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <span class="section-indicator bg-info"></span>
+                <h6 class="fw-bold text-dark mb-0 section-heading">Liderazgo & Gestión</h6>
+              </div>
+            </div>
 
             <!-- Row 1: Jefe Servicio + Supervisor -->
             <div class="row g-3 mb-3">
               <!-- Jefe Servicio -->
               <div class="col-md-6">
-                <label
-                  class="form-label x-small fw-bold text-secondary text-uppercase d-flex justify-content-between align-items-center"
-                >
-                  Jefe de Servicio (1)
-                  <button
-                    type="button"
-                    class="btn btn-link p-0 text-decoration-none x-small fw-bold"
-                    @click="openUserSelector('jefe_servicio')"
-                  >
+                <label class="form-label staff-field-label d-flex justify-content-between align-items-center mb-1">
+                  <span class="d-flex align-items-center gap-1">
+                    <i class="bi bi-person-check text-secondary"></i>
+                    <span>Jefe de Servicio (1)</span>
+                  </span>
+                  <button type="button" class="btn btn-link p-0 text-decoration-none x-small fw-bold text-primary" @click="openUserSelector('jefe_servicio')">
                     <i class="bi bi-search me-1"></i>Buscar
                   </button>
                 </label>
@@ -311,37 +321,19 @@ function onSubmit() {
                 <div v-if="formData.jefe_servicio">
                   <div class="selected-IStaff-card">
                     <div class="d-flex align-items-center gap-2">
-                      <div class="avatar-sm bg-primary text-white">
+                      <div class="avatar-sm bg-light text-dark border">
                         {{ formData.jefe_servicio.firstName.charAt(0) }}
                       </div>
                       <div class="lh-sm">
-                        <div class="fw-bold x-small">
+                        <div class="fw-bold x-small text-dark">
                           {{ formData.jefe_servicio.firstName }} {{ formData.jefe_servicio.lastName }}
                         </div>
                         <div class="text-muted x-xx-small">{{ formData.jefe_servicio.rut }}</div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      class="btn-remove"
-                      @click="removeSingleUser('jefe_servicio')"
-                    >
+                    <button type="button" class="btn-remove" @click="removeSingleUser('jefe_servicio')">
                       <i class="bi bi-x"></i>
                     </button>
-                  </div>
-                  <!-- Conflict Warning -->
-                  <div v-if="getUserConflicts(formData.jefe_servicio).length > 0" class="mt-2">
-                    <div
-                      v-for="conflict in getUserConflicts(formData.jefe_servicio)"
-                      :key="conflict"
-                      class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-2 border-0 rounded-3"
-                    >
-                      <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
-                      <span class="x-xx-small fw-bold text-dark lh-1"
-                        >Este usuario ya tiene el rol: <br />
-                        {{ conflict }}</span
-                      >
-                    </div>
                   </div>
                 </div>
                 <div v-else class="empty-selection" @click="openUserSelector('jefe_servicio')">
@@ -352,15 +344,12 @@ function onSubmit() {
 
               <!-- Supervisor -->
               <div class="col-md-6">
-                <label
-                  class="form-label x-small fw-bold text-secondary text-uppercase d-flex justify-content-between align-items-center"
-                >
-                  Supervisor (1)
-                  <button
-                    type="button"
-                    class="btn btn-link p-0 text-decoration-none x-small fw-bold"
-                    @click="openUserSelector('supervisor')"
-                  >
+                <label class="form-label staff-field-label d-flex justify-content-between align-items-center mb-1">
+                  <span class="d-flex align-items-center gap-1">
+                    <i class="bi bi-person-badge text-secondary"></i>
+                    <span>Supervisor (1)</span>
+                  </span>
+                  <button type="button" class="btn btn-link p-0 text-decoration-none x-small fw-bold text-primary" @click="openUserSelector('supervisor')">
                     <i class="bi bi-search me-1"></i>Buscar
                   </button>
                 </label>
@@ -368,37 +357,19 @@ function onSubmit() {
                 <div v-if="formData.supervisor">
                   <div class="selected-IStaff-card">
                     <div class="d-flex align-items-center gap-2">
-                      <div class="avatar-sm bg-info text-dark">
+                      <div class="avatar-sm bg-light text-dark border">
                         {{ formData.supervisor.firstName.charAt(0) }}
                       </div>
                       <div class="lh-sm">
-                        <div class="fw-bold x-small">
+                        <div class="fw-bold x-small text-dark">
                           {{ formData.supervisor.firstName }} {{ formData.supervisor.lastName }}
                         </div>
                         <div class="text-muted x-xx-small">{{ formData.supervisor.rut }}</div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      class="btn-remove"
-                      @click="removeSingleUser('supervisor')"
-                    >
+                    <button type="button" class="btn-remove" @click="removeSingleUser('supervisor')">
                       <i class="bi bi-x"></i>
                     </button>
-                  </div>
-                  <!-- Conflict Warning -->
-                  <div v-if="getUserConflicts(formData.supervisor).length > 0" class="mt-2">
-                    <div
-                      v-for="conflict in getUserConflicts(formData.supervisor)"
-                      :key="conflict"
-                      class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-2 border-0 rounded-3"
-                    >
-                      <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
-                      <span class="x-xx-small fw-bold text-dark lh-1"
-                        >Este usuario ya tiene el rol: <br />
-                        {{ conflict }}</span
-                      >
-                    </div>
                   </div>
                 </div>
                 <div v-else class="empty-selection" @click="openUserSelector('supervisor')">
@@ -410,30 +381,21 @@ function onSubmit() {
 
             <!-- Row 2: Coordinadores -->
             <div class="mb-3">
-              <label
-                class="form-label x-small fw-bold text-secondary text-uppercase d-flex justify-content-between align-items-center"
-              >
-                Coordinadores (Max 10)
-                <button
-                  type="button"
-                  class="btn btn-link p-0 text-decoration-none x-small fw-bold"
-                  @click="openUserSelectorMultiple('coordinadores')"
-                >
+              <label class="form-label staff-field-label d-flex justify-content-between align-items-center mb-1">
+                <span class="d-flex align-items-center gap-1">
+                  <i class="bi bi-people text-secondary"></i>
+                  <span>Coordinadores (Max 10)</span>
+                </span>
+                <button type="button" class="btn btn-link p-0 text-decoration-none x-small fw-bold text-primary" @click="openUserSelectorMultiple('coordinadores')">
                   <i class="bi bi-plus-lg me-1"></i>Agregar
                 </button>
               </label>
               <div class="d-flex flex-wrap gap-2">
                 <div v-for="IStaff in formData.coordinadores" :key="IStaff._id" class="chip-IStaff">
-                  <span class="x-small fw-bold">{{ IStaff.firstName }} {{ IStaff.lastName }}</span>
-                  <i
-                    class="bi bi-x ms-2 cursor-pointer"
-                    @click="removeUser('coordinadores', IStaff._id)"
-                  ></i>
+                  <span class="x-small fw-bold text-dark">{{ IStaff.firstName }} {{ IStaff.lastName }}</span>
+                  <i class="bi bi-x ms-2 cursor-pointer text-muted" @click="removeUser('coordinadores', IStaff._id)"></i>
                 </div>
-                <div
-                  v-if="formData.coordinadores.length === 0"
-                  class="text-muted x-small fst-italic py-1"
-                >
+                <div v-if="formData.coordinadores.length === 0" class="text-muted x-small fst-italic py-1">
                   Sin coordinadores asignados
                 </div>
               </div>
@@ -441,89 +403,89 @@ function onSubmit() {
 
             <!-- Row 3: Jefes de Turno -->
             <div class="mb-2">
-              <label
-                class="form-label x-small fw-bold text-secondary text-uppercase d-flex justify-content-between align-items-center"
-              >
-                Jefes de Turno (Max 10)
-                <button
-                  type="button"
-                  class="btn btn-link p-0 text-decoration-none x-small fw-bold"
-                  @click="openUserSelectorMultiple('jefes_turno')"
-                >
+              <label class="form-label staff-field-label d-flex justify-content-between align-items-center mb-1">
+                <span class="d-flex align-items-center gap-1">
+                  <i class="bi bi-diagram-3 text-secondary"></i>
+                  <span>Jefes de Turno (Max 10)</span>
+                </span>
+                <button type="button" class="btn btn-link p-0 text-decoration-none x-small fw-bold text-primary" @click="openUserSelectorMultiple('jefes_turno')">
                   <i class="bi bi-plus-lg me-1"></i>Agregar
                 </button>
               </label>
               <div class="d-flex flex-wrap gap-2">
-                <div
-                  v-for="IStaff in formData.jefes_turno"
-                  :key="IStaff._id"
-                  class="chip-IStaff bg-dark text-white border-0"
-                >
+                <div v-for="IStaff in formData.jefes_turno" :key="IStaff._id" class="chip-IStaff bg-dark text-white border-0">
                   <span class="x-small fw-bold">{{ IStaff.firstName }} {{ IStaff.lastName }}</span>
-                  <i
-                    class="bi bi-x ms-2 cursor-pointer"
-                    @click="removeUser('jefes_turno', IStaff._id)"
-                  ></i>
+                  <i class="bi bi-x ms-2 cursor-pointer text-white-50" @click="removeUser('jefes_turno', IStaff._id)"></i>
                 </div>
-                <div
-                  v-if="formData.jefes_turno.length === 0"
-                  class="text-muted x-small fst-italic py-1"
-                >
+                <div v-if="formData.jefes_turno.length === 0" class="text-muted x-small fst-italic py-1">
                   Sin jefes de turno asignados
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- UBICACION & CONTACTO -->
-          <div class="section-block">
-            <h6 class="section-title">Ubicación y Contacto</h6>
+          <!-- SECCIÓN 3: UBICACIÓN & CONTACTO -->
+          <div class="vanguard-section-card mb-3 p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <span class="section-indicator bg-warning"></span>
+                <h6 class="fw-bold text-dark mb-0 section-heading">Ubicación y Contacto</h6>
+              </div>
+            </div>
+            
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                  >Centro de Costo</label
-                >
+                <label class="form-label staff-field-label d-flex align-items-center gap-1 mb-1">
+                  <i class="bi bi-hash text-secondary"></i>
+                  <span>Centro de Costo</span>
+                </label>
                 <Field
                   name="centro_costo"
                   v-model="formData.centro_costo"
                   type="text"
-                  class="form-control custom-input"
+                  class="form-control form-control-sm modern-input"
                   placeholder="Ej: CC-2024"
                 />
               </div>
+              
               <div class="col-md-6">
-                <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                  >Ubicación Física</label
-                >
+                <label class="form-label staff-field-label d-flex align-items-center gap-1 mb-1">
+                  <i class="bi bi-geo-alt text-secondary"></i>
+                  <span>Ubicación Física</span>
+                </label>
                 <Field
                   name="ubicacion"
                   v-model="formData.ubicacion"
                   type="text"
-                  class="form-control custom-input"
+                  class="form-control form-control-sm modern-input"
                   placeholder="Ej: Piso 3, Ala Norte"
                 />
               </div>
+              
               <div class="col-md-6">
-                <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                  >Anexo Telefónico</label
-                >
+                <label class="form-label staff-field-label d-flex align-items-center gap-1 mb-1">
+                  <i class="bi bi-telephone text-secondary"></i>
+                  <span>Anexo Telefónico</span>
+                </label>
                 <Field
                   name="anexo"
                   v-model="formData.anexo"
                   type="text"
-                  class="form-control custom-input"
+                  class="form-control form-control-sm modern-input"
                   placeholder="Ej: 5544"
                 />
               </div>
+              
               <div class="col-md-6">
-                <label class="form-label x-small fw-bold text-secondary text-uppercase"
-                  >Email de Contacto</label
-                >
+                <label class="form-label staff-field-label d-flex align-items-center gap-1 mb-1">
+                  <i class="bi bi-envelope text-secondary"></i>
+                  <span>Email de Contacto</span>
+                </label>
                 <Field
                   name="email"
                   v-model="formData.email"
                   type="email"
-                  class="form-control custom-input"
+                  class="form-control form-control-sm modern-input"
                   placeholder="servicio@hospital.cl"
                 />
               </div>
@@ -531,17 +493,17 @@ function onSubmit() {
           </div>
 
           <!-- Footer Actions -->
-          <div class="d-flex justify-content-end gap-2 mt-4 pt-4 border-top">
+          <div class="vanguard-modal-footer mt-4 pt-3 d-flex justify-content-end gap-2">
             <button
               type="button"
-              class="btn btn-light btn-sm fw-bold px-4 rounded-pill border-0 text-secondary"
+              class="btn btn-secondary-pill"
               @click="$emit('close')"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              class="btn btn-primary btn-sm fw-bold px-4 rounded-pill shadow-sm"
+              class="btn btn-primary-pill"
               :disabled="loading"
             >
               <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
@@ -566,15 +528,30 @@ function onSubmit() {
 </template>
 
 <style scoped>
-/* Modal Structure copied from CargoModal */
+/* Transición Modal */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Modal Dialog Width & Elevation */
+.modal-custom-width {
+  max-width: 820px;
+}
+
 .modal-backdrop-custom {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
   z-index: 1050;
   display: flex;
   align-items: center;
@@ -584,78 +561,151 @@ function onSubmit() {
 .modal-content-custom {
   background: white;
   width: 90%;
-  max-width: 600px;
-  max-height: 90vh; /* Taller */
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  border-radius: 24px;
+  border-radius: 20px;
   padding: 0;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 
 .modal-header-custom {
-  padding: 1.5rem 2rem;
+  background: white;
   border-bottom: 1px solid #f1f5f9;
+  padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .modal-body-custom {
-  padding: 2rem;
+  padding: 1.5rem 2rem;
   overflow-y: auto;
   flex: 1;
+  background-color: #f8fafc;
 }
 
 .btn-close-custom {
-  background: #f1f5f9;
-  border: none;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
-  transition: all 0.2s;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .btn-close-custom:hover {
-  background: #e2e8f0;
+  background: #f1f5f9;
   color: #0f172a;
   transform: rotate(90deg);
 }
 
-.custom-input {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  padding: 0.75rem 1rem;
-  transition: all 0.2s;
-}
-
-.custom-input:focus {
+/* Vanguard Section Card (Double-Bezel Inner Card) */
+.vanguard-section-card {
   background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+}
+
+.section-indicator {
+  width: 4px;
+  height: 16px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+.section-heading {
+  font-size: 0.88rem;
+  letter-spacing: -0.01em;
+}
+
+/* Fields & Labels */
+.staff-field-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.01em;
+}
+
+.modern-input {
+  font-size: 0.82rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  padding: 0.5rem 0.75rem;
+  color: #1e293b;
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.modern-input:focus {
   border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  outline: none;
 }
 
-.x-small {
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
+/* Footer & Buttons */
+.vanguard-modal-footer {
+  border-top: 1px solid #f1f5f9;
 }
 
-.x-xx-small {
-  font-size: 0.65rem;
+.btn-secondary-pill {
+  background: white;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  padding: 0.45rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-secondary-pill:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.btn-primary-pill {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  padding: 0.45rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-primary-pill:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  color: white;
+}
+
+.btn-primary-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: translateY(20px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -663,26 +713,10 @@ function onSubmit() {
   }
 }
 
-/* Sections */
-.section-block {
-  background: white;
-}
-.section-title {
-  font-weight: 800;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #94a3b8;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid #f1f5f9;
-  padding-bottom: 0.5rem;
-}
-
-/* IStaff Selection Components */
 .empty-selection {
   border: 2px dashed #e2e8f0;
   border-radius: 12px;
-  height: 80px;
+  height: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -695,18 +729,16 @@ function onSubmit() {
   border-color: #3b82f6;
   background: #eff6ff;
 }
-
 .selected-IStaff-card {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.75rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: #fff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
-
 .avatar-sm {
   width: 32px;
   height: 32px;
@@ -717,7 +749,6 @@ function onSubmit() {
   font-weight: bold;
   font-size: 0.8rem;
 }
-
 .btn-remove {
   border: none;
   background: transparent;
@@ -733,7 +764,6 @@ function onSubmit() {
   background: #fee2e2;
   color: #ef4444;
 }
-
 .chip-IStaff {
   display: inline-flex;
   align-items: center;
@@ -745,8 +775,5 @@ function onSubmit() {
 }
 .chip-IStaff:hover {
   background: #e2e8f0;
-}
-.cursor-pointer {
-  cursor: pointer;
 }
 </style>

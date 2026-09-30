@@ -163,76 +163,112 @@ function onSubmit() {
       <!-- Body (Scrollable) -->
       <div class="modal-body-custom">
         <Form @submit="onSubmit" :validation-schema="schema" v-slot="{ errors }">
-          <!-- CODIGO (Editable on Create, Read Only on Update) -->
-          <div class="mb-4">
-            <label class="form-label x-small fw-bold text-secondary text-uppercase"
-              >Código (SKU)</label
-            >
-            <Field
-              name="code"
-              v-model="formData.code"
-              type="text"
-              class="form-control form-control-lg custom-input font-monospace text-uppercase"
-              :class="{ 'is-invalid': errors.code }"
-              placeholder="Ej: SYS_ADMIN"
-              :disabled="isEditing"
-            />
-            <ErrorMessage name="code" class="text-danger x-small fw-bold mt-1 d-block" />
-          </div>
-
-          <!-- Nombre -->
-          <div class="mb-4">
-            <label class="form-label x-small fw-bold text-secondary text-uppercase"
-              >Nombre del Rol</label
-            >
-            <Field
-              name="name"
-              v-model="formData.name"
-              type="text"
-              class="form-control form-control-lg custom-input"
-              :class="{ 'is-invalid': errors.name }"
-              placeholder="Ej: Administrador"
-            />
-            <ErrorMessage name="name" class="text-danger x-small fw-bold mt-1 d-block" />
-          </div>
-
-          <!-- Nivel Jerarquico -->
-          <div class="mb-4">
-            <label class="form-label x-small fw-bold text-secondary text-uppercase"
-              >Nivel de Acceso (1-100)</label
-            >
-            <div class="d-flex align-items-center gap-2">
-              <Field
-                name="level"
-                v-model.number="formData.level"
-                type="number"
-                min="1"
-                max="100"
-                class="form-control custom-input w-25 text-center fw-bold"
-                :class="{ 'is-invalid': errors.level }"
-              />
-              <div class="text-muted small lh-sm">
-                10: Básico<br />50: Supervisor<br />100: Administrador
+          
+          <!-- SECCIÓN 1: CONFIGURACIÓN BÁSICA -->
+          <div class="vanguard-section-card mb-3 p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <span class="section-indicator bg-primary"></span>
+                <h6 class="fw-bold text-dark mb-0 section-heading">Identificación y Acceso</h6>
+              </div>
+              <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+                <label class="form-check-label x-small fw-bold text-muted mb-0" for="systemAccessSwitch">{{
+                  formData.hasSystemAccess ? 'Acceso al Sistema Habilitado' : 'Sin Acceso'
+                }}</label>
+                <input
+                  class="form-check-input mt-0"
+                  type="checkbox"
+                  role="switch"
+                  id="systemAccessSwitch"
+                  v-model="formData.hasSystemAccess"
+                  style="cursor: pointer;"
+                />
               </div>
             </div>
-            <ErrorMessage name="level" class="text-danger x-small fw-bold mt-1 d-block" />
+
+            <div class="row g-3">
+              <!-- CODIGO -->
+              <div class="col-md-4">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Código (SKU) <span class="text-danger">*</span></label
+                >
+                <Field
+                  name="code"
+                  v-model="formData.code"
+                  type="text"
+                  class="form-control custom-input font-monospace text-uppercase"
+                  :class="{ 'is-invalid': errors.code }"
+                  placeholder="Ej: SYS_ADMIN"
+                  :disabled="isEditing"
+                />
+                <ErrorMessage name="code" class="text-danger x-small fw-bold mt-1 d-block" />
+              </div>
+
+              <!-- Nombre -->
+              <div class="col-md-8">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Nombre del Rol <span class="text-danger">*</span></label
+                >
+                <Field
+                  name="name"
+                  v-model="formData.name"
+                  type="text"
+                  class="form-control custom-input"
+                  :class="{ 'is-invalid': errors.name }"
+                  placeholder="Ej: Administrador"
+                />
+                <ErrorMessage name="name" class="text-danger x-small fw-bold mt-1 d-block" />
+              </div>
+
+              <!-- Nivel Jerarquico -->
+              <div class="col-md-4">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Nivel de Acceso</label
+                >
+                <Field
+                  name="level"
+                  v-model.number="formData.level"
+                  type="number"
+                  min="1"
+                  max="100"
+                  class="form-control custom-input text-center fw-bold"
+                  :class="{ 'is-invalid': errors.level }"
+                />
+                <ErrorMessage name="level" class="text-danger x-small fw-bold mt-1 d-block" />
+              </div>
+
+              <div class="col-md-8 d-flex align-items-center">
+                <div class="text-muted small lh-sm ms-2 mt-4 pt-1">
+                  <em>Niveles de Referencia: 10 (Básico) | 50 (Supervisor) | 100 (Administrador)</em>
+                </div>
+              </div>
+
+              <!-- Descripcion -->
+              <div class="col-12 mt-3">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Descripción</label
+                >
+                <Field
+                  name="description"
+                  v-model="formData.description"
+                  as="textarea"
+                  rows="2"
+                  class="form-control custom-input"
+                  :class="{ 'is-invalid': errors.description }"
+                  placeholder="Breve descripción..."
+                />
+              </div>
+            </div>
           </div>
 
-          <!-- Descripcion -->
-          <div class="mb-4">
-            <label class="form-label x-small fw-bold text-secondary text-uppercase"
-              >Descripción</label
-            >
-            <Field
-              name="description"
-              v-model="formData.description"
-              as="textarea"
-              rows="2"
-              class="form-control custom-input"
-              :class="{ 'is-invalid': errors.description }"
-              placeholder="Breve descripción..."
-            />
-          </div>
+          <!-- SECCIÓN 2: PERMISOS (Condicional al acceso) -->
+          <div class="vanguard-section-card mb-3 p-3 p-md-4" :class="{'opacity-50 grayscale-card': !formData.hasSystemAccess}">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <span class="section-indicator bg-info"></span>
+                <h6 class="fw-bold text-dark mb-0 section-heading">Matriz de Permisos Granulares</h6>
+              </div>
+            </div>
 
           <!-- Permisos Granulares -->
           <div class="mb-4">
@@ -285,44 +321,20 @@ function onSubmit() {
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- System Access -->
-          <div class="mb-4 bg-light p-3 rounded-3 border">
-            <div class="d-flex align-items-center mb-2">
-              <div class="form-check form-switch custom-switch flex-grow-1">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  v-model="formData.hasSystemAccess"
-                  id="systemAccessSwitch"
-                  :disabled="isEditing"
-                />
-                <label class="form-check-label fw-bold ms-2 text-dark" for="systemAccessSwitch">
-                  Acceso al Sistema
-                </label>
-              </div>
-            </div>
+            
             <div
               v-if="formData.hasSystemAccess && !isEditing"
-              class="alert alert-warning x-small fw-bold mb-0 mt-2 d-flex align-items-center"
+              class="alert alert-warning x-small fw-bold mb-0 mt-3 d-flex align-items-center"
             >
               <i class="bi bi-exclamation-triangle-fill me-2 fs-6"></i>
-              <span>Esta acción es irreversible. Si concedes acceso al sistema, este rol generará permanentemente credenciales para sus usuarios.</span>
+              <span>Si concedes acceso, este rol generará credenciales permanentes (Irreversible).</span>
             </div>
             <div
-              v-else-if="formData.hasSystemAccess && isEditing"
-              class="text-muted x-small mt-1"
+              v-else-if="isEditing"
+              class="text-muted x-small mt-3"
             >
               <i class="bi bi-info-circle me-1"></i>
-              El acceso al sistema no puede ser modificado.
-            </div>
-            <div
-              v-else-if="!formData.hasSystemAccess && isEditing"
-              class="text-muted x-small mt-1"
-            >
-              <i class="bi bi-info-circle me-1"></i>
-              El acceso al sistema no puede ser modificado.
+              El acceso al sistema no puede ser modificado después de creado.
             </div>
           </div>
 
@@ -393,6 +405,29 @@ function onSubmit() {
   padding: 2rem;
   overflow-y: auto; /* Scrollable body */
   flex: 1;
+}
+
+.vanguard-section-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+
+.section-indicator {
+  width: 6px;
+  height: 18px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.section-heading {
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.grayscale-card {
+  filter: grayscale(100%);
 }
 
 .permissions-container {

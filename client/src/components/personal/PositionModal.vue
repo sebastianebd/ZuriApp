@@ -85,94 +85,104 @@ function onSubmit() {
       <!-- Body (Scrollable) -->
       <div class="modal-body-custom">
         <Form @submit="onSubmit" :validation-schema="schema" v-slot="{ errors }">
-          <!-- CODIGO (Editable on Create, Read Only on Update) -->
-          <div class="mb-4">
-            <label class="form-label x-small fw-bold text-secondary text-uppercase"
-              >Código de Cargo</label
-            >
-            <Field
-              name="position_code"
-              v-model="formData.position_code"
-              type="text"
-              class="form-control form-control-lg custom-input font-monospace text-uppercase"
-              :class="{ 'is-invalid': errors.position_code }"
-              placeholder="Ej: MED_1"
-              :disabled="isEditing"
-            />
-            <ErrorMessage name="position_code" class="text-danger x-small fw-bold mt-1 d-block" />
-          </div>
+          <!-- SECCIÓN 1: CONFIGURACIÓN BÁSICA -->
+          <div class="vanguard-section-card mb-3 p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <span class="section-indicator bg-primary"></span>
+                <h6 class="fw-bold text-dark mb-0 section-heading">Información del Cargo Físico</h6>
+              </div>
+              <div v-if="isEditing" class="form-check form-switch m-0 d-flex align-items-center gap-2">
+                <label class="form-check-label x-small fw-bold text-muted mb-0" for="activoSwitch">{{
+                  formData.isActive ? 'Cargo Activo' : 'Cargo Inactivo'
+                }}</label>
+                <input
+                  class="form-check-input mt-0"
+                  type="checkbox"
+                  role="switch"
+                  id="activoSwitch"
+                  v-model="formData.isActive"
+                  style="cursor: pointer;"
+                />
+              </div>
+            </div>
 
-          <!-- Nombre -->
-          <div class="mb-4">
-            <label class="form-label x-small fw-bold text-secondary text-uppercase"
-              >Nombre del Cargo</label
-            >
-            <Field
-              name="name"
-              v-model="formData.name"
-              type="text"
-              class="form-control form-control-lg custom-input"
-              :class="{ 'is-invalid': errors.name }"
-              placeholder="Ej: TENS, MÉDICO"
-            />
-            <ErrorMessage name="name" class="text-danger x-small fw-bold mt-1 d-block" />
-          </div>
+            <div class="row g-3">
+              <!-- CODIGO -->
+              <div class="col-md-4">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Código de Cargo</label
+                >
+                <Field
+                  name="position_code"
+                  v-model="formData.position_code"
+                  type="text"
+                  class="form-control custom-input font-monospace text-uppercase"
+                  :class="{ 'is-invalid': errors.position_code }"
+                  placeholder="Ej: MED_1"
+                  :disabled="isEditing"
+                />
+                <ErrorMessage name="position_code" class="text-danger x-small fw-bold mt-1 d-block" />
+              </div>
 
-          <!-- Estamento Legal -->
-          <div class="mb-4">
-            <label class="form-label x-small fw-bold text-secondary text-uppercase"
-              >Estamento Legal <span class="text-danger">*</span></label
-            >
-            <Field
-              name="estamento"
-              v-model="formData.estamento"
-              as="select"
-              class="form-select form-select-lg custom-input"
-              :class="{ 'is-invalid': errors.estamento }"
-            >
-              <option value="" disabled>Selecciona el estamento...</option>
-              <option
-                v-for="(label, key) in ESTAMENTOS_LABELS"
-                :key="key"
-                :value="key"
-              >
-                {{ label }}
-              </option>
-            </Field>
-            <ErrorMessage name="estamento" class="text-danger x-small fw-bold mt-1 d-block" />
-            <small class="text-muted x-small mt-1 d-block">
-              Determina el marco legal del funcionario y las reglas de elegibilidad en reemplazos.
-            </small>
-          </div>
+              <!-- Nombre -->
+              <div class="col-md-8">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Nombre del Cargo <span class="text-danger">*</span></label
+                >
+                <Field
+                  name="name"
+                  v-model="formData.name"
+                  type="text"
+                  class="form-control custom-input"
+                  :class="{ 'is-invalid': errors.name }"
+                  placeholder="Ej: TENS, MÉDICO, ENFERMERA"
+                />
+                <ErrorMessage name="name" class="text-danger x-small fw-bold mt-1 d-block" />
+              </div>
 
-          <!-- Descripcion -->
-          <div class="mb-4">
-            <label class="form-label x-small fw-bold text-secondary text-uppercase"
-              >Descripción</label
-            >
-            <Field
-              name="description"
-              v-model="formData.description"
-              as="textarea"
-              rows="2"
-              class="form-control custom-input"
-              :class="{ 'is-invalid': errors.description }"
-              placeholder="Breve descripción..."
-            />
-          </div>
+              <!-- Estamento Legal -->
+              <div class="col-md-12">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Estamento Legal (Ley) <span class="text-danger">*</span></label
+                >
+                <Field
+                  name="estamento"
+                  v-model="formData.estamento"
+                  as="select"
+                  class="form-select custom-input"
+                  :class="{ 'is-invalid': errors.estamento }"
+                >
+                  <option value="" disabled>Selecciona el estamento...</option>
+                  <option
+                    v-for="(label, key) in ESTAMENTOS_LABELS"
+                    :key="key"
+                    :value="key"
+                  >
+                    {{ label }}
+                  </option>
+                </Field>
+                <ErrorMessage name="estamento" class="text-danger x-small fw-bold mt-1 d-block" />
+                <small class="text-muted x-small mt-1 d-block">
+                  Determina el marco legal del funcionario y las reglas de elegibilidad en reemplazos.
+                </small>
+              </div>
 
-          <!-- Activo -->
-          <div v-if="isEditing" class="mb-4 d-flex align-items-center">
-            <div class="form-check form-switch custom-switch">
-              <input
-                type="checkbox"
-                class="form-check-input"
-                v-model="formData.isActive"
-                id="activoSwitch"
-              />
-              <label class="form-check-label fw-bold ms-2 text-dark" for="activoSwitch">
-                Cargo Físico Activo
-              </label>
+              <!-- Descripcion -->
+              <div class="col-12 mt-2">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Descripción Adicional</label
+                >
+                <Field
+                  name="description"
+                  v-model="formData.description"
+                  as="textarea"
+                  rows="2"
+                  class="form-control custom-input"
+                  :class="{ 'is-invalid': errors.description }"
+                  placeholder="Breve descripción opcional..."
+                />
+              </div>
             </div>
           </div>
 
@@ -273,6 +283,25 @@ function onSubmit() {
   background: #e2e8f0;
   color: #0f172a;
   transform: rotate(90deg);
+}
+
+.vanguard-section-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+
+.section-indicator {
+  width: 6px;
+  height: 18px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.section-heading {
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
 }
 
 .custom-input {

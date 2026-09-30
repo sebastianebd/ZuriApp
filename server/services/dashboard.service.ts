@@ -197,6 +197,51 @@ export class DashboardService {
   }
 
   /**
+   * Calcula el desglose y porcentajes de motivos de ausencia
+   */
+  calculateAbsenteeismReasons(
+    reasonsMap: Map<string, number>,
+    totalReplacements: number,
+  ): Array<{
+    motivo: string;
+    label: string;
+    color: string;
+    count: number;
+    percentage: number;
+  }> {
+    const MOTIVO_META: Record<string, { label: string; color: string }> = {
+      LICENCIA_MEDICA: { label: "Licencia Médica", color: "#ef4444" },
+      FERIADO_LEGAL: { label: "Feriado Legal", color: "#10b981" },
+      PERMISO_ADMINISTRATIVO: { label: "Permiso Administrativo", color: "#3b82f6" },
+      PRE_POST_NATAL: { label: "Pre / Post Natal", color: "#8b5cf6" },
+      DIA_COMPENSATORIO: { label: "Día Compensatorio", color: "#f59e0b" },
+      COMISION_SERVICIO: { label: "Comisión de Servicio", color: "#06b6d4" },
+      PERMISO_GREMIAL: { label: "Permiso Gremial", color: "#ec4899" },
+      OTRO: { label: "Otro Motivo", color: "#64748b" },
+    };
+
+    return Array.from(reasonsMap.entries())
+      .map(([key, count]) => {
+        const meta = MOTIVO_META[key] || {
+          label: key.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()),
+          color: "#64748b",
+        };
+        const percentage =
+          totalReplacements > 0
+            ? Number(((count / totalReplacements) * 100).toFixed(1))
+            : 0;
+        return {
+          motivo: key,
+          label: meta.label,
+          color: meta.color,
+          count,
+          percentage,
+        };
+      })
+      .sort((a, b) => b.count - a.count);
+  }
+
+  /**
    * Invalida la caché de Redis para un servicio y emite notificación Socket.io
    */
   async invalidateDashboardCache(serviceId: string): Promise<void> {
@@ -451,6 +496,9 @@ export class DashboardService {
     let dayHours = 0;
     let nightHours = 0;
 
+    // Conteo por motivo de ausencia
+    const reasonsMap = new Map<string, number>();
+
     // Conteo por funcionario saliente para Top 5
     const salienteMap = new Map<
       string,
@@ -465,6 +513,9 @@ export class DashboardService {
     >();
 
     replacements.forEach((rep: any) => {
+      const motivoKey = (rep.motivo || "OTRO").toString().toUpperCase();
+      reasonsMap.set(motivoKey, (reasonsMap.get(motivoKey) || 0) + 1);
+
       const saliente = rep.id_saliente;
       const salienteId = (saliente?._id || saliente || "unknown").toString();
 
@@ -601,7 +652,13 @@ export class DashboardService {
     const nightPercentage =
       totalHours > 0 ? Number(((nightHours / totalHours) * 100).toFixed(2)) : 0;
 
-    // 10. Periodo Anterior y Comparativa
+    // 10. Desglose de Motivos de Ausentismo
+    const absenteeismReasons = this.calculateAbsenteeismReasons(
+      reasonsMap,
+      totalReplacements,
+    );
+
+    // 11. Periodo Anterior y Comparativa
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
 
@@ -651,6 +708,7 @@ export class DashboardService {
         nightHours,
         nightPercentage,
       },
+      absenteeismReasons,
       topReplacedStaff,
       comparative: {
         previousPeriod: { month: prevMonth, year: prevYear },

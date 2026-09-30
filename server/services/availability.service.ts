@@ -142,32 +142,26 @@ export class AvailabilityService {
     const startM = dayjs(offerStart);
     const endM = dayjs(offerEnd);
 
-    // 1. Reemplazos previos en el servicio solicitante
+    // 1. Reemplazos previos históricos en el servicio solicitante
+    // Buscamos todos los turnos que no estén anulados para este funcionario
     const allReplacements = await Replacement.find({
       id_entrante: staffId,
-      status: 'activo',
+      status: { $ne: 'anulado' },
     });
 
-    const previousReplacements = allReplacements.filter(
-      (r: any) => (r.servicio?.toString() || r.servicio) === targetServiceId.toString()
-    ).length;
-
-    // 2. Horas acumuladas en el mes calendario de la oferta
-    const monthStart = startM.startOf('month');
-    const monthEnd = startM.endOf('month');
-
-    let accumulatedHoursMonthly = 0;
+    let historicalHoursInService = 0;
     allReplacements.forEach((r: any) => {
-      const rStart = dayjs(r.fecha_inicio);
-      const rEnd = dayjs(r.fecha_termino);
-      if (rStart.isAfter(monthStart) && rStart.isBefore(monthEnd)) {
+      const srvId = r.servicio?.toString() || r.servicio;
+      if (srvId === targetServiceId.toString()) {
+        const rStart = dayjs(r.fecha_inicio);
+        const rEnd = dayjs(r.fecha_termino);
         const h = rEnd.diff(rStart, 'hour', true);
-        accumulatedHoursMonthly += Math.max(0, h);
+        historicalHoursInService += Math.max(0, h);
       }
     });
 
-    // 3. Horas de descanso desde el último turno
-    let hoursSinceLastShift = 999; // Si no tiene turno previo, descanso ideal
+    // 2. Horas de descanso desde el último turno (de todos los servicios)
+    let hoursSinceLastShift = 999;
     let lastShiftEnd: dayjs.Dayjs | null = null;
 
     allReplacements.forEach((r: any) => {
@@ -183,78 +177,22 @@ export class AvailabilityService {
       hoursSinceLastShift = Number(startM.diff(lastShiftEnd, 'hour', true).toFixed(1));
     }
 
-    // 4. Concordancia exacta de cargo
+    // 3. Concordancia exacta de cargo
     const staffPosId = staff.positionId?._id?.toString() || staff.positionId?.toString();
     const matchesPosition = staffPosId === targetPositionId.toString();
 
-    // 5. Historial intachable (ShiftConfirmation unavailable)
-    const unavailables = await ShiftConfirmation.find({
-      staffId,
-      status: 'unavailable',
-    });
-    const cleanRecord = !unavailables || unavailables.length === 0;
-
-    // 6. Penalización por cercanía al límite semanal de 44h (semana ISO)
-    const weekStart = startM.startOf('isoWeek');
-    const weekEnd = startM.endOf('isoWeek');
-    let weeklyHours = 0;
-    allReplacements.forEach((r: any) => {
-      const rStart = dayjs(r.fecha_inicio);
-      const rEnd = dayjs(r.fecha_termino);
-      if (rStart.isAfter(weekStart) && rStart.isBefore(weekEnd)) {
-        weeklyHours += Math.max(0, rEnd.diff(rStart, 'hour', true));
-      }
-    });
-    const nearWeeklyCapPenalty = weeklyHours >= 36;
-
-    // 7. Penalización por turno nocturno adyacente (< 24h antes o después)
-    let nightShiftAdjacencyPenalty = false;
-    allReplacements.forEach((r: any) => {
-      const rStart = dayjs(r.fecha_inicio);
-      const rEnd = dayjs(r.fecha_termino);
-      const isNight = rStart.hour() >= 19 || rEnd.hour() <= 9;
-      if (isNight) {
-        const gapBefore = Math.abs(startM.diff(rEnd, 'hour'));
-        const gapAfter = Math.abs(rStart.diff(endM, 'hour'));
-        if (gapBefore <= 24 || gapAfter <= 24) {
-          nightShiftAdjacencyPenalty = true;
-        }
-      }
-    });
-
-    // Ponderación de Soft Constraints
-    const pointsPrevious = previousReplacements > 0 ? 30 : 0;
-    let pointsHours = 0;
-    if (accumulatedHoursMonthly <= 44) pointsHours = 25;
-    else if (accumulatedHoursMonthly <= 88) pointsHours = 15;
-    else if (accumulatedHoursMonthly <= 132) pointsHours = 5;
-    else pointsHours = 0;
-
+    // === NUEVO MOTOR DE PUNTUACIÓN SIMPLIFICADO ===
+    const pointsPosition = matchesPosition ? 30 : 0;
     const pointsRest = hoursSinceLastShift >= 24 ? 20 : 0;
-    const pointsPosition = matchesPosition ? 15 : 0;
-    const pointsClean = cleanRecord ? 10 : 0;
-    const penaltyWeekly = nearWeeklyCapPenalty ? 20 : 0;
-    const penaltyNight = nightShiftAdjacencyPenalty ? 30 : 0;
+    // 1 punto por cada 12 horas trabajadas históricamente en el servicio
+    const pointsExperience = Math.floor(historicalHoursInService / 12);
 
-    const score = Math.max(
-      0,
-      pointsPrevious +
-        pointsHours +
-        pointsRest +
-        pointsPosition +
-        pointsClean -
-        penaltyWeekly -
-        penaltyNight
-    );
+    const score = Math.max(0, pointsPosition + pointsRest + pointsExperience);
 
-    const breakdown: CandidateScoreBreakdown = {
-      previousReplacements,
-      accumulatedHoursMonthly: Math.round(accumulatedHoursMonthly),
-      hoursSinceLastShift,
+    const breakdown: any = {
       matchesPosition,
-      cleanRecord,
-      nearWeeklyCapPenalty,
-      nightShiftAdjacencyPenalty,
+      hoursSinceLastShift,
+      historicalHoursInService: Math.round(historicalHoursInService),
     };
 
     const positionName =
@@ -330,19 +268,26 @@ export class AvailabilityService {
         offer.tipo_turno
       );
 
-      if (compliance.valid) {
-        const candidate = await this.calculateScoreForStaff(
-          staff,
-          serviceIdStr,
-          positionIdStr,
-          offer.fecha_inicio,
-          offer.fecha_termino
-        );
-        scoredList.push(candidate);
-      }
+      const candidate = await this.calculateScoreForStaff(
+        staff,
+        serviceIdStr,
+        positionIdStr,
+        offer.fecha_inicio,
+        offer.fecha_termino
+      );
+
+      candidate.isValid = compliance.valid;
+      candidate.violations = compliance.violations;
+
+      scoredList.push(candidate);
     }
 
-    return scoredList.sort((a, b) => b.score - a.score);
+    return scoredList.sort((a, b) => {
+      if (a.isValid !== b.isValid) {
+        return a.isValid ? -1 : 1;
+      }
+      return b.score - a.score;
+    });
   }
 
   /**

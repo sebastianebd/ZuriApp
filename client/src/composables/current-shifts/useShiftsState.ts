@@ -76,11 +76,7 @@ export function useShiftsState(props?: { historyMode?: boolean; externalFilters?
   })
 
   const canGoNext = computed(() => {
-    const today = new Date()
-    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-    const activeMonth = new Date(currentYear.value, currentMonth.value, 1)
-
-    return activeMonth < thisMonth
+    return true
   })
 
   const isPastMonth = computed(() => {
@@ -92,9 +88,7 @@ export function useShiftsState(props?: { historyMode?: boolean; externalFilters?
   })
 
   function nextMonth() {
-    if (canGoNext.value) {
-      currentDate.value = new Date(currentYear.value, currentMonth.value + 1, 1)
-    }
+    currentDate.value = new Date(currentYear.value, currentMonth.value + 1, 1)
   }
 
   function prevMonth() {

@@ -15,16 +15,15 @@ export interface ReplacementOfferItem {
   rut_saliente?: string;
   motivo?: string;
   observaciones?: string;
+  awardedStaffId?: string;
+  createdAt?: string;
+  createdBy?: string;
 }
 
 export interface CandidateBreakdown {
-  previousReplacements: number;
-  accumulatedHoursMonthly: number;
-  hoursSinceLastShift: number;
   matchesPosition: boolean;
-  cleanRecord: boolean;
-  nearWeeklyCapPenalty: boolean;
-  nightShiftAdjacencyPenalty: boolean;
+  hoursSinceLastShift: number;
+  historicalHoursInService: number;
 }
 
 export interface ScoredCandidateItem {
@@ -35,6 +34,8 @@ export interface ScoredCandidateItem {
   positionName: string;
   score: number;
   breakdown: CandidateBreakdown;
+  isValid?: boolean;
+  violations?: string[];
 }
 
 export interface OfferScoringData {

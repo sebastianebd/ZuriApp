@@ -32,6 +32,7 @@ export interface ShiftResult {
   assignmentName?: string
   replacementCode?: string
   baseSigla?: string
+  availableSiglas?: string[]
 }
 
 export function useShiftsGrid(
@@ -196,6 +197,8 @@ export function useShiftsGrid(
             const pattern = getPattern(rep as any, rep.tipo_turno)
             if (!pattern || pattern.length === 0) return null
 
+            const availableSiglas = [...new Set(pattern.map((p) => p.sigla))]
+
             const result = calculateShift<ShiftResult>(date, rep.fecha_inicio, pattern)
             const baseSigla = result?.sigla
 
@@ -210,7 +213,8 @@ export function useShiftsGrid(
                   turnTypeStore.turnTypes.find((t) => t._id === rep.tipo_turno)?.nombre ||
                   rep.tipo_turno,
                 replacementCode: rep.id_negocio,
-                baseSigla
+                baseSigla,
+                availableSiglas
               }
             }
 
@@ -222,7 +226,8 @@ export function useShiftsGrid(
                   turnTypeStore.turnTypes.find((t) => t._id === rep.tipo_turno)?.nombre ||
                   rep.tipo_turno,
                 replacementCode: rep.id_negocio,
-                baseSigla
+                baseSigla,
+                availableSiglas
               }
             }
             return null
@@ -286,6 +291,8 @@ export function useShiftsGrid(
             const pattern = getPattern(a)
             if (pattern.length === 0) return null
 
+            const availableSiglas = [...new Set(pattern.map((p) => p.sigla))]
+
             const aStart = parseAsLocal(a.start_date)
             const result = calculateShift<ShiftResult>(date, aStart, pattern)
             const baseSigla = result?.sigla
@@ -293,11 +300,11 @@ export function useShiftsGrid(
             const exception = exceptionStore.findException(a._id, date)
             if (exception) {
               const { sigla, color } = mapEnumToSigla(exception.override_type)
-              return { sigla, color, ...meta, baseSigla }
+              return { sigla, color, ...meta, baseSigla, availableSiglas }
             }
 
             if (result) {
-              return { ...result, ...meta, baseSigla }
+              return { ...result, ...meta, baseSigla, availableSiglas }
             }
             return null
           }

@@ -36,6 +36,13 @@ export interface DashboardKPIResponse {
       nightHours: number;
       nightPercentage: number;
     };
+    absenteeismReasons?: Array<{
+      motivo: string;
+      label: string;
+      color: string;
+      count: number;
+      percentage: number;
+    }>;
     topReplacedStaff: Array<{
       staffId: string;
       fullName: string;

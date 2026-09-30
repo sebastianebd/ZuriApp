@@ -59,4 +59,16 @@ describe('useShiftsState - Servicio Seleccionado & Persistencia', () => {
 
     expect(localStorage.getItem('zuriapp_shifts_selected_service')).toBe('srv-farmacia')
   })
+
+  it('permite navegar a meses futuros (canGoNext es true y nextMonth avanza la fecha)', () => {
+    const state = useShiftsState()
+    const initialMonth = state.currentMonth.value
+
+    expect(state.canGoNext.value).toBe(true)
+
+    state.nextMonth()
+    const expectedMonth = (initialMonth + 1) % 12
+    expect(state.currentMonth.value).toBe(expectedMonth)
+    expect(state.canGoNext.value).toBe(true)
+  })
 })

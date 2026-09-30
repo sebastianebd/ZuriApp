@@ -8,12 +8,6 @@
           <i class="bi bi-megaphone-fill fs-4 text-primary"></i>
         </div>
         <div>
-          <div class="d-flex align-items-center gap-2 mb-1">
-            <span class="badge-eyebrow">Operaciones • Honorarios</span>
-            <span class="live-pulse-badge">
-              <span class="pulse-dot"></span> En Vivo
-            </span>
-          </div>
           <h3 class="fw-bold text-dark mb-0 tracking-tight header-title">Bolsa de Reemplazos</h3>
           <p class="text-secondary small mb-0 mt-1">
             Tablón de convocatorias abiertas para honorarios, adjudicación atómica y scoring clínico.
@@ -23,13 +17,6 @@
 
       <!-- Right Action Islands -->
       <div class="d-flex align-items-center gap-2 flex-wrap">
-        <router-link
-          to="/app/operaciones/reemplazos"
-          class="btn btn-secondary-pill d-flex align-items-center gap-2"
-        >
-          <span class="btn-icon-wrap"><i class="bi bi-journal-medical"></i></span>
-          <span>Reemplazos Oficiales</span>
-        </router-link>
 
         <button
           type="button"
@@ -100,7 +87,7 @@
             >
               <span class="status-indicator-dot dot-open"></span>
               <span>Abiertas</span>
-              <span class="pill-counter count-open">({{ countByStatus('open') }})</span>
+              <span class="pill-counter">({{ countByStatus('open') }})</span>
             </button>
             <button
               type="button"
@@ -119,7 +106,7 @@
               @click="selectedStatus = 'filled'"
             >
               <span class="status-indicator-dot dot-filled"></span>
-              <span>Adjudicadas</span>
+              <span>Completadas</span>
               <span class="pill-counter">({{ countByStatus('filled') }})</span>
             </button>
             <button
@@ -178,10 +165,11 @@
                 <th class="ps-4">Servicio & Cargo</th>
                 <th>Titular Ausente</th>
                 <th>Causal</th>
+                <th>Publicación</th>
                 <th>Fechas & Turno</th>
                 <th>Tiempo Restante</th>
                 <th>Postulantes</th>
-                <th class="text-end pe-4">Acciones</th>
+                <th class="text-end pe-4">STATUS</th>
               </tr>
             </thead>
             <tbody>
@@ -189,39 +177,53 @@
                 v-for="(offer, index) in filteredOffers"
                 :key="offer.id"
                 class="vanguard-row"
+                :class="`row-${offer.status}`"
                 :style="{ animationDelay: `${index * 30}ms` }"
+                @click="openApplicantsModal(offer)"
               >
                 <!-- Servicio & Cargo -->
                 <td class="ps-4 cell-service">
                   <div class="d-flex align-items-center gap-3">
-                    <div class="service-avatar-box">
-                      {{ getServiceInitials(offer.serviceName) }}
-                    </div>
-                    <div>
-                      <div class="service-name fw-bold text-dark">{{ offer.serviceName }}</div>
-                      <div class="position-name text-secondary">{{ offer.positionName }}</div>
+                    <span 
+                      class="row-status-dot" 
+                      :class="[
+                        `bg-${offer.status}-indicator`, 
+                        { 'pulse-attention-dot': offer.status === 'finalized' }
+                      ]"
+                    ></span>
+                    <div class="d-flex flex-column justify-content-center">
+                      <div class="service-name fw-bold text-slate-900 mb-1">{{ offer.serviceName }}</div>
+                      <div class="position-name text-slate-500">{{ offer.positionName }}</div>
                     </div>
                   </div>
                 </td>
 
                 <!-- Titular Ausente -->
                 <td class="cell-staff">
-                  <div class="staff-name fw-semibold text-dark">{{ offer.nombre_saliente || 'No especificado' }}</div>
-                  <div class="staff-rut monospace-rut">{{ offer.rut_saliente }}</div>
+                  <div class="staff-name fw-semibold text-slate-900 mb-1">{{ offer.nombre_saliente || 'No especificado' }}</div>
+                  <div class="staff-rut monospace-rut text-slate-400">{{ offer.rut_saliente }}</div>
                 </td>
 
                 <!-- Causal -->
                 <td class="cell-causal">
                   <span class="causal-tag" :class="getCausalClass(offer.motivo)">
-                    <i class="bi bi-bandaid me-1 opacity-75"></i>
                     {{ formatMotivo(offer.motivo) }}
                   </span>
                 </td>
 
+                <!-- Publicación -->
+                <td class="cell-publication">
+                  <div class="publication-date text-slate-900 mb-1">
+                    {{ formatDateTime(offer.createdAt) }}
+                  </div>
+                  <div class="publication-author text-slate-500">
+                    {{ offer.createdBy || 'Sistema' }}
+                  </div>
+                </td>
+
                 <!-- Fechas & Turno -->
                 <td class="cell-dates">
-                  <div class="date-range-text fw-semibold text-dark">
-                    <i class="bi bi-calendar3 me-1 text-primary opacity-75"></i>
+                  <div class="date-range-text text-slate-900 mb-1">
                     {{ formatDate(offer.fecha_inicio) }} al {{ formatDate(offer.fecha_termino) }}
                   </div>
                   <span class="turno-pill">
@@ -239,42 +241,29 @@
 
                 <!-- Postulantes / Scoring -->
                 <td class="cell-applicants">
-                  <button
-                    type="button"
-                    class="btn btn-sm applicant-pill-btn d-flex align-items-center gap-2"
-                    :class="offer.applicantsCount > 0 ? 'btn-outline-primary has-applicants' : 'btn-outline-warning no-applicants'"
-                    @click="openApplicantsModal(offer)"
-                  >
+                  <div class="applicant-pill-badge d-inline-flex align-items-center gap-2">
                     <span class="applicant-icon-capsule">
                       <i class="bi" :class="offer.applicantsCount > 0 ? 'bi-people-fill' : 'bi-person-plus'"></i>
                     </span>
                     <span class="fw-semibold">{{ offer.applicantsCount }} Postulantes</span>
-                    <span v-if="offer.applicantsCount > 0" class="badge-scoring-hint" title="Scoring clínico disponible">
-                      <i class="bi bi-stars"></i>
-                    </span>
-                  </button>
+                  </div>
                 </td>
 
-                <!-- Acciones -->
+                <!-- STATUS -->
                 <td class="text-end pe-4 cell-actions">
                   <div class="d-flex justify-content-end align-items-center gap-1">
-                    <button
-                      v-if="offer.status === 'open'"
-                      type="button"
-                      class="btn btn-sm btn-cancel-offer"
-                      title="Anular convocatoria"
-                      @click="handleCancel(offer.id)"
-                    >
-                      <i class="bi bi-x-circle me-1"></i> Anular
-                    </button>
-                    <span v-else-if="offer.status === 'filled'" class="status-badge-filled">
-                      <i class="bi bi-check2-circle me-1"></i> Adjudicada
+                    <span v-if="offer.status === 'open'" class="status-badge status-badge-open">
+                      Abierta
                     </span>
-                    <span v-else-if="offer.status === 'finalized'" class="status-badge-finalized">
-                      <i class="bi bi-clock-history me-1"></i> Concluida
+                    <span v-else-if="offer.status === 'filled'" class="status-badge status-badge-filled">
+                      Completada
                     </span>
-                    <span v-else class="status-badge-cancelled">
-                      <i class="bi bi-slash-circle me-1"></i> Anulada
+                    <span v-else-if="offer.status === 'finalized'" class="status-badge status-badge-finalized pulse-attention">
+                      <i class="bi bi-exclamation-circle-fill me-1"></i>
+                      Finalizada
+                    </span>
+                    <span v-else class="status-badge status-badge-cancelled">
+                      Anulada
                     </span>
                   </div>
                 </td>
@@ -293,16 +282,18 @@
       :is-call-list="isCallList"
       :candidates="currentCandidates"
       :loading="scoringLoading"
+      :offer-status="activeOffer.status"
+      :awarded-staff-id="activeOffer.awardedStaffId"
       @close="closeApplicantsModal"
       @award="handleAward"
+      @cancel-offer="handleCancelFromModal"
     />
 
-    <!-- Modal de Creación de Reemplazos / Convocatorias -->
-    <ReplacementModalCreate
+    <!-- Modal de Creación de Convocatorias en Bolsa -->
+    <ReplacementOfferModalCreate
       :visible="showCreateModal"
       :lista-de-turnos="listaDeTurnos"
       :lista-de-servicios="listaDeServicios"
-      :initial-bolsa-mode="true"
       @cerrar="showCreateModal = false"
       @guardar="onOfferCreated"
     />
@@ -316,7 +307,7 @@ import { useServiceStore } from '@/stores/service.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
 import type { ReplacementOfferItem, ScoredCandidateItem } from '@/types/replacement-offer.types'
 import ReplacementOfferApplicantsModal from '@/components/replacements/ReplacementOfferApplicantsModal.vue'
-import ReplacementModalCreate from '@/components/replacements/ReplacementModalCreate.vue'
+import ReplacementOfferModalCreate from '@/components/replacements/ReplacementOfferModalCreate.vue'
 
 const store = useReplacementOfferStore()
 const serviceStore = useServiceStore()
@@ -361,15 +352,6 @@ const countByStatus = (status: string) => {
   return offers.value.filter((o: any) => o.status === status).length
 }
 
-const getServiceInitials = (name?: string) => {
-  if (!name) return 'SRV'
-  const words = name.trim().split(/\s+/)
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase()
-  }
-  return name.slice(0, 3).toUpperCase()
-}
-
 const formatMotivo = (motivo?: string) => {
   if (!motivo) return 'Otro'
   const map: Record<string, string> = {
@@ -411,6 +393,18 @@ const formatDate = (dateStr: string) => {
   return d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', timeZone: 'UTC' })
 }
 
+const formatDateTime = (dateStr?: string) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return d.toLocaleString('es-CL', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  })
+}
+
 const formatRemainingTime = (expiresAt: string, status: string) => {
   if (status !== 'open') {
     return 'Plazo concluido'
@@ -445,15 +439,19 @@ const openApplicantsModal = async (offer: ReplacementOfferItem) => {
   activeOffer.value = offer
   showApplicantsModal.value = true
   scoringLoading.value = true
+  isCallList.value = false
 
   try {
     const data = await store.fetchScoring(offer.id)
+    console.log('[openApplicantsModal] fetchScoring data:', data)
     if (data) {
       isCallList.value = data.isCallList
       currentCandidates.value = data.candidates || []
     }
-  } catch {
+  } catch (error) {
+    console.error('Error fetching scoring:', error)
     currentCandidates.value = []
+    isCallList.value = false
   } finally {
     scoringLoading.value = false
   }
@@ -479,6 +477,18 @@ const handleAward = async (staffId: string) => {
 const handleCancel = async (offerId: string) => {
   if (confirm('¿Estás segura de anular esta convocatoria?')) {
     await store.cancelOffer(offerId)
+  }
+}
+
+const handleCancelFromModal = async () => {
+  if (!activeOffer.value) return
+  if (confirm('¿Estás segura de anular esta convocatoria?')) {
+    try {
+      await store.cancelOffer(activeOffer.value.id)
+      closeApplicantsModal()
+    } catch (err: any) {
+      alert(err.message || 'Error al anular la convocatoria')
+    }
   }
 }
 
@@ -542,77 +552,11 @@ onMounted(async () => {
   border: 1px solid rgba(191, 219, 254, 0.6);
 }
 
-.badge-eyebrow {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #2563eb;
-  background-color: #eff6ff;
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(191, 219, 254, 0.5);
-}
-
-.live-pulse-badge {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #059669;
-  background-color: #ecfdf5;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  border: 1px solid rgba(167, 243, 208, 0.6);
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.pulse-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #10b981;
-  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  animation: pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-  }
-}
-
 .header-title {
   letter-spacing: -0.02em;
 }
 
 /* --- Action Buttons (Island Architecture) --- */
-.btn-secondary-pill {
-  background: white;
-  color: #334155;
-  border: 1px solid #e2e8f0;
-  border-radius: 9999px;
-  padding: 0.45rem 1.15rem 0.45rem 0.65rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
-  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.btn-secondary-pill:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #0f172a;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
-}
-
 .btn-primary-pill {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
@@ -632,8 +576,7 @@ onMounted(async () => {
   color: white;
 }
 
-.btn-primary-pill:active,
-.btn-secondary-pill:active {
+.btn-primary-pill:active {
   transform: scale(0.98);
 }
 
@@ -719,20 +662,16 @@ onMounted(async () => {
 }
 
 .dot-all { background-color: #94a3b8; }
-.dot-open { background-color: #10b981; }
-.dot-finalized { background-color: #64748b; }
-.dot-filled { background-color: #3b82f6; }
-.dot-cancelled { background-color: #ef4444; }
+.dot-open { background-color: #3b82f6; } /* Azul */
+.dot-finalized { background-color: #f59e0b; } /* Amarillo/Naranja */
+.dot-filled { background-color: #10b981; } /* Verde */
+.dot-cancelled { background-color: #ef4444; } /* Rojo */
 
 .pill-counter {
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
-  opacity: 0.85;
-}
-
-.count-open {
-  color: #059669;
-  font-weight: 700;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
 /* --- Table Card & Grid Architecture --- */
@@ -741,7 +680,7 @@ onMounted(async () => {
   border: 1px solid #e2e8f0 !important;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 4px 8px -2px rgba(15, 23, 42, 0.02) !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03) !important;
 }
 
 .vanguard-table {
@@ -751,62 +690,68 @@ onMounted(async () => {
 }
 
 .vanguard-table thead th {
-  background-color: #f8fafc;
-  color: #64748b;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  background-color: white;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   border-top: none;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 18px 16px 14px;
   white-space: nowrap;
 }
 
 .vanguard-row {
-  transition: all 0.18s cubic-bezier(0.32, 0.72, 0, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: #ffffff;
 }
 
-.vanguard-row:hover {
-  background-color: #f8fafc;
+.vanguard-row:hover td {
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
 }
+
+/* Status Indicator Dots (Replaces the thick left line) */
+.row-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+.bg-open-indicator { background-color: #60a5fa; }
+.bg-filled-indicator { background-color: #34d399; }
+.bg-finalized-indicator { background-color: #fbbf24; }
+.bg-cancelled-indicator { background-color: #f87171; }
 
 .vanguard-table td {
-  padding: 16px 14px;
+  padding: 18px 16px;
   border-top: none;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9 !important; /* Soft hairline */
   vertical-align: middle;
 }
+
+.text-slate-900 { color: #0f172a !important; }
+.text-slate-500 { color: #64748b !important; }
+.text-slate-400 { color: #94a3b8 !important; }
 
 .vanguard-table tbody tr:last-child td {
   border-bottom: none;
 }
 
 /* --- Cell: Servicio & Cargo --- */
-.service-avatar-box {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  color: #166534;
-  border: 1px solid rgba(187, 247, 208, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
-}
-
 .service-name {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   letter-spacing: -0.01em;
+  color: #0f172a;
 }
 
 .position-name {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 500;
+  color: #64748b;
 }
 
 /* --- Cell: Titular Ausente --- */
@@ -861,6 +806,18 @@ onMounted(async () => {
   background-color: #f1f5f9;
   color: #334155;
   border: 1px solid #cbd5e1;
+}
+
+/* --- Cell: Publicación --- */
+.publication-date {
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 2px;
+}
+
+.publication-author {
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 /* --- Cell: Fechas & Turno --- */
@@ -920,91 +877,116 @@ onMounted(async () => {
   font-weight: 500;
 }
 
-/* --- Cell: Postulantes Button --- */
-.applicant-pill-btn {
+/* --- Cell: Postulantes Badge --- */
+.applicant-pill-badge {
   border-radius: 9999px !important;
   padding: 0.38rem 0.85rem !important;
   font-size: 0.78rem !important;
   font-weight: 600 !important;
-  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1) !important;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
-}
-
-.applicant-pill-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08) !important;
-}
-
-.applicant-pill-btn:active {
-  transform: scale(0.98);
+  background-color: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
 }
 
 .applicant-icon-capsule {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
+  color: #64748b;
 }
 
-.badge-scoring-hint {
-  color: #3b82f6;
-  font-size: 0.75rem;
+.btn-neutral-filled {
+  background-color: #ffffff !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.btn-neutral-filled:hover {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
 }
 
 /* --- Cell: Status Badges & Actions --- */
-.btn-cancel-offer {
-  color: #e11d48;
-  border: 1px solid #fecdd3;
-  background-color: #fff1f2;
-  border-radius: 8px;
+.btn-neutral-action {
+  color: #475569;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
   font-weight: 600;
   font-size: 0.78rem;
-  padding: 0.35rem 0.75rem;
+  padding: 5px 16px;
   transition: all 0.18s ease;
 }
 
-.btn-cancel-offer:hover {
-  background-color: #ffe4e6;
-  border-color: #fda4af;
-  color: #be123c;
+.btn-neutral-action:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
   transform: translateY(-1px);
 }
 
-.status-badge-filled {
+.status-badge {
   display: inline-flex;
   align-items: center;
-  background-color: #ecfdf5;
-  color: #047857;
-  border: 1px solid #a7f3d0;
-  padding: 5px 12px;
+  justify-content: center;
+  padding: 5px 14px;
   border-radius: 9999px;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.01em;
+  min-width: 115px;
+}
+
+.status-badge-open {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.status-badge-filled {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
 }
 
 .status-badge-finalized {
-  display: inline-flex;
-  align-items: center;
-  background-color: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-  padding: 5px 12px;
-  border-radius: 9999px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  background-color: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
 }
 
 .status-badge-cancelled {
-  display: inline-flex;
-  align-items: center;
-  background-color: #f8fafc;
-  color: #94a3b8;
-  border: 1px solid #e2e8f0;
-  padding: 5px 12px;
-  border-radius: 9999px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+/* --- Action Required Alert --- */
+.pulse-attention {
+  animation: vanguard-pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes vanguard-pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.action-required-text {
+  display: none;
+}
+
+.pulse-attention-dot {
+  animation: vanguard-pulse-ring-dot 1.5s cubic-bezier(0.25, 0.8, 0.25, 1) infinite;
+}
+
+@keyframes vanguard-pulse-ring-dot {
+  0% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 1), 0 0 0 0 rgba(251, 191, 36, 0.9); }
+  70% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 1), 0 0 0 12px rgba(251, 191, 36, 0); }
+  100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 1), 0 0 0 0 rgba(251, 191, 36, 0); }
 }
 
 /* --- Empty State --- */

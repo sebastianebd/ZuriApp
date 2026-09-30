@@ -1,20 +1,47 @@
 <template>
-  <div class="h-100 d-flex flex-column position-relative overflow-hidden">
-    <!-- Loader -->
-    <div
-      v-if="store.loading && store.turnTypes.length === 0"
-      class="position-absolute top-50 start-50 translate-middle z-3"
-    >
-      <div class="spinner-border text-warning" role="status"></div>
+  <div class="h-100 d-flex flex-column position-relative overflow-hidden bg-slate-50 px-4 py-4">
+    <!-- Header Controls -->
+    <div class="d-flex justify-content-between align-items-end mb-3">
+      <div>
+        <h6 class="text-slate-800 fw-bold mb-1">Jornadas y Turnos</h6>
+        <p class="text-slate-500 text-sm mb-0">Configuración de secuencias operativas y leyenda global de siglas.</p>
+      </div>
     </div>
 
-    <!-- Table Scroll Container -->
-    <div class="flex-grow-1 overflow-auto custom-scrollbar">
-      <TurnTypeTable
-        :turn-types="store.turnTypes"
-        @edit="openEditModal"
-        @delete="confirmDelete"
-      />
+    <!-- Master-Widget Split Layout -->
+    <div class="row flex-grow-1 overflow-hidden m-0 pb-2 h-100">
+      
+      <!-- LEFT COLUMN: Turn Types List (65%) -->
+      <div class="col-12 col-xl-8 h-100 d-flex flex-column p-0 pe-xl-3 position-relative">
+        <div
+          v-if="store.loading && store.turnTypes.length === 0"
+          class="position-absolute top-50 start-50 translate-middle z-3"
+        >
+          <div class="spinner-border text-primary" role="status"></div>
+        </div>
+
+        <div class="flex-grow-1 overflow-auto custom-scrollbar pe-2">
+          <TurnTypeTable
+            :turn-types="store.turnTypes"
+            @edit="openEditModal"
+            @delete="confirmDelete"
+          />
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: Siglas Dictionary (35%) -->
+      <div class="col-12 col-xl-4 h-100 d-flex flex-column p-0 ps-xl-3 border-start-xl mt-4 mt-xl-0">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="text-slate-800 fw-bold mb-0">Diccionario de Siglas</h6>
+          <button class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-3" @click="$refs.siglaPanelRef?.openCreateModal()">
+            <i class="bi bi-plus-lg me-1"></i> Añadir
+          </button>
+        </div>
+        <div class="flex-grow-1 overflow-hidden bg-white border rounded-4 shadow-sm">
+          <TurnSiglaManagement ref="siglaPanelRef" :hideActionHeader="true" class="h-100" />
+        </div>
+      </div>
+
     </div>
 
     <!-- Modals -->
@@ -48,6 +75,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useTurnTypeStore, type TurnType } from '@/stores/turn-type.store'
 import TurnTypeModal from '@/components/config/TurnTypeModal.vue'
+import TurnSiglaManagement from '@/components/config/TurnSiglaManagement.vue'
 import TurnTypeTable from '@/components/config/TurnTypeTable.vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 
@@ -137,6 +165,25 @@ defineExpose({
 </script>
 
 <style scoped>
+/* Colors mapped to standard slate palette */
+.text-slate-900 { color: #0f172a; }
+.text-slate-800 { color: #1e293b; }
+.text-slate-700 { color: #334155; }
+.text-slate-600 { color: #475569; }
+.text-slate-500 { color: #64748b; }
+.text-slate-400 { color: #94a3b8; }
+.bg-slate-50 { background-color: #f8fafc; }
+.bg-slate-100 { background-color: #f1f5f9; }
+.border-slate-200 { border-color: #e2e8f0; }
+
+.text-sm { font-size: 0.875rem; }
+
+@media (min-width: 1200px) {
+  .border-start-xl {
+    border-left: 1px solid #e2e8f0 !important;
+  }
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }

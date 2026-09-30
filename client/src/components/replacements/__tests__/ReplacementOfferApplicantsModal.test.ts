@@ -17,13 +17,9 @@ describe('ReplacementOfferApplicantsModal.vue - Modal Dual Scoring y Contingenci
         positionName: 'Enfermero/a Clínico/a',
         score: 85,
         breakdown: {
-          previousReplacements: 3,
-          accumulatedHoursMonthly: 40,
-          hoursSinceLastShift: 36,
           matchesPosition: true,
-          cleanRecord: true,
-          nearWeeklyCapPenalty: false,
-          nightShiftAdjacencyPenalty: false,
+          hoursSinceLastShift: 36,
+          historicalHoursInService: 120,
         },
       },
       {
@@ -34,13 +30,9 @@ describe('ReplacementOfferApplicantsModal.vue - Modal Dual Scoring y Contingenci
         positionName: 'Enfermero/a Clínico/a',
         score: 45,
         breakdown: {
-          previousReplacements: 0,
-          accumulatedHoursMonthly: 80,
-          hoursSinceLastShift: 14,
           matchesPosition: true,
-          cleanRecord: false,
-          nearWeeklyCapPenalty: false,
-          nightShiftAdjacencyPenalty: false,
+          hoursSinceLastShift: 14,
+          historicalHoursInService: 0,
         },
       },
     ]
@@ -81,13 +73,9 @@ describe('ReplacementOfferApplicantsModal.vue - Modal Dual Scoring y Contingenci
         positionName: 'Enfermero/a Clínico/a',
         score: 70,
         breakdown: {
-          previousReplacements: 1,
-          accumulatedHoursMonthly: 20,
-          hoursSinceLastShift: 48,
           matchesPosition: true,
-          cleanRecord: true,
-          nearWeeklyCapPenalty: false,
-          nightShiftAdjacencyPenalty: false,
+          hoursSinceLastShift: 48,
+          historicalHoursInService: 24,
         },
       },
     ]

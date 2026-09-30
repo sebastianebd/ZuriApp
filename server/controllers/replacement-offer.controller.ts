@@ -176,17 +176,22 @@ export const getOfferScoringHandler = async (
     if (hasApplicants) {
       candidates = await AvailabilityService.scoreOfferApplicants(offerId);
     } else {
-      isCallList = true;
-      const srvId =
-        (offer.serviceId as any)?._id?.toString() || offer.serviceId?.toString();
-      const posId =
-        (offer.positionId as any)?._id?.toString() || offer.positionId?.toString();
-      candidates = await AvailabilityService.getTopEligibleCandidates(
-        srvId,
-        posId,
-        offer.fecha_inicio,
-        offer.fecha_termino
-      );
+      if (offer.status === 'open' || offer.status === 'finalized') {
+        isCallList = true;
+        const srvId =
+          (offer.serviceId as any)?._id?.toString() || offer.serviceId?.toString();
+        const posId =
+          (offer.positionId as any)?._id?.toString() || offer.positionId?.toString();
+        candidates = await AvailabilityService.getTopEligibleCandidates(
+          srvId,
+          posId,
+          offer.fecha_inicio,
+          offer.fecha_termino
+        );
+      } else {
+        isCallList = false;
+        candidates = [];
+      }
     }
 
     return res.status(200).json({

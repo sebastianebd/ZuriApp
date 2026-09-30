@@ -70,7 +70,11 @@ vi.mock('@/components/replacements', () => ({
   ReplacementModalUpdate: { name: 'ReplacementModalUpdate', template: '<div></div>' },
   ReplacementModalCreate: { name: 'ReplacementModalCreate', template: '<div></div>' },
   ReplacementModalSubstitute: { name: 'ReplacementModalSubstitute', template: '<div></div>' },
-  ReplacementCalendarTab: { name: 'ReplacementCalendarTab', template: '<div class="mock-calendar-tab"></div>' }
+  ReplacementCoverageModal: {
+    name: 'ReplacementCoverageModal',
+    props: ['visible'],
+    template: '<div v-if="visible" class="mock-coverage-modal"></div>'
+  }
 }))
 vi.mock('@/components/common/TableLoader.vue', () => ({
   default: { name: 'TableLoader', template: '<div></div>' }
@@ -79,7 +83,7 @@ vi.mock('@/components/common/AppPagination.vue', () => ({
   default: { name: 'AppPagination', template: '<div></div>' }
 }))
 
-describe('ActiveReplacementsView - Consolidated Navigation', () => {
+describe('ActiveReplacementsView - Navigation & Coverage Modal', () => {
   beforeEach(() => {
     mockRoute.query = {}
     vi.clearAllMocks()
@@ -91,56 +95,41 @@ describe('ActiveReplacementsView - Consolidated Navigation', () => {
     template: '<a :href="to"><slot /></a>',
   }
 
-  it('debería renderizar la Vista Tabla por defecto cuando no hay query view', () => {
+  it('debería renderizar la Vista Tabla con el botón Mapa de Cobertura', () => {
     const wrapper = mount(ActiveReplacementsView, {
       global: { stubs: { 'router-link': routerLinkStub } },
     })
 
     expect(wrapper.find('.mock-filter').exists()).toBe(true)
-    expect(wrapper.find('.mock-calendar-tab').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Tabla')
-    expect(wrapper.text()).toContain('Calendario')
+    expect(wrapper.find('.mock-coverage-modal').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Mapa de Cobertura')
     expect(wrapper.text()).toContain('Nuevo Reemplazo')
   })
 
-  it('debería renderizar la Vista Calendario cuando view=calendar', () => {
+  it('debería abrir el modal de cobertura al hacer clic en el botón Mapa de Cobertura', async () => {
+    const wrapper = mount(ActiveReplacementsView, {
+      global: { stubs: { 'router-link': routerLinkStub } },
+    })
+
+    expect(wrapper.find('.mock-coverage-modal').exists()).toBe(false)
+
+    const coverageBtn = wrapper.find('.coverage-btn')
+    expect(coverageBtn.exists()).toBe(true)
+
+    await coverageBtn.trigger('click')
+
+    expect(wrapper.find('.mock-coverage-modal').exists()).toBe(true)
+  })
+
+  it('debería abrir automáticamente el modal y limpiar el query si view=calendar', async () => {
     mockRoute.query = { view: 'calendar' }
     const wrapper = mount(ActiveReplacementsView, {
       global: { stubs: { 'router-link': routerLinkStub } },
     })
 
-    expect(wrapper.find('.mock-calendar-tab').exists()).toBe(true)
-    expect(wrapper.find('.mock-filter').exists()).toBe(false)
-  })
+    await wrapper.vm.$nextTick()
 
-  it('debería invocar router.replace al hacer clic en el botón Calendario', async () => {
-    const wrapper = mount(ActiveReplacementsView, {
-      global: { stubs: { 'router-link': routerLinkStub } },
-    })
-
-    const buttons = wrapper.findAll('button')
-    const calendarBtn = buttons.find((b) => b.text().includes('Calendario'))
-    expect(calendarBtn).toBeDefined()
-
-    await calendarBtn!.trigger('click')
-
-    expect(mockRouter.replace).toHaveBeenCalledWith({
-      query: { view: 'calendar' }
-    })
-  })
-
-  it('debería invocar router.replace al volver a la vista Tabla', async () => {
-    mockRoute.query = { view: 'calendar' }
-    const wrapper = mount(ActiveReplacementsView, {
-      global: { stubs: { 'router-link': routerLinkStub } },
-    })
-
-    const buttons = wrapper.findAll('button')
-    const tableBtn = buttons.find((b) => b.text().includes('Tabla'))
-    expect(tableBtn).toBeDefined()
-
-    await tableBtn!.trigger('click')
-
+    expect(wrapper.find('.mock-coverage-modal').exists()).toBe(true)
     expect(mockRouter.replace).toHaveBeenCalledWith({
       query: { view: undefined }
     })

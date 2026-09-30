@@ -127,6 +127,10 @@ export function useCurrentShifts(props: {
     return serviceStore.getServiceName(currentId)
   })
 
+  const turnSiglas = computed(() => {
+    return turnSiglaStore.siglas.filter((s) => s.activo !== false)
+  })
+
   return {
     ...state,
     ...grid,
@@ -138,6 +142,9 @@ export function useCurrentShifts(props: {
     loadingExceptions,
     loadingAssignments,
     selectedServiceName,
+    turnSiglas,
+    exceptionStore,
+    serviceStore,
     ...tooltip
   }
 }

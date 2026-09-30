@@ -3,12 +3,12 @@
     <!-- Unified Dynamic Header -->
     <div class="d-flex justify-content-between align-items-center mb-3 flex-shrink-0">
       <div class="d-flex align-items-center gap-3">
-        <div class="icon-square bg-white shadow-sm text-primary">
-          <i class="bi bi-gear-fill fs-4"></i>
+        <div class="header-icon-box shadow-sm">
+          <i class="bi bi-gear-fill fs-4 text-primary"></i>
         </div>
         <div>
-          <h4 class="fw-bold mb-0 text-dark">Configuración del Sistema</h4>
-          <span class="text-secondary small">{{ currentTabSubtitle }}</span>
+          <h4 class="fw-bold mb-0 text-slate-900 tracking-tight">Configuración del Sistema</h4>
+          <span class="text-slate-500 small">{{ currentTabSubtitle }}</span>
         </div>
       </div>
 
@@ -16,29 +16,31 @@
       <div>
         <button
           v-if="canCreateInActiveTab"
-          class="btn btn-primary fw-bold shadow-sm px-4 d-inline-flex align-items-center gap-2"
+          class="btn btn-primary-pill d-flex align-items-center gap-2"
           @click="handleCreateAction"
         >
-          <i class="bi bi-plus-lg"></i>
+          <span class="btn-icon-wrap primary"><i class="bi bi-plus-lg"></i></span>
           <span>{{ createButtonText }}</span>
         </button>
       </div>
     </div>
 
-    <!-- Responsive Horizontal Tabs Bar -->
-    <div class="mb-3 flex-shrink-0">
-      <div class="tabs-scroll-wrapper d-flex flex-nowrap overflow-x-auto gap-2 pb-1">
-        <button
-          v-for="tab in availableTabs"
-          :key="tab.id"
-          type="button"
-          class="btn tab-pill fw-semibold d-inline-flex align-items-center gap-2 px-3 py-2 text-nowrap rounded-pill border-0 transition-all"
-          :class="activeTab === tab.id ? 'active-pill shadow-sm' : 'inactive-pill text-secondary'"
-          @click="selectTab(tab.id)"
-        >
-          <i class="bi" :class="tab.icon"></i>
-          <span>{{ tab.label }}</span>
-        </button>
+    <!-- Segmented Capsule Tabs Bar -->
+    <div class="mb-4 flex-shrink-0">
+      <div class="tabs-scroll-wrapper overflow-x-auto pb-1">
+        <div class="vanguard-segmented-control d-inline-flex p-1">
+          <button
+            v-for="tab in availableTabs"
+            :key="tab.id"
+            type="button"
+            class="segmented-btn d-inline-flex align-items-center gap-2 text-nowrap transition-all"
+            :class="activeTab === tab.id ? 'active' : ''"
+            @click="selectTab(tab.id)"
+          >
+            <i class="bi" :class="tab.icon"></i>
+            <span>{{ tab.label }}</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -53,12 +55,6 @@
       <TurnTypesConfigTab
         v-else-if="activeTab === 'tipos-turno'"
         ref="tabComponentRef"
-      />
-      <TurnSiglaManagement
-        v-else-if="activeTab === 'siglas'"
-        ref="tabComponentRef"
-        :hideActionHeader="true"
-        class="p-3"
       />
       <RolesConfigTab
         v-else-if="activeTab === 'roles'"
@@ -89,7 +85,6 @@ import { useAuth } from '@/composables/login/useAuth'
 
 import ServicesConfigTab from '@/components/config/ServicesConfigTab.vue'
 import TurnTypesConfigTab from '@/components/config/TurnTypesConfigTab.vue'
-import TurnSiglaManagement from '@/components/config/TurnSiglaManagement.vue'
 import RolesConfigTab from '@/components/config/RolesConfigTab.vue'
 import PositionsConfigTab from '@/components/config/PositionsConfigTab.vue'
 
@@ -97,7 +92,7 @@ const route = useRoute()
 const router = useRouter()
 const { can } = useAuth()
 
-type ConfigTabId = 'servicios' | 'tipos-turno' | 'siglas' | 'roles' | 'cargos'
+type ConfigTabId = 'servicios' | 'tipos-turno' | 'roles' | 'cargos'
 
 interface TabDefinition {
   id: ConfigTabId
@@ -127,15 +122,6 @@ const allTabs: TabDefinition[] = [
     viewPermission: 'turn-type.view',
     createPermission: 'turn-type.create',
     createLabel: 'Nuevo Turno'
-  },
-  {
-    id: 'siglas',
-    label: 'Leyenda (Siglas)',
-    icon: 'bi-palette',
-    subtitle: 'Leyenda global y códigos visuales de turnos',
-    viewPermission: 'turn-sigla.view',
-    createPermission: 'turn-sigla.create',
-    createLabel: 'Nueva Sigla'
   },
   {
     id: 'roles',
@@ -232,45 +218,101 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.icon-square {
+/* --- Header & Eyebrow --- */
+.header-icon-box {
   width: 48px;
   height: 48px;
   border-radius: 14px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(191, 219, 254, 0.6);
 }
 
+.tracking-tight {
+  letter-spacing: -0.02em;
+}
+
+/* --- Action Buttons (Island Architecture) --- */
+.btn-primary-pill {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  padding: 0.45rem 1.25rem 0.45rem 0.65rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-primary-pill:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  color: white;
+}
+
+.btn-primary-pill:active {
+  transform: scale(0.98);
+}
+
+.btn-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.btn-icon-wrap.primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* --- Vanguard Segmented Control Tabs --- */
+.vanguard-segmented-control {
+  background-color: #f1f5f9;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.segmented-btn {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 1.2rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.segmented-btn:hover:not(.active) {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.segmented-btn.active {
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+/* Custom Scrollbar for Tabs */
 .tabs-scroll-wrapper {
   scrollbar-width: thin;
 }
-
 .tabs-scroll-wrapper::-webkit-scrollbar {
   height: 4px;
 }
-
 .tabs-scroll-wrapper::-webkit-scrollbar-thumb {
   background-color: #cbd5e1;
   border-radius: 10px;
-}
-
-.tab-pill {
-  font-size: 0.875rem;
-  background-color: transparent;
-  transition: all 0.2s ease-in-out;
-}
-
-.tab-pill.inactive-pill:hover {
-  background-color: #f1f5f9;
-  color: #1e293b !important;
-}
-
-.tab-pill.active-pill {
-  background-color: #3b82f6;
-  color: #ffffff !important;
-}
-
-.transition-all {
-  transition: all 0.2s ease;
 }
 </style>

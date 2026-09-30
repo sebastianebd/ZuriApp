@@ -5,10 +5,7 @@
       <div class="d-flex align-items-center gap-3">
         <!-- Clinical Squircle Icon -->
         <div class="header-icon-box shadow-sm">
-          <i
-            class="bi fs-4 text-primary"
-            :class="viewMode === 'calendar' ? 'bi-calendar3' : 'bi-arrow-left-right'"
-          ></i>
+          <i class="bi fs-4 text-primary bi-arrow-left-right"></i>
         </div>
         <div>
           <div class="d-flex align-items-center gap-2 mb-1">
@@ -18,37 +15,22 @@
             </span>
           </div>
           <p class="text-secondary small mb-0 mt-1">
-            <span v-if="viewMode === 'table'">
-              Administra, audita y fiscaliza los reemplazos y coberturas en el sistema.
-            </span>
-            <span v-else>
-              Visualiza y gestiona la programación de turnos en calendario interactivo.
-            </span>
+            Administra, audita y fiscaliza los reemplazos y coberturas en el sistema.
           </p>
         </div>
       </div>
 
-      <!-- Action Islands & Switcher -->
+      <!-- Action Islands -->
       <div class="d-flex align-items-center gap-2 flex-wrap">
-        <!-- Switcher de Vistas: Tabla / Calendario (Deep Linking) -->
-        <div class="btn-group p-1 bg-white border rounded-pill shadow-sm view-mode-switcher">
-          <button
-            type="button"
-            class="btn btn-sm px-3 rounded-pill fw-semibold border-0 switcher-pill"
-            :class="viewMode === 'table' ? 'btn-primary text-white shadow-sm' : 'text-secondary bg-transparent'"
-            @click="setViewMode('table')"
-          >
-            <i class="bi bi-table me-1"></i> Tabla
-          </button>
-          <button
-            type="button"
-            class="btn btn-sm px-3 rounded-pill fw-semibold border-0 switcher-pill"
-            :class="viewMode === 'calendar' ? 'btn-primary text-white shadow-sm' : 'text-secondary bg-transparent'"
-            @click="setViewMode('calendar')"
-          >
-            <i class="bi bi-calendar3 me-1"></i> Calendario
-          </button>
-        </div>
+        <!-- Botón Mapa de Cobertura (Modal Cronograma & Solapamientos) -->
+        <button
+          type="button"
+          class="btn btn-outline-primary rounded-pill d-flex align-items-center gap-2 px-3 fw-semibold shadow-xs coverage-btn"
+          @click="coverageModalVisible = true"
+        >
+          <i class="bi bi-calendar3-range"></i>
+          <span>Mapa de Cobertura</span>
+        </button>
 
         <div class="vr my-1 text-secondary opacity-25 d-none d-md-block"></div>
 
@@ -64,8 +46,8 @@
       </div>
     </div>
 
-    <!-- VISTA TABLA -->
-    <div v-if="viewMode === 'table'" class="vanguard-card shadow-sm border-0">
+    <!-- VISTA TABLA PRINCIPAL -->
+    <div class="vanguard-card shadow-sm border-0">
       <div class="vanguard-card-body p-4">
         <!-- Filter Section -->
         <ReplacementFilter :lista-servicios="listaDeServicios" />
@@ -114,8 +96,11 @@
       </div>
     </div>
 
-    <!-- VISTA CALENDARIO (Montaje limpio con v-if para FullCalendar) -->
-    <ReplacementCalendarTab v-else />
+    <!-- MODAL DE COBERTURA Y SOLAPAMIENTOS -->
+    <ReplacementCoverageModal
+      :visible="coverageModalVisible"
+      @cerrar="coverageModalVisible = false"
+    />
 
     <!-- MODAL CREAR -->
     <ReplacementModalCreate
@@ -156,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { exportReplacementToPDF } from '@/utils/exportHelpers'
 import { useReplacements } from '@/composables/active-replacements/useActiveReplacements'
@@ -166,7 +151,7 @@ import {
   ReplacementModalUpdate,
   ReplacementModalCreate,
   ReplacementModalSubstitute,
-  ReplacementCalendarTab
+  ReplacementCoverageModal
 } from '@/components/replacements'
 import TableLoader from '@/components/common/TableLoader.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
@@ -176,17 +161,21 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-// Sincronización reactiva con URL Query Parameter (?view=table|calendar)
-const viewMode = computed(() => (route.query.view === 'calendar' ? 'calendar' : 'table'))
+// Estado del Modal de Cobertura
+const coverageModalVisible = ref(false)
 
-const setViewMode = (mode: 'table' | 'calendar') => {
-  router.replace({
-    query: {
-      ...route.query,
-      view: mode === 'table' ? undefined : mode
-    }
-  })
-}
+// Compatibilidad retroactiva: si venía con ?view=calendar, abrir el modal y limpiar el query
+onMounted(() => {
+  if (route.query.view === 'calendar') {
+    coverageModalVisible.value = true
+    router.replace({
+      query: {
+        ...route.query,
+        view: undefined
+      }
+    })
+  }
+})
 
 const {
   replacementStore,

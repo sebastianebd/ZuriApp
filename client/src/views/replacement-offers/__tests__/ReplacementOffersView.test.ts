@@ -43,10 +43,10 @@ const routerLinkStub = {
 
 const globalStubs = {
   'router-link': routerLinkStub,
-  ReplacementModalCreate: {
-    name: 'ReplacementModalCreate',
-    template: '<div class="replacement-modal-create-stub" v-if="visible"></div>',
-    props: ['visible', 'listaDeTurnos', 'listaDeServicios', 'initialBolsaMode'],
+  ReplacementOfferModalCreate: {
+    name: 'ReplacementOfferModalCreate',
+    template: '<div class="replacement-offer-modal-create-stub" v-if="visible"></div>',
+    props: ['visible', 'listaDeTurnos', 'listaDeServicios'],
   },
 }
 
@@ -213,7 +213,7 @@ describe('ReplacementOffersView.vue - Tablón Operativo de Convocatorias (TDD RE
     expect(wrapper.find('.spinner-border').exists()).toBe(false)
   })
 
-  it('pasa listaDeTurnos, listaDeServicios y activa modo bolsa por defecto al montar ReplacementModalCreate', async () => {
+  it('pasa listaDeTurnos y listaDeServicios al montar ReplacementOfferModalCreate', async () => {
     const wrapper = mount(ReplacementOffersView, {
       global: {
         stubs: globalStubs,
@@ -222,9 +222,8 @@ describe('ReplacementOffersView.vue - Tablón Operativo de Convocatorias (TDD RE
 
     await flushPromises()
 
-    const createModal = wrapper.findComponent({ name: 'ReplacementModalCreate' })
+    const createModal = wrapper.findComponent({ name: 'ReplacementOfferModalCreate' })
     expect(createModal.exists()).toBe(true)
-    expect(createModal.props('initialBolsaMode')).toBe(true)
     expect(createModal.props('listaDeServicios')).toBeDefined()
     expect(createModal.props('listaDeTurnos')).toBeDefined()
   })

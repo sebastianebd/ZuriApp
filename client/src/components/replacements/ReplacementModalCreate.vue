@@ -5,375 +5,318 @@
       v-if="visible"
       tabindex="-1"
       role="dialog"
-      style="background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px)"
+      aria-modal="true"
+      style="background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px)"
     >
-      <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content shadow-2xl border-0 rounded-4">
-          <!-- HEADER -->
-          <div class="modal-header border-0 bg-white p-4 pb-3">
-            <div>
-              <h5 class="modal-title fw-bold text-dark">
-                <i class="bi bi-plus-circle-fill text-primary me-2"></i>Nuevo Reemplazo
-              </h5>
-              <p class="text-secondary small mb-0 mt-1">
-                Configure los detalles de la transacción y el período.
-              </p>
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-custom-width" role="document">
+        <div class="modal-content vanguard-modal-content border-0 shadow-2xl rounded-4 overflow-hidden">
+          <!-- HEADER VANGUARDISTA -->
+          <div class="modal-header vanguard-modal-header p-4 border-bottom d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+              <div class="modal-icon-box shadow-sm">
+                <i class="bi bi-arrow-left-right text-primary fs-5"></i>
+              </div>
+              <div>
+                <div class="d-flex align-items-center gap-2">
+                  <h5 class="modal-title fw-bold text-dark mb-0 modal-title-custom">
+                    Nuevo Reemplazo Directo
+                  </h5>
+                  <span class="badge-direct-mode">
+                    <span class="pulse-dot-blue"></span> Asignación Bilateral
+                  </span>
+                </div>
+                <p class="text-secondary small mb-0 mt-1">
+                  Asigna una cobertura directa de turno entre el titular ausente y su reemplazante.
+                </p>
+              </div>
             </div>
             <button
               type="button"
-              class="btn-close"
+              class="btn-close-modal"
               @click="$emit('cerrar')"
-              aria-label="Close"
-            ></button>
+              aria-label="Cerrar modal"
+            >
+              <i class="bi bi-x-lg"></i>
+            </button>
           </div>
 
-          <!-- BODY -->
-          <div class="modal-body p-4 bg-light bg-opacity-50">
-            <!-- ALERTAS DE VALIDACIÓN -->
+          <!-- BODY CON DOBLE BISEL -->
+          <div class="modal-body p-4 bg-surface">
+            <!-- ALERTA DE VALIDACIÓN -->
             <div
               v-if="validationError"
-              class="alert alert-danger border-0 shadow-sm rounded-3 d-flex align-items-center mb-4 animate-shake"
+              class="alert alert-danger border-0 shadow-sm rounded-3 d-flex align-items-center mb-3 animate-shake"
             >
-              <i class="bi bi-exclamation-triangle-fill fs-5 me-3"></i>
-              <div>
-                <div class="fw-bold">Conflicto de Usuarios</div>
-                <div class="small">{{ validationError }}</div>
-              </div>
+              <i class="bi bi-exclamation-triangle-fill fs-5 me-2 flex-shrink-0 text-danger"></i>
+              <div class="small fw-medium">{{ validationError }}</div>
             </div>
 
-            <!-- SELECTOR DE MODO: DIRECTO VS BOLSA DE REEMPLAZOS -->
-            <div class="d-flex align-items-center justify-content-between p-3 mb-4 bg-white rounded-4 border shadow-sm">
-              <div>
-                <span class="fw-bold text-dark d-block">Modalidad de Reemplazo</span>
-                <span class="small text-muted">Asignación directa o convocatoria pública en bolsa de reemplazos.</span>
+            <!-- SECCIÓN 1: TRASPASO DE TURNO (Saliente -> Entrante) -->
+            <div class="vanguard-section-card mb-3 p-3 p-md-4">
+              <!-- Encabezado de Sección -->
+              <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="section-indicator bg-primary"></span>
+                  <h6 class="fw-bold text-dark mb-0 section-heading">Traspaso de Turno</h6>
+                </div>
+                <span class="badge bg-light text-primary border x-small">
+                  Transacción Directa
+                </span>
               </div>
-              <div class="btn-group">
-                <button
-                  type="button"
-                  class="btn btn-sm px-3"
-                  :class="!isBolsaMode ? 'btn-dark text-white shadow-sm fw-semibold' : 'btn-outline-secondary'"
-                  @click="isBolsaMode = false"
-                >
-                  Modo Directo
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-sm px-3"
-                  :class="isBolsaMode ? 'btn-dark text-white shadow-sm fw-semibold' : 'btn-outline-secondary'"
-                  @click="isBolsaMode = true"
-                >
-                  📢 Publicar en Bolsa de Reemplazos
-                </button>
-              </div>
-            </div>
 
-            <!-- SECCIÓN TRANSACCIÓN (Saliente -> Entrante) -->
-            <div class="transaction-container bg-white rounded-4 shadow-sm p-4 mb-4 border">
-              <div class="row align-items-center g-0">
-                <!-- SALIENTE CARD -->
-                <div class="col-md-5">
-                  <div
-                    class="IStaff-card outgoing p-3 rounded-3 border border-danger border-opacity-25 bg-danger bg-opacity-10 position-relative"
-                  >
-                    <div
-                      class="badge bg-danger text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
-                    >
-                      SALIENTE
-                    </div>
+              <!-- Grilla de Asignación Balanceada -->
+              <div class="row g-3 align-items-stretch position-relative">
+                <!-- COLUMNA FUNCIONARIO SALIENTE -->
+                <div class="col-12 col-md-6">
+                  <div class="staff-role-card staff-outgoing h-100 p-3 rounded-3 d-flex flex-column justify-content-between">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="role-pill pill-outgoing">
+                          <i class="bi bi-person-dash me-1"></i> Titular Saliente
+                        </span>
+                      </div>
 
-                    <!-- 🏢 ENTERPRISE: v-select with server-side search -->
-                    <div class="mt-4">
-                      <label class="form-label small fw-semibold text-danger mb-2">
-                        <i class="bi bi-search me-1"></i>Buscar Funcionario
-                      </label>
-                      <v-select
-                        v-model="selectedSaliente"
-                        :options="salienteOptions"
-                        :filterable="false"
-                        :loading="isSearchingSaliente"
-                        @search="searchSaliente"
-                        label="displayName"
-                        placeholder="Escribe RUT o nombre..."
-                        class="IStaff-select-danger"
-                      >
-                        <template #option="option">
-                          <div class="IStaff-option">
-                            <div class="d-flex justify-content-between align-items-center">
-                              <div>
-                                <span class="fw-bold text-dark">{{ option.rut }}</span>
-                                <span class="text-secondary ms-2"
-                                  >{{ option.firstName }} {{ option.lastName }}</span
-                                >
-                              </div>
-                              <span class="badge bg-primary">{{ option.positionId?.name || 'Sin Cargo' }}</span>
-                            </div>
-                          </div>
-                        </template>
-                        <template #selected-option="option">
-                          <div class="d-flex align-items-center">
-                            <div
-                              class="avatar-filled bg-gradient-danger text-white shadow-sm me-2"
-                              style="width: 32px; height: 32px; font-size: 0.75rem"
-                            >
-                              {{ getInitials(option.firstName + ' ' + option.lastName) }}
-                            </div>
-                            <div>
-                              <div class="fw-bold text-dark" style="font-size: 0.875rem">
-                                {{ option.firstName }} {{ option.lastName }}
-                              </div>
-                              <div class="text-secondary" style="font-size: 0.7rem">
-                                {{ option.rut }}
-                              </div>
-                            </div>
-                          </div>
-                        </template>
-                        <template #no-options="{ search }">
-                          <div class="text-center text-muted py-2">
-                            <i class="bi bi-search me-1"></i>
-                            <span v-if="!search">Escribe para buscar...</span>
-                            <span v-else>No se encontraron resultados</span>
-                          </div>
-                        </template>
-                      </v-select>
-                    </div>
-
-                    <!-- Causal de Ausencia (Saliente) -->
-                    <div class="mt-3 pt-2 border-top border-danger border-opacity-25">
-                      <label class="form-label small fw-semibold text-danger mb-1" for="causal-saliente-select">
-                        <i class="bi bi-file-earmark-medical me-1"></i>Causal de Ausencia <span class="text-danger">*</span>
-                      </label>
-                      <select
-                        id="causal-saliente-select"
-                        v-model="registroLocal.motivo"
-                        class="form-select form-select-sm border-danger border-opacity-50"
-                        data-testid="motivo-select"
-                        required
-                      >
-                        <option value="" disabled>Seleccione causal de ausencia...</option>
-                        <option
-                          v-for="(label, key) in MOTIVOS_AUSENCIA_LABELS"
-                          :key="key"
-                          :value="key"
-                        >
-                          {{ label }}
-                        </option>
-                      </select>
-
-                      <!-- Observaciones -->
-                      <div class="mt-2">
-                        <label
-                          class="form-label small fw-semibold mb-1"
-                          :class="registroLocal.motivo === 'OTRO' ? 'text-danger' : 'text-secondary'"
-                          for="observaciones-saliente"
-                        >
-                          Observaciones
-                          <span v-if="registroLocal.motivo === 'OTRO'" class="text-danger">* (Obligatorio)</span>
-                          <span v-else class="text-muted fw-normal">(Opcional)</span>
+                      <!-- Buscador Saliente -->
+                      <div class="my-2">
+                        <label class="form-label staff-field-label mb-1">
+                          Buscar Funcionario Titular <span class="text-danger">*</span>
                         </label>
-                        <textarea
-                          id="observaciones-saliente"
-                          v-model="registroLocal.observaciones"
-                          class="form-control form-control-sm"
-                          :class="{ 'border-danger border-opacity-50': registroLocal.motivo === 'OTRO' && (!registroLocal.observaciones || !registroLocal.observaciones.trim()) }"
-                          rows="2"
-                          maxlength="500"
-                          placeholder="Detalles sobre la ausencia..."
-                          data-testid="observaciones-textarea"
-                        ></textarea>
-                        <div class="text-end text-muted x-small mt-1">
-                          {{ (registroLocal.observaciones || '').length }} / 500
-                        </div>
+                        <v-select
+                          v-model="selectedSaliente"
+                          :options="salienteOptions"
+                          :filterable="false"
+                          :loading="isSearchingSaliente"
+                          @search="searchSaliente"
+                          label="displayName"
+                          placeholder="Escribe RUT o nombre..."
+                          class="custom-v-select staff-v-select"
+                        >
+                          <template #option="option">
+                            <div class="IStaff-option py-1">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                  <span class="fw-bold text-dark font-monospace x-small">{{ option.rut }}</span>
+                                  <span class="text-secondary ms-2 small">{{ option.firstName }} {{ option.lastName }}</span>
+                                </div>
+                                <span class="badge bg-light text-primary border x-small">
+                                  {{ option.positionId?.name || 'Sin Cargo' }}
+                                </span>
+                              </div>
+                            </div>
+                          </template>
+                          <template #selected-option="option">
+                            <div class="d-flex align-items-center py-1">
+                              <div class="avatar-squircle avatar-outgoing-xs shadow-xs me-2">
+                                {{ getInitials(option.firstName + ' ' + option.lastName) }}
+                              </div>
+                              <div style="overflow: hidden">
+                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.8rem">
+                                  {{ option.firstName }} {{ option.lastName }}
+                                </div>
+                                <div class="text-secondary x-small font-monospace text-truncate">
+                                  {{ option.rut }}
+                                </div>
+                              </div>
+                            </div>
+                          </template>
+                          <template #no-options="{ search }">
+                            <div class="text-center text-muted py-2 small">
+                              <i class="bi bi-search me-1"></i>
+                              <span v-if="!search">Escribe al menos 2 caracteres...</span>
+                              <span v-else>No se encontraron resultados</span>
+                            </div>
+                          </template>
+                        </v-select>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <!-- ARROW CONNECTOR -->
-                <div class="col-md-2 text-center py-3 py-md-0">
-                  <div
-                    class="connector-icon bg-white text-secondary shadow-sm rounded-circle d-inline-flex align-items-center justify-content-center border"
-                  >
-                    <i class="bi bi-arrow-right fs-4 d-none d-md-block"></i>
-                    <i class="bi bi-arrow-down fs-4 d-md-none"></i>
-                  </div>
-                </div>
-
-                <!-- ENTRANTE CARD / BOLSA PRESETS -->
-                <div class="col-md-5">
-                  <div
-                    v-if="!isBolsaMode"
-                    class="IStaff-card incoming p-3 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10 position-relative"
-                  >
-                    <div
-                      class="badge bg-success text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
-                    >
-                      ENTRANTE
-                    </div>
-
-                    <!-- 🏢 ENTERPRISE: v-select with server-side search -->
-                    <div class="mt-4">
-                      <label class="form-label small fw-semibold text-success mb-2">
-                        <i class="bi bi-search me-1"></i>Buscar Funcionario
-                      </label>
-                      <v-select
-                        v-model="selectedEntrante"
-                        :options="entranteOptions"
-                        :filterable="false"
-                        :loading="isSearchingEntrante"
-                        @search="searchEntrante"
-                        label="displayName"
-                        placeholder="Escribe RUT o nombre..."
-                        class="IStaff-select-success"
+                    <!-- Causal de Ausencia -->
+                    <div class="mt-3 pt-2 border-top-dashed">
+                      <label
+                        class="form-label staff-field-label d-flex align-items-center gap-1 mb-1"
+                        for="causal-saliente-select"
                       >
-                        <template #option="option">
-                          <div class="IStaff-option">
-                            <div class="d-flex justify-content-between align-items-center">
-                              <div>
-                                <span class="fw-bold text-dark">{{ option.rut }}</span>
-                                <span class="text-secondary ms-2"
-                                  >{{ option.firstName }} {{ option.lastName }}</span
-                                >
-                              </div>
-                              <span class="badge bg-primary">{{ option.positionId?.name || 'Sin Cargo' }}</span>
-                            </div>
-                          </div>
-                        </template>
-                        <template #selected-option="option">
-                          <div class="d-flex align-items-center">
-                            <div
-                              class="avatar-filled bg-gradient-success text-white shadow-sm me-2"
-                              style="width: 32px; height: 32px; font-size: 0.75rem"
-                            >
-                              {{ getInitials(option.firstName + ' ' + option.lastName) }}
-                            </div>
-                            <div>
-                              <div class="fw-bold text-dark" style="font-size: 0.875rem">
-                                {{ option.firstName }} {{ option.lastName }}
-                              </div>
-                              <div class="text-secondary" style="font-size: 0.7rem">
-                                {{ option.rut }}
-                              </div>
-                            </div>
-                          </div>
-                        </template>
-                        <template #no-options="{ search }">
-                          <div class="text-center text-muted py-2">
-                            <i class="bi bi-search me-1"></i>
-                            <span v-if="!search">Escribe para buscar...</span>
-                            <span v-else>No se encontraron resultados</span>
-                          </div>
-                        </template>
-                      </v-select>
+                        <i class="bi bi-file-earmark-medical text-secondary"></i>
+                        <span>Causal de Ausencia</span>
+                        <span class="text-danger">*</span>
+                      </label>
+                      <div class="select-wrapper">
+                        <select
+                          id="causal-saliente-select"
+                          v-model="registroLocal.motivo"
+                          class="form-select form-select-custom"
+                          data-testid="motivo-select"
+                          required
+                        >
+                          <option value="" disabled>Seleccione causal de ausencia...</option>
+                          <option
+                            v-for="(label, key) in MOTIVOS_AUSENCIA_LABELS"
+                            :key="key"
+                            :value="key"
+                          >
+                            {{ label }}
+                          </option>
+                        </select>
+                      </div>
                     </div>
                   </div>
+                </div>
 
-                  <!-- MODO BOLSA: PRESETS DE VENCIMIENTO -->
-                  <div
-                    v-else
-                    class="IStaff-card bolsa p-3 rounded-3 border border-primary border-opacity-25 bg-primary bg-opacity-10 position-relative"
-                    data-testid="bolsa-presets-container"
-                  >
-                    <div
-                      class="badge bg-primary text-white position-absolute top-0 start-0 m-2 x-small shadow-sm"
-                    >
-                      BOLSA DE REEMPLAZOS
+                <!-- COLUMNA FUNCIONARIO ENTRANTE -->
+                <div class="col-12 col-md-6">
+                  <div class="staff-role-card staff-incoming h-100 p-3 rounded-3 d-flex flex-column justify-content-between">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="role-pill pill-incoming">
+                          <i class="bi bi-person-check me-1"></i> Reemplazante Entrante
+                        </span>
+                      </div>
+
+                      <!-- Buscador Entrante -->
+                      <div class="my-2">
+                        <label class="form-label staff-field-label mb-1">
+                          Buscar Reemplazante <span class="text-danger">*</span>
+                        </label>
+                        <v-select
+                          v-model="selectedEntrante"
+                          :options="entranteOptions"
+                          :filterable="false"
+                          :loading="isSearchingEntrante"
+                          @search="searchEntrante"
+                          label="displayName"
+                          placeholder="Escribe RUT o nombre..."
+                          class="custom-v-select staff-v-select"
+                        >
+                          <template #option="option">
+                            <div class="IStaff-option py-1">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                  <span class="fw-bold text-dark font-monospace x-small">{{ option.rut }}</span>
+                                  <span class="text-secondary ms-2 small">{{ option.firstName }} {{ option.lastName }}</span>
+                                </div>
+                                <span class="badge bg-light text-primary border x-small">
+                                  {{ option.positionId?.name || 'Sin Cargo' }}
+                                </span>
+                              </div>
+                            </div>
+                          </template>
+                          <template #selected-option="option">
+                            <div class="d-flex align-items-center py-1">
+                              <div class="avatar-squircle avatar-incoming-xs shadow-xs me-2">
+                                {{ getInitials(option.firstName + ' ' + option.lastName) }}
+                              </div>
+                              <div style="overflow: hidden">
+                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.8rem">
+                                  {{ option.firstName }} {{ option.lastName }}
+                                </div>
+                                <div class="text-secondary x-small font-monospace text-truncate">
+                                  {{ option.rut }}
+                                </div>
+                              </div>
+                            </div>
+                          </template>
+                          <template #no-options="{ search }">
+                            <div class="text-center text-muted py-2 small">
+                              <i class="bi bi-search me-1"></i>
+                              <span v-if="!search">Escribe al menos 2 caracteres...</span>
+                              <span v-else>No se encontraron resultados</span>
+                            </div>
+                          </template>
+                        </v-select>
+                      </div>
                     </div>
-                    <div class="mt-4">
-                      <label class="form-label small fw-semibold text-primary mb-2">
-                        <i class="bi bi-clock-history me-1"></i>Vencimiento de Postulación
-                      </label>
-                      <div class="d-flex flex-wrap gap-2 mb-2">
-                        <button
-                          type="button"
-                          class="btn btn-sm"
-                          :class="expirationPreset === '2h' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark'"
-                          @click="expirationPreset = '2h'"
-                        >
-                          En 2 horas
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-sm"
-                          :class="expirationPreset === '4h' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark'"
-                          @click="expirationPreset = '4h'"
-                        >
-                          En 4 horas
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-sm"
-                          :class="expirationPreset === 'eod' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark'"
-                          @click="expirationPreset = 'eod'"
-                        >
-                          Fin del día (18:00)
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-sm"
-                          :class="expirationPreset === 'custom' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark'"
-                          @click="expirationPreset = 'custom'"
-                        >
-                          Personalizado
-                        </button>
-                      </div>
 
-                      <div v-if="expirationPreset === 'custom'" class="mt-2">
-                        <input
-                          type="datetime-local"
-                          v-model="customExpiresAt"
-                          class="form-control form-control-sm"
-                        />
-                      </div>
-
-                      <div class="small text-muted mt-2">
-                        <span>Límite calculado: </span>
-                        <strong class="text-dark">{{ formatExpirationDisplay() }}</strong>
-                      </div>
+                    <div class="mt-3 pt-2 border-top-dashed d-flex align-items-center gap-1 text-muted x-small">
+                      <i class="bi bi-check-circle-fill text-success opacity-75"></i>
+                      <span>Personal habilitado para cobertura de turno</span>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <!-- Observaciones Transversal (Simetría Perfecta) -->
+              <div class="mt-3 pt-3 border-top">
+                <label
+                  class="form-label staff-field-label d-flex justify-content-between align-items-center mb-1"
+                  for="observaciones-saliente"
+                >
+                  <span class="d-flex align-items-center gap-1">
+                    <i class="bi bi-card-text text-secondary"></i>
+                    <span>Observaciones de la Ausencia o Turno</span>
+                    <span v-if="registroLocal.motivo === 'OTRO'" class="text-danger">* (Obligatorio)</span>
+                  </span>
+                  <span class="text-secondary fw-normal x-small">
+                    {{ (registroLocal.observaciones || '').length }} / 500 car.
+                  </span>
+                </label>
+                <textarea
+                  id="observaciones-saliente"
+                  v-model="registroLocal.observaciones"
+                  class="form-control form-textarea-custom"
+                  :class="{ 'border-danger border-opacity-50': registroLocal.motivo === 'OTRO' && (!registroLocal.observaciones || !registroLocal.observaciones.trim()) }"
+                  rows="2"
+                  maxlength="500"
+                  placeholder="Detalles sobre la ausencia, justificación o acuerdos del turno..."
+                  data-testid="observaciones-textarea"
+                ></textarea>
+              </div>
             </div>
 
-            <!-- SECCIÓN CONTEXTO -->
-            <div class="context-container bg-white rounded-4 shadow-sm p-4 border">
-              <h6 class="text-uppercase text-secondary fw-bold x-small mb-3 tracking-wider">
-                Detalles del Período
-              </h6>
+            <!-- SECCIÓN 2: PARÁMETROS DEL TURNO Y SERVICIO -->
+            <div class="vanguard-section-card p-3 p-md-4">
+              <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="section-indicator bg-indigo"></span>
+                  <h6 class="fw-bold text-dark mb-0 section-heading">Parámetros del Turno</h6>
+                </div>
+                <span class="badge bg-light text-secondary border x-small">
+                  Período y Servicio
+                </span>
+              </div>
 
               <div class="row g-3">
-                <!-- SERVICIO -->
-                <div class="col-md-6">
-                  <label class="form-label small fw-semibold text-secondary"
-                    >Servicio Clínico</label
-                  >
+                <!-- Tipo Turno y Servicio Clínico -->
+                <div class="col-12 col-md-6">
+                  <label class="form-label staff-field-label d-flex align-items-center gap-1 mb-1">
+                    <i class="bi bi-clock-history text-secondary"></i>
+                    <span>Tipo de Turno</span>
+                    <span class="text-danger">*</span>
+                  </label>
                   <v-select
-                    v-model="registroLocal.servicio"
+                    :options="computedListaDeTurnos"
+                    v-model="registroLocal.tipo_turno"
+                    placeholder="Seleccione turno..."
+                    :clearable="false"
+                    :searchable="false"
+                    class="custom-v-select small-select"
+                  />
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="form-label staff-field-label d-flex align-items-center gap-1 mb-1">
+                    <i class="bi bi-hospital text-secondary"></i>
+                    <span>Servicio Clínico</span>
+                    <span class="text-danger">*</span>
+                  </label>
+                  <v-select
                     :options="computedListaDeServicios"
+                    v-model="registroLocal.servicio"
                     label="nombre"
                     :reduce="(s: any) => s._id"
-                    placeholder="Seleccione servicio"
-                    class="custom-v-select"
-                  />
-                </div>
-
-                <!-- TIPO TURNO -->
-                <div class="col-md-6">
-                  <label class="form-label small fw-semibold text-secondary">Tipo de Turno</label>
-                  <v-select
-                    id="tipo_turno"
-                    v-model="registroLocal.tipo_turno"
-                    :options="computedListaDeTurnos"
+                    placeholder="Seleccione servicio..."
                     :clearable="false"
-                    :filterable="true"
-                    placeholder="Tipo de turno..."
-                    class="custom-v-select"
+                    :searchable="true"
+                    class="custom-v-select small-select"
                   />
                 </div>
 
-                <!-- FECHAS -->
-                <div class="col-md-6">
-                  <label class="form-label small fw-semibold text-secondary">Inicio</label>
+                <!-- Fechas Inicio y Término con DatePicker -->
+                <div class="col-12 col-md-6">
+                  <label class="form-label staff-field-label d-flex align-items-center gap-1 mb-1">
+                    <i class="bi bi-calendar-event text-secondary"></i>
+                    <span>Fecha de Inicio</span>
+                    <span class="text-danger">*</span>
+                  </label>
                   <DatePicker
                     ref="dpInicio"
                     v-model="fechaInicioComputed"
@@ -381,21 +324,21 @@
                     :min-date="today"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :popover="popoverConfig"
-                    :attributes="combinedDateAttributes"
-                    is-required
+                    :is-required="true"
+                    trim-weeks
                     color="blue"
                   >
                     <template #default="{ inputValue, inputEvents }">
-                      <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted"
-                          ><i class="bi bi-calendar3"></i
-                        ></span>
+                      <div class="input-group modern-input-group">
+                        <span class="input-group-text">
+                          <i class="bi bi-calendar3"></i>
+                        </span>
                         <input
-                          class="form-control bg-white border-start-0 ps-0"
+                          class="form-control modern-date-input"
                           :value="inputValue"
                           v-on="inputEvents"
                           @click="handleInicioClick"
-                          placeholder="Seleccione fecha inicio"
+                          placeholder="dd/mm/aaaa"
                           readonly
                         />
                       </div>
@@ -403,8 +346,12 @@
                   </DatePicker>
                 </div>
 
-                <div class="col-md-6">
-                  <label class="form-label small fw-semibold text-secondary">Término</label>
+                <div class="col-12 col-md-6">
+                  <label class="form-label staff-field-label d-flex align-items-center gap-1 mb-1">
+                    <i class="bi bi-calendar-check text-secondary"></i>
+                    <span>Fecha de Término</span>
+                    <span class="text-danger">*</span>
+                  </label>
                   <DatePicker
                     ref="dpTermino"
                     v-model="fechaTerminoComputed"
@@ -412,21 +359,21 @@
                     :min-date="fechaInicioComputed || today"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     :popover="popoverConfig"
-                    :attributes="combinedDateAttributes"
-                    is-required
+                    :is-required="true"
+                    trim-weeks
                     color="blue"
                   >
                     <template #default="{ inputValue, inputEvents }">
-                      <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted"
-                          ><i class="bi bi-calendar3"></i
-                        ></span>
+                      <div class="input-group modern-input-group">
+                        <span class="input-group-text">
+                          <i class="bi bi-calendar3"></i>
+                        </span>
                         <input
-                          class="form-control bg-white border-start-0 ps-0"
+                          class="form-control modern-date-input"
                           :value="inputValue"
                           v-on="inputEvents"
                           @click="handleTerminoClick"
-                          placeholder="Seleccione fecha término"
+                          placeholder="dd/mm/aaaa"
                           readonly
                         />
                       </div>
@@ -437,32 +384,37 @@
             </div>
           </div>
 
-          <!-- FOOTER -->
-          <div class="modal-footer border-top bg-light p-3">
+          <!-- FOOTER VANGUARDISTA -->
+          <div class="modal-footer vanguard-modal-footer p-3 px-4 border-top d-flex justify-content-between align-items-center bg-white">
             <button
               type="button"
-              class="btn btn-light border fw-bold text-secondary px-4 me-2"
+              class="btn btn-secondary-pill"
               @click="$emit('cerrar')"
             >
               Cancelar
             </button>
             <button
               type="button"
+              class="btn btn-primary btn-primary-pill d-flex align-items-center gap-2"
+              :disabled="!isFormComplete || Boolean(validationError)"
               @click="abrirConfirmacion"
-              class="btn btn-primary fw-bold px-4 shadow-sm"
-              :disabled="!!validationError || !isFormComplete"
             >
-              <i class="bi bi-check-lg me-2"></i>Crear Reemplazo
+              <span class="btn-icon-wrap primary">
+                <i class="bi bi-check-lg"></i>
+              </span>
+              <span>Crear Reemplazo</span>
             </button>
           </div>
 
           <!-- Modal de confirmación -->
-          <ConfirmationModal
-            :visible="showConfirmacion"
-            mensaje="¿Confirmas la creación de este reemplazo?"
-            @confirmar="confirmarGuardar"
-            @cancelar="cancelarConfirmacion"
-          />
+          <Teleport to="body">
+            <ConfirmationModal
+              :visible="showConfirmacion"
+              mensaje="¿Deseas crear y confirmar este reemplazo directo?"
+              @confirmar="confirmarGuardar"
+              @cancelar="cancelarConfirmacion"
+            />
+          </Teleport>
         </div>
       </div>
     </div>
@@ -470,38 +422,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { type ReplacementRegistration, MOTIVOS_AUSENCIA_LABELS, type AusenciaSalienteMotivo } from '@/types/replacement.types'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { getInitials } from '@/utils/text-formatters'
+import {
+  type ReplacementRegistration,
+  MOTIVOS_AUSENCIA_LABELS,
+  type AusenciaSalienteMotivo
+} from '@/types/replacement.types'
 import { type IStaff } from '@/types/staff.types'
 import { useStaffStore } from '@/stores/staff.store'
 import { useServiceStore } from '@/stores/service.store'
 import { useTurnTypeStore } from '@/stores/turn-type.store'
-import ConfirmationModal from '../common/ConfirmationModal.vue'
+import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
+import { useReplacementStore } from '@/stores/replacement.store'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
 import { useDatePicker } from '@/composables/useDatePicker'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
-import { useTurnAssignmentStore } from '@/stores/turn-assignment.store'
-import { useReplacementStore } from '@/stores/replacement.store'
-import { useReplacementOfferStore } from '@/stores/replacement-offer.store'
-import { findNextAvailableDate } from '@/utils/date-utils'
+import ConfirmationModal from '../common/ConfirmationModal.vue'
+
+interface ReemplazoModalData extends Partial<ReplacementRegistration> {
+  fecha_inicio?: string
+  fecha_termino?: string
+}
 
 const props = withDefaults(
   defineProps<{
     visible: boolean
     listaDeTurnos?: string[]
     listaDeServicios?: any[]
-    registro?: Partial<ReplacementRegistration>
+    registro?: ReemplazoModalData
     fechasBloqueadas?: string[]
-    initialBolsaMode?: boolean
   }>(),
   {
+    visible: false,
     listaDeTurnos: () => [],
     listaDeServicios: () => [],
     registro: () => ({}),
-    fechasBloqueadas: () => [],
-    initialBolsaMode: false,
+    fechasBloqueadas: () => []
   }
 )
 
@@ -530,99 +489,46 @@ const computedListaDeTurnos = computed(() => {
   return turnTypeStore.turnTypes.map((t: any) => t.nombre || t.name)
 })
 
-const isBolsaMode = ref<boolean>(props.initialBolsaMode ?? false)
-
 onMounted(async () => {
-  if (props.initialBolsaMode) {
-    isBolsaMode.value = true
-  }
   if (props.visible) {
-    if (serviceStore.services.length === 0) {
-      await serviceStore.fetchServices()
-    }
-    if (turnTypeStore.turnTypes.length === 0) {
-      await turnTypeStore.fetchTurnTypes(true)
-    }
+    if (serviceStore.services.length === 0) await serviceStore.fetchServices()
+    if (turnTypeStore.turnTypes.length === 0) await turnTypeStore.fetchTurnTypes(true)
   }
 })
 
-const expirationPreset = ref<'2h' | '4h' | 'eod' | 'custom'>('2h')
-const customExpiresAt = ref<string>('')
-
-const computeExpirationDate = (): Date => {
-  const now = new Date()
-  if (expirationPreset.value === '2h') {
-    return new Date(now.getTime() + 2 * 3600000)
-  }
-  if (expirationPreset.value === '4h') {
-    return new Date(now.getTime() + 4 * 3600000)
-  }
-  if (expirationPreset.value === 'eod') {
-    const eod = new Date(now)
-    eod.setHours(18, 0, 0, 0)
-    if (eod.getTime() <= now.getTime()) {
-      eod.setDate(eod.getDate() + 1)
-    }
-    return eod
-  }
-  if (customExpiresAt.value) {
-    const d = new Date(customExpiresAt.value)
-    if (!isNaN(d.getTime())) return d
-  }
-  return new Date(now.getTime() + 2 * 3600000)
-}
-
-const computedExpiresAt = computed(() => {
-  return computeExpirationDate().toISOString()
-})
-
-const formatExpirationDisplay = () => {
-  const d = computeExpirationDate()
-  return d.toLocaleTimeString('es-CL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: '2-digit',
-  })
-}
-
+// Local Form State
 const registroLocal = reactive({
   ...props.registro,
-  motivo: (props.registro.motivo || '') as AusenciaSalienteMotivo,
+  motivo: (props.registro.motivo || '') as AusenciaSalienteMotivo | '',
   observaciones: props.registro.observaciones || ''
 })
-const showConfirmacion = ref(false)
 
-// 🏢 ENTERPRISE: IStaff selection with server-side search
+const showConfirmacion = ref(false)
 const selectedSaliente = ref<IStaff | null>(null)
 const selectedEntrante = ref<IStaff | null>(null)
 const salienteOptions = ref<IStaff[]>([])
 const entranteOptions = ref<IStaff[]>([])
 const isSearchingSaliente = ref(false)
 const isSearchingEntrante = ref(false)
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-// Debounced search for Saliente (300ms)
+let searchTimeoutSaliente: ReturnType<typeof setTimeout> | null = null
+let searchTimeoutEntrante: ReturnType<typeof setTimeout> | null = null
+
+const salienteBlockedDates = ref<any[]>([])
+const entranteBlockedRanges = ref<any[]>([])
+
 const searchSaliente = (query: string, loading: (isLoading: boolean) => void) => {
   if (!query || query.length < 2) {
     salienteOptions.value = []
     return
   }
-
   loading(true)
   isSearchingSaliente.value = true
 
-  if (searchTimeout) clearTimeout(searchTimeout)
-
-  searchTimeout = setTimeout(async () => {
+  if (searchTimeoutSaliente) clearTimeout(searchTimeoutSaliente)
+  searchTimeoutSaliente = setTimeout(async () => {
     try {
-      await staffStore.searchStaff({
-        search: query.trim(),
-        page: 1,
-        limit: 20
-      })
-
-      // Transform results for v-select
+      await staffStore.searchStaff({ search: query.trim(), page: 1, limit: 20 })
       salienteOptions.value = staffStore.searchResults.map((u) => ({
         ...u,
         displayName: `${u.rut} - ${u.firstName} ${u.lastName}`
@@ -637,27 +543,18 @@ const searchSaliente = (query: string, loading: (isLoading: boolean) => void) =>
   }, 300)
 }
 
-// Debounced search for Entrante (300ms)
 const searchEntrante = (query: string, loading: (isLoading: boolean) => void) => {
   if (!query || query.length < 2) {
     entranteOptions.value = []
     return
   }
-
   loading(true)
   isSearchingEntrante.value = true
 
-  if (searchTimeout) clearTimeout(searchTimeout)
-
-  searchTimeout = setTimeout(async () => {
+  if (searchTimeoutEntrante) clearTimeout(searchTimeoutEntrante)
+  searchTimeoutEntrante = setTimeout(async () => {
     try {
-      await staffStore.searchStaff({
-        search: query.trim(),
-        page: 1,
-        limit: 20
-      })
-
-      // Transform results for v-select
+      await staffStore.searchStaff({ search: query.trim(), page: 1, limit: 20 })
       entranteOptions.value = staffStore.searchResults.map((u) => ({
         ...u,
         displayName: `${u.rut} - ${u.firstName} ${u.lastName}`
@@ -672,20 +569,37 @@ const searchEntrante = (query: string, loading: (isLoading: boolean) => void) =>
   }, 300)
 }
 
-// --- Blocking Logic AuthState ---
-const salienteBlockedDates = ref<Date[]>([])
-const entranteBlockedRanges = ref<any[]>([])
-
-// Helper to parse "YYYY-MM-DD" to Date
-const parseDateStr = (str: string) => {
-  const [y, m, d] = str.split('-').map(Number)
-  return new Date(y, m - 1, d)
+const parseDateStr = (dStr: string): Date => {
+  const [yyyy, mm, dd] = dStr.split('-').map(Number)
+  return new Date(yyyy, mm - 1, dd)
 }
 
-// Helper para actualizar fecha_inicio al primer día disponible si hay fechas bloqueadas
 const updateDateToNextAvailable = () => {
-  if (combinedDisabledDates.value.length === 0) return
-  const nextAvailable = findNextAvailableDate(new Date(), combinedDisabledDates.value)
+  const now = new Date()
+  let nextAvailable = new Date(now)
+  nextAvailable.setHours(0, 0, 0, 0)
+
+  const isBlocked = (targetDate: Date) => {
+    return combinedDisabledDates.value.some((b: any) => {
+      let bStart: Date
+      let bEnd: Date
+      if (b && b.start) {
+        bStart = new Date(b.start)
+        bEnd = b.end ? new Date(b.end) : bStart
+      } else {
+        bStart = new Date(b)
+        bEnd = new Date(b)
+      }
+      bStart.setHours(0, 0, 0, 0)
+      bEnd.setHours(23, 59, 59, 999)
+      return targetDate >= bStart && targetDate <= bEnd
+    })
+  }
+
+  while (isBlocked(nextAvailable)) {
+    nextAvailable.setDate(nextAvailable.getDate() + 1)
+  }
+
   const yyyy = nextAvailable.getFullYear()
   const mm = String(nextAvailable.getMonth() + 1).padStart(2, '0')
   const dd = String(nextAvailable.getDate()).padStart(2, '0')
@@ -694,28 +608,20 @@ const updateDateToNextAvailable = () => {
   registroLocal.fecha_termino = dateStr
 }
 
-// Shared helper to fetch blocked dates for a Staff (Absence + Working + Shifts)
 const fetchBlockedDates = async (IStaff: IStaff) => {
   try {
     const [replacements, assignments = []] = await Promise.all([
       replacementStore.checkConflicts({ search: IStaff.rut, limit: 100 }),
       turnAssignmentStore.fetchAssignmentsByUser(IStaff._id)
     ])
-
-    // 1. Absences (IStaff is Saliente en otro reemplazo activo)
     const absenceStrs = replacementStore.getFechasAusencia(IStaff._id, replacements)
     const absenceDates = absenceStrs.map(parseDateStr)
-
-    // 2. Occupied as Replacement (IStaff is Entrante en otro reemplazo activo)
     const occupiedStrs = replacementStore.getFechasOcupadas(IStaff._id, replacements)
     const occupiedDates = occupiedStrs.map(parseDateStr)
-
-    // 3. Occupied by Shift Assignment (bloquea fechas con turnos asignados)
     const shiftRanges = assignments.map((a: any) => ({
       start: new Date(a.start_date),
       end: a.end_date ? new Date(a.end_date) : new Date(2100, 0, 1)
     }))
-
     return [...absenceDates, ...occupiedDates, ...shiftRanges]
   } catch (error) {
     console.error(`Error fetching blocked dates for ${IStaff.rut}:`, error)
@@ -723,7 +629,6 @@ const fetchBlockedDates = async (IStaff: IStaff) => {
   }
 }
 
-// Watch Saliente -> Update Form & Fetch ALL Blocked Dates
 watch(selectedSaliente, async (IStaff) => {
   if (IStaff) {
     Object.assign(registroLocal, {
@@ -743,7 +648,6 @@ watch(selectedSaliente, async (IStaff) => {
   }
 })
 
-// Watch Entrante -> Update Form & Fetch ALL Blocked Dates
 watch(selectedEntrante, async (IStaff) => {
   if (IStaff) {
     Object.assign(registroLocal, {
@@ -763,39 +667,22 @@ watch(selectedEntrante, async (IStaff) => {
   }
 })
 
-// Combine everything
 const combinedDisabledDates = computed(() => {
-  const fromProps = (props.fechasBloqueadas || []).map(parseDateStr)
-  return [...fromProps, ...salienteBlockedDates.value, ...entranteBlockedRanges.value]
+  const staticBlocks = (props.fechasBloqueadas || []).map(parseDateStr)
+  return [...staticBlocks, ...salienteBlockedDates.value, ...entranteBlockedRanges.value]
 })
 
-const combinedDateAttributes = computed(() => {
-  if (combinedDisabledDates.value.length === 0) return []
-  return [
-    {
-      highlight: {
-        color: 'red',
-        fillMode: 'light'
-      },
-      dates: combinedDisabledDates.value
-    }
-  ]
-})
-
-// --- Validation Logic ---
+// Validations
 const validationError = computed(() => {
-  // 1. Validar conflicto de usuarios
   if (registroLocal.rut_saliente && registroLocal.rut_entrante) {
     if (registroLocal.rut_saliente === registroLocal.rut_entrante) {
       return 'El funcionario saliente y entrante no pueden ser la misma persona.'
     }
   }
 
-  // 2. Validar Fechas
   if (registroLocal.fecha_inicio) {
     const start = new Date(registroLocal.fecha_inicio + 'T00:00:00')
     start.setHours(0, 0, 0, 0)
-
     const now = new Date()
     now.setHours(0, 0, 0, 0)
 
@@ -807,24 +694,11 @@ const validationError = computed(() => {
     if (registroLocal.fecha_termino) {
       end = new Date(registroLocal.fecha_termino + 'T00:00:00')
       end.setHours(23, 59, 59, 999)
-
       if (end < start) {
         return 'La fecha de término no puede ser anterior a la fecha de inicio.'
       }
-    } else {
-      // If no end date set yet, we only validate start against blocks if strictly needed,
-      // but usually we validate range. If single day replacment assumption?
-      // IStaff says "input start and end".
-      // If end is missing, we assume end = start for blocking check?
-      // No, let's wait for end date usually. But if IStaff only wants 1 day...
-      // Let's assume end = start if not provided for safety check?
-      // Or just check conflict for start date.
-      const startEnd = new Date(start)
-      startEnd.setHours(23, 59, 59, 999)
-      end = startEnd
     }
 
-    // Default to Check Overlap (supports Date or range { start, end })
     const hasConflict = combinedDisabledDates.value.some((blockedDate: any) => {
       let bStart: Date
       let bEnd: Date
@@ -837,7 +711,6 @@ const validationError = computed(() => {
       }
       bStart.setHours(0, 0, 0, 0)
       bEnd.setHours(23, 59, 59, 999)
-
       return start <= bEnd && end >= bStart
     })
 
@@ -846,7 +719,6 @@ const validationError = computed(() => {
     }
   }
 
-  // 3. Validar Causal de Ausencia y Observaciones
   if (registroLocal.motivo === 'OTRO') {
     if (!registroLocal.observaciones || !registroLocal.observaciones.trim()) {
       return "Las observaciones son obligatorias cuando el motivo es 'OTRO'"
@@ -860,23 +732,7 @@ const validationError = computed(() => {
 })
 
 const isFormComplete = computed(() => {
-  if (isBolsaMode.value) {
-    const bolsaComplete = Boolean(
-      registroLocal.rut_saliente &&
-      registroLocal.tipo_turno &&
-      registroLocal.servicio &&
-      registroLocal.fecha_inicio &&
-      registroLocal.fecha_termino &&
-      registroLocal.motivo
-    )
-    if (!bolsaComplete) return false
-    if (registroLocal.motivo === 'OTRO') {
-      return Boolean(registroLocal.observaciones && registroLocal.observaciones.trim().length > 0)
-    }
-    return true
-  }
-
-  const baseComplete = Boolean(
+  const complete = Boolean(
     registroLocal.rut_saliente &&
     registroLocal.rut_entrante &&
     registroLocal.tipo_turno &&
@@ -885,17 +741,14 @@ const isFormComplete = computed(() => {
     registroLocal.fecha_termino &&
     registroLocal.motivo
   )
-
-  if (!baseComplete) return false
-
+  if (!complete) return false
   if (registroLocal.motivo === 'OTRO') {
     return Boolean(registroLocal.observaciones && registroLocal.observaciones.trim().length > 0)
   }
-
   return true
 })
 
-// --- Watchers ---
+// Watchers
 watch(
   () => props.registro,
   (nuevo) => {
@@ -912,23 +765,14 @@ watch(
   () => props.visible,
   async (nuevoValor) => {
     if (nuevoValor) {
-      if (props.initialBolsaMode) {
-        isBolsaMode.value = true
-      }
-      if (serviceStore.services.length === 0) {
-        await serviceStore.fetchServices()
-      }
-      if (turnTypeStore.turnTypes.length === 0) {
-        await turnTypeStore.fetchTurnTypes(true)
-      }
-      // Reset logic if needed
+      if (serviceStore.services.length === 0) await serviceStore.fetchServices()
+      if (turnTypeStore.turnTypes.length === 0) await turnTypeStore.fetchTurnTypes(true)
       if (!registroLocal.fecha_inicio) registroLocal.fecha_inicio = todayString()
       if (!registroLocal.fecha_termino) registroLocal.fecha_termino = todayString()
     }
   }
 )
 
-// Sync Termino with Inicio
 watch(
   () => registroLocal.fecha_inicio,
   (newVal) => {
@@ -938,7 +782,7 @@ watch(
   }
 )
 
-// --- Date Logic ---
+// DatePicker controls
 const dpInicio = ref<any>(null)
 const dpTermino = ref<any>(null)
 const { popoverConfig } = useDatePicker(props)
@@ -1005,71 +849,32 @@ const fechaTerminoComputed = computed({
   }
 })
 
-// --- Helpers ---
-function getInitials(name: string) {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .filter((n) => n.length > 0)
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-}
-
 function abrirConfirmacion() {
-  if (validationError.value) return
+  if (validationError.value || !isFormComplete.value) return
   showConfirmacion.value = true
 }
 
 function confirmarGuardar() {
   showConfirmacion.value = false
-  
-  // Clean payload for strict backend
+
   const payload = { ...registroLocal } as any
-  
-  // Force strict UTC Dates
+
   if (payload.fecha_inicio) {
     const [y, m, d] = String(payload.fecha_inicio).split('T')[0].split('-').map(Number)
     payload.fecha_inicio = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)).toISOString()
   }
-  
+
   if (payload.fecha_termino) {
     const [y, m, d] = String(payload.fecha_termino).split('T')[0].split('-').map(Number)
     payload.fecha_termino = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)).toISOString()
   }
 
-  // Ensure ObjectIds are strings, not objects (Vue-Select sometimes binds objects)
   if (typeof payload.id_saliente === 'object' && payload.id_saliente?._id) payload.id_saliente = payload.id_saliente._id
   if (typeof payload.id_entrante === 'object' && payload.id_entrante?._id) payload.id_entrante = payload.id_entrante._id
   if (typeof payload.servicio === 'object' && payload.servicio?._id) payload.servicio = payload.servicio._id
 
   payload.motivo = registroLocal.motivo
-  payload.observaciones = registroLocal.observaciones && registroLocal.observaciones.trim() ? registroLocal.observaciones.trim() : undefined
-
-  if (isBolsaMode.value) {
-    const offerPayload = {
-      serviceId: payload.servicio,
-      positionId: (selectedSaliente.value?.positionId as any)?._id || selectedSaliente.value?.positionId,
-      id_saliente: payload.id_saliente,
-      motivo: payload.motivo,
-      observaciones: payload.observaciones,
-      tipo_turno: payload.tipo_turno,
-      fecha_inicio: payload.fecha_inicio,
-      fecha_termino: payload.fecha_termino,
-      expiresAt: computedExpiresAt.value,
-    }
-
-    try {
-      const offerStore = useReplacementOfferStore()
-      offerStore.createOffer(offerPayload)
-    } catch {
-      // Graceful fallback
-    }
-
-    emit('cerrar')
-    return
-  }
+  payload.observaciones = registroLocal.observaciones?.trim() || undefined
 
   emit('guardar', payload as ReplacementRegistration)
 }
@@ -1080,136 +885,316 @@ function cancelarConfirmacion() {
 </script>
 
 <style scoped>
-.modal-content {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+/* Transición Modal */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.shadow-2xl {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
-.animate-shake {
-  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+/* Modal Dialog Width & Elevation */
+.modal-custom-width {
+  max-width: 820px;
 }
 
-@keyframes shake {
-  10%,
-  90% {
-    transform: translate3d(-1px, 0, 0);
-  }
-  20%,
-  80% {
-    transform: translate3d(2px, 0, 0);
-  }
-  30%,
-  50%,
-  70% {
-    transform: translate3d(-4px, 0, 0);
-  }
-  40%,
-  60% {
-    transform: translate3d(4px, 0, 0);
-  }
+.vanguard-modal-content {
+  background: white;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
 }
 
-/* IStaff Cards */
-.IStaff-card {
-  transition: all 0.2s ease;
-  height: 100%;
-}
-.IStaff-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+.bg-surface {
+  background-color: #f8fafc;
 }
 
-.avatar-empty {
-  width: 48px;
-  height: 48px;
+/* Header Styles */
+.vanguard-modal-header {
+  background: white;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.modal-icon-box {
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  border: 1px solid rgba(191, 219, 254, 0.6);
+  flex-shrink: 0;
 }
 
-.avatar-filled {
-  width: 42px;
-  height: 42px;
+.modal-title-custom {
+  letter-spacing: -0.02em;
+  font-size: 1.15rem;
+}
+
+.badge-direct-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 3px 9px;
+  border-radius: 9999px;
+}
+
+.pulse-dot-blue {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.btn-close-modal {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-close-modal:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  transform: rotate(90deg);
+}
+
+/* Vanguard Section Card (Double-Bezel Inner Card) */
+.vanguard-section-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+}
+
+.section-indicator {
+  width: 4px;
+  height: 16px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+.bg-indigo {
+  background-color: #6366f1;
+}
+
+.section-heading {
+  font-size: 0.88rem;
+  letter-spacing: -0.01em;
+}
+
+/* Staff Role Cards */
+.staff-role-card {
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+.staff-outgoing {
+  background: linear-gradient(180deg, #fffafa 0%, #ffffff 100%);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.03);
+}
+
+.staff-incoming {
+  background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.03);
+}
+
+.role-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pill-outgoing {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.pill-incoming {
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+/* Avatars */
+.avatar-squircle {
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.9rem;
   flex-shrink: 0;
 }
 
-.bg-gradient-danger {
-  background: linear-gradient(135deg, #fecaca 0%, #ef4444 100%);
-}
-.bg-gradient-success {
-  background: linear-gradient(135deg, #bbf7d0 0%, #22c55e 100%);
-}
-
-.btn-icon {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.avatar-outgoing-xs {
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
+  background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%);
+  color: #991b1b;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
-.connector-icon {
-  width: 40px;
-  height: 40px;
+.avatar-incoming-xs {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #d1fae5 0%, #86efac 100%);
+  color: #065f46;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
-.form-control:focus {
-  box-shadow: none;
-  background-color: #f8fafc;
+.border-top-dashed {
+  border-top: 1px dashed rgba(148, 163, 184, 0.3);
 }
 
+/* Fields & Labels */
+.staff-field-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.01em;
+}
+
+.form-select-custom {
+  font-size: 0.82rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  padding: 0.45rem 0.75rem;
+  color: #1e293b;
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.form-select-custom:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  outline: none;
+}
+
+.form-textarea-custom {
+  font-size: 0.82rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  padding: 0.5rem 0.75rem;
+  color: #1e293b;
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.form-textarea-custom:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  outline: none;
+}
+
+/* DatePicker Input Group */
+.modern-input-group .input-group-text {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.modern-date-input {
+  border-color: #cbd5e1;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+  font-size: 0.82rem;
+  background-color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  color: #1e293b;
+  padding: 0.45rem 0.75rem;
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.modern-date-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* Custom vue-select styling */
 .custom-v-select :deep(.vs__dropdown-toggle) {
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  padding: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 3px 6px;
   background: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
+  min-height: 38px;
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.custom-v-select.small-select :deep(.vs__dropdown-toggle) {
+  min-height: 36px;
+}
+
+.custom-v-select :deep(.vs__dropdown-toggle:focus-within) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
 }
 
 .custom-v-select :deep(.vs__selected) {
-  font-size: 0.875rem;
+  font-size: 0.82rem;
   color: #1e293b;
-  font-weight: 500;
+  margin: 2px 2px 0;
 }
 
 .custom-v-select :deep(.vs__search::placeholder) {
   color: #94a3b8;
+  font-size: 0.82rem;
 }
 
 .custom-v-select :deep(.vs__actions svg) {
   fill: #64748b;
-  transform: scale(0.8);
+  transform: scale(0.75);
 }
 
 .custom-v-select :deep(.vs__dropdown-menu) {
-  border: none;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  padding: 8px;
-  font-size: 0.875rem;
   border: 1px solid #e2e8f0;
-  max-height: 210px; /* Limit to approx 5 items */
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
+  padding: 6px;
+  font-size: 0.82rem;
+  max-height: 220px;
   overflow-y: auto;
+  z-index: 1050;
 }
 
 .custom-v-select :deep(.vs__dropdown-option) {
-  border-radius: 0.375rem;
-  padding: 8px 12px;
+  border-radius: 6px;
+  padding: 6px 10px;
   margin-bottom: 2px;
-  color: #475569;
+  color: #334155;
 }
 
 .custom-v-select :deep(.vs__dropdown-option--highlight) {
@@ -1217,111 +1202,75 @@ function cancelarConfirmacion() {
   color: white;
 }
 
-/* Typography */
+/* Footer & Buttons */
+.vanguard-modal-footer {
+  border-top: 1px solid #f1f5f9;
+}
+
+.btn-secondary-pill {
+  background: white;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  padding: 0.45rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-secondary-pill:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.btn-primary-pill {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  padding: 0.45rem 1.25rem 0.45rem 0.65rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.btn-primary-pill:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  color: white;
+}
+
+.btn-primary-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-icon-wrap {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.btn-icon-wrap.primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
 .x-small {
   font-size: 0.7rem;
 }
+
 .shadow-xs {
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-.tracking-wider {
-  letter-spacing: 0.05em;
-}
-
-/* Transitions */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* 🏢 ENTERPRISE: Custom v-select styles for IStaff selection */
-.IStaff-select-danger :deep(.vs__dropdown-toggle),
-.IStaff-select-success :deep(.vs__dropdown-toggle) {
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  padding: 6px;
-  background: white;
-  min-height: 60px; /* Fixed height to prevent expansion */
-  max-height: 60px;
-  overflow: hidden;
-}
-
-.IStaff-select-danger :deep(.vs__selected-options),
-.IStaff-select-success :deep(.vs__selected-options) {
-  min-height: 48px;
-  max-height: 48px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-}
-
-.IStaff-select-danger :deep(.vs__selected),
-.IStaff-select-success :deep(.vs__selected) {
-  display: flex;
-  align-items: center;
-  margin: 0;
-  padding: 0;
-}
-
-.IStaff-select-danger :deep(.vs__dropdown-toggle) {
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
-.IStaff-select-success :deep(.vs__dropdown-toggle) {
-  border-color: rgba(34, 197, 94, 0.3);
-}
-
-.IStaff-select-danger :deep(.vs__dropdown-toggle):hover,
-.IStaff-select-success :deep(.vs__dropdown-toggle):hover {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.IStaff-select-danger :deep(.vs__search::placeholder),
-.IStaff-select-success :deep(.vs__search::placeholder) {
-  color: #94a3b8;
-  font-size: 0.875rem;
-}
-
-.IStaff-select-danger :deep(.vs__dropdown-menu),
-.IStaff-select-success :deep(.vs__dropdown-menu) {
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  padding: 4px;
-  max-height: 240px;
-  overflow-y: auto;
-  min-width: 320px; /* Balanced width for info display */
-  z-index: 9999; /* Above everything */
-}
-
-.IStaff-select-danger :deep(.vs__dropdown-option),
-.IStaff-select-success :deep(.vs__dropdown-option) {
-  border-radius: 0.375rem;
-  padding: 10px 12px;
-  margin-bottom: 2px;
-  font-size: 0.875rem;
-}
-
-.IStaff-select-danger :deep(.vs__dropdown-option--highlight) {
-  background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
-}
-
-.IStaff-select-success :deep(.vs__dropdown-option--highlight) {
-  background: rgba(34, 197, 94, 0.1);
-  color: #16a34a;
-}
-
-.IStaff-select-danger :deep(.vs__spinner),
-.IStaff-select-success :deep(.vs__spinner) {
-  border-left-color: #3b82f6;
-}
-
-.IStaff-option {
-  width: 100%;
 }
 </style>

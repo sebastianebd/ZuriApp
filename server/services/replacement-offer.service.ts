@@ -118,10 +118,13 @@ export class ReplacementOfferService {
         applicantsCount: countActiveApplicants(offer.applicants),
         applicants: offer.applicants,
         id_saliente: offer.id_saliente?._id?.toString() || offer.id_saliente?.toString(),
-        nombre_saliente: offer.nombre_saliente,
+        nombre_saliente: offer.apellido_saliente ? `${offer.nombre_saliente} ${offer.apellido_saliente}` : offer.nombre_saliente,
         rut_saliente: offer.rut_saliente,
         motivo: offer.motivo,
         observaciones: offer.observaciones,
+        awardedStaffId: offer.awardedStaffId?.toString(),
+        createdAt: offer.created_at?.toISOString?.() || offer.created_at,
+        createdBy: offer.creado_por ? `${offer.creado_por.firstName} ${offer.creado_por.lastName}` : 'Desconocido',
       };
     });
   }
@@ -635,35 +638,46 @@ export class ReplacementOfferService {
 
     offer.status = 'finalized';
 
-    if (!offer.applicants || offer.applicants.length === 0) {
-      logger.warn(`[ReplacementOffer] Convocatoria ${offerId} finalizó desierta (0 postulantes).`);
-      
-      const alert = await Alert.create({
-        ruleId: 'OPS-04',
-        severity: 'high',
-        category: 'operational',
-        serviceId: offer.serviceId,
-        date: offer.fecha_inicio,
-        message: `Convocatoria de reemplazo para ${offer.tipo_turno} finalizó desierta (0 postulantes). Requiere búsqueda activa.`,
-        context: {
-          offerId: offer._id.toString(),
-          tipo_turno: offer.tipo_turno,
-        },
-        status: 'active',
-      });
+    const applicantsCount = offer.applicants?.length || 0;
+    
+    const isDesierta = applicantsCount === 0;
+    const alertMessage = isDesierta
+      ? `Convocatoria de reemplazo para ${offer.tipo_turno} finalizó desierta (0 postulantes). Requiere búsqueda activa.`
+      : `Convocatoria de reemplazo para ${offer.tipo_turno} finalizada. Tienes ${applicantsCount} postulante(s) pendiente(s) de asignación.`;
+    
+    const severity = isDesierta ? 'high' : 'medium';
 
-      socketService.emitAlertNew(offer.serviceId.toString(), {
-        id: alert._id.toString(),
-        ruleId: 'OPS-04',
-        severity: 'high',
-        category: 'operational',
-        serviceId: offer.serviceId.toString(),
-        message: alert.message,
-        context: alert.context,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-      });
+    if (isDesierta) {
+      logger.warn(`[ReplacementOffer] Convocatoria ${offerId} finalizó desierta (0 postulantes).`);
+    } else {
+      logger.info(`[ReplacementOffer] Convocatoria ${offerId} finalizada con ${applicantsCount} postulante(s).`);
     }
+      
+    const alert = await Alert.create({
+      ruleId: 'OPS-04',
+      severity: severity,
+      category: 'operational',
+      serviceId: offer.serviceId,
+      date: offer.fecha_inicio,
+      message: alertMessage,
+      context: {
+        offerId: offer._id.toString(),
+        tipo_turno: offer.tipo_turno,
+      },
+      status: 'active',
+    });
+
+    socketService.emitAlertNew(offer.serviceId.toString(), {
+      id: alert._id.toString(),
+      ruleId: 'OPS-04',
+      severity: severity,
+      category: 'operational',
+      serviceId: offer.serviceId.toString(),
+      message: alert.message,
+      context: alert.context,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    });
 
     await offer.save();
   }

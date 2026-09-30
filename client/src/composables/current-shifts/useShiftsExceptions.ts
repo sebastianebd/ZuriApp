@@ -18,6 +18,7 @@ export function useShiftsExceptions(state: any, grid: any, props: { readonly?: b
     assignmentName: string
     date: Date
     currentShift: ShiftResult | null
+    availableSiglas?: string[]
     hasException: boolean
   } | null>(null)
 
@@ -43,6 +44,7 @@ export function useShiftsExceptions(state: any, grid: any, props: { readonly?: b
         : formatTitleCase(`${item.nombre} ${item.apellido}`),
       date: date,
       currentShift: shift,
+      availableSiglas: shift.availableSiglas || [],
       hasException: !!exception
     }
 

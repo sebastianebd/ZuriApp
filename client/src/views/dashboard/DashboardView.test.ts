@@ -52,6 +52,7 @@ describe('DashboardView.vue (TDD RED)', () => {
           ReplacementChart: true,
           TopReplacedStaff: true,
           HoursBreakdownCard: true,
+          AbsenteeismReasonsCard: true,
           ServiceStaffingModal: true,
         },
       },
@@ -107,6 +108,7 @@ describe('DashboardView.vue (TDD RED)', () => {
           ReplacementChart: true,
           TopReplacedStaff: true,
           HoursBreakdownCard: true,
+          AbsenteeismReasonsCard: true,
           ServiceStaffingModal: true,
         },
       },
@@ -116,7 +118,7 @@ describe('DashboardView.vue (TDD RED)', () => {
     expect(editButton.exists()).toBe(true)
 
     // Cambiar a canEditStaffing = false
-    store.kpiData.service.canEditStaffing = false
+    store.kpiData!.service.canEditStaffing = false
     await wrapper.vm.$nextTick()
 
     const hiddenButton = wrapper.find('[data-test="btn-edit-staffing"]')
@@ -164,6 +166,7 @@ describe('DashboardView.vue (TDD RED)', () => {
           ReplacementChart: true,
           TopReplacedStaff: true,
           HoursBreakdownCard: true,
+          AbsenteeismReasonsCard: true,
           ServiceStaffingModal: true,
         },
       },

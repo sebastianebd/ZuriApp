@@ -5,7 +5,9 @@ import ReplacementModalUsers from './ReplacementModalUsers.vue';
 import ReplacementModalCreate from './ReplacementModalCreate.vue';
 import ConfirmationModal from '../common/ConfirmationModal.vue';
 import ReplacementModalSubstitute from './ReplacementModalSubstitute.vue';
-import ReplacementCalendarTab from './ReplacementCalendarTab.vue';
+import ReplacementCoverageModal from './ReplacementCoverageModal.vue';
+
+import ReplacementOfferModalCreate from './ReplacementOfferModalCreate.vue';
 
 export { 
     ReplacementFilter,
@@ -13,7 +15,8 @@ export {
     ReplacementModalUpdate,
     ReplacementModalUsers,
     ReplacementModalCreate,
+    ReplacementOfferModalCreate,
     ConfirmationModal,
     ReplacementModalSubstitute,
-    ReplacementCalendarTab
+    ReplacementCoverageModal
 }

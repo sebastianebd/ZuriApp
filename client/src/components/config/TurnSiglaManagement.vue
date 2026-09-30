@@ -20,54 +20,49 @@
 
       <div
         v-else
-        class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3"
+        class="d-flex flex-column gap-2"
       >
-        <div v-for="item in store.siglas" :key="item._id" class="col">
-          <div class="card h-100 border-0 shadow-sm rounded-4 hover-card">
-            <div class="card-body p-3">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <div
-                  class="sigla-badge fw-bold shadow-sm"
-                  :style="{ backgroundColor: item.color, color: '#1e293b' }"
-                >
-                  {{ item.sigla }}
-                </div>
-                <div class="dropdown">
-                  <button
-                    class="btn btn-sm btn-light btn-icon"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    <i class="bi bi-three-dots-vertical"></i>
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
-                    <li>
-                      <button class="dropdown-item small" @click="openEditModal(item)">
-                        <i class="bi bi-pencil me-2"></i>Editar
-                      </button>
-                    </li>
-                    <li>
-                      <button class="dropdown-item small text-danger" @click="confirmDelete(item)">
-                        <i class="bi bi-trash me-2"></i>Eliminar
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <h6 class="fw-bold text-dark mb-1 text-truncate">{{ item.nombre }}</h6>
-              <div class="text-secondary small mb-2 text-truncate">
-                {{ item.descripcion || 'Sin descripción' }}
-              </div>
-
-              <div class="d-flex align-items-center gap-2 mt-auto pt-2 border-top">
-                <div class="d-flex align-items-center text-muted small" v-if="item.turno_entrada">
-                  <i class="bi bi-clock me-1"></i>
-                  {{ item.turno_entrada }} - {{ item.turno_salida || '?' }}
-                </div>
-                <div class="badge bg-light text-muted fw-normal ms-auto" v-else>Sin horario</div>
-              </div>
+        <div v-for="item in store.siglas" :key="item._id" class="p-2 border rounded-3 bg-slate-50 d-flex align-items-center gap-3 transition-all hover-card">
+          <!-- Sigla Badge -->
+          <div
+            class="sigla-badge fw-bold shadow-sm flex-shrink-0"
+            :style="{ backgroundColor: item.color, color: '#1e293b' }"
+          >
+            {{ item.sigla }}
+          </div>
+          
+          <!-- Content -->
+          <div class="flex-grow-1 min-w-0">
+            <h6 class="fw-bold text-dark mb-0 text-truncate" style="font-size: 0.85rem;">{{ item.nombre }}</h6>
+            <div class="text-secondary text-truncate" style="font-size: 0.75rem;">
+              {{ item.descripcion || 'Sin descripción' }}
             </div>
+            <div class="d-flex align-items-center text-muted mt-1" style="font-size: 0.7rem;" v-if="item.turno_entrada">
+              <i class="bi bi-clock me-1"></i> {{ item.turno_entrada }} - {{ item.turno_salida || '?' }}
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="dropdown flex-shrink-0">
+            <button
+              class="btn btn-sm btn-light btn-icon rounded-circle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm">
+              <li>
+                <button class="dropdown-item small" @click="openEditModal(item)">
+                  <i class="bi bi-pencil me-2 text-primary"></i>Editar
+                </button>
+              </li>
+              <li>
+                <button class="dropdown-item small text-danger" @click="confirmDelete(item)">
+                  <i class="bi bi-trash me-2"></i>Eliminar
+                </button>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -187,12 +182,13 @@ async function handleDelete() {
   justify-content: center;
   font-size: 1.1rem;
 }
-.hover-card {
-  transition: transform 0.2s, box-shadow 0.2s;
-}
+.bg-slate-50 { background-color: #f8fafc; }
+.transition-all { transition: all 0.2s ease; }
 .hover-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  background-color: #ffffff;
+  border-color: #cbd5e1 !important;
+  transform: translateX(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 .btn-icon {
   width: 28px;

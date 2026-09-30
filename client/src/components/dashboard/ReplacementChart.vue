@@ -1,18 +1,23 @@
 <template>
-  <div class="card shadow-sm border-0 h-100">
-    <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+  <div class="card border shadow-xs h-100 replacement-chart-card">
+    <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-bar-chart text-primary fs-5"></i>
-        <h5 class="card-title fw-bold mb-0">Evolución y Comparativa de Reemplazos</h5>
+        <div class="header-icon-mini text-primary">
+          <i class="bi bi-bar-chart-line-fill fs-5"></i>
+        </div>
+        <h5 class="card-title fw-bold mb-0 text-dark">Evolución y Comparativa de Reemplazos</h5>
       </div>
+      <span class="badge bg-light text-secondary border smaller">
+        Histórico Mensual
+      </span>
     </div>
     <div class="card-body">
       <div v-if="hasData" class="chart-container" style="position: relative; height: 260px;">
         <Bar :data="chartData" :options="chartOptions" />
       </div>
       <div v-else class="d-flex flex-column align-items-center justify-content-center h-100 text-muted p-4">
-        <i class="bi bi-graph-up fs-2 mb-2"></i>
-        <span class="small">Sin datos suficientes para graficar</span>
+        <i class="bi bi-graph-up fs-2 mb-2 text-secondary opacity-50"></i>
+        <span class="small">Sin datos suficientes para graficar en este período</span>
       </div>
     </div>
   </div>
@@ -65,8 +70,8 @@ const chartData = computed(() => {
     datasets: [
       {
         label: 'Total Reemplazos',
-        backgroundColor: '#3b82f6',
-        borderRadius: 4,
+        backgroundColor: '#2563eb',
+        borderRadius: 6,
         data: [
           props.comparative?.replacementsDeltaPct !== null && props.comparative?.replacementsDeltaPct !== undefined
             ? Math.max(0, Math.round((props.summary?.totalReplacements ?? 0) / (1 + props.comparative.replacementsDeltaPct / 100)))
@@ -76,8 +81,8 @@ const chartData = computed(() => {
       },
       {
         label: 'Jornadas Reemplazadas',
-        backgroundColor: '#10b981',
-        borderRadius: 4,
+        backgroundColor: '#059669',
+        borderRadius: 6,
         data: [
           0,
           props.summary?.totalShiftsReplaced ?? 0,
@@ -94,13 +99,31 @@ const chartOptions = {
     legend: {
       position: 'bottom' as const,
       labels: {
-        boxWidth: 12,
-        padding: 15,
+        usePointStyle: true,
+        pointStyle: 'circle' as const,
+        boxWidth: 8,
+        padding: 16,
+        font: {
+          family: 'Inter, system-ui, sans-serif',
+          size: 12,
+          weight: 500,
+        },
       },
     },
     tooltip: {
-      backgroundColor: '#1e293b',
-      padding: 10,
+      backgroundColor: '#0f172a',
+      titleFont: {
+        family: 'Inter, system-ui, sans-serif',
+        size: 13,
+        weight: 600,
+      },
+      bodyFont: {
+        family: 'Inter, system-ui, sans-serif',
+        size: 12,
+      },
+      padding: 12,
+      cornerRadius: 8,
+      boxPadding: 4,
     },
   },
   scales: {
@@ -111,13 +134,48 @@ const chartOptions = {
       },
       ticks: {
         precision: 0,
+        font: {
+          family: 'Inter, system-ui, sans-serif',
+          size: 11,
+        },
+      },
+      border: {
+        dash: [4, 4],
       },
     },
     x: {
       grid: {
         display: false,
       },
+      ticks: {
+        font: {
+          family: 'Inter, system-ui, sans-serif',
+          size: 12,
+          weight: 600,
+        },
+      },
     },
   },
 }
 </script>
+
+<style scoped lang="scss">
+.replacement-chart-card {
+  border-radius: 0.875rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0 !important;
+  overflow: hidden;
+}
+
+.card-header {
+  background: transparent !important;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.smaller {
+  font-size: 0.75rem;
+}
+</style>

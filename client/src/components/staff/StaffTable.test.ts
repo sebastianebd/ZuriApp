@@ -2,16 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import StaffTable from './StaffTable.vue'
 
-// Mock router
-const mockPush = vi.fn()
-vi.mock('vue-router', () => ({
-  useRouter: () => ({
-    push: mockPush
-  })
-}))
-
 // Mock Auth Store
-const mockHasPermission = vi.fn((perm: string) => perm === 'shifts.view' || perm === 'users.update')
+const mockHasPermission = vi.fn((perm: string) => perm === 'users.update' || perm === 'users.delete')
 vi.mock('@/stores/auth.store', () => ({
   useAuthStore: () => ({
     hasPermission: mockHasPermission
@@ -26,7 +18,7 @@ vi.mock('@/stores/role.store', () => ({
   })
 }))
 
-describe('StaffTable (Épica 3: Ficha de Turnos Quick Access)', () => {
+describe('StaffTable', () => {
   const dummyUsuarios = [
     {
       _id: 'usr-123456',
@@ -52,7 +44,7 @@ describe('StaffTable (Épica 3: Ficha de Turnos Quick Access)', () => {
     vi.clearAllMocks()
   })
 
-  it('renders "Ver Ficha de Turnos" quick action button when user has shifts.view permission', () => {
+  it('renders staff information correctly', () => {
     const wrapper = mount(StaffTable, {
       props: {
         usuarios: dummyUsuarios,
@@ -60,13 +52,12 @@ describe('StaffTable (Épica 3: Ficha de Turnos Quick Access)', () => {
       }
     })
 
-    const fichaButton = wrapper.find('.btn-ficha')
-    expect(fichaButton.exists()).toBe(true)
-    expect(fichaButton.attributes('title')).toBe('Ver Ficha de Turnos')
-    expect(fichaButton.find('.bi-person-lines-fill').exists()).toBe(true)
+    expect(wrapper.text()).toContain('12.345.678-9')
+    expect(wrapper.text()).toContain('Juan P.')
+    expect(wrapper.text()).toContain('juan@hospital.cl')
   })
 
-  it('navigates to personal-ficha-turnos with staffId query param when "Ver Ficha" is clicked', async () => {
+  it('does NOT render legacy btn-ficha', () => {
     const wrapper = mount(StaffTable, {
       props: {
         usuarios: dummyUsuarios,
@@ -74,18 +65,10 @@ describe('StaffTable (Épica 3: Ficha de Turnos Quick Access)', () => {
       }
     })
 
-    const fichaButton = wrapper.find('.btn-ficha')
-    await fichaButton.trigger('click')
-
-    expect(mockPush).toHaveBeenCalledWith({
-      name: 'personal-ficha-turnos',
-      query: { staffId: 'usr-123456' }
-    })
+    expect(wrapper.find('.btn-ficha').exists()).toBe(false)
   })
 
-  it('hides "Ver Ficha de Turnos" button when user lacks shifts.view permission', () => {
-    mockHasPermission.mockReturnValue(false)
-
+  it('emits "editar" when edit button is clicked', async () => {
     const wrapper = mount(StaffTable, {
       props: {
         usuarios: dummyUsuarios,
@@ -93,7 +76,27 @@ describe('StaffTable (Épica 3: Ficha de Turnos Quick Access)', () => {
       }
     })
 
-    const fichaButton = wrapper.find('.btn-ficha')
-    expect(fichaButton.exists()).toBe(false)
+    const editBtn = wrapper.find('.btn-edit')
+    expect(editBtn.exists()).toBe(true)
+    await editBtn.trigger('click')
+
+    expect(wrapper.emitted('editar')).toBeTruthy()
+    expect(wrapper.emitted('editar')![0]).toEqual([dummyUsuarios[0]])
+  })
+
+  it('emits "detalle" when history button is clicked', async () => {
+    const wrapper = mount(StaffTable, {
+      props: {
+        usuarios: dummyUsuarios,
+        loginUser: dummyLoginUser
+      }
+    })
+
+    const historyBtn = wrapper.find('.btn-history')
+    expect(historyBtn.exists()).toBe(true)
+    await historyBtn.trigger('click')
+
+    expect(wrapper.emitted('detalle')).toBeTruthy()
+    expect(wrapper.emitted('detalle')![0]).toEqual([dummyUsuarios[0]])
   })
 })

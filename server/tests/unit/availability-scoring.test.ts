@@ -126,9 +126,8 @@ describe('AvailabilityService - Motor de Scoring y Búsqueda Activa (TDD RED)', 
       expect(results[0].staffId).toBe('staff_1');
       expect(results[0].fullName).toBe('Carlos Pérez');
       expect(results[0].score).toBeGreaterThan(results[1].score);
-      expect(results[0].breakdown.previousReplacements).toBe(3);
-      expect(results[0].breakdown.cleanRecord).toBe(true);
-      expect(results[1].breakdown.cleanRecord).toBe(false);
+      expect(results[0].breakdown.historicalHoursInService).toBe(72); // 3 turnos de 24 horas
+      expect(results[1].breakdown.historicalHoursInService).toBe(0);
     });
 
     it('descarta candidatos con incompatibilidad de cargo o inactivos', async () => {
@@ -165,6 +164,98 @@ describe('AvailabilityService - Motor de Scoring y Búsqueda Activa (TDD RED)', 
 
       const results = await AvailabilityService.scoreOfferApplicants(mockOfferId);
       expect(results).toHaveLength(0);
+    });
+
+    it('debe priorizar al candidato con más horas históricas trabajadas en el servicio (TDD RED)', async () => {
+      const mockOffer = {
+        _id: mockOfferId,
+        serviceId: mockServiceId,
+        positionId: mockPositionId,
+        tipo_turno: '4TO_TURNO',
+        fecha_inicio: new Date('2026-10-20T08:00:00.000Z'),
+        fecha_termino: new Date('2026-10-20T20:00:00.000Z'),
+        status: 'open',
+        applicants: [
+          { staffId: 'staff_newbie', appliedAt: new Date(), status: 'pending' },
+          { staffId: 'staff_veteran', appliedAt: new Date(), status: 'pending' },
+        ],
+      };
+
+      const mockNewbie = {
+        _id: 'staff_newbie',
+        rut: '55.555.555-5',
+        firstName: 'Novato',
+        lastName: 'Pérez',
+        positionId: { _id: mockPositionId, name: 'Enfermero/a' },
+        isActive: true,
+        contractType: 'HONORARIO',
+      };
+
+      const mockVeteran = {
+        _id: 'staff_veteran',
+        rut: '66.666.666-6',
+        firstName: 'Veterano',
+        lastName: 'Soto',
+        positionId: { _id: mockPositionId, name: 'Enfermero/a' },
+        isActive: true,
+        contractType: 'HONORARIO',
+      };
+
+      (ReplacementOffer.findById as any).mockReturnValue({
+        populate: vi.fn().mockResolvedValue(mockOffer),
+      });
+
+      (Staff.find as any).mockReturnValue({
+        populate: vi.fn().mockResolvedValue([mockNewbie, mockVeteran]),
+      });
+
+      // Newbie: 1 turno de 12 horas (hace mucho tiempo, buen descanso)
+      // Veteran: 10 turnos de 12 horas (hace mucho tiempo, buen descanso)
+      (Replacement.find as any).mockImplementation((query: any) => {
+        if (query.id_entrante === 'staff_newbie') {
+          return Promise.resolve([
+            { servicio: mockServiceId, fecha_inicio: new Date('2026-09-01T08:00Z'), fecha_termino: new Date('2026-09-01T20:00Z'), status: 'FINALIZADO' },
+          ]);
+        }
+        if (query.id_entrante === 'staff_veteran') {
+          return Promise.resolve(Array.from({ length: 10 }, (_, i) => {
+            const day = (i + 1).toString().padStart(2, '0');
+            return {
+              servicio: mockServiceId, 
+              fecha_inicio: new Date(`2026-09-${day}T08:00:00Z`), 
+              fecha_termino: new Date(`2026-09-${day}T20:00:00Z`), 
+              status: 'FINALIZADO' 
+            };
+          }));
+        }
+        return Promise.resolve([]);
+      });
+
+      (TurnAssignment.find as any).mockResolvedValue([]);
+      (ShiftConfirmation.find as any).mockResolvedValue([]);
+
+      const results = await AvailabilityService.scoreOfferApplicants(mockOfferId);
+
+      expect(results).toHaveLength(2);
+      expect(results[0].staffId).toBe('staff_veteran');
+      expect(results[1].staffId).toBe('staff_newbie');
+      
+      // Breakdown simplificado esperado
+      expect(results[0].breakdown).toMatchObject({
+        matchesPosition: true,
+        hoursSinceLastShift: expect.any(Number),
+        historicalHoursInService: 120, // 10 turnos x 12 horas
+      });
+
+      expect(results[1].breakdown).toMatchObject({
+        matchesPosition: true,
+        historicalHoursInService: 12,
+      });
+
+      // Veterano (30 + 20 + 10) = 60
+      // Novato (30 + 20 + 1) = 51
+      expect(results[0].score).toBe(60);
+      expect(results[1].score).toBe(51);
     });
   });
 

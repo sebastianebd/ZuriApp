@@ -55,11 +55,6 @@ const router = createRouter({
           name: 'personal-cargos',
           redirect: () => ({ name: 'configuracion', query: { tab: 'roles' } })
         },
-        {
-          path: 'personal/ficha-turnos',
-          name: 'personal-ficha-turnos',
-          component: () => import('@/views/shift-records/ShiftRecordsView.vue')
-        },
 
         // ==================== OPERACIONES ====================
         {

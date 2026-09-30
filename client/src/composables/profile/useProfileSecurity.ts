@@ -1,4 +1,4 @@
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 
 import AlertMessage from '@/components/common/AlertMessage.vue'
@@ -42,11 +42,16 @@ export function useProfileSecurity() {
     }
   }
 
-  // Watch activeTab to load history
+  // Watch activeTab to load history (legacy support)
   watch(activeTab, (newTab) => {
     if (newTab === 'security') {
       loadHistory()
     }
+  })
+
+  // Cargar automáticamente el historial al montar el componente
+  onMounted(() => {
+    loadHistory()
   })
 
   // IStaff Agent Parser Helper

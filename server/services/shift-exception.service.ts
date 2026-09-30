@@ -37,6 +37,8 @@ async function createException(payload: any, currentUser: any) {
     throw new AppError(404, "Assignment not found in TurnAssignment or Replacement");
   }
 
+  const authorId = created_by || currentUser?._id;
+
   const exception = await ShiftExceptionModel.findOneAndUpdate(
     { assignment_id, date: new Date(date) },
     {
@@ -44,16 +46,24 @@ async function createException(payload: any, currentUser: any) {
       original_type,
       override_type,
       reason,
-      created_by,
+      created_by: authorId,
       created_at: new Date(),
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   ).populate({ path: "assignment_id" });
 
+  await exception.populate("created_by", "firstName lastName");
+
   if (exception.assignment_model === "TurnAssignment") {
     await exception.populate({
       path: "assignment_id.staffId",
-      select: "firstName lastName",
+      select: "firstName lastName roleId positionId",
+      model: "Staff",
+    });
+  } else if (exception.assignment_model === "Replacement") {
+    await exception.populate({
+      path: "assignment_id.id_entrante",
+      select: "firstName lastName roleId positionId",
       model: "Staff",
     });
   }

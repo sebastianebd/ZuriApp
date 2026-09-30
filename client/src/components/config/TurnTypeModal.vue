@@ -179,99 +179,112 @@ function handleSubmit() {
       <!-- Body (Scrollable) -->
       <div class="modal-body-custom custom-scrollbar">
         <form @submit.prevent="handleSubmit">
-          <!-- Row 1: Basic Info -->
-          <div class="row g-3 mb-4">
-            <!-- Nombre -->
-            <div class="col-md-4">
-              <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                >Nombre</label
-              >
-              <input
-                type="text"
-                class="form-control custom-input"
-                :class="{ 'is-invalid': errors.nombre }"
-                v-model="formData.nombre"
-                placeholder="Ej: 3er Turno"
-              />
-              <div v-if="errors.nombre" class="text-danger x-small fw-bold mt-1">
-                {{ errors.nombre }}
+          
+          <!-- SECCIÓN 1: INFORMACIÓN GENERAL -->
+          <div class="vanguard-section-card mb-3 p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <span class="section-indicator bg-indigo-500"></span>
+                <h6 class="fw-bold text-dark mb-0 section-heading">Información del Turno</h6>
               </div>
-            </div>
-
-            <!-- Alias -->
-            <div class="col-md-3">
-              <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                >Alias <small class="text-muted">(Opc)</small></label
-              >
-              <input
-                type="text"
-                class="form-control custom-input"
-                v-model="formData.alias"
-                placeholder="Ej: 3T"
-              />
-            </div>
-
-            <!-- Jornada -->
-            <div class="col-md-3">
-              <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                >Jornada</label
-              >
-              <select class="form-select custom-input" v-model="formData.jornada">
-                <option value="MIXTO">Mixto</option>
-                <option value="DIURNO">Diurno</option>
-                <option value="NOCTURNO">Nocturno</option>
-              </select>
-            </div>
-
-            <!-- Estado -->
-            <div class="col-md-2">
-              <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                >Estado</label
-              >
-              <div class="form-check form-switch pt-2">
+              <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+                <label class="form-check-label x-small fw-bold text-muted mb-0" for="flexSwitchCheckChecked">{{
+                  formData.activo ? 'Turno Activo' : 'Turno Inactivo'
+                }}</label>
                 <input
-                  class="form-check-input"
+                  class="form-check-input mt-0"
                   type="checkbox"
                   role="switch"
                   id="flexSwitchCheckChecked"
                   v-model="formData.activo"
+                  style="cursor: pointer;"
                 />
-                <label class="form-check-label x-small fw-bold" for="flexSwitchCheckChecked">{{
-                  formData.activo ? 'Activo' : 'Inactivo'
-                }}</label>
               </div>
             </div>
-          </div>
 
-          <!-- Description & Days -->
-          <div class="mb-4">
-            <div class="d-flex gap-3">
-              <div class="flex-grow-1">
+            <div class="row g-3 mb-3">
+              <!-- Nombre -->
+              <div class="col-md-6">
                 <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                  >Descripción</label
+                  >Nombre del Turno <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control custom-input"
+                  :class="{ 'is-invalid': errors.nombre }"
+                  v-model="formData.nombre"
+                  placeholder="Ej: Cuarto Turno"
+                />
+                <div v-if="errors.nombre" class="text-danger x-small fw-bold mt-1">
+                  {{ errors.nombre }}
+                </div>
+              </div>
+
+              <!-- Alias -->
+              <div class="col-md-3">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Alias / Sigla</label
+                >
+                <input
+                  type="text"
+                  class="form-control custom-input"
+                  v-model="formData.alias"
+                  placeholder="Ej: 4T"
+                />
+              </div>
+
+              <!-- Jornada -->
+              <div class="col-md-3">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Jornada</label
+                >
+                <select class="form-select custom-input" v-model="formData.jornada">
+                  <option value="MIXTO">Mixto</option>
+                  <option value="DIURNO">Diurno</option>
+                  <option value="NOCTURNO">Nocturno</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
+                  >Descripción Adicional</label
                 >
                 <input
                   type="text"
                   class="form-control custom-input"
                   v-model="formData.descripcion"
-                  placeholder="Descripción opcional..."
+                  placeholder="Descripción interna opcional..."
                 />
               </div>
-              <div style="width: 140px">
-                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-2"
-                  >Días (Ciclo)</label
+            </div>
+          </div>
+
+          <!-- SECCIÓN 2: SECUENCIA Y CICLO -->
+          <div class="vanguard-section-card mb-3 p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <span class="section-indicator bg-warning"></span>
+                <h6 class="fw-bold text-dark mb-0 section-heading">Secuencia y Ciclo</h6>
+              </div>
+              
+              <div class="d-flex align-items-center gap-2">
+                <label class="form-label x-small fw-bold text-secondary text-uppercase mb-0"
+                  >Duración (Días)</label
                 >
                 <input
                   type="number"
                   min="1"
                   max="45"
-                  class="form-control custom-input text-center fw-bold"
+                  class="form-control custom-input text-center fw-bold form-control-sm"
+                  style="width: 70px"
                   v-model.number="formData.cantidad_dias"
                   @change="updateSequenceLength"
                 />
               </div>
             </div>
-          </div>
 
           <!-- GRID / PATTERN -->
           <div class="mb-4">
@@ -429,6 +442,28 @@ function handleSubmit() {
   background: #e2e8f0;
   color: #0f172a;
   transform: rotate(90deg);
+}
+
+.vanguard-section-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+
+.section-indicator {
+  width: 6px;
+  height: 18px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.bg-indigo-500 { background-color: #6366f1; }
+.bg-warning { background-color: #f59e0b; }
+
+.section-heading {
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
 }
 
 .custom-input {

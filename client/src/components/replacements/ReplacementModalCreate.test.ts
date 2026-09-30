@@ -273,28 +273,6 @@ describe('ReplacementModalCreate.vue - Causal de Ausencia (Pre-req 3.4)', () => 
     }
   })
 
-  it('Modo Bolsa: oculta el campo de funcionario entrante y muestra los presets de vencimiento', async () => {
-    const wrapper = mount(ReplacementModalCreate, {
-      props: defaultProps,
-      global: globalOptions,
-    })
-
-    const vm = wrapper.vm as any
-    expect(vm.isBolsaMode).toBe(false)
-    expect(wrapper.find('[data-testid="bolsa-presets-container"]').exists()).toBe(false)
-
-    // Activar Modo Bolsa
-    const bolsaBtn = wrapper.findAll('button').find((b) => b.text().includes('Publicar en Bolsa'))
-    expect(bolsaBtn).toBeDefined()
-    await bolsaBtn!.trigger('click')
-
-    expect(vm.isBolsaMode).toBe(true)
-    expect(wrapper.find('[data-testid="bolsa-presets-container"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('En 2 horas')
-    expect(wrapper.text()).toContain('En 4 horas')
-    expect(wrapper.text()).toContain('Fin del día (18:00)')
-  })
-
   it('resuelve automáticamente listaDeServicios y listaDeTurnos desde los stores cuando no se pasan como props', () => {
     const wrapper = mount(ReplacementModalCreate, {
       props: {
@@ -310,18 +288,16 @@ describe('ReplacementModalCreate.vue - Causal de Ausencia (Pre-req 3.4)', () => 
     expect(vm.computedListaDeTurnos).toEqual(['Turno Fallback'])
   })
 
-  it('inicia en modo bolsa cuando se provee prop initialBolsaMode: true', () => {
+  it('emite el evento cerrar cuando se hace clic en Cancelar', async () => {
     const wrapper = mount(ReplacementModalCreate, {
-      props: {
-        visible: true,
-        initialBolsaMode: true,
-        registro: {},
-        fechasBloqueadas: []
-      },
+      props: defaultProps,
       global: globalOptions,
     })
 
-    const vm = wrapper.vm as any
-    expect(vm.isBolsaMode).toBe(true)
+    const cancelBtn = wrapper.findAll('button').find((b) => b.text().trim() === 'Cancelar')
+    expect(cancelBtn).toBeDefined()
+    await cancelBtn!.trigger('click')
+
+    expect(wrapper.emitted('cerrar')).toBeTruthy()
   })
 })

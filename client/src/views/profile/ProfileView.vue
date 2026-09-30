@@ -1,243 +1,101 @@
 <template>
-  <div class="IStaff-profile-view">
-    <div class="container-fluid px-4 py-4">
-      <!-- Header -->
-      <!-- Header & Tabs -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 class="fw-bold mb-1 text-dark">
-            <i class="bi bi-person-circle text-primary me-2"></i>Mi Perfil
-          </h4>
-          <p class="text-secondary mb-0">Información de tu cuenta y actividad</p>
-        </div>
-
-        <!-- Navegación de Pestañas -->
-        <ul class="nav nav-pills custom-tabs p-1 rounded-4 bg-white shadow-sm d-inline-flex">
-          <li class="nav-item">
-            <button
-              class="nav-link rounded-4 px-4 py-2 fw-semibold d-flex align-items-center gap-2"
-              :class="{ active: activeTab === 'profile' }"
-              @click="activeTab = 'profile'"
-            >
-              <i class="bi bi-person-vcard"></i>
-              Mi Perfil
-            </button>
-          </li>
-          <li class="nav-item">
-            <button
-              class="nav-link rounded-4 px-4 py-2 fw-semibold d-flex align-items-center gap-2"
-              :class="{ active: activeTab === 'security' }"
-              @click="activeTab = 'security'"
-            >
-              <i class="bi bi-shield-lock"></i>
-              Seguridad
-            </button>
-          </li>
-        </ul>
-      </div>
-
+  <div class="vanguard-profile-view">
+    <div class="container-fluid px-4 py-5 max-w-900 mx-auto">
+      
       <Suspense>
         <template #default>
-          <div v-if="IStaff">
-            <!-- Pestaña: Mi Perfil -->
-            <div v-if="activeTab === 'profile'" class="row g-4 fade-in">
-              <!-- Columna Izquierda: Perfil y Stats (Igual que antes) -->
-              <div class="col-12 col-lg-4">
-                <div class="row g-4">
-                  <!-- Card Principal con Avatar -->
-                  <div class="col-12">
-                    <div class="card border-0 shadow-sm rounded-4">
-                      <div class="card-body text-center p-4">
-                        <div class="avatar-circle mx-auto mb-3">
-                          <i class="bi bi-person-fill"></i>
-                        </div>
-                        <h4 class="fw-bold mb-1">{{ IStaff.firstName }} {{ IStaff.lastName }}</h4>
-                        <p class="text-muted mb-3">{{ IStaff.positionId?.name || IStaff.role?.code }}</p>
-                        <span
-                          class="badge rounded-pill px-3 py-2"
-                          :class="IStaff.isActive ? 'bg-success' : 'bg-danger'"
-                        >
-                          <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem"></i>
-                          {{ IStaff.isActive ? 'Activo' : 'Inactivo' }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Stats Cards -->
-                  <div class="col-12 col-md-6 col-lg-12">
-                    <div class="card border-0 shadow-sm rounded-4 bg-primary text-white stat-card">
-                      <div class="card-body p-4">
-                        <div class="d-flex align-items-center mb-2">
-                          <div class="stat-icon bg-white bg-opacity-25 rounded-3 me-3">
-                            <i class="bi bi-clipboard-check"></i>
-                          </div>
-                          <h6 class="mb-0 opacity-75">Total Reemplazos</h6>
-                        </div>
-                        <h2 class="fw-bold mb-0">{{ stats.total }}</h2>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="col-12 col-md-6 col-lg-12">
-                    <div class="card border-0 shadow-sm rounded-4 bg-info text-white stat-card">
-                      <div class="card-body p-4">
-                        <div class="d-flex align-items-center mb-2">
-                          <div class="stat-icon bg-white bg-opacity-25 rounded-3 me-3">
-                            <i class="bi bi-calendar-month"></i>
-                          </div>
-                          <h6 class="mb-0 opacity-75">Este Mes</h6>
-                        </div>
-                        <h2 class="fw-bold mb-0">{{ stats.monthly }}</h2>
-                      </div>
-                    </div>
-                  </div>
+          <div v-if="IStaff" class="fade-in">
+            <!-- Profile Header -->
+            <div class="profile-header mb-5">
+              <div class="d-flex align-items-center gap-4">
+                <div class="vanguard-avatar">
+                  {{ getInitials(IStaff.firstName, IStaff.lastName) }}
                 </div>
-              </div>
-
-              <!-- Columna Derecha: Info y Gráficos -->
-              <div class="col-12 col-lg-8">
-                <div class="row g-4">
-                  <!-- Info Personal -->
-                  <div class="col-12">
-                    <div class="card border-0 shadow-sm rounded-4">
-                      <div class="card-body p-4">
-                        <h5 class="fw-bold mb-4 text-primary">
-                          <i class="bi bi-person-badge me-2"></i>
-                          Información Personal
-                        </h5>
-                        <div class="row g-3">
-                          <div class="col-12 col-md-6">
-                            <div class="info-item">
-                              <label class="info-label">RUT</label>
-                              <p class="info-value">{{ IStaff.rut }}</p>
-                            </div>
-                          </div>
-                          <div class="col-12 col-md-6">
-                            <div class="info-item">
-                              <label class="info-label">Fecha de Nacimiento</label>
-                              <p class="info-value">{{ formatDate(IStaff.birthDate) }}</p>
-                            </div>
-                          </div>
-                          <div class="col-12 col-md-6">
-                            <div class="info-item">
-                              <label class="info-label">Email</label>
-                              <p class="info-value">{{ IStaff.email }}</p>
-                            </div>
-                          </div>
-                          <div class="col-12 col-md-6">
-                            <div class="info-item">
-                              <label class="info-label">Teléfono</label>
-                              <p class="info-value">{{ IStaff.phone }}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Gráficos y Timeline -->
-                  <div class="col-12 col-md-6">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
-                      <div class="card-body p-4 d-flex flex-column">
-                        <h5 class="fw-bold mb-4 text-primary">
-                          <i class="bi bi-pie-chart me-2"></i> Demanda de Servicios
-                        </h5>
-                        <div
-                          v-if="loading"
-                          class="d-flex align-items-center justify-content-center h-100"
-                          style="min-height: 250px"
-                        >
-                          <TableLoader text="Cargando servicios..." />
-                        </div>
-                        <div
-                          v-else
-                          class="flex-grow-1 d-flex align-items-center justify-content-center"
-                        >
-                          <div
-                            v-if="chartData.labels.length > 0"
-                            class="w-100"
-                            style="max-height: 250px"
-                          >
-                            <Doughnut :data="chartData" :options="chartOptions" />
-                          </div>
-                          <div v-else class="text-center text-muted">
-                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                            Sin datos
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="col-12 col-md-6">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
-                      <div class="card-body p-4">
-                        <h5 class="fw-bold mb-4 text-primary">
-                          <i class="bi bi-clock-history me-2"></i> Últimos Movimientos
-                        </h5>
-                        <div
-                          v-if="loading"
-                          class="d-flex align-items-center justify-content-center"
-                          style="min-height: 300px"
-                        >
-                          <TableLoader text="Cargando..." />
-                        </div>
-                        <div v-else>
-                          <div v-if="recentActivity.length > 0" class="timeline">
-                            <div
-                              v-for="activity in recentActivity"
-                              :key="activity.id"
-                              class="timeline-item"
-                            >
-                              <div
-                                class="timeline-dot"
-                                :class="getActionClass(activity.action)"
-                              ></div>
-                              <div class="timeline-content">
-                                <div class="d-flex justify-content-between align-items-start mb-1">
-                                  <span class="fw-bold small text-dark">{{ activity.action }}</span>
-                                  <span class="text-muted smaller">{{
-                                    formatRelativeTime(activity.created_at)
-                                  }}</span>
-                                </div>
-                                <p class="mb-0 text-secondary smaller">
-                                  {{ activity.description }}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <div v-else class="text-center py-4 text-muted">
-                            <p class="mb-0">Sin movimientos</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                <div>
+                  <h2 class="fw-bold text-slate-900 mb-1">{{ IStaff.firstName }} {{ IStaff.lastName }}</h2>
+                  <div class="text-slate-500 fw-medium d-flex align-items-center gap-2">
+                    {{ IStaff.positionId?.name || IStaff.role?.code || 'Funcionario' }}
+                    <span class="meta-dot">•</span>
+                    <span class="text-slate-400 font-monospace small">{{ IStaff.rut }}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Pestaña: Seguridad (Cambiar Contraseña & Historial) -->
-            <div
-              v-else-if="activeTab === 'security'"
-              class="row justify-content-center align-items-stretch fade-in g-4"
-            >
-              <div class="col-12 col-lg-6">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                  <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3 text-primary d-flex align-items-center gap-2">
-                      <i class="bi bi-key-fill"></i> Cambiar Contraseña
-                    </h5>
+            <div class="row g-5">
+              <!-- Columna Izquierda: Identidad & Preferencias -->
+              <div class="col-12 col-lg-7">
+                
+                <!-- Contacto Clínico -->
+                <section class="mb-5">
+                  <h6 class="section-title">Datos de Contacto</h6>
+                  <div class="vanguard-card p-0">
+                    <div class="data-row">
+                      <div class="data-label">Correo Electrónico</div>
+                      <div class="data-value">{{ IStaff.email }}</div>
+                    </div>
+                    <div class="data-row border-0">
+                      <div class="data-label">Teléfono</div>
+                      <div class="data-value d-flex justify-content-between align-items-center gap-3">
+                        <span>{{ IStaff.phone || 'No registrado' }}</span>
+                        <button class="btn-text">Editar</button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
 
+                <!-- Preferencias -->
+                <section class="mb-5">
+                  <h6 class="section-title">Preferencias de Sistema</h6>
+                  <div class="vanguard-card p-0">
+                    <div class="data-row">
+                      <div class="data-label pe-4">
+                        <span class="d-block fw-medium text-slate-900 mb-1">Alertas de Turnos Críticos</span>
+                        <span class="d-block text-slate-500 small">Recibir notificaciones cuando se abra una convocatoria</span>
+                      </div>
+                      <div class="form-check form-switch vanguard-switch">
+                        <input class="form-check-input" type="checkbox" checked>
+                      </div>
+                    </div>
+                    
+                    <div class="data-row">
+                      <div class="data-label pe-4">
+                        <span class="d-block fw-medium text-slate-900 mb-1">Resumen Diario al Correo</span>
+                        <span class="d-block text-slate-500 small">Reporte con el resumen de tus turnos al inicio del día</span>
+                      </div>
+                      <div class="form-check form-switch vanguard-switch">
+                        <input class="form-check-input" type="checkbox">
+                      </div>
+                    </div>
+
+                    <div class="data-row border-0">
+                      <div class="data-label">
+                        <span class="d-block fw-medium text-slate-900">Apariencia del Sistema</span>
+                      </div>
+                      <div class="d-flex gap-2">
+                        <button class="btn-theme active">Sistema</button>
+                        <button class="btn-theme">Claro</button>
+                        <button class="btn-theme">Oscuro</button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <!-- Columna Derecha: Seguridad & Accesos -->
+              <div class="col-12 col-lg-5">
+                
+                <!-- Password Form -->
+                <section class="mb-5">
+                  <h6 class="section-title">Seguridad de la Cuenta</h6>
+                  <div class="vanguard-card p-4">
+                    <h6 class="fw-semibold text-slate-900 mb-4">Cambiar Contraseña</h6>
+                    
                     <form @submit.prevent="handleChangePassword">
-                      <!-- Contraseña Actual -->
                       <div class="mb-3">
-                        <label class="form-label text-muted fw-semibold small"
-                          >Contraseña Actual</label
-                        >
+                        <label class="form-label text-slate-500 fw-medium small">Contraseña Actual</label>
                         <div class="input-group-custom">
-                          <i class="bi bi-lock-fill input-icon"></i>
+                          <i class="bi bi-lock input-icon"></i>
                           <input
                             v-model="passwordForm.currentPassword"
                             :type="showPassword.current ? 'text' : 'password'"
@@ -248,233 +106,143 @@
                           <button
                             type="button"
                             class="password-toggle"
-                            @mousedown="showPassword.current = true"
-                            @mouseup="showPassword.current = false"
-                            @mouseleave="showPassword.current = false"
+                            @click="showPassword.current = !showPassword.current"
                           >
-                            <i
-                              class="bi"
-                              :class="showPassword.current ? 'bi-eye' : 'bi-eye-slash'"
-                            ></i>
+                            <i class="bi" :class="showPassword.current ? 'bi-eye-slash' : 'bi-eye'"></i>
                           </button>
                         </div>
                       </div>
 
-                      <!-- Nueva Contraseña -->
                       <div class="mb-3">
-                        <label class="form-label text-muted fw-semibold small"
-                          >Nueva Contraseña</label
-                        >
-                        <div class="input-group-custom mb-2">
-                          <i class="bi bi-shield-lock-fill input-icon"></i>
+                        <label class="form-label text-slate-500 fw-medium small">Nueva Contraseña</label>
+                        <div class="input-group-custom">
+                          <i class="bi bi-key input-icon"></i>
                           <input
                             v-model="passwordForm.newPassword"
                             :type="showPassword.new ? 'text' : 'password'"
                             class="form-control-custom"
-                            placeholder="Crea una contraseña segura"
+                            placeholder="Mínimo 8 caracteres"
                             maxlength="8"
                             @input="validatePasswordStrength"
                           />
                           <button
                             type="button"
                             class="password-toggle"
-                            @mousedown="showPassword.new = true"
-                            @mouseup="showPassword.new = false"
-                            @mouseleave="showPassword.new = false"
+                            @click="showPassword.new = !showPassword.new"
                           >
-                            <i class="bi" :class="showPassword.new ? 'bi-eye' : 'bi-eye-slash'"></i>
+                            <i class="bi" :class="showPassword.new ? 'bi-eye-slash' : 'bi-eye'"></i>
                           </button>
                         </div>
-
-                        <!-- Lista de Requisitos en Tiempo Real -->
-                        <div class="password-requirements p-2 rounded-3 bg-light">
-                          <p class="small text-muted mb-1 fw-bold">La contraseña debe contener:</p>
-                          <ul class="list-unstyled mb-0 smaller">
-                            <li :class="reqs.length ? 'text-success' : 'text-muted'">
-                              <i
-                                class="bi"
-                                :class="reqs.length ? 'bi-check-circle-fill' : 'bi-circle'"
-                              ></i>
-                              Entre 6 y 8 caracteres
-                            </li>
-                            <li :class="reqs.uppercase ? 'text-success' : 'text-muted'">
-                              <i
-                                class="bi"
-                                :class="reqs.uppercase ? 'bi-check-circle-fill' : 'bi-circle'"
-                              ></i>
-                              Al menos una Mayúscula (A-Z)
-                            </li>
-                            <li :class="reqs.lowercase ? 'text-success' : 'text-muted'">
-                              <i
-                                class="bi"
-                                :class="reqs.lowercase ? 'bi-check-circle-fill' : 'bi-circle'"
-                              ></i>
-                              Al menos una Minúscula (a-z)
-                            </li>
-                            <li :class="reqs.number ? 'text-success' : 'text-muted'">
-                              <i
-                                class="bi"
-                                :class="reqs.number ? 'bi-check-circle-fill' : 'bi-circle'"
-                              ></i>
-                              Al menos un Número (0-9)
-                            </li>
-                            <li :class="reqs.special ? 'text-success' : 'text-muted'">
-                              <i
-                                class="bi"
-                                :class="reqs.special ? 'bi-check-circle-fill' : 'bi-circle'"
-                              ></i>
-                              Carácter especial (@ # $ % & * - _ + = ! ?)
-                            </li>
-                          </ul>
+                        
+                        <!-- Requisitos -->
+                        <div class="password-reqs mt-2">
+                          <div class="req-item" :class="{ 'req-met': reqs.length }">
+                            <i class="bi" :class="reqs.length ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                            8 caracteres (máx 8)
+                          </div>
+                          <div class="req-item" :class="{ 'req-met': reqs.uppercase }">
+                            <i class="bi" :class="reqs.uppercase ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                            Una mayúscula
+                          </div>
+                          <div class="req-item" :class="{ 'req-met': reqs.lowercase }">
+                            <i class="bi" :class="reqs.lowercase ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                            Una minúscula
+                          </div>
+                          <div class="req-item" :class="{ 'req-met': reqs.number }">
+                            <i class="bi" :class="reqs.number ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                            Un número
+                          </div>
                         </div>
                       </div>
 
-                      <!-- Confirmar Contraseña -->
                       <div class="mb-4">
-                        <label class="form-label text-muted fw-semibold small"
-                          >Confirmar Nueva Contraseña</label
-                        >
+                        <label class="form-label text-slate-500 fw-medium small">Confirmar Contraseña</label>
                         <div class="input-group-custom">
-                          <i class="bi bi-check-circle-fill input-icon"></i>
+                          <i class="bi bi-check2-circle input-icon"></i>
                           <input
                             v-model="passwordForm.confirmPassword"
                             :type="showPassword.confirm ? 'text' : 'password'"
                             class="form-control-custom"
+                            :class="{ 'is-invalid': passwordMismatch }"
                             placeholder="Repite la nueva contraseña"
                             maxlength="8"
                           />
                           <button
                             type="button"
                             class="password-toggle"
-                            @mousedown="showPassword.confirm = true"
-                            @mouseup="showPassword.confirm = false"
-                            @mouseleave="showPassword.confirm = false"
+                            @click="showPassword.confirm = !showPassword.confirm"
                           >
-                            <i
-                              class="bi"
-                              :class="showPassword.confirm ? 'bi-eye' : 'bi-eye-slash'"
-                            ></i>
+                            <i class="bi" :class="showPassword.confirm ? 'bi-eye-slash' : 'bi-eye'"></i>
                           </button>
                         </div>
-                        <small v-if="passwordMismatch" class="text-danger mt-1 d-block">
-                          <i class="bi bi-exclamation-circle me-1"></i> Las contraseñas no coinciden
-                        </small>
+                        <div v-if="passwordMismatch" class="invalid-feedback d-block small mt-1">
+                          Las contraseñas no coinciden.
+                        </div>
                       </div>
 
-                      <!-- Botón de Acción -->
-                      <div class="d-grid">
-                        <button
-                          type="submit"
-                          class="btn btn-primary rounded-pill py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
-                          :disabled="!isFormValid || isSubmitting"
-                        >
-                          <span v-if="isSubmitting" class="spinner-border spinner-border-sm"></span>
-                          <span v-else>Actualizar Contraseña</span>
-                        </button>
-                      </div>
+                      <button
+                        type="submit"
+                        class="btn btn-vanguard-primary w-100"
+                        :disabled="!isFormValid || isSubmitting"
+                      >
+                        <span
+                          v-if="isSubmitting"
+                          class="spinner-border spinner-border-sm me-2"
+                          role="status"
+                        ></span>
+                        <i v-else class="bi bi-shield-lock me-2"></i>
+                        Actualizar Credenciales
+                      </button>
                     </form>
                   </div>
-                </div>
-              </div>
+                </section>
 
-              <!-- Historial de Inicios de Sesión -->
-              <div class="col-12 col-lg-6 mt-4 mt-lg-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                  <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4 text-primary d-flex align-items-center gap-2">
-                      <i class="bi bi-clock-history"></i> Historial de Accesos
-                    </h5>
-
-                    <div v-if="loadingHistory" class="text-center py-5">
-                      <div class="spinner-border text-primary spinner-border-sm" role="status">
-                        <span class="visually-hidden">Cargando...</span>
+                <!-- Access History -->
+                <section class="mb-5">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="section-title mb-0">Historial de Accesos</h6>
+                    <button class="btn-text small"><i class="bi bi-arrow-clockwise"></i></button>
+                  </div>
+                  
+                  <div class="vanguard-card p-0 overflow-hidden">
+                    <div v-if="loadingHistory" class="text-center py-4">
+                      <div class="spinner-border spinner-border-sm text-slate-400"></div>
+                    </div>
+                    <div v-else-if="loginHistory.length === 0" class="text-center py-4 text-slate-500 small">
+                      No hay registros recientes.
+                    </div>
+                    <div v-else class="login-history-list">
+                      <div 
+                        v-for="(log, idx) in loginHistory.slice(0, 10)" 
+                        :key="idx"
+                        class="history-row"
+                      >
+                        <div class="d-flex align-items-start gap-3">
+                          <div class="status-dot-container mt-1">
+                            <span class="status-dot" :class="log.status === 'SUCCESS' ? 'bg-emerald-500' : 'bg-red-500'"></span>
+                          </div>
+                          <div>
+                            <div class="fw-semibold text-slate-900 small mb-1">{{ parseUserAgent(log.userAgent) }}</div>
+                            <div class="d-flex align-items-center gap-2 text-slate-500" style="font-size: 0.75rem;">
+                              <span>{{ formatRelativeTime(log.timestamp) }}</span>
+                              <span class="meta-dot">•</span>
+                              <span class="font-monospace">{{ log.ip }}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    <div v-else-if="loginHistory.length === 0" class="text-center py-5 text-muted">
-                      <i class="bi bi-shield-check fs-1 mb-2 d-block"></i>
-                      <p class="mb-0">No hay registros recientes</p>
-                    </div>
-
-                    <div v-else class="table-responsive history-scroll-container">
-                      <table class="table table-borderless align-middle mb-0">
-                        <thead class="text-muted small text-uppercase sticky-top bg-white">
-                          <tr>
-                            <th class="fw-semibold ps-0">Estado</th>
-                            <th class="fw-semibold">Fecha</th>
-                            <th class="fw-semibold text-end pe-0">IP</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr
-                            v-for="(log, index) in loginHistory"
-                            :key="index"
-                            class="border-bottom"
-                          >
-                            <td class="ps-0 py-3">
-                              <div class="d-flex align-items-center gap-2">
-                                <div
-                                  class="icon-circle"
-                                  :class="
-                                    log.status === 'SUCCESS'
-                                      ? 'bg-success bg-opacity-10 text-success'
-                                      : 'bg-danger bg-opacity-10 text-danger'
-                                  "
-                                >
-                                  <i
-                                    class="bi"
-                                    :class="log.status === 'SUCCESS' ? 'bi-check-lg' : 'bi-x-lg'"
-                                  ></i>
-                                </div>
-                                <div>
-                                  <span
-                                    class="d-block fw-semibold small"
-                                    :class="
-                                      log.status === 'SUCCESS' ? 'text-success' : 'text-danger'
-                                    "
-                                  >
-                                    {{ log.status === 'SUCCESS' ? 'Exitoso' : 'Fallido' }}
-                                  </span>
-                                  <span
-                                    class="text-muted smaller text-truncate d-block"
-                                    style="max-width: 150px"
-                                  >
-                                    {{ parseUserAgent(log.userAgent) }}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td class="py-3">
-                              <span class="text-dark small fw-medium">{{
-                                formatDate(log.timestamp)
-                              }}</span>
-                              <span class="d-block text-muted smaller">{{
-                                formatRelativeTime(log.timestamp)
-                              }}</span>
-                            </td>
-                            <td class="text-end pe-0 py-3">
-                              <span
-                                class="badge bg-light text-secondary border fw-normal font-monospace"
-                              >
-                                {{ log.ip }}
-                              </span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
                   </div>
-                </div>
+                </section>
+
               </div>
             </div>
           </div>
         </template>
         <template #fallback>
           <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="text-secondary mt-3">Cargando información del perfil...</p>
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-secondary mt-3">Cargando perfil...</p>
           </div>
         </template>
       </Suspense>
@@ -495,20 +263,14 @@
 <script setup lang="ts">
 import { useUserProfile } from '../../composables/profile/useProfile'
 import { useProfileSecurity } from '../../composables/profile/useProfileSecurity'
-import { formatDateLong as formatDate, formatRelativeTime } from '@/utils/date-utils'
-import { getActionClass } from '@/utils/helpers'
-import TableLoader from '@/components/common/TableLoader.vue'
-import { Doughnut } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale } from 'chart.js'
+import { formatRelativeTime } from '@/utils/date-utils'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
-ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale)
-
-const { IStaff, stats, chartData, chartOptions, recentActivity, loading } = useUserProfile()
+// Importamos la info del staff pero ignoramos los charts/stats (sin eliminarlos del composable para no romper otras dependencias si las hay)
+const { IStaff } = useUserProfile()
 
 const {
-  activeTab,
   passwordForm,
   showPassword,
   isSubmitting,
@@ -524,230 +286,271 @@ const {
   confirmChangePassword,
   alertComponent
 } = useProfileSecurity()
+
+const getInitials = (firstName?: string, lastName?: string) => {
+  if (!firstName) return 'U'
+  return `${firstName.charAt(0)}${lastName ? lastName.charAt(0) : ''}`.toUpperCase()
+}
 </script>
 
 <style scoped>
-.IStaff-profile-view {
-  background-color: #f8f9fa;
+.vanguard-profile-view {
+  min-height: 100vh;
+  padding-bottom: 2rem;
 }
 
-/* Avatar Circle */
-.avatar-circle {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(78, 115, 223, 0.2);
+.max-w-900 {
+  max-width: 960px;
 }
 
-.avatar-circle i {
-  font-size: 3rem;
-  color: white;
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
-/* Stat Cards */
-.stat-card {
-  transition: transform 0.2s ease;
-}
-.stat-card:hover {
-  transform: translateY(-4px);
-}
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Info Items */
-.info-item {
-  padding: 0.75rem;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  border: 1px solid #edf2f7;
-}
-
-.info-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #a0aec0;
+/* --- Typography & Basics --- */
+.section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.025em;
-  margin-bottom: 0.25rem;
-  display: block;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 1rem;
 }
 
-.info-value {
-  font-size: 1rem;
+.text-slate-900 { color: #0f172a; }
+.text-slate-500 { color: #64748b; }
+.text-slate-400 { color: #94a3b8; }
+.bg-emerald-500 { background-color: #10b981; }
+.bg-red-500 { background-color: #ef4444; }
+
+.meta-dot {
+  opacity: 0.4;
+  font-size: 0.8em;
+}
+
+/* --- Header & Avatar --- */
+.vanguard-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background-color: #f8fafc;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  border: 1px solid #e2e8f0;
+}
+
+/* --- Cards (Bento) --- */
+.vanguard-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+/* --- Data Grid --- */
+.data-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.data-label {
+  font-size: 0.9rem;
   font-weight: 500;
-  color: #2d3748;
-  margin: 0;
+  color: #475569;
 }
 
-/* Timeline */
-.timeline {
-  position: relative;
-  padding-left: 1.5rem;
+.data-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #0f172a;
+  text-align: right;
 }
 
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 0.25rem;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: #edf2f7;
-}
-
-.timeline-item {
-  position: relative;
-  padding-bottom: 1.5rem;
-}
-
-.timeline-item:last-child {
-  padding-bottom: 0;
-}
-
-.timeline-dot {
-  position: absolute;
-  left: -1.45rem;
-  top: 0.25rem;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid white;
-  z-index: 1;
-}
-
-.smaller {
-  font-size: 0.75rem;
-}
-
-/* Cards */
-.card {
+/* --- Buttons & Inputs --- */
+.btn-text {
+  background: none;
   border: none;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-}
-
-.badge {
+  color: #2563eb;
   font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
+  font-size: 0.85rem;
+  padding: 0;
 }
 
-@media (max-width: 991.98px) {
-  .col-lg-4 {
-    order: 2;
-  }
-  .col-lg-8 {
-    order: 1;
-  }
+.btn-text:hover {
+  text-decoration: underline;
 }
-/* Custom Form Controls */
+
+.btn-theme {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #475569;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.btn-theme.active {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  font-weight: 600;
+}
+
+.btn-theme:hover:not(.active) {
+  background: #f8fafc;
+}
+
+.vanguard-switch .form-check-input {
+  width: 2.5rem;
+  height: 1.25rem;
+  cursor: pointer;
+}
+
+.vanguard-switch .form-check-input:checked {
+  background-color: #0f172a;
+  border-color: #0f172a;
+}
+
+/* --- Forms (Security) --- */
 .input-group-custom {
   position: relative;
   display: flex;
   align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.input-group-custom:focus-within {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.05);
 }
 
 .input-icon {
-  position: absolute;
-  left: 1rem;
-  color: #a0aec0;
+  padding-left: 14px;
+  color: #94a3b8;
   font-size: 1.1rem;
-  z-index: 10;
-  transition: color 0.2s ease;
 }
 
 .form-control-custom {
-  width: 100%;
-  padding: 0.6rem 2.8rem 0.6rem 2.8rem; /* Compact padding */
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 14px;
   font-size: 0.95rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 50rem; /* Pill shape */
-  background-color: #f8fafc;
-  transition: all 0.3s ease;
+  color: #0f172a;
 }
 
 .form-control-custom:focus {
   outline: none;
-  border-color: #4e73df;
-  box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
-  background-color: #fff;
 }
 
-.form-control-custom:focus + .input-icon,
-.input-group-custom:focus-within .input-icon {
-  color: #4e73df;
-}
-
-.password-requirements ul li {
-  margin-bottom: 0.35rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Password Toggle Eye */
 .password-toggle {
-  position: absolute;
-  right: 1rem;
   background: none;
   border: none;
-  color: #a0aec0;
+  padding: 0 14px;
+  color: #94a3b8;
   cursor: pointer;
-  z-index: 10;
-  transition: color 0.2s ease;
 }
 
 .password-toggle:hover {
-  color: #4e73df;
-}
-.password-toggle:hover {
-  color: #4e73df;
+  color: #475569;
 }
 
-.icon-circle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+/* Password Reqs */
+.password-reqs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.req-item {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.req-item.req-met {
+  color: #10b981;
+}
+
+.btn-vanguard-primary {
+  background: #0f172a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.btn-vanguard-primary:hover:not(:disabled) {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+.btn-vanguard-primary:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* --- Access History --- */
+.login-history-list {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* Estilo para el scrollbar (Webkit) */
+.login-history-list::-webkit-scrollbar {
+  width: 6px;
+}
+.login-history-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.login-history-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+.login-history-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.history-row {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.history-row:last-child {
+  border-bottom: none;
+}
+
+.status-dot-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
 }
 
-/* History Scroll & Sticky Header */
-.history-scroll-container {
-  max-height: 450px; /* Approx 7 rows */
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-.history-scroll-container::-webkit-scrollbar {
-  width: 6px;
-}
-.history-scroll-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-.history-scroll-container::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 20px;
-}
-
-/* Ensure sticky header sits on top of content */
-.sticky-top {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Slight shadow to separate header */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
 }
 </style>
