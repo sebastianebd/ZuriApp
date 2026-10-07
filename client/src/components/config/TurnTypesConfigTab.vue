@@ -33,7 +33,7 @@
       <div class="col-12 col-xl-4 h-100 d-flex flex-column p-0 ps-xl-3 border-start-xl mt-4 mt-xl-0">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="text-slate-800 fw-bold mb-0">Diccionario de Siglas</h6>
-          <button class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-3" @click="$refs.siglaPanelRef?.openCreateModal()">
+          <button class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-3" @click="siglaPanelRef?.openCreateModal()">
             <i class="bi bi-plus-lg me-1"></i> Añadir
           </button>
         </div>
@@ -80,6 +80,7 @@ import TurnTypeTable from '@/components/config/TurnTypeTable.vue'
 import ConfirmationModal from '@/components/common/ConfirmationModal.vue'
 
 const store = useTurnTypeStore()
+const siglaPanelRef = ref<InstanceType<typeof TurnSiglaManagement> | null>(null)
 const showModal = ref(false)
 const showDeleteModal = ref(false)
 const showConfirmationModal = ref(false)

@@ -337,6 +337,7 @@ function onSubmit() {
               El acceso al sistema no puede ser modificado después de creado.
             </div>
           </div>
+          </div> <!-- Close vanguard-section-card -->
 
           <!-- Footer Actions -->
           <div class="d-flex justify-content-end gap-2 mt-4">
